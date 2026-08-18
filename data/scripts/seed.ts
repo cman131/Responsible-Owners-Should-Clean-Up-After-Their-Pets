@@ -8,31 +8,96 @@ const dataDir = join(__dirname, '..'); // writes to data/
 
 const gen9 = Dex.forGen(9);
 
-// Helper: compute evolution stage from prevo chain
-function getEvoStage(speciesId: string): number {
-  let stage = 1;
-  let current = gen9.species.getByID(speciesId as any);
-  while (current.prevo) {
-    stage++;
-    current = gen9.species.get(current.prevo);
-  }
-  // stage is how deep from base — reverse it to get stage from base
-  return stage;
+// ── Growth rate mapping (PokeAPI name → our enum) ─────────────────────────────
+const GROWTH_RATE_MAP: Record<string, string> = {
+  'slow': 'Slow',
+  'medium': 'MediumFast',
+  'fast': 'Fast',
+  'medium-slow': 'MediumSlow',
+  'fast-then-very-slow': 'Fluctuating',
+  'slow-then-very-fast': 'Erratic',
+};
+
+// ── Fetch exp data from PokeAPI ───────────────────────────────────────────────
+// @pkmn/dex does not include baseExp or expGrowth (PS focuses on competitive,
+// not level-up mechanics). We source these from PokeAPI which is authoritative.
+
+interface PokeApiExpData {
+  baseExpYield: number;
+  expGrowth: string;
 }
 
-// Actually we want stage FROM base: base=1, first evo=2, second evo=3
-// The loop above goes backwards from current to base counting steps,
-// so 'stage' already equals the correct evolution stage number.
+async function fetchWithRetry(url: string, retries = 3): Promise<Response> {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      const res = await fetch(url);
+      if (res.ok) return res;
+    } catch {
+      if (attempt < retries - 1) {
+        await new Promise(r => setTimeout(r, 500 * (attempt + 1)));
+      }
+    }
+  }
+  throw new Error(`Failed to fetch ${url} after ${retries} attempts`);
+}
+
+async function fetchExpDataForDexNum(dexNum: number): Promise<PokeApiExpData> {
+  try {
+    const [pokemonRes, speciesRes] = await Promise.all([
+      fetchWithRetry(`https://pokeapi.co/api/v2/pokemon/${dexNum}`),
+      fetchWithRetry(`https://pokeapi.co/api/v2/pokemon-species/${dexNum}`),
+    ]);
+
+    const pokemon = await pokemonRes.json() as { base_experience: number | null };
+    const species = await speciesRes.json() as { growth_rate: { name: string } };
+
+    return {
+      baseExpYield: pokemon.base_experience ?? 100,
+      expGrowth: GROWTH_RATE_MAP[species.growth_rate.name] ?? 'MediumFast',
+    };
+  } catch {
+    return { baseExpYield: 100, expGrowth: 'MediumFast' };
+  }
+}
+
+// Collect unique positive dex numbers (formes share the base species' num)
+const allSpeciesRaw = gen9.species.all();
+const uniquePosDexNums = [...new Set(allSpeciesRaw.map(s => s.num).filter(n => n > 0))];
+
+console.log(`Fetching exp data for ${uniquePosDexNums.length} species from PokeAPI...`);
+
+const expDataMap = new Map<number, PokeApiExpData>();
+const CONCURRENCY = 5;
+
+for (let i = 0; i < uniquePosDexNums.length; i += CONCURRENCY) {
+  const batch = uniquePosDexNums.slice(i, i + CONCURRENCY);
+  const results = await Promise.all(
+    batch.map(async (num) => ({ num, data: await fetchExpDataForDexNum(num) }))
+  );
+  for (const { num, data } of results) {
+    expDataMap.set(num, data);
+  }
+  process.stdout.write(`\r  ${Math.min(i + CONCURRENCY, uniquePosDexNums.length)}/${uniquePosDexNums.length}`);
+  // Small pause between batches to avoid overwhelming PokeAPI
+  if (i + CONCURRENCY < uniquePosDexNums.length) {
+    await new Promise(r => setTimeout(r, 100));
+  }
+}
+console.log('\n✓ Exp data fetched');
 
 // ── Seed Pokémon species ──────────────────────────────────────────────────────
-const allSpecies = gen9.species.all().map((s) => {
+const allSpecies = allSpeciesRaw.map((s) => {
   // Compute evolution stage by traversing prevo chain
-  let evoStage = 1;
+  let evolutionStage = 1;
   let cur = s;
   while (cur.prevo) {
-    evoStage++;
+    evolutionStage++;
     cur = gen9.species.get(cur.prevo);
   }
+
+  const expData = s.num > 0
+    ? (expDataMap.get(s.num) ?? { baseExpYield: 100, expGrowth: 'MediumFast' })
+    : { baseExpYield: 100, expGrowth: 'MediumFast' };
 
   return {
     id: s.num,
@@ -41,13 +106,14 @@ const allSpecies = gen9.species.all().map((s) => {
     types: s.types,
     baseStats: s.baseStats,
     abilities: s.abilities,
+    baseExpYield: expData.baseExpYield,
+    expGrowth: expData.expGrowth,
     learnset: [] as string[],
-    evolutionStage: evoStage,
+    evolutionStage,
   };
 });
 
 // Fill learnsets — DexLearnsets only has async get(name), no all()
-// We load learnsets per species using Promise.all
 const learnsetResults = await Promise.all(
   allSpecies.map((s) => gen9.learnsets.get(s.name))
 );
@@ -110,7 +176,6 @@ const TYPES = [
   'Rock', 'Ghost', 'Dragon', 'Dark', 'Steel', 'Fairy',
 ] as const;
 
-type T = typeof TYPES[number];
 const chart: Record<string, Record<string, number>> = {};
 
 function encodingToMultiplier(encoding: number): number {
@@ -125,7 +190,6 @@ function encodingToMultiplier(encoding: number): number {
 for (const atk of TYPES) {
   chart[atk] = {};
   for (const def of TYPES) {
-    // Look up from defender's perspective: defType.damageTaken[atkType]
     const encoding = gen9.types.get(def).damageTaken[atk] ?? 0;
     chart[atk]![def] = encodingToMultiplier(encoding);
   }
