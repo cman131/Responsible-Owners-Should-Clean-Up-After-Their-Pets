@@ -8,8 +8,7 @@
     "validate": "tsx validate.ts"
   },
   "dependencies": {
-    "@pkmn/dex": "^0.9.0",
-    "pokemon-showdown": "^0.11.11"
+    "@pkmn/dex": "^0.9.0"
   },
   "devDependencies": {
     "tsx": "^4.7.0",
