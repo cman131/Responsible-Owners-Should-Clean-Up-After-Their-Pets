@@ -61,8 +61,9 @@ async function fetchExpDataForDexNum(dexNum: number): Promise<PokeApiExpData> {
 }
 
 // Collect unique positive dex numbers (formes share the base species' num)
-const allSpeciesRaw = gen9.species.all();
-const uniquePosDexNums = [...new Set(allSpeciesRaw.map(s => s.num).filter(n => n > 0))];
+// Filter num > 0 to exclude CAP (Create-A-Pokemon) Smogon metas and MissingNo glitch entries
+const allSpeciesRaw = gen9.species.all().filter(s => s.num > 0);
+const uniquePosDexNums = [...new Set(allSpeciesRaw.map(s => s.num))];
 
 console.log(`Fetching exp data for ${uniquePosDexNums.length} species from PokeAPI...`);
 
@@ -95,9 +96,7 @@ const allSpecies = allSpeciesRaw.map((s) => {
     cur = gen9.species.get(cur.prevo);
   }
 
-  const expData = s.num > 0
-    ? (expDataMap.get(s.num) ?? { baseExpYield: 100, expGrowth: 'MediumFast' })
-    : { baseExpYield: 100, expGrowth: 'MediumFast' };
+  const expData = expDataMap.get(s.num) ?? { baseExpYield: 100, expGrowth: 'MediumFast' };
 
   return {
     id: s.num,

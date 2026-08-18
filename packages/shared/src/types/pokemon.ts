@@ -7,16 +7,21 @@ export type ExpGrowthCurve =
   | 'Erratic' | 'Fast' | 'MediumFast' | 'MediumSlow' | 'Slow' | 'Fluctuating';
 
 export type MoveTarget =
-  | 'normal'          // single adjacent foe
-  | 'self'            // user only
-  | 'allAdjacentFoes' // all opponents (spread)
-  | 'allAdjacent'     // all adjacent (hits allies too)
-  | 'adjacentAlly'    // single ally
-  | 'allySide'        // your side (e.g. Reflect)
-  | 'foeSide'         // foe side (e.g. Stealth Rock)
-  | 'all'             // whole field (e.g. Sunny Day)
-  | 'randomNormal'    // targets random adjacent foe
-  | 'scripted';       // contextual (Counter, Mirror Coat)
+  | 'normal'              // single adjacent foe
+  | 'self'                // user only
+  | 'allAdjacentFoes'     // all opponents (spread)
+  | 'allAdjacent'         // all adjacent (hits allies too)
+  | 'adjacentAlly'        // single ally
+  | 'adjacentAllyOrSelf'  // self or single adjacent ally
+  | 'adjacentFoe'         // single adjacent foe (non-random)
+  | 'any'                 // any single Pokémon on the field
+  | 'allies'              // all ally slots
+  | 'allyTeam'            // whole ally team (e.g. Aromatherapy)
+  | 'allySide'            // your side (e.g. Reflect)
+  | 'foeSide'             // foe side (e.g. Stealth Rock)
+  | 'all'                 // whole field (e.g. Sunny Day)
+  | 'randomNormal'        // targets random adjacent foe
+  | 'scripted';           // contextual (Counter, Mirror Coat)
 
 export type MoveCategory = 'physical' | 'special' | 'status';
 
