@@ -8,7 +8,8 @@
     "validate": "tsx validate.ts"
   },
   "dependencies": {
-    "@pkmn/dex": "^0.9.0"
+    "@pkmn/dex": "^0.9.0",
+    "@poke-fighter/shared": "workspace:*"
   },
   "devDependencies": {
     "tsx": "^4.7.0",
