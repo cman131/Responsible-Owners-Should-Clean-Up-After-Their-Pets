@@ -1,0 +1,1572 @@
+[
+  {
+    "id": "noability",
+    "name": "No Ability",
+    "effectId": "noability"
+  },
+  {
+    "id": "adaptability",
+    "name": "Adaptability",
+    "effectId": "adaptability"
+  },
+  {
+    "id": "aerilate",
+    "name": "Aerilate",
+    "effectId": "aerilate"
+  },
+  {
+    "id": "aftermath",
+    "name": "Aftermath",
+    "effectId": "aftermath"
+  },
+  {
+    "id": "airlock",
+    "name": "Air Lock",
+    "effectId": "airlock"
+  },
+  {
+    "id": "analytic",
+    "name": "Analytic",
+    "effectId": "analytic"
+  },
+  {
+    "id": "angerpoint",
+    "name": "Anger Point",
+    "effectId": "angerpoint"
+  },
+  {
+    "id": "angershell",
+    "name": "Anger Shell",
+    "effectId": "angershell"
+  },
+  {
+    "id": "anticipation",
+    "name": "Anticipation",
+    "effectId": "anticipation"
+  },
+  {
+    "id": "arenatrap",
+    "name": "Arena Trap",
+    "effectId": "arenatrap"
+  },
+  {
+    "id": "armortail",
+    "name": "Armor Tail",
+    "effectId": "armortail"
+  },
+  {
+    "id": "aromaveil",
+    "name": "Aroma Veil",
+    "effectId": "aromaveil"
+  },
+  {
+    "id": "asoneglastrier",
+    "name": "As One (Glastrier)",
+    "effectId": "asoneglastrier"
+  },
+  {
+    "id": "asonespectrier",
+    "name": "As One (Spectrier)",
+    "effectId": "asonespectrier"
+  },
+  {
+    "id": "aurabreak",
+    "name": "Aura Break",
+    "effectId": "aurabreak"
+  },
+  {
+    "id": "baddreams",
+    "name": "Bad Dreams",
+    "effectId": "baddreams"
+  },
+  {
+    "id": "ballfetch",
+    "name": "Ball Fetch",
+    "effectId": "ballfetch"
+  },
+  {
+    "id": "battery",
+    "name": "Battery",
+    "effectId": "battery"
+  },
+  {
+    "id": "battlearmor",
+    "name": "Battle Armor",
+    "effectId": "battlearmor"
+  },
+  {
+    "id": "battlebond",
+    "name": "Battle Bond",
+    "effectId": "battlebond"
+  },
+  {
+    "id": "beadsofruin",
+    "name": "Beads of Ruin",
+    "effectId": "beadsofruin"
+  },
+  {
+    "id": "beastboost",
+    "name": "Beast Boost",
+    "effectId": "beastboost"
+  },
+  {
+    "id": "berserk",
+    "name": "Berserk",
+    "effectId": "berserk"
+  },
+  {
+    "id": "bigpecks",
+    "name": "Big Pecks",
+    "effectId": "bigpecks"
+  },
+  {
+    "id": "blaze",
+    "name": "Blaze",
+    "effectId": "blaze"
+  },
+  {
+    "id": "bulletproof",
+    "name": "Bulletproof",
+    "effectId": "bulletproof"
+  },
+  {
+    "id": "cheekpouch",
+    "name": "Cheek Pouch",
+    "effectId": "cheekpouch"
+  },
+  {
+    "id": "chillingneigh",
+    "name": "Chilling Neigh",
+    "effectId": "chillingneigh"
+  },
+  {
+    "id": "chlorophyll",
+    "name": "Chlorophyll",
+    "effectId": "chlorophyll"
+  },
+  {
+    "id": "clearbody",
+    "name": "Clear Body",
+    "effectId": "clearbody"
+  },
+  {
+    "id": "cloudnine",
+    "name": "Cloud Nine",
+    "effectId": "cloudnine"
+  },
+  {
+    "id": "colorchange",
+    "name": "Color Change",
+    "effectId": "colorchange"
+  },
+  {
+    "id": "comatose",
+    "name": "Comatose",
+    "effectId": "comatose"
+  },
+  {
+    "id": "commander",
+    "name": "Commander",
+    "effectId": "commander"
+  },
+  {
+    "id": "competitive",
+    "name": "Competitive",
+    "effectId": "competitive"
+  },
+  {
+    "id": "compoundeyes",
+    "name": "Compound Eyes",
+    "effectId": "compoundeyes"
+  },
+  {
+    "id": "contrary",
+    "name": "Contrary",
+    "effectId": "contrary"
+  },
+  {
+    "id": "corrosion",
+    "name": "Corrosion",
+    "effectId": "corrosion"
+  },
+  {
+    "id": "costar",
+    "name": "Costar",
+    "effectId": "costar"
+  },
+  {
+    "id": "cottondown",
+    "name": "Cotton Down",
+    "effectId": "cottondown"
+  },
+  {
+    "id": "cudchew",
+    "name": "Cud Chew",
+    "effectId": "cudchew"
+  },
+  {
+    "id": "curiousmedicine",
+    "name": "Curious Medicine",
+    "effectId": "curiousmedicine"
+  },
+  {
+    "id": "cursedbody",
+    "name": "Cursed Body",
+    "effectId": "cursedbody"
+  },
+  {
+    "id": "cutecharm",
+    "name": "Cute Charm",
+    "effectId": "cutecharm"
+  },
+  {
+    "id": "damp",
+    "name": "Damp",
+    "effectId": "damp"
+  },
+  {
+    "id": "dancer",
+    "name": "Dancer",
+    "effectId": "dancer"
+  },
+  {
+    "id": "darkaura",
+    "name": "Dark Aura",
+    "effectId": "darkaura"
+  },
+  {
+    "id": "dauntlessshield",
+    "name": "Dauntless Shield",
+    "effectId": "dauntlessshield"
+  },
+  {
+    "id": "dazzling",
+    "name": "Dazzling",
+    "effectId": "dazzling"
+  },
+  {
+    "id": "defeatist",
+    "name": "Defeatist",
+    "effectId": "defeatist"
+  },
+  {
+    "id": "defiant",
+    "name": "Defiant",
+    "effectId": "defiant"
+  },
+  {
+    "id": "deltastream",
+    "name": "Delta Stream",
+    "effectId": "deltastream"
+  },
+  {
+    "id": "desolateland",
+    "name": "Desolate Land",
+    "effectId": "desolateland"
+  },
+  {
+    "id": "disguise",
+    "name": "Disguise",
+    "effectId": "disguise"
+  },
+  {
+    "id": "download",
+    "name": "Download",
+    "effectId": "download"
+  },
+  {
+    "id": "dragonsmaw",
+    "name": "Dragon's Maw",
+    "effectId": "dragonsmaw"
+  },
+  {
+    "id": "drizzle",
+    "name": "Drizzle",
+    "effectId": "drizzle"
+  },
+  {
+    "id": "drought",
+    "name": "Drought",
+    "effectId": "drought"
+  },
+  {
+    "id": "dryskin",
+    "name": "Dry Skin",
+    "effectId": "dryskin"
+  },
+  {
+    "id": "earlybird",
+    "name": "Early Bird",
+    "effectId": "earlybird"
+  },
+  {
+    "id": "eartheater",
+    "name": "Earth Eater",
+    "effectId": "eartheater"
+  },
+  {
+    "id": "effectspore",
+    "name": "Effect Spore",
+    "effectId": "effectspore"
+  },
+  {
+    "id": "electricsurge",
+    "name": "Electric Surge",
+    "effectId": "electricsurge"
+  },
+  {
+    "id": "electromorphosis",
+    "name": "Electromorphosis",
+    "effectId": "electromorphosis"
+  },
+  {
+    "id": "embodyaspectcornerstone",
+    "name": "Embody Aspect (Cornerstone)",
+    "effectId": "embodyaspectcornerstone"
+  },
+  {
+    "id": "embodyaspecthearthflame",
+    "name": "Embody Aspect (Hearthflame)",
+    "effectId": "embodyaspecthearthflame"
+  },
+  {
+    "id": "embodyaspectteal",
+    "name": "Embody Aspect (Teal)",
+    "effectId": "embodyaspectteal"
+  },
+  {
+    "id": "embodyaspectwellspring",
+    "name": "Embody Aspect (Wellspring)",
+    "effectId": "embodyaspectwellspring"
+  },
+  {
+    "id": "emergencyexit",
+    "name": "Emergency Exit",
+    "effectId": "emergencyexit"
+  },
+  {
+    "id": "fairyaura",
+    "name": "Fairy Aura",
+    "effectId": "fairyaura"
+  },
+  {
+    "id": "filter",
+    "name": "Filter",
+    "effectId": "filter"
+  },
+  {
+    "id": "flamebody",
+    "name": "Flame Body",
+    "effectId": "flamebody"
+  },
+  {
+    "id": "flareboost",
+    "name": "Flare Boost",
+    "effectId": "flareboost"
+  },
+  {
+    "id": "flashfire",
+    "name": "Flash Fire",
+    "effectId": "flashfire"
+  },
+  {
+    "id": "flowergift",
+    "name": "Flower Gift",
+    "effectId": "flowergift"
+  },
+  {
+    "id": "flowerveil",
+    "name": "Flower Veil",
+    "effectId": "flowerveil"
+  },
+  {
+    "id": "fluffy",
+    "name": "Fluffy",
+    "effectId": "fluffy"
+  },
+  {
+    "id": "forecast",
+    "name": "Forecast",
+    "effectId": "forecast"
+  },
+  {
+    "id": "forewarn",
+    "name": "Forewarn",
+    "effectId": "forewarn"
+  },
+  {
+    "id": "friendguard",
+    "name": "Friend Guard",
+    "effectId": "friendguard"
+  },
+  {
+    "id": "frisk",
+    "name": "Frisk",
+    "effectId": "frisk"
+  },
+  {
+    "id": "fullmetalbody",
+    "name": "Full Metal Body",
+    "effectId": "fullmetalbody"
+  },
+  {
+    "id": "furcoat",
+    "name": "Fur Coat",
+    "effectId": "furcoat"
+  },
+  {
+    "id": "galewings",
+    "name": "Gale Wings",
+    "effectId": "galewings"
+  },
+  {
+    "id": "galvanize",
+    "name": "Galvanize",
+    "effectId": "galvanize"
+  },
+  {
+    "id": "gluttony",
+    "name": "Gluttony",
+    "effectId": "gluttony"
+  },
+  {
+    "id": "goodasgold",
+    "name": "Good as Gold",
+    "effectId": "goodasgold"
+  },
+  {
+    "id": "gooey",
+    "name": "Gooey",
+    "effectId": "gooey"
+  },
+  {
+    "id": "gorillatactics",
+    "name": "Gorilla Tactics",
+    "effectId": "gorillatactics"
+  },
+  {
+    "id": "grasspelt",
+    "name": "Grass Pelt",
+    "effectId": "grasspelt"
+  },
+  {
+    "id": "grassysurge",
+    "name": "Grassy Surge",
+    "effectId": "grassysurge"
+  },
+  {
+    "id": "grimneigh",
+    "name": "Grim Neigh",
+    "effectId": "grimneigh"
+  },
+  {
+    "id": "guarddog",
+    "name": "Guard Dog",
+    "effectId": "guarddog"
+  },
+  {
+    "id": "gulpmissile",
+    "name": "Gulp Missile",
+    "effectId": "gulpmissile"
+  },
+  {
+    "id": "guts",
+    "name": "Guts",
+    "effectId": "guts"
+  },
+  {
+    "id": "hadronengine",
+    "name": "Hadron Engine",
+    "effectId": "hadronengine"
+  },
+  {
+    "id": "harvest",
+    "name": "Harvest",
+    "effectId": "harvest"
+  },
+  {
+    "id": "healer",
+    "name": "Healer",
+    "effectId": "healer"
+  },
+  {
+    "id": "heatproof",
+    "name": "Heatproof",
+    "effectId": "heatproof"
+  },
+  {
+    "id": "heavymetal",
+    "name": "Heavy Metal",
+    "effectId": "heavymetal"
+  },
+  {
+    "id": "honeygather",
+    "name": "Honey Gather",
+    "effectId": "honeygather"
+  },
+  {
+    "id": "hospitality",
+    "name": "Hospitality",
+    "effectId": "hospitality"
+  },
+  {
+    "id": "hugepower",
+    "name": "Huge Power",
+    "effectId": "hugepower"
+  },
+  {
+    "id": "hungerswitch",
+    "name": "Hunger Switch",
+    "effectId": "hungerswitch"
+  },
+  {
+    "id": "hustle",
+    "name": "Hustle",
+    "effectId": "hustle"
+  },
+  {
+    "id": "hydration",
+    "name": "Hydration",
+    "effectId": "hydration"
+  },
+  {
+    "id": "hypercutter",
+    "name": "Hyper Cutter",
+    "effectId": "hypercutter"
+  },
+  {
+    "id": "icebody",
+    "name": "Ice Body",
+    "effectId": "icebody"
+  },
+  {
+    "id": "iceface",
+    "name": "Ice Face",
+    "effectId": "iceface"
+  },
+  {
+    "id": "icescales",
+    "name": "Ice Scales",
+    "effectId": "icescales"
+  },
+  {
+    "id": "illuminate",
+    "name": "Illuminate",
+    "effectId": "illuminate"
+  },
+  {
+    "id": "illusion",
+    "name": "Illusion",
+    "effectId": "illusion"
+  },
+  {
+    "id": "immunity",
+    "name": "Immunity",
+    "effectId": "immunity"
+  },
+  {
+    "id": "imposter",
+    "name": "Imposter",
+    "effectId": "imposter"
+  },
+  {
+    "id": "infiltrator",
+    "name": "Infiltrator",
+    "effectId": "infiltrator"
+  },
+  {
+    "id": "innardsout",
+    "name": "Innards Out",
+    "effectId": "innardsout"
+  },
+  {
+    "id": "innerfocus",
+    "name": "Inner Focus",
+    "effectId": "innerfocus"
+  },
+  {
+    "id": "insomnia",
+    "name": "Insomnia",
+    "effectId": "insomnia"
+  },
+  {
+    "id": "intimidate",
+    "name": "Intimidate",
+    "effectId": "intimidate"
+  },
+  {
+    "id": "intrepidsword",
+    "name": "Intrepid Sword",
+    "effectId": "intrepidsword"
+  },
+  {
+    "id": "ironbarbs",
+    "name": "Iron Barbs",
+    "effectId": "ironbarbs"
+  },
+  {
+    "id": "ironfist",
+    "name": "Iron Fist",
+    "effectId": "ironfist"
+  },
+  {
+    "id": "justified",
+    "name": "Justified",
+    "effectId": "justified"
+  },
+  {
+    "id": "keeneye",
+    "name": "Keen Eye",
+    "effectId": "keeneye"
+  },
+  {
+    "id": "klutz",
+    "name": "Klutz",
+    "effectId": "klutz"
+  },
+  {
+    "id": "leafguard",
+    "name": "Leaf Guard",
+    "effectId": "leafguard"
+  },
+  {
+    "id": "levitate",
+    "name": "Levitate",
+    "effectId": "levitate"
+  },
+  {
+    "id": "libero",
+    "name": "Libero",
+    "effectId": "libero"
+  },
+  {
+    "id": "lightmetal",
+    "name": "Light Metal",
+    "effectId": "lightmetal"
+  },
+  {
+    "id": "lightningrod",
+    "name": "Lightning Rod",
+    "effectId": "lightningrod"
+  },
+  {
+    "id": "limber",
+    "name": "Limber",
+    "effectId": "limber"
+  },
+  {
+    "id": "lingeringaroma",
+    "name": "Lingering Aroma",
+    "effectId": "lingeringaroma"
+  },
+  {
+    "id": "liquidooze",
+    "name": "Liquid Ooze",
+    "effectId": "liquidooze"
+  },
+  {
+    "id": "liquidvoice",
+    "name": "Liquid Voice",
+    "effectId": "liquidvoice"
+  },
+  {
+    "id": "longreach",
+    "name": "Long Reach",
+    "effectId": "longreach"
+  },
+  {
+    "id": "magicbounce",
+    "name": "Magic Bounce",
+    "effectId": "magicbounce"
+  },
+  {
+    "id": "magicguard",
+    "name": "Magic Guard",
+    "effectId": "magicguard"
+  },
+  {
+    "id": "magician",
+    "name": "Magician",
+    "effectId": "magician"
+  },
+  {
+    "id": "magmaarmor",
+    "name": "Magma Armor",
+    "effectId": "magmaarmor"
+  },
+  {
+    "id": "magnetpull",
+    "name": "Magnet Pull",
+    "effectId": "magnetpull"
+  },
+  {
+    "id": "marvelscale",
+    "name": "Marvel Scale",
+    "effectId": "marvelscale"
+  },
+  {
+    "id": "megalauncher",
+    "name": "Mega Launcher",
+    "effectId": "megalauncher"
+  },
+  {
+    "id": "merciless",
+    "name": "Merciless",
+    "effectId": "merciless"
+  },
+  {
+    "id": "mimicry",
+    "name": "Mimicry",
+    "effectId": "mimicry"
+  },
+  {
+    "id": "mindseye",
+    "name": "Mind's Eye",
+    "effectId": "mindseye"
+  },
+  {
+    "id": "minus",
+    "name": "Minus",
+    "effectId": "minus"
+  },
+  {
+    "id": "mirrorarmor",
+    "name": "Mirror Armor",
+    "effectId": "mirrorarmor"
+  },
+  {
+    "id": "mistysurge",
+    "name": "Misty Surge",
+    "effectId": "mistysurge"
+  },
+  {
+    "id": "moldbreaker",
+    "name": "Mold Breaker",
+    "effectId": "moldbreaker"
+  },
+  {
+    "id": "moody",
+    "name": "Moody",
+    "effectId": "moody"
+  },
+  {
+    "id": "motordrive",
+    "name": "Motor Drive",
+    "effectId": "motordrive"
+  },
+  {
+    "id": "moxie",
+    "name": "Moxie",
+    "effectId": "moxie"
+  },
+  {
+    "id": "multiscale",
+    "name": "Multiscale",
+    "effectId": "multiscale"
+  },
+  {
+    "id": "multitype",
+    "name": "Multitype",
+    "effectId": "multitype"
+  },
+  {
+    "id": "mummy",
+    "name": "Mummy",
+    "effectId": "mummy"
+  },
+  {
+    "id": "myceliummight",
+    "name": "Mycelium Might",
+    "effectId": "myceliummight"
+  },
+  {
+    "id": "naturalcure",
+    "name": "Natural Cure",
+    "effectId": "naturalcure"
+  },
+  {
+    "id": "neuroforce",
+    "name": "Neuroforce",
+    "effectId": "neuroforce"
+  },
+  {
+    "id": "neutralizinggas",
+    "name": "Neutralizing Gas",
+    "effectId": "neutralizinggas"
+  },
+  {
+    "id": "noguard",
+    "name": "No Guard",
+    "effectId": "noguard"
+  },
+  {
+    "id": "normalize",
+    "name": "Normalize",
+    "effectId": "normalize"
+  },
+  {
+    "id": "oblivious",
+    "name": "Oblivious",
+    "effectId": "oblivious"
+  },
+  {
+    "id": "opportunist",
+    "name": "Opportunist",
+    "effectId": "opportunist"
+  },
+  {
+    "id": "orichalcumpulse",
+    "name": "Orichalcum Pulse",
+    "effectId": "orichalcumpulse"
+  },
+  {
+    "id": "overcoat",
+    "name": "Overcoat",
+    "effectId": "overcoat"
+  },
+  {
+    "id": "overgrow",
+    "name": "Overgrow",
+    "effectId": "overgrow"
+  },
+  {
+    "id": "owntempo",
+    "name": "Own Tempo",
+    "effectId": "owntempo"
+  },
+  {
+    "id": "parentalbond",
+    "name": "Parental Bond",
+    "effectId": "parentalbond"
+  },
+  {
+    "id": "pastelveil",
+    "name": "Pastel Veil",
+    "effectId": "pastelveil"
+  },
+  {
+    "id": "perishbody",
+    "name": "Perish Body",
+    "effectId": "perishbody"
+  },
+  {
+    "id": "pickpocket",
+    "name": "Pickpocket",
+    "effectId": "pickpocket"
+  },
+  {
+    "id": "pickup",
+    "name": "Pickup",
+    "effectId": "pickup"
+  },
+  {
+    "id": "pixilate",
+    "name": "Pixilate",
+    "effectId": "pixilate"
+  },
+  {
+    "id": "plus",
+    "name": "Plus",
+    "effectId": "plus"
+  },
+  {
+    "id": "poisonheal",
+    "name": "Poison Heal",
+    "effectId": "poisonheal"
+  },
+  {
+    "id": "poisonpoint",
+    "name": "Poison Point",
+    "effectId": "poisonpoint"
+  },
+  {
+    "id": "poisonpuppeteer",
+    "name": "Poison Puppeteer",
+    "effectId": "poisonpuppeteer"
+  },
+  {
+    "id": "poisontouch",
+    "name": "Poison Touch",
+    "effectId": "poisontouch"
+  },
+  {
+    "id": "powerconstruct",
+    "name": "Power Construct",
+    "effectId": "powerconstruct"
+  },
+  {
+    "id": "powerofalchemy",
+    "name": "Power of Alchemy",
+    "effectId": "powerofalchemy"
+  },
+  {
+    "id": "powerspot",
+    "name": "Power Spot",
+    "effectId": "powerspot"
+  },
+  {
+    "id": "prankster",
+    "name": "Prankster",
+    "effectId": "prankster"
+  },
+  {
+    "id": "pressure",
+    "name": "Pressure",
+    "effectId": "pressure"
+  },
+  {
+    "id": "primordialsea",
+    "name": "Primordial Sea",
+    "effectId": "primordialsea"
+  },
+  {
+    "id": "prismarmor",
+    "name": "Prism Armor",
+    "effectId": "prismarmor"
+  },
+  {
+    "id": "propellertail",
+    "name": "Propeller Tail",
+    "effectId": "propellertail"
+  },
+  {
+    "id": "protean",
+    "name": "Protean",
+    "effectId": "protean"
+  },
+  {
+    "id": "protosynthesis",
+    "name": "Protosynthesis",
+    "effectId": "protosynthesis"
+  },
+  {
+    "id": "psychicsurge",
+    "name": "Psychic Surge",
+    "effectId": "psychicsurge"
+  },
+  {
+    "id": "punkrock",
+    "name": "Punk Rock",
+    "effectId": "punkrock"
+  },
+  {
+    "id": "purepower",
+    "name": "Pure Power",
+    "effectId": "purepower"
+  },
+  {
+    "id": "purifyingsalt",
+    "name": "Purifying Salt",
+    "effectId": "purifyingsalt"
+  },
+  {
+    "id": "quarkdrive",
+    "name": "Quark Drive",
+    "effectId": "quarkdrive"
+  },
+  {
+    "id": "queenlymajesty",
+    "name": "Queenly Majesty",
+    "effectId": "queenlymajesty"
+  },
+  {
+    "id": "quickdraw",
+    "name": "Quick Draw",
+    "effectId": "quickdraw"
+  },
+  {
+    "id": "quickfeet",
+    "name": "Quick Feet",
+    "effectId": "quickfeet"
+  },
+  {
+    "id": "raindish",
+    "name": "Rain Dish",
+    "effectId": "raindish"
+  },
+  {
+    "id": "rattled",
+    "name": "Rattled",
+    "effectId": "rattled"
+  },
+  {
+    "id": "receiver",
+    "name": "Receiver",
+    "effectId": "receiver"
+  },
+  {
+    "id": "reckless",
+    "name": "Reckless",
+    "effectId": "reckless"
+  },
+  {
+    "id": "refrigerate",
+    "name": "Refrigerate",
+    "effectId": "refrigerate"
+  },
+  {
+    "id": "regenerator",
+    "name": "Regenerator",
+    "effectId": "regenerator"
+  },
+  {
+    "id": "ripen",
+    "name": "Ripen",
+    "effectId": "ripen"
+  },
+  {
+    "id": "rivalry",
+    "name": "Rivalry",
+    "effectId": "rivalry"
+  },
+  {
+    "id": "rkssystem",
+    "name": "RKS System",
+    "effectId": "rkssystem"
+  },
+  {
+    "id": "rockhead",
+    "name": "Rock Head",
+    "effectId": "rockhead"
+  },
+  {
+    "id": "rockypayload",
+    "name": "Rocky Payload",
+    "effectId": "rockypayload"
+  },
+  {
+    "id": "roughskin",
+    "name": "Rough Skin",
+    "effectId": "roughskin"
+  },
+  {
+    "id": "runaway",
+    "name": "Run Away",
+    "effectId": "runaway"
+  },
+  {
+    "id": "sandforce",
+    "name": "Sand Force",
+    "effectId": "sandforce"
+  },
+  {
+    "id": "sandrush",
+    "name": "Sand Rush",
+    "effectId": "sandrush"
+  },
+  {
+    "id": "sandspit",
+    "name": "Sand Spit",
+    "effectId": "sandspit"
+  },
+  {
+    "id": "sandstream",
+    "name": "Sand Stream",
+    "effectId": "sandstream"
+  },
+  {
+    "id": "sandveil",
+    "name": "Sand Veil",
+    "effectId": "sandveil"
+  },
+  {
+    "id": "sapsipper",
+    "name": "Sap Sipper",
+    "effectId": "sapsipper"
+  },
+  {
+    "id": "schooling",
+    "name": "Schooling",
+    "effectId": "schooling"
+  },
+  {
+    "id": "scrappy",
+    "name": "Scrappy",
+    "effectId": "scrappy"
+  },
+  {
+    "id": "screencleaner",
+    "name": "Screen Cleaner",
+    "effectId": "screencleaner"
+  },
+  {
+    "id": "seedsower",
+    "name": "Seed Sower",
+    "effectId": "seedsower"
+  },
+  {
+    "id": "serenegrace",
+    "name": "Serene Grace",
+    "effectId": "serenegrace"
+  },
+  {
+    "id": "shadowshield",
+    "name": "Shadow Shield",
+    "effectId": "shadowshield"
+  },
+  {
+    "id": "shadowtag",
+    "name": "Shadow Tag",
+    "effectId": "shadowtag"
+  },
+  {
+    "id": "sharpness",
+    "name": "Sharpness",
+    "effectId": "sharpness"
+  },
+  {
+    "id": "shedskin",
+    "name": "Shed Skin",
+    "effectId": "shedskin"
+  },
+  {
+    "id": "sheerforce",
+    "name": "Sheer Force",
+    "effectId": "sheerforce"
+  },
+  {
+    "id": "shellarmor",
+    "name": "Shell Armor",
+    "effectId": "shellarmor"
+  },
+  {
+    "id": "shielddust",
+    "name": "Shield Dust",
+    "effectId": "shielddust"
+  },
+  {
+    "id": "shieldsdown",
+    "name": "Shields Down",
+    "effectId": "shieldsdown"
+  },
+  {
+    "id": "simple",
+    "name": "Simple",
+    "effectId": "simple"
+  },
+  {
+    "id": "skilllink",
+    "name": "Skill Link",
+    "effectId": "skilllink"
+  },
+  {
+    "id": "slowstart",
+    "name": "Slow Start",
+    "effectId": "slowstart"
+  },
+  {
+    "id": "slushrush",
+    "name": "Slush Rush",
+    "effectId": "slushrush"
+  },
+  {
+    "id": "sniper",
+    "name": "Sniper",
+    "effectId": "sniper"
+  },
+  {
+    "id": "snowcloak",
+    "name": "Snow Cloak",
+    "effectId": "snowcloak"
+  },
+  {
+    "id": "snowwarning",
+    "name": "Snow Warning",
+    "effectId": "snowwarning"
+  },
+  {
+    "id": "solarpower",
+    "name": "Solar Power",
+    "effectId": "solarpower"
+  },
+  {
+    "id": "solidrock",
+    "name": "Solid Rock",
+    "effectId": "solidrock"
+  },
+  {
+    "id": "soulheart",
+    "name": "Soul-Heart",
+    "effectId": "soulheart"
+  },
+  {
+    "id": "soundproof",
+    "name": "Soundproof",
+    "effectId": "soundproof"
+  },
+  {
+    "id": "speedboost",
+    "name": "Speed Boost",
+    "effectId": "speedboost"
+  },
+  {
+    "id": "stakeout",
+    "name": "Stakeout",
+    "effectId": "stakeout"
+  },
+  {
+    "id": "stall",
+    "name": "Stall",
+    "effectId": "stall"
+  },
+  {
+    "id": "stalwart",
+    "name": "Stalwart",
+    "effectId": "stalwart"
+  },
+  {
+    "id": "stamina",
+    "name": "Stamina",
+    "effectId": "stamina"
+  },
+  {
+    "id": "stancechange",
+    "name": "Stance Change",
+    "effectId": "stancechange"
+  },
+  {
+    "id": "static",
+    "name": "Static",
+    "effectId": "static"
+  },
+  {
+    "id": "steadfast",
+    "name": "Steadfast",
+    "effectId": "steadfast"
+  },
+  {
+    "id": "steamengine",
+    "name": "Steam Engine",
+    "effectId": "steamengine"
+  },
+  {
+    "id": "steelworker",
+    "name": "Steelworker",
+    "effectId": "steelworker"
+  },
+  {
+    "id": "steelyspirit",
+    "name": "Steely Spirit",
+    "effectId": "steelyspirit"
+  },
+  {
+    "id": "stench",
+    "name": "Stench",
+    "effectId": "stench"
+  },
+  {
+    "id": "stickyhold",
+    "name": "Sticky Hold",
+    "effectId": "stickyhold"
+  },
+  {
+    "id": "stormdrain",
+    "name": "Storm Drain",
+    "effectId": "stormdrain"
+  },
+  {
+    "id": "strongjaw",
+    "name": "Strong Jaw",
+    "effectId": "strongjaw"
+  },
+  {
+    "id": "sturdy",
+    "name": "Sturdy",
+    "effectId": "sturdy"
+  },
+  {
+    "id": "suctioncups",
+    "name": "Suction Cups",
+    "effectId": "suctioncups"
+  },
+  {
+    "id": "superluck",
+    "name": "Super Luck",
+    "effectId": "superluck"
+  },
+  {
+    "id": "supersweetsyrup",
+    "name": "Supersweet Syrup",
+    "effectId": "supersweetsyrup"
+  },
+  {
+    "id": "supremeoverlord",
+    "name": "Supreme Overlord",
+    "effectId": "supremeoverlord"
+  },
+  {
+    "id": "surgesurfer",
+    "name": "Surge Surfer",
+    "effectId": "surgesurfer"
+  },
+  {
+    "id": "swarm",
+    "name": "Swarm",
+    "effectId": "swarm"
+  },
+  {
+    "id": "sweetveil",
+    "name": "Sweet Veil",
+    "effectId": "sweetveil"
+  },
+  {
+    "id": "swiftswim",
+    "name": "Swift Swim",
+    "effectId": "swiftswim"
+  },
+  {
+    "id": "symbiosis",
+    "name": "Symbiosis",
+    "effectId": "symbiosis"
+  },
+  {
+    "id": "synchronize",
+    "name": "Synchronize",
+    "effectId": "synchronize"
+  },
+  {
+    "id": "swordofruin",
+    "name": "Sword of Ruin",
+    "effectId": "swordofruin"
+  },
+  {
+    "id": "tabletsofruin",
+    "name": "Tablets of Ruin",
+    "effectId": "tabletsofruin"
+  },
+  {
+    "id": "tangledfeet",
+    "name": "Tangled Feet",
+    "effectId": "tangledfeet"
+  },
+  {
+    "id": "tanglinghair",
+    "name": "Tangling Hair",
+    "effectId": "tanglinghair"
+  },
+  {
+    "id": "technician",
+    "name": "Technician",
+    "effectId": "technician"
+  },
+  {
+    "id": "telepathy",
+    "name": "Telepathy",
+    "effectId": "telepathy"
+  },
+  {
+    "id": "teraformzero",
+    "name": "Teraform Zero",
+    "effectId": "teraformzero"
+  },
+  {
+    "id": "terashell",
+    "name": "Tera Shell",
+    "effectId": "terashell"
+  },
+  {
+    "id": "terashift",
+    "name": "Tera Shift",
+    "effectId": "terashift"
+  },
+  {
+    "id": "teravolt",
+    "name": "Teravolt",
+    "effectId": "teravolt"
+  },
+  {
+    "id": "thermalexchange",
+    "name": "Thermal Exchange",
+    "effectId": "thermalexchange"
+  },
+  {
+    "id": "thickfat",
+    "name": "Thick Fat",
+    "effectId": "thickfat"
+  },
+  {
+    "id": "tintedlens",
+    "name": "Tinted Lens",
+    "effectId": "tintedlens"
+  },
+  {
+    "id": "torrent",
+    "name": "Torrent",
+    "effectId": "torrent"
+  },
+  {
+    "id": "toughclaws",
+    "name": "Tough Claws",
+    "effectId": "toughclaws"
+  },
+  {
+    "id": "toxicboost",
+    "name": "Toxic Boost",
+    "effectId": "toxicboost"
+  },
+  {
+    "id": "toxicchain",
+    "name": "Toxic Chain",
+    "effectId": "toxicchain"
+  },
+  {
+    "id": "toxicdebris",
+    "name": "Toxic Debris",
+    "effectId": "toxicdebris"
+  },
+  {
+    "id": "trace",
+    "name": "Trace",
+    "effectId": "trace"
+  },
+  {
+    "id": "transistor",
+    "name": "Transistor",
+    "effectId": "transistor"
+  },
+  {
+    "id": "triage",
+    "name": "Triage",
+    "effectId": "triage"
+  },
+  {
+    "id": "truant",
+    "name": "Truant",
+    "effectId": "truant"
+  },
+  {
+    "id": "turboblaze",
+    "name": "Turboblaze",
+    "effectId": "turboblaze"
+  },
+  {
+    "id": "unaware",
+    "name": "Unaware",
+    "effectId": "unaware"
+  },
+  {
+    "id": "unburden",
+    "name": "Unburden",
+    "effectId": "unburden"
+  },
+  {
+    "id": "unnerve",
+    "name": "Unnerve",
+    "effectId": "unnerve"
+  },
+  {
+    "id": "unseenfist",
+    "name": "Unseen Fist",
+    "effectId": "unseenfist"
+  },
+  {
+    "id": "vesselofruin",
+    "name": "Vessel of Ruin",
+    "effectId": "vesselofruin"
+  },
+  {
+    "id": "victorystar",
+    "name": "Victory Star",
+    "effectId": "victorystar"
+  },
+  {
+    "id": "vitalspirit",
+    "name": "Vital Spirit",
+    "effectId": "vitalspirit"
+  },
+  {
+    "id": "voltabsorb",
+    "name": "Volt Absorb",
+    "effectId": "voltabsorb"
+  },
+  {
+    "id": "wanderingspirit",
+    "name": "Wandering Spirit",
+    "effectId": "wanderingspirit"
+  },
+  {
+    "id": "waterabsorb",
+    "name": "Water Absorb",
+    "effectId": "waterabsorb"
+  },
+  {
+    "id": "waterbubble",
+    "name": "Water Bubble",
+    "effectId": "waterbubble"
+  },
+  {
+    "id": "watercompaction",
+    "name": "Water Compaction",
+    "effectId": "watercompaction"
+  },
+  {
+    "id": "waterveil",
+    "name": "Water Veil",
+    "effectId": "waterveil"
+  },
+  {
+    "id": "weakarmor",
+    "name": "Weak Armor",
+    "effectId": "weakarmor"
+  },
+  {
+    "id": "wellbakedbody",
+    "name": "Well-Baked Body",
+    "effectId": "wellbakedbody"
+  },
+  {
+    "id": "whitesmoke",
+    "name": "White Smoke",
+    "effectId": "whitesmoke"
+  },
+  {
+    "id": "wimpout",
+    "name": "Wimp Out",
+    "effectId": "wimpout"
+  },
+  {
+    "id": "windpower",
+    "name": "Wind Power",
+    "effectId": "windpower"
+  },
+  {
+    "id": "windrider",
+    "name": "Wind Rider",
+    "effectId": "windrider"
+  },
+  {
+    "id": "wonderguard",
+    "name": "Wonder Guard",
+    "effectId": "wonderguard"
+  },
+  {
+    "id": "wonderskin",
+    "name": "Wonder Skin",
+    "effectId": "wonderskin"
+  },
+  {
+    "id": "zenmode",
+    "name": "Zen Mode",
+    "effectId": "zenmode"
+  },
+  {
+    "id": "zerotohero",
+    "name": "Zero to Hero",
+    "effectId": "zerotohero"
+  },
+  {
+    "id": "mountaineer",
+    "name": "Mountaineer",
+    "effectId": "mountaineer"
+  },
+  {
+    "id": "rebound",
+    "name": "Rebound",
+    "effectId": "rebound"
+  },
+  {
+    "id": "persistent",
+    "name": "Persistent",
+    "effectId": "persistent"
+  }
+]

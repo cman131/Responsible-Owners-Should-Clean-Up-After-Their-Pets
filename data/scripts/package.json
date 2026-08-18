@@ -1,0 +1,17 @@
+{
+  "name": "data-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "seed": "tsx seed.ts",
+    "validate": "tsx validate.ts"
+  },
+  "dependencies": {
+    "@pkmn/dex": "^0.9.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0"
+  }
+}
