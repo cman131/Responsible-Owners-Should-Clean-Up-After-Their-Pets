@@ -13,13 +13,15 @@
   },
   "dependencies": {
     "@poke-fighter/shared": "workspace:*",
+    "dotenv": "^16.4.0",
     "socket.io": "^4.7.0",
-    "dotenv": "^16.4.0"
+    "uuid": "^14.0.1"
   },
   "devDependencies": {
-    "typescript": "^5.4.0",
-    "vitest": "^1.6.0",
+    "@types/node": "^20.0.0",
+    "@types/uuid": "^11.0.0",
     "tsx": "^4.7.0",
-    "@types/node": "^20.0.0"
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
   }
 }
