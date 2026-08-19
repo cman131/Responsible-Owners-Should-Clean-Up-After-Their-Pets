@@ -79,6 +79,18 @@ export class SocketServer {
       });
     });
 
+    room.onExpAward((awards) => {
+      this.io.to(`battle:${initialState.battleId}`).emit('exp:award', { awards });
+    });
+
+    room.onLevelUp((result, newStats) => {
+      this.io.to(`battle:${initialState.battleId}`).emit('level:up', {
+        instanceId: result.instanceId,
+        newLevel: result.newLevel,
+        newStats,
+      });
+    });
+
     room.onBattleEnd((winningTeamId, finalState) => {
       this.io.to(`battle:${initialState.battleId}`).emit('battle:end', { winningTeamId, state: finalState });
       this.rooms.delete(initialState.battleId);

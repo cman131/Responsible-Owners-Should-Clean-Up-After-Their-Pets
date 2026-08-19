@@ -1,5 +1,8 @@
-import type { BattleState, MoveAction, SwitchAction, TurnResolveEvent, SlotState } from '@poke-fighter/shared';
+import type { BattleState, MoveAction, SwitchAction, TurnResolveEvent, SlotState, PartyMember, Stats } from '@poke-fighter/shared';
 import { BattleEngine } from '../engine/index.js';
+import { calcExpYield, distributeExp, checkLevelUps, type ExpAward, type LevelUpResult } from '../engine/exp.js';
+import { DataLoader } from '../data/loader.js';
+import { calcAllStats } from '../engine/stats.js';
 
 type Action = MoveAction | SwitchAction;
 
@@ -21,6 +24,9 @@ export class BattleRoom {
   private onTurnResolvedCb: TurnResolvedCallback | null = null;
   private onBattleEndCb: BattleEndCallback | null = null;
   private onSwitchRequestCb: SwitchRequestCallback | null = null;
+  private onExpAwardCb: ((awards: ExpAward[]) => void) | null = null;
+  private onLevelUpCb: ((result: LevelUpResult, newStats: Stats) => void) | null = null;
+  private readonly data = new DataLoader();
   private awaitingForcedSwitches = new Set<string>();
   private paused = false;
 
@@ -45,6 +51,10 @@ export class BattleRoom {
   onSwitchRequest(cb: SwitchRequestCallback): void {
     this.onSwitchRequestCb = cb;
   }
+
+  onExpAward(cb: (awards: ExpAward[]) => void): void { this.onExpAwardCb = cb; }
+
+  onLevelUp(cb: (result: LevelUpResult, newStats: Stats) => void): void { this.onLevelUpCb = cb; }
 
   submitAction(slotId: string, action: Action): { ok: boolean; reason?: string } {
     // Handle forced switch (after faint) — must come before normal validation
@@ -129,6 +139,73 @@ export class BattleRoom {
     return pending;
   }
 
+  private processExpFromEvents(events: TurnResolveEvent[], newState: BattleState): void {
+    for (const event of events) {
+      if (event.type !== 'faint') continue;
+      const faintedInstanceId = event.data['instanceId'] as string;
+
+      // Find the fainted team index
+      const faintedTeamIdx = newState.teams.findIndex((t) =>
+        t.slots.some((s) => s.party.some((p) => p.instanceId === faintedInstanceId))
+      );
+      if (faintedTeamIdx === -1) continue;
+
+      // Find fainted mon
+      let faintedMon: PartyMember | undefined;
+      for (const team of newState.teams) {
+        for (const slot of team.slots) {
+          const mon = slot.party.find((p) => p.instanceId === faintedInstanceId);
+          if (mon) { faintedMon = mon; break; }
+        }
+        if (faintedMon) break;
+      }
+      if (!faintedMon) continue;
+
+      const species = this.data.getSpecies(faintedMon.speciesId);
+      if (!species) continue;
+
+      const expYield = calcExpYield({ baseExpYield: species.baseExpYield, level: faintedMon.level });
+
+      // Winning team is the other team
+      const winningTeamIdx = faintedTeamIdx === 0 ? 1 : 0;
+      const recipients = newState.teams[winningTeamIdx]?.slots.flatMap((s) => s.party) ?? [];
+
+      const awards = distributeExp({ expYield, recipients });
+
+      // Apply exp and check level-ups
+      for (const award of awards) {
+        for (const team of newState.teams) {
+          for (const slot of team.slots) {
+            const mon = slot.party.find((p) => p.instanceId === award.instanceId);
+            if (!mon) continue;
+            mon.expTotal = award.newTotal;
+            const growth = this.data.getSpecies(mon.speciesId)?.expGrowth ?? 'MediumFast';
+            const levelUp = checkLevelUps(mon, award.newTotal, growth);
+            if (levelUp) {
+              mon.level = levelUp.newLevel;
+              const speciesData = this.data.getSpecies(mon.speciesId);
+              if (speciesData) {
+                const newStats = calcAllStats({
+                  baseStats: speciesData.baseStats,
+                  ivs: { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 },
+                  evs: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
+                  level: levelUp.newLevel,
+                  nature: 'hardy',
+                });
+                mon.stats = newStats;
+                this.onLevelUpCb?.(levelUp, newStats);
+              }
+            }
+          }
+        }
+      }
+
+      if (awards.length > 0) {
+        this.onExpAwardCb?.(awards);
+      }
+    }
+  }
+
   private findSlot(slotId: string): SlotState | undefined {
     for (const team of this.state.teams) {
       const slot = team.slots.find((s) => s.slotId === slotId);
@@ -172,6 +249,8 @@ export class BattleRoom {
 
     const { newState, events } = this.engine.resolveTurn(this.state, actions);
     this.state = newState;
+
+    this.processExpFromEvents(events, newState);
 
     try {
       this.onTurnResolvedCb?.(events, newState);
