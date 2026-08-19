@@ -22,7 +22,7 @@ export class BattleRoom {
   private paused = false;
 
   constructor({ initialState, timerSeconds }: BattleRoomOptions) {
-    this.state = initialState;
+    this.state = structuredClone(initialState);
     this.timerSeconds = timerSeconds;
     this.startTimer();
   }
@@ -112,11 +112,19 @@ export class BattleRoom {
     const { newState, events } = this.engine.resolveTurn(this.state, actions);
     this.state = newState;
 
-    this.onTurnResolvedCb?.(events, newState);
+    try {
+      this.onTurnResolvedCb?.(events, newState);
+    } catch (err) {
+      console.error('[BattleRoom] onTurnResolved callback threw:', err);
+    }
 
     if (newState.phase === 'ended' && newState.winner !== undefined) {
       const winningTeam = newState.teams[newState.winner];
-      this.onBattleEndCb?.(winningTeam?.teamId ?? '', newState);
+      try {
+        this.onBattleEndCb?.(winningTeam?.teamId ?? '', newState);
+      } catch (err) {
+        console.error('[BattleRoom] onBattleEnd callback threw:', err);
+      }
     } else {
       this.startTimer();
     }
