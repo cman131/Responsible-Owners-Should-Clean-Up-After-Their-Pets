@@ -42,7 +42,9 @@ export interface AdminActionPayload {
     | 'registry:save-npc'
     | 'registry:delete-npc'
     | 'registry:save-team'
-    | 'registry:delete-team';
+    | 'registry:delete-team'
+    | 'start-battle'
+    | 'data:query';
   data: Record<string, unknown>;
 }
 

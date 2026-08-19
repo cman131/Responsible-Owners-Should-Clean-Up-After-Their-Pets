@@ -13,7 +13,7 @@ export function registerAdminHandlers(
   startBattle: (config: BattleState) => BattleRoom,
   registry: RegistryStore
 ): void {
-  socket.on('admin:action', (payload: AdminActionPayload) => {
+  socket.on('admin:action', async (payload: AdminActionPayload) => {
     switch (payload.type) {
       case 'npc-action': {
         const { battleId, slotId, action } = payload.data as { battleId: string; slotId: string; action: MoveAction | SwitchAction };
@@ -31,6 +31,17 @@ export function registerAdminHandlers(
       case 'unpause': {
         const { battleId } = payload.data as { battleId: string };
         getRoom(battleId)?.unpause();
+        break;
+      }
+      case 'start-battle': {
+        const { battleId, label, turnTimerSeconds, teams } = payload.data as {
+          battleId: string; label: string; turnTimerSeconds: number;
+          teams: [{ slots: { slotId: string; displayName: string; isNpc: boolean; party: import('@poke-fighter/shared').PokemonSet[] }[] }, { slots: { slotId: string; displayName: string; isNpc: boolean; party: import('@poke-fighter/shared').PokemonSet[] }[] }];
+        };
+        const { BattleConfigurator } = await import('../../setup/BattleConfigurator.js');
+        const configurator = new BattleConfigurator();
+        const state = configurator.build({ battleId, label, turnTimerSeconds, teams });
+        startBattle(state);
         break;
       }
       case 'force-faint':
