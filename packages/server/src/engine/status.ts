@@ -1,0 +1,78 @@
+import type { StatusCondition, PokemonType } from '@poke-fighter/shared';
+
+export const PARALYSIS_SPEED_MOD = 0.5;
+export const PARALYSIS_FULL_PARALYSIS_CHANCE = 0.25;
+export const FREEZE_THAW_CHANCE = 0.2;
+export const CONFUSION_HURT_CHANCE = 0.33;
+
+interface CanApplyInput {
+  status: StatusCondition;
+  types: PokemonType[];
+  currentStatus: StatusCondition | undefined;
+  ability: string;
+}
+
+const IMMUNITIES: Record<StatusCondition, PokemonType[]> = {
+  brn: ['Fire'],
+  par: ['Electric', 'Ground'],
+  frz: ['Ice'],
+  psn: ['Poison', 'Steel'],
+  tox: ['Poison', 'Steel'],
+  slp: [],
+  fnt: [],
+};
+
+export function canApplyStatus({ status, types, currentStatus, ability }: CanApplyInput): boolean {
+  if (currentStatus) return false;  // already has a status
+  const immune = IMMUNITIES[status] ?? [];
+  if (types.some((t) => immune.includes(t))) return false;
+  // Ability-based immunities (subset — full list handled in abilities.ts)
+  if (ability === 'limber' && status === 'par') return false;
+  if (ability === 'immunity' && (status === 'psn' || status === 'tox')) return false;
+  if (ability === 'magmaarmor' && status === 'frz') return false;
+  if (ability === 'waterveil' && status === 'brn') return false;
+  if (ability === 'insomnia' && status === 'slp') return false;
+  return true;
+}
+
+export function getBurnDamage(maxHp: number): number {
+  return Math.max(1, Math.floor(maxHp / 16));
+}
+
+export function getPoisonDamage(maxHp: number): number {
+  return Math.max(1, Math.floor(maxHp / 8));
+}
+
+export function getToxicDamage(maxHp: number, toxicCounter: number): number {
+  return Math.max(1, Math.floor(maxHp * toxicCounter / 16));
+}
+
+export type StatusTickResult = {
+  hpDelta: number;      // negative = damage, 0 = no change
+  cured: boolean;
+  fullParalysis: boolean;
+  thawed: boolean;
+};
+
+export function tickStatus(
+  status: StatusCondition,
+  maxHp: number,
+  toxicCounter: number
+): StatusTickResult {
+  switch (status) {
+    case 'brn':
+      return { hpDelta: -getBurnDamage(maxHp), cured: false, fullParalysis: false, thawed: false };
+    case 'psn':
+      return { hpDelta: -getPoisonDamage(maxHp), cured: false, fullParalysis: false, thawed: false };
+    case 'tox':
+      return { hpDelta: -getToxicDamage(maxHp, toxicCounter), cured: false, fullParalysis: false, thawed: false };
+    case 'par':
+      return { hpDelta: 0, cured: false, fullParalysis: Math.random() < PARALYSIS_FULL_PARALYSIS_CHANCE, thawed: false };
+    case 'frz':
+      return { hpDelta: 0, cured: false, fullParalysis: false, thawed: Math.random() < FREEZE_THAW_CHANCE };
+    case 'slp':
+      return { hpDelta: 0, cured: false, fullParalysis: false, thawed: false };
+    default:
+      return { hpDelta: 0, cured: false, fullParalysis: false, thawed: false };
+  }
+}
