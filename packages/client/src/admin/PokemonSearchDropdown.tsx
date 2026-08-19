@@ -35,7 +35,7 @@ export function PokemonSearchDropdown({ onSelect }: Props) {
     if (!results.length) return;
     if (e.key === 'ArrowDown') { e.preventDefault(); setHighlighted((h) => Math.min(h + 1, results.length - 1)); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); setHighlighted((h) => Math.max(h - 1, 0)); }
-    else if (e.key === 'Enter') { e.preventDefault(); pick(results[highlighted]); }
+    else if (e.key === 'Enter') { e.preventDefault(); pick(results[highlighted]!); }
     else if (e.key === 'Escape') { setResults([]); setQuery(''); }
   }
 
