@@ -27,10 +27,12 @@ export class LobbyManager {
 
     const existing = this.byName.get(trimmed.toLowerCase());
     if (existing) {
-      // Allow reconnect only if it's the same socket AND within window
-      if (existing.socketId === socketId && existing.disconnectedAt && Date.now() - existing.disconnectedAt < RECONNECT_WINDOW_MS) {
-        // Reconnect — clear disconnectedAt
+      if (existing.disconnectedAt !== undefined && Date.now() - existing.disconnectedAt < RECONNECT_WINDOW_MS) {
+        // Reconnect: update socketId
+        this.bySocketId.delete(existing.socketId);
+        existing.socketId = socketId;
         delete existing.disconnectedAt;
+        this.bySocketId.set(socketId, existing);
         return { ok: true, player: existing };
       }
       return { ok: false, code: 'NAME_TAKEN', message: `"${trimmed}" is already taken.` };
@@ -75,5 +77,24 @@ export class LobbyManager {
 
   getWaitingPlayers(): ConnectedPlayer[] {
     return Array.from(this.bySocketId.values()).filter((p) => !p.battleId && !p.disconnectedAt);
+  }
+
+  getAllPlayers(): ConnectedPlayer[] {
+    return Array.from(this.bySocketId.values());
+  }
+
+  getBySlotId(slotId: string): ConnectedPlayer | undefined {
+    for (const player of this.bySocketId.values()) {
+      if (player.battleSlotId === slotId) return player;
+    }
+    return undefined;
+  }
+
+  setBattleSlot(socketId: string, slotId: string, battleId: string): void {
+    const player = this.bySocketId.get(socketId);
+    if (player) {
+      player.battleSlotId = slotId;
+      player.battleId = battleId;
+    }
   }
 }

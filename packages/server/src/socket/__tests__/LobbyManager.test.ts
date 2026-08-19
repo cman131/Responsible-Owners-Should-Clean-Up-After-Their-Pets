@@ -37,11 +37,15 @@ describe('LobbyManager', () => {
     expect(result.ok).toBe(true);
   });
 
-  it('frees name when player disconnects within 2-minute reconnect window', () => {
+  it('allows reconnect within 2-minute window (new socketId takes over the name)', () => {
     lobby.registerPlayer('socket-1', 'Alice');
     lobby.markDisconnected('socket-1');
-    // Name is held during reconnect window — new registration with same name should fail
+    // Within the reconnect window, a new socket claiming the same name is treated as a reconnect
     const result = lobby.registerPlayer('socket-2', 'Alice');
-    expect(result.ok).toBe(false);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.player.displayName).toBe('Alice');
+      expect(result.player.socketId).toBe('socket-2');
+    }
   });
 });

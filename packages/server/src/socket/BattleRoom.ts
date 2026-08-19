@@ -47,24 +47,36 @@ export class BattleRoom {
   }
 
   submitAction(slotId: string, action: Action): { ok: boolean; reason?: string } {
-    // Handle forced switch (after faint)
-    if (action.type === 'switch' && this.awaitingForcedSwitches.has(slotId)) {
+    // Handle forced switch (after faint) — must come before normal validation
+    if (this.awaitingForcedSwitches.has(slotId)) {
+      if (action.type !== 'switch') {
+        return { ok: false, reason: 'Must submit a switch action' };
+      }
       this.awaitingForcedSwitches.delete(slotId);
       const s = structuredClone(this.state);
+      let switched = false;
       // Find and update slot in cloned state
       for (const team of s.teams) {
         const slot = team.slots.find((sl) => sl.slotId === slotId);
-        if (slot) {
-          const newIndex = slot.party.findIndex((p) => p.instanceId === action.targetInstanceId);
-          if (newIndex !== -1 && !slot.party[newIndex]?.fainted) {
-            slot.activePokemonIndex = newIndex;
-          }
-          break;
+        if (!slot) continue;
+        const newIndex = slot.party.findIndex((p) => p.instanceId === (action as SwitchAction).targetInstanceId);
+        if (newIndex === -1 || slot.party[newIndex]?.fainted) {
+          // Invalid target — reject and restore awaiting state
+          this.awaitingForcedSwitches.add(slotId);
+          return { ok: false, reason: 'Invalid switch target' };
         }
+        slot.activePokemonIndex = newIndex;
+        switched = true;
+        break;
+      }
+      if (!switched) {
+        this.awaitingForcedSwitches.add(slotId);
+        return { ok: false, reason: 'Slot not found' };
       }
       this.state = s;
+      const switchEvent: TurnResolveEvent = { type: 'volatile-applied', data: { note: 'switch', slotId } };
       try {
-        this.onTurnResolvedCb?.([{ type: 'volatile-applied', data: { note: 'forced-switch', slotId } }], s);
+        this.onTurnResolvedCb?.([switchEvent], this.state);
       } catch (err) {
         console.error('[BattleRoom] onTurnResolvedCb (forced switch) threw:', err);
       }

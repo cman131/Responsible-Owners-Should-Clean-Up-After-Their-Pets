@@ -47,9 +47,23 @@ export class SocketServer {
   }
 
   startBattle(initialState: BattleState): BattleRoom {
-    const room = new BattleRoom({ initialState, timerSeconds: initialState.turnTimerSeconds });
+    const room = new BattleRoom({ initialState: structuredClone(initialState), timerSeconds: initialState.turnTimerSeconds });
     this.rooms.set(initialState.battleId, room);
 
+    // Wire participants: join their sockets to the battle room and set battleId
+    for (const team of initialState.teams) {
+      for (const slot of team.slots) {
+        if (slot.isSpectator) continue;
+        // Find player assigned to this slot
+        const player = this.lobby.getBySlotId(slot.slotId);
+        if (!player) continue;
+        player.battleId = initialState.battleId;
+        const socket = this.io.sockets.sockets.get(player.socketId);
+        socket?.join(`battle:${initialState.battleId}`);
+      }
+    }
+
+    // Broadcast start AFTER sockets are in the room
     this.io.to(`battle:${initialState.battleId}`).emit('battle:start', { state: initialState });
 
     room.onTurnResolved((events, newState) => {
@@ -67,7 +81,7 @@ export class SocketServer {
 
     room.onSwitchRequest((slots: SlotState[]) => {
       for (const slot of slots) {
-        const player = this.lobby.getByName(slot.displayName);
+        const player = this.lobby.getBySlotId(slot.slotId);
         if (!player) continue;
         const availableParty = slot.party.filter((p, i) => i !== slot.activePokemonIndex && !p.fainted);
         this.io.to(player.socketId).emit('switch:request', {
