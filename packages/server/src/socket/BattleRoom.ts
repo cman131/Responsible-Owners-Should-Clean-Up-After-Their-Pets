@@ -174,6 +174,7 @@ export class BattleRoom {
     // Check for battle end
     const winner = this.checkWinner(s);
     if (winner !== null) {
+      if (this.timer) clearTimeout(this.timer);
       s.phase = 'ended';
       s.winner = winner;
       this.state = s;
@@ -189,6 +190,7 @@ export class BattleRoom {
   }
 
   forfeit(teamId: string): void {
+    if (this.timer) clearTimeout(this.timer);
     const s = structuredClone(this.state);
     const teamIdx = s.teams.findIndex((t) => t.teamId === teamId);
     if (teamIdx === -1) return;
