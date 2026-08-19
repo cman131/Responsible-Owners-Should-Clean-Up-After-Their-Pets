@@ -1,6 +1,6 @@
 import type { Server as HttpServer } from 'node:http';
 import { Server } from 'socket.io';
-import type { ServerToClientEvents, ClientToServerEvents, BattleState } from '@poke-fighter/shared';
+import type { ServerToClientEvents, ClientToServerEvents, BattleState, SlotState } from '@poke-fighter/shared';
 import { LobbyManager } from './LobbyManager.js';
 import { BattleRoom } from './BattleRoom.js';
 import { registerLobbyHandlers } from './handlers/lobbyHandlers.js';
@@ -63,6 +63,19 @@ export class SocketServer {
     room.onBattleEnd((winningTeamId, finalState) => {
       this.io.to(`battle:${initialState.battleId}`).emit('battle:end', { winningTeamId, state: finalState });
       this.rooms.delete(initialState.battleId);
+    });
+
+    room.onSwitchRequest((slots: SlotState[]) => {
+      for (const slot of slots) {
+        const player = this.lobby.getByName(slot.displayName);
+        if (!player) continue;
+        const availableParty = slot.party.filter((p, i) => i !== slot.activePokemonIndex && !p.fainted);
+        this.io.to(player.socketId).emit('switch:request', {
+          slotId: slot.slotId,
+          party: availableParty,
+          reason: 'faint',
+        });
+      }
     });
 
     return room;
