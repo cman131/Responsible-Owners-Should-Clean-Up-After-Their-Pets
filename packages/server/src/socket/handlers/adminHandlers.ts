@@ -1,10 +1,15 @@
 import type { Socket, Server } from 'socket.io';
 import type {
   ServerToClientEvents, ClientToServerEvents, AdminActionPayload,
-  MoveAction, SwitchAction, BattleState,
+  MoveAction, SwitchAction, BattleState, PokemonSpecies,
 } from '@poke-fighter/shared';
 import type { BattleRoom } from '../BattleRoom.js';
 import type { RegistryStore } from '../../registry/RegistryStore.js';
+
+export function pokemonMatchesQuery(s: PokemonSpecies, query: string): boolean {
+  const q = query.toLowerCase();
+  return s.name.toLowerCase().includes(q) || s.displayName.toLowerCase().includes(q) || String(s.id).includes(q);
+}
 
 export function registerAdminHandlers(
   socket: Socket<ClientToServerEvents, ServerToClientEvents>,
@@ -51,9 +56,7 @@ export function registerAdminHandlers(
         let results: unknown[];
         switch (resource) {
           case 'pokemon':
-            results = data.getAllSpecies().filter((s) =>
-              !query || s.name.includes(query.toLowerCase()) || String(s.id).includes(query)
-            ).slice(0, 30);
+            results = data.getAllSpecies().filter((s) => !query || pokemonMatchesQuery(s, query)).slice(0, 30);
             break;
           case 'moves': {
             const species = data.getSpecies(Number(query));
