@@ -1,3 +1,5 @@
+import { AdminShell } from '../admin/AdminShell.js';
+
 export function AdminPage() {
-  return <div>Admin (Plan 05)</div>;
+  return <AdminShell />;
 }
