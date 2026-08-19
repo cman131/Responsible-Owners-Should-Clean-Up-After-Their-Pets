@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getSocket } from '../socket.js';
 import type { ActionRequestPayload } from '@poke-fighter/shared';
 
@@ -15,6 +15,10 @@ interface Props {
 
 export function NpcActionPanel({ battleId, npcRequests }: Props) {
   const [submitted, setSubmitted] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    setSubmitted(new Set());
+  }, [npcRequests]);
 
   function submitNpcAction(slotId: string, moveIndex: 0 | 1 | 2 | 3, targetSlotId?: string) {
     const action = targetSlotId

@@ -96,7 +96,7 @@ function BattleView() {
           onCancelTargeting={() => setTargetingMoveIndex(null)}
         />
         {myActiveMon && (
-          <ExpBar instanceId={myActiveMon.instanceId} currentLevel={myActiveMon.level} />
+          <ExpBar instanceId={myActiveMon.instanceId} />
         )}
       </div>
 

@@ -4,10 +4,9 @@ import type { ExpAwardPayload, LevelUpPayload } from '@poke-fighter/shared';
 
 interface Props {
   instanceId: string;
-  currentLevel: number;
 }
 
-export function ExpBar({ instanceId, currentLevel }: Props) {
+export function ExpBar({ instanceId }: Props) {
   const [expGain, setExpGain] = useState<number | null>(null);
   const [levelUp, setLevelUp] = useState<number | null>(null);
 

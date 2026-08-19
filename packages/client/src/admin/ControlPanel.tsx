@@ -4,7 +4,7 @@ import { BattleProvider, useBattle } from '../battle/BattleContext.js';
 import { BattleCanvas } from '../battle/BattleCanvas.js';
 import { TurnLog } from '../battle/overlays/TurnLog.js';
 import { NpcActionPanel } from './NpcActionPanel.js';
-import type { ActionRequestPayload } from '@poke-fighter/shared';
+import type { ActionRequestPayload, AdminActionPayload } from '@poke-fighter/shared';
 
 interface NpcSlotRequest {
   slotId: string;
@@ -37,8 +37,8 @@ function ControlPanelInner({ battleId }: Props) {
     };
   }, [battleId]);
 
-  function sendAdminAction(type: string, data: Record<string, unknown>) {
-    getSocket().emit('admin:action', { type, data: { battleId, ...data } } as any);
+  function sendAdminAction(type: AdminActionPayload['type'], data: Record<string, unknown>) {
+    getSocket().emit('admin:action', { type, data: { battleId, ...data } });
   }
 
   function handleForfeit(teamId: string) {
