@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react';
-import { getSocket } from '../socket.js';
+// packages/client/src/admin/TeamBuilder.tsx
+import { useState } from 'react';
 import type { PokemonSpecies, PokemonSet } from '@poke-fighter/shared';
+import { PokemonSearchDropdown } from './PokemonSearchDropdown.js';
+import { TYPE_COLORS } from './pokemonTypeColors.js';
 
 interface Props {
   onTeamSaved: (team: PokemonSet[]) => void;
@@ -9,27 +11,8 @@ interface Props {
 
 export function TeamBuilder({ onTeamSaved, initialTeam = [] }: Props) {
   const [team, setTeam] = useState<Partial<PokemonSet>[]>(initialTeam.length > 0 ? initialTeam : [{}]);
-  const [search, setSearch] = useState('');
-  const [searchResults, setSearchResults] = useState<PokemonSpecies[]>([]);
+  const [slotSpecies, setSlotSpecies] = useState<(PokemonSpecies | null)[]>(Array(6).fill(null));
   const [selectedSlot, setSelectedSlot] = useState(0);
-
-  useEffect(() => {
-    const socket = getSocket();
-    const handler = (payload: any) => {
-      if (payload.resource === 'pokemon') setSearchResults(payload.results);
-    };
-    socket.on('data:results' as any, handler);
-    return () => { socket.off('data:results' as any, handler); };
-  }, []);
-
-  function searchPokemon(q: string) {
-    setSearch(q);
-    if (q.length >= 2) {
-      getSocket().emit('admin:action', { type: 'data:query', data: { resource: 'pokemon', query: q } } as any);
-    } else {
-      setSearchResults([]);
-    }
-  }
 
   function pickPokemon(species: PokemonSpecies) {
     const updated = [...team];
@@ -43,8 +26,9 @@ export function TeamBuilder({ onTeamSaved, initialTeam = [] }: Props) {
       nature: 'hardy',
     };
     setTeam(updated);
-    setSearchResults([]);
-    setSearch('');
+    const updatedSpecies = [...slotSpecies];
+    updatedSpecies[selectedSlot] = species;
+    setSlotSpecies(updatedSpecies);
   }
 
   function updateSlotField(index: number, field: keyof PokemonSet, value: unknown) {
@@ -53,7 +37,8 @@ export function TeamBuilder({ onTeamSaved, initialTeam = [] }: Props) {
     setTeam(updated);
   }
 
-  const isValid = team.length > 0 && team.some((s) => s.speciesId) && team.every((s) => !s.speciesId || (s.moves?.every(Boolean)));
+  const isValid = team.some((s) => s.speciesId) && team.every((s) => !s.speciesId || s.moves?.every(Boolean));
+  const currentSpecies = slotSpecies[selectedSlot];
 
   return (
     <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -65,39 +50,36 @@ export function TeamBuilder({ onTeamSaved, initialTeam = [] }: Props) {
           <button
             key={i}
             onClick={() => { setSelectedSlot(i); if (!team[i]) { const t = [...team]; t[i] = {}; setTeam(t); } }}
-            style={{
-              background: selectedSlot === i ? '#2980b9' : '#1a1a2e',
-              border: `1px solid ${selectedSlot === i ? '#3498db' : '#333'}`,
-              color: '#fff', padding: '4px 10px', borderRadius: 3, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11,
-            }}
+            style={{ background: selectedSlot === i ? '#2980b9' : '#1a1a2e', border: `1px solid ${selectedSlot === i ? '#3498db' : '#333'}`, color: '#fff', padding: '4px 10px', borderRadius: 3, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11 }}
           >
             {team[i]?.speciesId ? `#${team[i]!.speciesId}` : `Slot ${i + 1}`}
           </button>
         ))}
       </div>
 
-      {/* Pokemon search */}
-      <div>
-        <input
-          placeholder="Search Pokemon by name or dex number..."
-          value={search}
-          onChange={(e) => searchPokemon(e.target.value)}
-          style={{ background: '#1a1a2e', border: '1px solid #555', color: '#fff', padding: '6px 10px', borderRadius: 4, fontFamily: 'inherit', width: '100%', fontSize: 13 }}
-        />
-        {searchResults.length > 0 && (
-          <div style={{ background: '#111', border: '1px solid #333', borderRadius: 4, maxHeight: 150, overflowY: 'auto', marginTop: 4 }}>
-            {searchResults.map((s) => (
-              <div
-                key={s.id}
-                onClick={() => pickPokemon(s)}
-                style={{ padding: '6px 10px', cursor: 'pointer', color: '#fff', fontSize: 12, borderBottom: '1px solid #222' }}
-              >
-                #{s.id} {s.displayName} [{s.types.join('/')}]
-              </div>
+      {/* Search */}
+      <PokemonSearchDropdown onSelect={pickPokemon} />
+
+      {/* Species summary — only shown after picking via dropdown in this session */}
+      {currentSpecies && (
+        <div style={{ background: '#0d1a2e', border: '1px solid #2980b9', borderRadius: 4, padding: '6px 10px', display: 'flex', alignItems: 'center', gap: 10, fontSize: 11, flexWrap: 'wrap' }}>
+          <span style={{ color: '#fff', fontWeight: 'bold' }}>{currentSpecies.displayName}</span>
+          <span style={{ color: '#888' }}>#{currentSpecies.id}</span>
+          <span style={{ display: 'flex', gap: 3 }}>
+            {currentSpecies.types.map((t) => (
+              <span key={t} style={{ background: TYPE_COLORS[t] ?? '#555', color: '#fff', padding: '1px 6px', borderRadius: 3, fontSize: 10 }}>{t}</span>
             ))}
-          </div>
-        )}
-      </div>
+          </span>
+          <span style={{ color: '#aaa', marginLeft: 'auto', display: 'flex', gap: 6 }}>
+            {(['hp', 'atk', 'def', 'spa', 'spd', 'spe'] as const).map((stat) => (
+              <span key={stat}>
+                <span style={{ color: '#666', fontSize: 9 }}>{stat.toUpperCase()} </span>
+                <span style={{ color: '#ccc' }}>{currentSpecies.baseStats[stat]}</span>
+              </span>
+            ))}
+          </span>
+        </div>
+      )}
 
       {/* Slot editor */}
       {team[selectedSlot]?.speciesId && (
@@ -134,13 +116,13 @@ export function TeamBuilder({ onTeamSaved, initialTeam = [] }: Props) {
       <button
         onClick={() => onTeamSaved(team.filter((s): s is PokemonSet => !!s.speciesId))}
         disabled={!isValid}
-        style={{ background: isValid ? '#27ae60' : '#333', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: 4, cursor: isValid ? 'pointer' : 'not-allowed', fontFamily: 'inherit', fontSize: 13, letterSpacing: 1 }}
+        style={{ background: isValid ? '#27ae60' : '#333', color: isValid ? '#fff' : '#888', border: 'none', padding: '10px 20px', cursor: isValid ? 'pointer' : 'default', borderRadius: 4, fontFamily: 'inherit', letterSpacing: 2 }}
       >
-        SAVE TEAM ({team.filter((s) => s.speciesId).length}/6)
+        SAVE TEAM
       </button>
     </div>
   );
 }
 
-const lbl: React.CSSProperties = { color: '#aaa', fontSize: 11, minWidth: 50 };
+const lbl: React.CSSProperties = { color: '#aaa', fontSize: 11, minWidth: 52 };
 const inp: React.CSSProperties = { background: '#1a1a2e', border: '1px solid #555', color: '#fff', padding: '4px 8px', borderRadius: 3, fontFamily: 'inherit', fontSize: 12 };
