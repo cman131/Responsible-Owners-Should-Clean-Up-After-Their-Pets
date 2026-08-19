@@ -66,8 +66,20 @@ export function registerAdminHandlers(
         socket.emit('data:results', { resource, results });
         break;
       }
-      case 'force-faint':
-      case 'forfeit':
+      case 'force-faint': {
+        const { battleId, slotId } = payload.data as { battleId: string; slotId: string };
+        if (typeof battleId === 'string' && typeof slotId === 'string') {
+          getRoom(battleId)?.forceFaint(slotId);
+        }
+        break;
+      }
+      case 'forfeit': {
+        const { battleId, teamId } = payload.data as { battleId: string; teamId: string };
+        if (typeof battleId === 'string' && typeof teamId === 'string') {
+          getRoom(battleId)?.forfeit(teamId);
+        }
+        break;
+      }
       case 'force-switch':
         // Deferred to later plans
         break;

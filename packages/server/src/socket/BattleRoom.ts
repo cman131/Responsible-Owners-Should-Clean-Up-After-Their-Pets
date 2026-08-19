@@ -132,6 +132,61 @@ export class BattleRoom {
     return structuredClone(this.state);
   }
 
+  forceFaint(slotId: string): void {
+    const s = structuredClone(this.state);
+    let mon: PartyMember | undefined;
+    let foundSlot: SlotState | undefined;
+    for (const team of s.teams) {
+      const slot = team.slots.find((sl) => sl.slotId === slotId);
+      if (!slot) continue;
+      foundSlot = slot;
+      mon = slot.party[slot.activePokemonIndex];
+      break;
+    }
+    if (!foundSlot || !mon) return;
+
+    mon.fainted = true;
+    mon.currentHp = 0;
+    this.state = s;
+
+    const faintEvent: TurnResolveEvent = {
+      type: 'faint',
+      data: { slotId, instanceId: mon.instanceId },
+    };
+    this.processExpFromEvents([faintEvent], s);
+
+    try {
+      this.onTurnResolvedCb?.([faintEvent], s);
+    } catch (err) {
+      console.error('[BattleRoom] forceFaint onTurnResolvedCb threw:', err);
+    }
+  }
+
+  forfeit(teamId: string): void {
+    const s = structuredClone(this.state);
+    const teamIdx = s.teams.findIndex((t) => t.teamId === teamId);
+    if (teamIdx === -1) return;
+
+    for (const slot of s.teams[teamIdx]!.slots) {
+      for (const p of slot.party) {
+        p.fainted = true;
+        p.currentHp = 0;
+      }
+    }
+
+    const winnerIdx = teamIdx === 0 ? 1 : 0;
+    s.phase = 'ended';
+    s.winner = winnerIdx as 0 | 1;
+    this.state = s;
+
+    const winningTeamId = s.teams[winnerIdx]?.teamId ?? '';
+    try {
+      this.onBattleEndCb?.(winningTeamId, s);
+    } catch (err) {
+      console.error('[BattleRoom] forfeit onBattleEndCb threw:', err);
+    }
+  }
+
   private getPendingSwitchSlots(state: BattleState): SlotState[] {
     const pending: SlotState[] = [];
     for (const team of state.teams) {
