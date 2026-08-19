@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calcExpYield, distributeExp } from '../exp.js';
+import { calcExpYield, distributeExp, checkLevelUps, expForLevel } from '../exp.js';
 import type { PartyMember } from '@poke-fighter/shared';
 
 function makeMon(overrides: Partial<PartyMember> = {}): PartyMember {
@@ -49,10 +49,54 @@ describe('distributeExp', () => {
     expect(awards.find((a) => a.instanceId === 'a1')?.amount).toBe(1714);
     expect(awards.find((a) => a.instanceId === 'a2')?.amount).toBe(1714);
     expect(awards.find((a) => a.instanceId === 'a3')).toBeUndefined();
+    expect(awards.find((a) => a.instanceId === 'a1')?.newTotal).toBe(1714); // expTotal was 0
+    expect(awards.find((a) => a.instanceId === 'a2')?.newTotal).toBe(1714);
   });
 
   it('does not award exp when no living recipients', () => {
     const fainted = [makeMon({ fainted: true })];
     expect(distributeExp({ expYield: 1000, recipients: fainted })).toHaveLength(0);
+  });
+});
+
+describe('expForLevel', () => {
+  it('MediumFast: level^3', () => {
+    expect(expForLevel('MediumFast', 50)).toBe(125000); // 50^3
+  });
+  it('Fast: floor(4 * level^3 / 5)', () => {
+    expect(expForLevel('Fast', 50)).toBe(Math.floor(4 * 125000 / 5)); // 100000
+  });
+  it('Slow: floor(5 * level^3 / 4)', () => {
+    expect(expForLevel('Slow', 50)).toBe(Math.floor(5 * 125000 / 4)); // 156250
+  });
+  it('clamps level to 100', () => {
+    expect(expForLevel('MediumFast', 101)).toBe(expForLevel('MediumFast', 100));
+  });
+});
+
+describe('checkLevelUps', () => {
+  it('returns null when exp total does not reach next level', () => {
+    const mon = makeMon({ level: 5, expTotal: 0 });
+    expect(checkLevelUps(mon, 100, 'MediumFast')).toBeNull(); // need 216 for level 6
+  });
+
+  it('returns newLevel when exp total reaches next level', () => {
+    const mon = makeMon({ level: 5, expTotal: 0 });
+    const result = checkLevelUps(mon, expForLevel('MediumFast', 6), 'MediumFast');
+    expect(result?.newLevel).toBe(6);
+    expect(result?.instanceId).toBe(mon.instanceId);
+  });
+
+  it('handles multi-level jump correctly', () => {
+    const mon = makeMon({ level: 5, expTotal: 0 });
+    // expForLevel('MediumFast', 10) = 1000
+    const result = checkLevelUps(mon, 1000, 'MediumFast');
+    expect(result?.newLevel).toBe(10);
+  });
+
+  it('caps at level 100', () => {
+    const mon = makeMon({ level: 99, expTotal: 0 });
+    const result = checkLevelUps(mon, expForLevel('MediumFast', 100) + 999999, 'MediumFast');
+    expect(result?.newLevel).toBe(100);
   });
 });
