@@ -8,7 +8,11 @@ import { BattleSettingsStep } from './steps/BattleSettingsStep.js';
 
 type Step = 'structure' | 'assignment' | 'teams' | 'settings' | 'started';
 
-export function SetupPanel() {
+interface SetupPanelProps {
+  onBack: () => void;
+}
+
+export function SetupPanel({ onBack }: SetupPanelProps) {
   const [step, setStep] = useState<Step>('structure');
   const [structure, setStructure] = useState({ teamASlots: 1, teamBSlots: 1 });
   const [slotAssignment, setSlotAssignment] = useState<{ teamA: any[]; teamB: any[] } | null>(null);
@@ -65,6 +69,7 @@ export function SetupPanel() {
       <div style={{ padding: 48, textAlign: 'center' }}>
         <h2 style={{ color: '#27ae60', fontSize: 24 }}>Battle Started!</h2>
         <p style={{ color: '#aaa', marginTop: 12 }}>Waiting for players to join the battle room...</p>
+        <button onClick={onBack} style={{ marginTop: 24, background: 'none', border: '1px solid #555', color: '#aaa', padding: '6px 16px', borderRadius: 3, cursor: 'pointer', fontFamily: 'inherit' }}>← HUB</button>
       </div>
     );
   }
@@ -80,6 +85,7 @@ export function SetupPanel() {
     <div style={{ minHeight: '100vh', background: '#0d0d1a', padding: 32 }}>
       <div style={{ maxWidth: 800, margin: '0 auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+          <button onClick={onBack} style={{ background: 'none', border: '1px solid #555', color: '#aaa', padding: '4px 12px', borderRadius: 3, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11 }}>← HUB</button>
           <h1 style={{ color: '#e74c3c', letterSpacing: 4 }}>BATTLE SETUP</h1>
           <span style={{ color: '#aaa', fontSize: 12 }}>{stepTitles[step as keyof typeof stepTitles]}</span>
         </div>
