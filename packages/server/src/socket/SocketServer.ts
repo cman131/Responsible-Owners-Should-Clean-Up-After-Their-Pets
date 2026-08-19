@@ -30,7 +30,7 @@ export class SocketServer {
     this.io.on('connection', (socket) => {
       console.log(`Connected: ${socket.id} (admin=${socket.data['isAdmin'] ?? false})`);
 
-      registerLobbyHandlers(socket, this.lobby);
+      registerLobbyHandlers(socket, this.lobby, (id) => this.rooms.get(id));
       registerBattleHandlers(socket, this.lobby, (id) => this.rooms.get(id));
       if (socket.data['isAdmin']) {
         registerAdminHandlers(socket, this.io, (id) => this.rooms.get(id), this.startBattle.bind(this));
