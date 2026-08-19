@@ -134,16 +134,14 @@ export class BattleRoom {
 
   forceFaint(slotId: string): void {
     const s = structuredClone(this.state);
-    let mon: PartyMember | undefined;
-    let foundSlot: SlotState | undefined;
+    let mon: import('@poke-fighter/shared').PartyMember | undefined;
     for (const team of s.teams) {
       const slot = team.slots.find((sl) => sl.slotId === slotId);
       if (!slot) continue;
-      foundSlot = slot;
       mon = slot.party[slot.activePokemonIndex];
       break;
     }
-    if (!foundSlot || !mon) return;
+    if (!mon || mon.fainted) return; // already fainted — no-op
 
     mon.fainted = true;
     mon.currentHp = 0;
@@ -159,6 +157,34 @@ export class BattleRoom {
       this.onTurnResolvedCb?.([faintEvent], s);
     } catch (err) {
       console.error('[BattleRoom] forceFaint onTurnResolvedCb threw:', err);
+    }
+
+    // Check for pending switches (mon with living replacements)
+    const switchSlots = this.getPendingSwitchSlots(s);
+    if (switchSlots.length > 0) {
+      this.awaitingForcedSwitches = new Set(switchSlots.map((sl) => sl.slotId));
+      try {
+        this.onSwitchRequestCb?.(switchSlots);
+      } catch (err) {
+        console.error('[BattleRoom] forceFaint onSwitchRequestCb threw:', err);
+      }
+      return; // timer starts when forced switches are submitted
+    }
+
+    // Check for battle end
+    const winner = this.checkWinner(s);
+    if (winner !== null) {
+      s.phase = 'ended';
+      s.winner = winner;
+      this.state = s;
+      const winningTeamId = s.teams[winner]?.teamId ?? '';
+      try {
+        this.onBattleEndCb?.(winningTeamId, s);
+      } catch (err) {
+        console.error('[BattleRoom] forceFaint onBattleEndCb threw:', err);
+      }
+    } else {
+      this.startTimer();
     }
   }
 
@@ -257,6 +283,16 @@ export class BattleRoom {
         this.onExpAwardCb?.(awards);
       }
     }
+  }
+
+  private checkWinner(state: BattleState): 0 | 1 | null {
+    for (let i = 0; i < 2; i++) {
+      const team = state.teams[i];
+      if (!team) continue;
+      const allFainted = team.slots.every((slot) => slot.party.every((p) => p.fainted));
+      if (allFainted) return i === 0 ? 1 : 0;
+    }
+    return null;
   }
 
   private findSlot(slotId: string): SlotState | undefined {
