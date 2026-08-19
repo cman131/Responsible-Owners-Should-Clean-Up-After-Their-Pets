@@ -131,6 +131,7 @@ export interface ServerToClientEvents {
   'lobby:error': (payload: LobbyErrorPayload) => void;
   'state:sync': (state: BattleState) => void;
   'registry:data': (payload: { resource: string; data: unknown[] }) => void;
+  'data:results': (payload: { resource: string; results: unknown[] }) => void;
 }
 
 export interface ClientToServerEvents {

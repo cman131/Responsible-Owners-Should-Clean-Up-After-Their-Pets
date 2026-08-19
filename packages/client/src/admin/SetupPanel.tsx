@@ -3,14 +3,16 @@ import { v4 as uuidv4 } from 'uuid';
 import { getSocket } from '../socket.js';
 import { TeamStructureStep } from './steps/TeamStructureStep.js';
 import { SlotAssignmentStep } from './steps/SlotAssignmentStep.js';
+import { TeamBuilderStep } from './steps/TeamBuilderStep.js';
 import { BattleSettingsStep } from './steps/BattleSettingsStep.js';
 
-type Step = 'structure' | 'assignment' | 'settings' | 'started';
+type Step = 'structure' | 'assignment' | 'teams' | 'settings' | 'started';
 
 export function SetupPanel() {
   const [step, setStep] = useState<Step>('structure');
   const [structure, setStructure] = useState({ teamASlots: 1, teamBSlots: 1 });
   const [slotAssignment, setSlotAssignment] = useState<{ teamA: any[]; teamB: any[] } | null>(null);
+  const [slotTeams, setSlotTeams] = useState<any[]>([]);
 
   function handleStructureNext(config: { teamASlots: number; teamBSlots: number }) {
     setStructure(config);
@@ -19,12 +21,30 @@ export function SetupPanel() {
 
   function handleAssignmentNext(slots: { teamA: any[]; teamB: any[] }) {
     setSlotAssignment(slots);
+    setStep('teams');
+  }
+
+  function handleTeamsNext(st: any[]) {
+    setSlotTeams(st);
     setStep('settings');
   }
 
   function handleStart({ label, timerSeconds }: { label: string; timerSeconds: number }) {
     const socket = getSocket();
     const battleId = uuidv4();
+
+    function buildSlotsWithTeams(slots: any[]) {
+      return slots.map((slot: any) => {
+        const teamData = slotTeams.find((st) => st.slotId === slot.slotId);
+        return {
+          slotId: slot.slotId,
+          displayName: slot.displayName,
+          isNpc: slot.type === 'npc',
+          party: teamData?.team ?? [],
+        };
+      });
+    }
+
     socket.emit('admin:action', {
       type: 'start-battle',
       data: {
@@ -32,8 +52,8 @@ export function SetupPanel() {
         label,
         turnTimerSeconds: timerSeconds,
         teams: [
-          { slots: slotAssignment!.teamA },
-          { slots: slotAssignment!.teamB },
+          { slots: buildSlotsWithTeams(slotAssignment!.teamA) },
+          { slots: buildSlotsWithTeams(slotAssignment!.teamB) },
         ],
       },
     } as any);
@@ -49,7 +69,12 @@ export function SetupPanel() {
     );
   }
 
-  const stepTitles = { structure: '1 / 3 — Structure', assignment: '2 / 3 — Assign Slots', settings: '3 / 3 — Settings' };
+  const stepTitles = {
+    structure: '1 / 4 — Structure',
+    assignment: '2 / 4 — Assign Slots',
+    teams: '3 / 4 — Build Teams',
+    settings: '4 / 4 — Settings',
+  };
 
   return (
     <div style={{ minHeight: '100vh', background: '#0d0d1a', padding: 32 }}>
@@ -68,10 +93,17 @@ export function SetupPanel() {
               onBack={() => setStep('structure')}
             />
           )}
+          {step === 'teams' && slotAssignment && (
+            <TeamBuilderStep
+              slots={slotAssignment}
+              onNext={handleTeamsNext}
+              onBack={() => setStep('assignment')}
+            />
+          )}
           {step === 'settings' && (
             <BattleSettingsStep
               onStart={handleStart}
-              onBack={() => setStep('assignment')}
+              onBack={() => setStep('teams')}
             />
           )}
         </div>
