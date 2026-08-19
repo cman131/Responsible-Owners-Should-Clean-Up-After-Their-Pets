@@ -6,6 +6,7 @@ import { SwitchPanel } from '../battle/overlays/SwitchPanel.js';
 import { TurnLog } from '../battle/overlays/TurnLog.js';
 import { HpBar } from '../battle/overlays/HpBar.js';
 import { StatusBadge } from '../battle/overlays/StatusBadge.js';
+import { ExpBar } from '../battle/overlays/ExpBar.js';
 
 // Temporary — in real app, slotId comes from lobby state
 const MY_SLOT_ID = sessionStorage.getItem('mySlotId') ?? 'slot-a1';
@@ -85,14 +86,19 @@ function BattleView() {
     <div style={{ background: '#0d0d1a', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: 16, gap: 12 }}>
       <div style={{ color: '#f0c040', fontSize: 12, letterSpacing: 2 }}>{state.label} — Turn {state.turnNumber}</div>
 
-      <BattleCanvas
-        state={state}
-        mySlotId={mySlotId}
-        targetingMoveIndex={targetingMoveIndex}
-        legalTargets={actionRequest?.legalTargets ?? []}
-        onTargetSelected={handleTargetSelected}
-        onCancelTargeting={() => setTargetingMoveIndex(null)}
-      />
+      <div style={{ position: 'relative' }}>
+        <BattleCanvas
+          state={state}
+          mySlotId={mySlotId}
+          targetingMoveIndex={targetingMoveIndex}
+          legalTargets={actionRequest?.legalTargets ?? []}
+          onTargetSelected={handleTargetSelected}
+          onCancelTargeting={() => setTargetingMoveIndex(null)}
+        />
+        {myActiveMon && (
+          <ExpBar instanceId={myActiveMon.instanceId} currentLevel={myActiveMon.level} />
+        )}
+      </div>
 
       {myActiveMon && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#111', border: '1px solid #333', borderRadius: 6, padding: '8px 16px', width: 800 }}>
