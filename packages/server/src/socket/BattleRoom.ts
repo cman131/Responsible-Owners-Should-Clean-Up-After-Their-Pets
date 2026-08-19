@@ -1,4 +1,4 @@
-import type { BattleState, MoveAction, SwitchAction, TurnResolveEvent, SlotState, PartyMember, Stats } from '@poke-fighter/shared';
+import type { BattleState, MoveAction, SwitchAction, TurnResolveEvent, SlotState, PartyMember, Stats, ActionRequestPayload } from '@poke-fighter/shared';
 import { BattleEngine } from '../engine/index.js';
 import { calcExpYield, distributeExp, checkLevelUps, type ExpAward, type LevelUpResult } from '../engine/exp.js';
 import { DataLoader } from '../data/loader.js';
@@ -13,6 +13,7 @@ interface BattleRoomOptions {
 type TurnResolvedCallback = (events: TurnResolveEvent[], newState: BattleState) => void;
 type BattleEndCallback = (winningTeamId: string, finalState: BattleState) => void;
 type SwitchRequestCallback = (slots: SlotState[]) => void;
+type NpcActionRequiredCallback = (slots: Array<{ slotId: string; displayName: string; request: ActionRequestPayload }>) => void;
 
 export class BattleRoom {
   private state: BattleState;
@@ -25,6 +26,7 @@ export class BattleRoom {
   private onSwitchRequestCb: SwitchRequestCallback | null = null;
   private onExpAwardCb: ((awards: ExpAward[]) => void) | null = null;
   private onLevelUpCb: ((result: LevelUpResult, newStats: Stats) => void) | null = null;
+  private onNpcActionRequiredCb: NpcActionRequiredCallback | null = null;
   private readonly data = new DataLoader();
   private awaitingForcedSwitches = new Set<string>();
   private paused = false;
@@ -33,6 +35,11 @@ export class BattleRoom {
     this.state = structuredClone(initialState);
     this.timerSeconds = timerSeconds;
     this.startTimer();
+    // Defer NPC request emission so SocketServer can wire up onNpcActionRequired first
+    setTimeout(() => {
+      const npcRequests = this.buildNpcRequests();
+      if (npcRequests.length > 0) this.onNpcActionRequiredCb?.(npcRequests);
+    }, 0);
   }
 
   getState(): BattleState {
@@ -54,6 +61,8 @@ export class BattleRoom {
   onExpAward(cb: (awards: ExpAward[]) => void): void { this.onExpAwardCb = cb; }
 
   onLevelUp(cb: (result: LevelUpResult, newStats: Stats) => void): void { this.onLevelUpCb = cb; }
+
+  onNpcActionRequired(cb: NpcActionRequiredCallback): void { this.onNpcActionRequiredCb = cb; }
 
   submitAction(slotId: string, action: Action): { ok: boolean; reason?: string } {
     // Handle forced switch (after faint) — must come before normal validation
@@ -230,6 +239,44 @@ export class BattleRoom {
     }, this.timerSeconds * 1000);
   }
 
+  private buildNpcRequests(): Array<{ slotId: string; displayName: string; request: ActionRequestPayload }> {
+    const result: Array<{ slotId: string; displayName: string; request: ActionRequestPayload }> = [];
+    for (const team of this.state.teams) {
+      for (const slot of team.slots) {
+        if (!slot.isNpc || slot.isSpectator) continue;
+        const active = slot.party[slot.activePokemonIndex];
+        if (!active || active.fainted) continue;
+        result.push({
+          slotId: slot.slotId,
+          displayName: slot.displayName,
+          request: {
+            slotId: slot.slotId,
+            validMoves: active.moves.map((m, i) => ({
+              index: i as 0 | 1 | 2 | 3,
+              moveId: m.moveId,
+              pp: m.currentPp,
+              disabled: false,
+            })),
+            legalTargets: this.getOpposingSlotIds(slot.slotId),
+            canSwitch: false,
+            switchTargets: [],
+            canTerastallize: !active.hasTerastallized && !!active.teraType,
+            timerSeconds: this.timerSeconds,
+          },
+        });
+      }
+    }
+    return result;
+  }
+
+  private getOpposingSlotIds(slotId: string): string[] {
+    const teamIdx = this.state.teams.findIndex((t) => t.slots.some((s) => s.slotId === slotId));
+    const foeTeamIdx = teamIdx === 0 ? 1 : 0;
+    return this.state.teams[foeTeamIdx]?.slots
+      .filter((s) => !s.isSpectator && !s.party[s.activePokemonIndex]?.fainted)
+      .map((s) => s.slotId) ?? [];
+  }
+
   private resolveTurn(): void {
     if (this.timer) clearTimeout(this.timer);
 
@@ -267,6 +314,10 @@ export class BattleRoom {
       }
     } else {
       this.startTimer();
+      const npcRequests = this.buildNpcRequests();
+      if (npcRequests.length > 0) {
+        this.onNpcActionRequiredCb?.(npcRequests);
+      }
     }
   }
 }

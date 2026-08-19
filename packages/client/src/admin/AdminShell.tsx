@@ -1,11 +1,25 @@
-import { useState } from 'react';
-import { connectAsAdmin } from '../socket.js';
+import { useState, useEffect } from 'react';
+import { connectAsAdmin, getSocket } from '../socket.js';
 import { SetupPanel } from './SetupPanel.js';
+import { ControlPanel } from './ControlPanel.js';
 
 export function AdminShell() {
   const [token, setToken] = useState('');
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeBattle, setActiveBattle] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!connected) return;
+    const socket = getSocket();
+    const onBattleStart = (payload: { state: { battleId: string } }) => {
+      setActiveBattle(payload.state.battleId);
+    };
+    socket.on('battle:start', onBattleStart);
+    return () => {
+      socket.off('battle:start', onBattleStart);
+    };
+  }, [connected]);
 
   function handleConnect(e: React.FormEvent) {
     e.preventDefault();
@@ -14,6 +28,7 @@ export function AdminShell() {
     setConnected(true);
   }
 
+  if (connected && activeBattle) return <ControlPanel battleId={activeBattle} />;
   if (connected) return <SetupPanel />;
 
   return (

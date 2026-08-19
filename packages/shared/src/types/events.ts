@@ -132,6 +132,10 @@ export interface ServerToClientEvents {
   'state:sync': (state: BattleState) => void;
   'registry:data': (payload: { resource: string; data: unknown[] }) => void;
   'data:results': (payload: { resource: string; results: unknown[] }) => void;
+  'npc:action-request': (payload: {
+    battleId: string;
+    slots: Array<{ slotId: string; displayName: string; request: ActionRequestPayload }>;
+  }) => void;
 }
 
 export interface ClientToServerEvents {

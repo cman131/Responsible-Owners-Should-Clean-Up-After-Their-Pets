@@ -109,6 +109,13 @@ export class SocketServer {
       }
     });
 
+    room.onNpcActionRequired((slots) => {
+      const adminSockets = [...this.io.sockets.sockets.values()].filter((s) => s.data['isAdmin'] === true);
+      for (const adminSocket of adminSockets) {
+        adminSocket.emit('npc:action-request', { battleId: initialState.battleId, slots });
+      }
+    });
+
     return room;
   }
 }
