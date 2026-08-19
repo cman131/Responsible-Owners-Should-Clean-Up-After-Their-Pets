@@ -305,7 +305,7 @@ export class BattleEngine {
       s.field.weather.turnsRemaining -= 1;
       if (s.field.weather.turnsRemaining <= 0) {
         events.push({ type: 'weather-change', data: { weather: null } });
-        s.field.weather = undefined;
+        delete s.field.weather;
       }
     }
 

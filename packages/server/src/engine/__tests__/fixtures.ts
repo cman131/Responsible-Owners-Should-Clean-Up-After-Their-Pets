@@ -23,9 +23,9 @@ export function makePokemon(overrides: Partial<PartyMember> = {}): PartyMember {
       { moveId: 'roost',        currentPp: 10, maxPp: 10 },
       { moveId: 'willowisp',    currentPp: 15, maxPp: 15 },
     ],
-    status: undefined, volatileStatus: [],
+    volatileStatus: [],
     statBoosts: { atk: 0, def: 0, spa: 0, spd: 0, spe: 0, accuracy: 0, evasion: 0 },
-    teraType: undefined, hasTerastallized: false, fainted: false, expTotal: 0,
+    hasTerastallized: false, fainted: false, expTotal: 0,
     ...overrides,
   };
 }
