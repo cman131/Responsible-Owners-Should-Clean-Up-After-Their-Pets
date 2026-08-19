@@ -50,23 +50,27 @@ export function registerAdminHandlers(
         break;
       }
       case 'data:query': {
-        const { resource, query } = payload.data as { resource: 'pokemon' | 'moves'; query?: string };
-        const { DataLoader } = await import('../../data/loader.js');
-        const data = new DataLoader();
-        let results: unknown[];
-        switch (resource) {
-          case 'pokemon':
-            results = data.getAllSpecies().filter((s) => !query || pokemonMatchesQuery(s, query)).slice(0, 30);
-            break;
-          case 'moves': {
-            const species = data.getSpecies(Number(query));
-            results = (species?.learnset ?? []).map((id) => data.getMove(id)).filter(Boolean);
-            break;
+        try {
+          const { resource, query } = payload.data as { resource: 'pokemon' | 'moves'; query?: string };
+          const { DataLoader } = await import('../../data/loader.js');
+          const data = new DataLoader();
+          let results: unknown[];
+          switch (resource) {
+            case 'pokemon':
+              results = data.getAllSpecies().filter((s) => !query || pokemonMatchesQuery(s, query)).slice(0, 30);
+              break;
+            case 'moves': {
+              const species = data.getSpecies(Number(query));
+              results = (species?.learnset ?? []).map((id) => data.getMove(id)).filter(Boolean);
+              break;
+            }
+            default:
+              results = [];
           }
-          default:
-            results = [];
+          socket.emit('data:results', { resource, results });
+        } catch (err) {
+          console.error('[data:query] handler error:', err);
         }
-        socket.emit('data:results', { resource, results });
         break;
       }
       case 'force-faint': {
