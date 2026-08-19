@@ -206,7 +206,14 @@ export class BattleEngine {
         otherModifiers,
       });
 
-      const actualDamage = Math.min(damage, target.currentHp);
+      // Apply onDamageModifier from ability and item
+      let finalDamage = damage;
+      const abilityDmgMod = abilityHooks.onDamageModifier?.({ user: attacker, state: s, moveType: move.type, basePower: move.basePower, target });
+      if (abilityDmgMod !== undefined) finalDamage = Math.floor(finalDamage * abilityDmgMod);
+      const itemDmgMod = itemHooks.onDamageModifier?.({ holder: attacker, state: s, moveType: move.type, basePower: move.basePower, target, isPhysical });
+      if (itemDmgMod !== undefined) finalDamage = Math.floor(finalDamage * itemDmgMod);
+
+      const actualDamage = Math.min(finalDamage, target.currentHp);
       target.currentHp -= actualDamage;
 
       events.push({ type: 'damage-dealt', data: {
@@ -218,6 +225,21 @@ export class BattleEngine {
         target.fainted = true;
         target.currentHp = 0;
         events.push({ type: 'faint', data: { slotId: targetSlotId, instanceId: target.instanceId } });
+      }
+
+      // Life Orb recoil etc.
+      if (actualDamage > 0 && itemHooks.onAfterDamageTaken) {
+        const { hpDelta } = itemHooks.onAfterDamageTaken({ holder: attacker, state: s, damageTaken: actualDamage });
+        if (hpDelta < 0) {
+          const recoil = Math.min(-hpDelta, attacker.currentHp);
+          attacker.currentHp -= recoil;
+          events.push({ type: 'damage-dealt', data: { source: 'life-orb', slotId: attackerSlotId, damage: recoil, remainingHp: attacker.currentHp } });
+          if (attacker.currentHp <= 0) {
+            attacker.fainted = true;
+            attacker.currentHp = 0;
+            events.push({ type: 'faint', data: { slotId: attackerSlotId, instanceId: attacker.instanceId } });
+          }
+        }
       }
     }
 
@@ -260,6 +282,10 @@ export class BattleEngine {
               active.currentHp = 0;
               events.push({ type: 'faint', data: { slotId: slot.slotId, instanceId: active.instanceId } });
             }
+          }
+          // Increment toxic counter each turn
+          if (active.status === 'tox') {
+            active.volatileStatus.push('toxic-counter');
           }
         }
 
@@ -309,7 +335,7 @@ export class BattleEngine {
     return null;
   }
 
-  findSlot(state: BattleState, slotId: string): SlotState | null {
+  private findSlot(state: BattleState, slotId: string): SlotState | null {
     for (const team of state.teams) {
       const slot = team.slots.find((s) => s.slotId === slotId);
       if (slot) return slot;
