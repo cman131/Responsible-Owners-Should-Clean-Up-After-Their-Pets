@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { BattleProvider, useBattle } from '../battle/BattleContext.js';
 import { BattleCanvas } from '../battle/BattleCanvas.js';
 import { MovePanel } from '../battle/overlays/MovePanel.js';
+import { SwitchPanel } from '../battle/overlays/SwitchPanel.js';
 import { TurnLog } from '../battle/overlays/TurnLog.js';
 import { HpBar } from '../battle/overlays/HpBar.js';
 import { StatusBadge } from '../battle/overlays/StatusBadge.js';
@@ -18,9 +19,10 @@ export function BattlePage() {
 }
 
 function BattleView() {
-  const { state, mySlotId, actionRequest, turnLog, submitAction } = useBattle();
+  const { state, mySlotId, actionRequest, switchRequest, turnLog, submitAction } = useBattle();
   const [targetingMoveIndex, setTargetingMoveIndex] = useState<0 | 1 | 2 | 3 | null>(null);
   const [terastallize, setTerastallize] = useState(false);
+  const [showSwitchPanel, setShowSwitchPanel] = useState(false);
 
   function handleMoveSelect(moveIndex: 0 | 1 | 2 | 3) {
     if (!actionRequest) return;
@@ -69,6 +71,14 @@ function BattleView() {
   const mySlot = myTeam?.slots.find((s) => s.slotId === mySlotId);
   const myActiveMon = mySlot?.party[mySlot.activePokemonIndex];
 
+  const mySlotInState = state.teams.flatMap((t) => t.slots).find((s) => s.slotId === mySlotId);
+  const switchableParty = mySlotInState?.party.filter((p, i) => i !== mySlotInState.activePokemonIndex && !p.fainted) ?? [];
+
+  function handleSwitch(instanceId: string) {
+    submitAction({ slotId: mySlotId, action: { type: 'switch', targetInstanceId: instanceId } });
+    setShowSwitchPanel(false);
+  }
+
   return (
     <div style={{ background: '#0d0d1a', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: 16, gap: 12 }}>
       <div style={{ color: '#f0c040', fontSize: 12, letterSpacing: 2 }}>{state.label} — Turn {state.turnNumber}</div>
@@ -94,9 +104,20 @@ function BattleView() {
 
       <div style={{ display: 'flex', gap: 16, width: 800 }}>
         <div style={{ flex: 1 }}>
-          {actionRequest && !mySlot?.isSpectator ? (
+          {(switchRequest !== null || showSwitchPanel) ? (
+            <SwitchPanel
+              party={switchableParty}
+              onSwitch={handleSwitch}
+              label={switchRequest !== null ? 'YOUR POKÉMON FAINTED — CHOOSE NEXT' : 'CHOOSE POKÉMON'}
+              {...(switchRequest === null ? { onCancel: () => setShowSwitchPanel(false) } : {})}
+            />
+          ) : actionRequest && !mySlot?.isSpectator ? (
             <>
-              <MovePanel request={actionRequest} onSelectMove={handleMoveSelect} />
+              <MovePanel
+                request={actionRequest}
+                onSelectMove={handleMoveSelect}
+                onSwitchRequested={() => setShowSwitchPanel(true)}
+              />
               {actionRequest.canTerastallize && (
                 <div style={{ marginTop: 10, borderTop: '1px solid #333', paddingTop: 10 }}>
                   <label style={{ color: '#aaa', fontSize: 11 }}>
