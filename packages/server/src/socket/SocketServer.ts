@@ -1,4 +1,5 @@
 import type { Server as HttpServer } from 'node:http';
+import { join } from 'node:path';
 import { Server } from 'socket.io';
 import type { ServerToClientEvents, ClientToServerEvents, BattleState, SlotState } from '@poke-fighter/shared';
 import { LobbyManager } from './LobbyManager.js';
@@ -6,6 +7,7 @@ import { BattleRoom } from './BattleRoom.js';
 import { registerLobbyHandlers } from './handlers/lobbyHandlers.js';
 import { registerBattleHandlers } from './handlers/battleHandlers.js';
 import { registerAdminHandlers } from './handlers/adminHandlers.js';
+import { RegistryStore } from '../registry/RegistryStore.js';
 
 interface SocketServerOptions { adminToken: string }
 
@@ -13,11 +15,14 @@ export class SocketServer {
   private readonly io: Server<ClientToServerEvents, ServerToClientEvents>;
   private readonly lobby = new LobbyManager();
   private readonly rooms = new Map<string, BattleRoom>();
+  private readonly registry: RegistryStore;
 
   constructor(httpServer: HttpServer, { adminToken }: SocketServerOptions) {
     this.io = new Server(httpServer, {
       cors: { origin: '*' },
     });
+
+    this.registry = new RegistryStore(join(process.cwd(), 'data/registry'));
 
     this.io.use((socket, next) => {
       const token = socket.handshake.auth['token'] as string | undefined;
@@ -33,7 +38,7 @@ export class SocketServer {
       registerLobbyHandlers(socket, this.lobby, (id) => this.rooms.get(id));
       registerBattleHandlers(socket, this.lobby, (id) => this.rooms.get(id));
       if (socket.data['isAdmin']) {
-        registerAdminHandlers(socket, this.io, (id) => this.rooms.get(id), this.startBattle.bind(this));
+        registerAdminHandlers(socket, this.io, (id) => this.rooms.get(id), this.startBattle.bind(this), this.registry);
       }
 
       socket.on('disconnect', () => {

@@ -35,7 +35,14 @@ export interface AdminActionPayload {
     | 'unpause'
     | 'force-faint'    // force a pokemon to faint
     | 'forfeit'        // end battle, declare other team winner
-    | 'force-switch';  // force a pokemon switch
+    | 'force-switch'   // force a pokemon switch
+    | 'registry:list'
+    | 'registry:save-player'
+    | 'registry:delete-player'
+    | 'registry:save-npc'
+    | 'registry:delete-npc'
+    | 'registry:save-team'
+    | 'registry:delete-team';
   data: Record<string, unknown>;
 }
 
@@ -121,6 +128,7 @@ export interface ServerToClientEvents {
   'battle:end': (payload: BattleEndPayload) => void;
   'lobby:error': (payload: LobbyErrorPayload) => void;
   'state:sync': (state: BattleState) => void;
+  'registry:data': (payload: { resource: string; data: unknown[] }) => void;
 }
 
 export interface ClientToServerEvents {
