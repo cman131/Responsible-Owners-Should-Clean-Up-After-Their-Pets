@@ -71,8 +71,10 @@ function BattleView() {
   const mySlot = myTeam?.slots.find((s) => s.slotId === mySlotId);
   const myActiveMon = mySlot?.party[mySlot.activePokemonIndex];
 
-  const mySlotInState = state.teams.flatMap((t) => t.slots).find((s) => s.slotId === mySlotId);
-  const switchableParty = mySlotInState?.party.filter((p, i) => i !== mySlotInState.activePokemonIndex && !p.fainted) ?? [];
+  const switchableParty = (() => {
+    if (!mySlot) return [];
+    return mySlot.party.filter((_, i) => i !== mySlot.activePokemonIndex);
+  })();
 
   function handleSwitch(instanceId: string) {
     submitAction({ slotId: mySlotId, action: { type: 'switch', targetInstanceId: instanceId } });

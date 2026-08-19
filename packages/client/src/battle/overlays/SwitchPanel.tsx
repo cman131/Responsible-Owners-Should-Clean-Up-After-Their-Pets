@@ -36,6 +36,11 @@ export function SwitchPanel({ party, onSwitch, onCancel, label = 'CHOOSE POKÉMO
             </span>
           </button>
         ))}
+        {party.length === 0 && (
+          <div style={{ color: '#e74c3c', fontSize: 12, textAlign: 'center', padding: 8 }}>
+            No available Pokémon
+          </div>
+        )}
       </div>
       {onCancel && (
         <button
