@@ -18,15 +18,17 @@ function validate<T>(
   schema: z.ZodType<T>,
   records: unknown[]
 ): void {
+  let localErrors = 0;
   for (const record of records) {
     const result = schema.safeParse(record);
     if (!result.success) {
       console.error(`[${label}] Invalid record:`, JSON.stringify(record, null, 2));
       console.error('Errors:', result.error.flatten());
+      localErrors++;
       errors++;
     }
   }
-  const status = errors === 0 ? 'OK' : `${errors} errors`;
+  const status = localErrors === 0 ? 'OK' : `${localErrors} errors`;
   console.log(`[${label}] Validated ${records.length} records — ${status}`);
 }
 

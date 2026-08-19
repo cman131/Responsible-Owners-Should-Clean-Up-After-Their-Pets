@@ -21,7 +21,7 @@ describe('Seeded data validates against schemas', () => {
     expect(data.length).toBeGreaterThan(700);
     for (const entry of data) {
       const result = MoveSchema.safeParse(entry);
-      expect(result.success, `move ${JSON.stringify(entry)} failed`).toBe(true);
+      expect(result.success, `move ${JSON.stringify(entry)} failed: ${!result.success ? JSON.stringify(result.error.flatten()) : ''}`).toBe(true);
     }
   });
 });
