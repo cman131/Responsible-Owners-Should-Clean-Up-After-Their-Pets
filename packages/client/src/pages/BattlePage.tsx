@@ -19,9 +19,10 @@ export function BattlePage() {
 
 function BattleView() {
   const { state, mySlotId, actionRequest, turnLog, submitAction } = useBattle();
-  const [targetingMoveIndex, setTargetingMoveIndex] = useState<number | null>(null);
+  const [targetingMoveIndex, setTargetingMoveIndex] = useState<0 | 1 | 2 | 3 | null>(null);
+  const [terastallize, setTerastallize] = useState(false);
 
-  function handleMoveSelect(moveIndex: number) {
+  function handleMoveSelect(moveIndex: 0 | 1 | 2 | 3) {
     if (!actionRequest) return;
     const move = actionRequest.validMoves[moveIndex];
     if (!move) return;
@@ -36,27 +37,28 @@ function BattleView() {
         slotId: mySlotId,
         action: {
           type: 'move',
-          moveIndex: moveIndex as 0 | 1 | 2 | 3,
+          moveIndex,
           ...(autoTarget !== undefined ? { targetSlotId: autoTarget } : {}),
+          ...(terastallize ? { terastallize } : {}),
         },
       });
+      setTerastallize(false);
     }
   }
 
   function handleTargetSelected(targetSlotId: string) {
     if (targetingMoveIndex === null || !actionRequest) return;
-    const teraCheckbox = document.getElementById('tera') as HTMLInputElement | null;
-    const terastallize = teraCheckbox?.checked;
     submitAction({
       slotId: mySlotId,
       action: {
         type: 'move',
-        moveIndex: targetingMoveIndex as 0 | 1 | 2 | 3,
+        moveIndex: targetingMoveIndex,
         targetSlotId,
-        ...(terastallize !== undefined ? { terastallize } : {}),
+        ...(terastallize ? { terastallize } : {}),
       },
     });
     setTargetingMoveIndex(null);
+    setTerastallize(false);
   }
 
   if (!state) {
@@ -93,7 +95,22 @@ function BattleView() {
       <div style={{ display: 'flex', gap: 16, width: 800 }}>
         <div style={{ flex: 1 }}>
           {actionRequest && !mySlot?.isSpectator ? (
-            <MovePanel request={actionRequest} onSelectMove={handleMoveSelect} />
+            <>
+              <MovePanel request={actionRequest} onSelectMove={handleMoveSelect} />
+              {actionRequest.canTerastallize && (
+                <div style={{ marginTop: 10, borderTop: '1px solid #333', paddingTop: 10 }}>
+                  <label style={{ color: '#aaa', fontSize: 11 }}>
+                    <input
+                      type="checkbox"
+                      checked={terastallize}
+                      onChange={(e) => setTerastallize(e.target.checked)}
+                      style={{ marginRight: 6 }}
+                    />
+                    Terastallize this turn
+                  </label>
+                </div>
+              )}
+            </>
           ) : (
             <div style={{ background: '#0d0d1a', border: '1px solid #333', borderRadius: 6, padding: 16, color: '#555', fontSize: 13, textAlign: 'center' }}>
               {mySlot?.isSpectator ? 'Watching...' : 'Waiting for other players...'}

@@ -2,7 +2,7 @@ import type { ActionRequestPayload } from '@poke-fighter/shared';
 
 interface Props {
   request: ActionRequestPayload;
-  onSelectMove: (moveIndex: number) => void;
+  onSelectMove: (moveIndex: 0 | 1 | 2 | 3) => void;
   onSwitchRequested?: () => void;
 }
 
@@ -26,14 +26,6 @@ export function MovePanel({ request, onSelectMove, onSwitchRequested }: Props) {
           );
         })}
       </div>
-      {request.canTerastallize && (
-        <div style={styles.tera}>
-          <label style={{ color: '#aaa', fontSize: 11 }}>
-            <input type="checkbox" id="tera" style={{ marginRight: 6 }} />
-            Terastallize this turn
-          </label>
-        </div>
-      )}
       {request.canSwitch && onSwitchRequested && (
         <button
           style={{ ...styles.moveBtn, background: '#1a3a1a', borderColor: '#27ae60', marginTop: 8, width: '100%', justifyContent: 'center' }}
