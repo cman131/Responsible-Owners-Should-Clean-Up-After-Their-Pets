@@ -32,7 +32,7 @@ const ITEM_HOOKS: Record<string, ItemHooks> = {
   },
   'life-orb': {
     onDamageModifier: () => 1.3,
-    onAfterDamageTaken: ({ damageTaken }) => ({ hpDelta: damageTaken > 0 ? -Math.floor(damageTaken / 10) : 0 }),
+    onAfterDamageTaken: ({ holder, damageTaken }) => ({ hpDelta: damageTaken > 0 ? -Math.floor(holder.maxHp / 10) : 0 }),
   },
   leftovers: {
     onEndOfTurn: ({ holder }) => ({ hpDelta: Math.floor(holder.maxHp / 16) }),

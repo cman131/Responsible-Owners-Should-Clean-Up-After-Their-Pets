@@ -271,6 +271,10 @@ export class BattleEngine {
         if (!active || active.fainted) continue;
 
         if (active.status) {
+          // Pre-increment toxic counter so first tick = 1/16 (Gen 9 schedule)
+          if (active.status === 'tox') {
+            active.volatileStatus.push('toxic-counter');
+          }
           const toxicCounter = active.volatileStatus.filter((v) => v === 'toxic-counter').length;
           const tick = tickStatus(active.status, active.maxHp, toxicCounter);
           if (tick.hpDelta !== 0) {
@@ -282,10 +286,6 @@ export class BattleEngine {
               active.currentHp = 0;
               events.push({ type: 'faint', data: { slotId: slot.slotId, instanceId: active.instanceId } });
             }
-          }
-          // Increment toxic counter each turn
-          if (active.status === 'tox') {
-            active.volatileStatus.push('toxic-counter');
           }
         }
 

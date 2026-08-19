@@ -14,7 +14,7 @@ interface CanApplyInput {
 
 const IMMUNITIES: Record<StatusCondition, PokemonType[]> = {
   brn: ['Fire'],
-  par: ['Electric', 'Ground'],
+  par: ['Electric'],
   frz: ['Ice'],
   psn: ['Poison', 'Steel'],
   tox: ['Poison', 'Steel'],
