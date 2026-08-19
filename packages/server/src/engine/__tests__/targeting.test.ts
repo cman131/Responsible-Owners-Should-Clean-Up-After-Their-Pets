@@ -32,4 +32,15 @@ describe('getLegalTargets', () => {
     const targets = getLegalTargets(state, 'slot-a1', 'normal');
     expect(targets).toEqual([]);
   });
+
+  it('adjacentAlly returns ally slots excluding self', () => {
+    const state = make1v1State();
+    // Add a second ally slot
+    const extraAlly = structuredClone(state.teams[0]!.slots[0]!);
+    extraAlly.slotId = 'slot-a2';
+    state.teams[0]!.slots.push(extraAlly);
+
+    const targets = getLegalTargets(state, 'slot-a1', 'adjacentAlly');
+    expect(targets).toEqual(['slot-a2']);
+  });
 });
