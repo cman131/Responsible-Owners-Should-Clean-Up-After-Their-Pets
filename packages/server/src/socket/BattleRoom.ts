@@ -2,7 +2,6 @@ import type { BattleState, MoveAction, SwitchAction, TurnResolveEvent, SlotState
 import { BattleEngine } from '../engine/index.js';
 import { calcExpYield, distributeExp, checkLevelUps, type ExpAward, type LevelUpResult } from '../engine/exp.js';
 import { DataLoader } from '../data/loader.js';
-import { calcAllStats } from '../engine/stats.js';
 
 type Action = MoveAction | SwitchAction;
 
@@ -142,7 +141,8 @@ export class BattleRoom {
   private processExpFromEvents(events: TurnResolveEvent[], newState: BattleState): void {
     for (const event of events) {
       if (event.type !== 'faint') continue;
-      const faintedInstanceId = event.data['instanceId'] as string;
+      const faintedInstanceId = event.data['instanceId'];
+      if (typeof faintedInstanceId !== 'string') continue;
 
       // Find the fainted team index
       const faintedTeamIdx = newState.teams.findIndex((t) =>
@@ -183,18 +183,7 @@ export class BattleRoom {
             const levelUp = checkLevelUps(mon, award.newTotal, growth);
             if (levelUp) {
               mon.level = levelUp.newLevel;
-              const speciesData = this.data.getSpecies(mon.speciesId);
-              if (speciesData) {
-                const newStats = calcAllStats({
-                  baseStats: speciesData.baseStats,
-                  ivs: { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 },
-                  evs: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
-                  level: levelUp.newLevel,
-                  nature: 'hardy',
-                });
-                mon.stats = newStats;
-                this.onLevelUpCb?.(levelUp, newStats);
-              }
+              this.onLevelUpCb?.(levelUp, mon.stats);
             }
           }
         }
