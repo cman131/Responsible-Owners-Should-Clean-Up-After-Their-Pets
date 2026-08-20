@@ -56,16 +56,18 @@ export function registerAdminHandlers(
       }
       case 'data:query': {
         try {
-          const { resource, query } = payload.data as { resource: 'pokemon' | 'moves'; query?: string };
+          const { resource } = payload.data as { resource: 'pokemon' | 'moves' };
           const { DataLoader } = await import('../../data/loader.js');
           const data = new DataLoader();
           let results: unknown[];
           switch (resource) {
-            case 'pokemon':
+            case 'pokemon': {
+              const { query } = payload.data as { query?: string };
               results = data.getAllSpecies().filter((s) => !query || pokemonMatchesQuery(s, query)).slice(0, 30);
               break;
+            }
             case 'moves': {
-              const { speciesId, query: moveQuery } = payload.data as { resource: 'moves'; speciesId?: number; query?: string };
+              const { speciesId, query: moveQuery } = payload.data as { speciesId?: number; query?: string };
               if (speciesId !== undefined) {
                 const species = data.getSpecies(speciesId);
                 results = (species?.learnset ?? []).map((id) => data.getMove(id)).filter(Boolean);
