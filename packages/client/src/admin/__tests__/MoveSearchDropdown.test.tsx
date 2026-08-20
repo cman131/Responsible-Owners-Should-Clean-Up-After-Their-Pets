@@ -177,4 +177,16 @@ describe('MoveSearchDropdown', () => {
     // should NOT emit because pendingLearnsetFetch is still true
     expect(mockSocket.emit).not.toHaveBeenCalled();
   });
+
+  it('ignores data:results responses not triggered by this instance', () => {
+    render(<MoveSearchDropdown {...defaultProps} />);
+    act(() => { dataResultsHandler?.({ resource: 'moves', results: [flamethrower] }); });
+    // learnset loaded, pendingLearnsetFetch cleared, pendingAllMovesQuery = false
+    // simulate a response arriving from another instance (neither flag is set)
+    act(() => { dataResultsHandler?.({ resource: 'moves', results: [icebeam] }); });
+    // Open the dropdown — results should still be the learnset, not contaminated
+    fireEvent.focus(screen.getByPlaceholderText(/search moves/i));
+    expect(screen.getByText('Flamethrower')).toBeTruthy();
+    expect(screen.queryByText('Ice Beam')).toBeNull();
+  });
 });

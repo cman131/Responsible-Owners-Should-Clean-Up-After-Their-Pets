@@ -23,6 +23,7 @@ export function MoveSearchDropdown({ speciesId, value, selectedMoves, onChange }
   const [open, setOpen] = useState(false);
   const pendingLearnsetFetch = useRef(false);
   const isFirstMount = useRef(true);
+  const pendingAllMovesQuery = useRef(false);
 
   useEffect(() => {
     const socket = getSocket();
@@ -32,9 +33,14 @@ export function MoveSearchDropdown({ speciesId, value, selectedMoves, onChange }
       if (pendingLearnsetFetch.current) {
         setLearnsetCache(moves);
         pendingLearnsetFetch.current = false;
+        setResults(moves);
+        setHighlighted(0);
+      } else if (pendingAllMovesQuery.current) {
+        pendingAllMovesQuery.current = false;
+        setResults(moves);
+        setHighlighted(0);
       }
-      setResults(moves);
-      setHighlighted(0);
+      // else: response from another instance — ignore
     };
     socket.on('data:results' as any, handler);
     return () => { socket.off('data:results' as any, handler); };
@@ -51,6 +57,7 @@ export function MoveSearchDropdown({ speciesId, value, selectedMoves, onChange }
     setSelectedMove(null);
     setAllMovesMode(false);
     setOpen(false);
+    pendingAllMovesQuery.current = false;
     pendingLearnsetFetch.current = true;
     getSocket().emit('admin:action', { type: 'data:query', data: { resource: 'moves', speciesId } } as any);
   }, [speciesId]);
@@ -65,6 +72,7 @@ export function MoveSearchDropdown({ speciesId, value, selectedMoves, onChange }
     if (allMovesMode) {
       if (q.length >= 2) {
         if (!pendingLearnsetFetch.current) {
+          pendingAllMovesQuery.current = true;
           getSocket().emit('admin:action', { type: 'data:query', data: { resource: 'moves', query: q } } as any);
         }
         setOpen(true);
@@ -108,6 +116,7 @@ export function MoveSearchDropdown({ speciesId, value, selectedMoves, onChange }
 
   function toggleAllMovesMode(checked: boolean) {
     setAllMovesMode(checked);
+    pendingAllMovesQuery.current = false;
     setQuery('');
     setResults(checked ? [] : learnsetCache);
     setOpen(!checked);
