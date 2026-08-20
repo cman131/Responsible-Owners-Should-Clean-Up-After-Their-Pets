@@ -10,6 +10,34 @@ interface Props {
   initialTeam?: PokemonSet[];
 }
 
+const NATURES = [
+  { id: 'hardy',   boost: null,  drop: null  },
+  { id: 'lonely',  boost: 'Atk', drop: 'Def' },
+  { id: 'brave',   boost: 'Atk', drop: 'Spe' },
+  { id: 'adamant', boost: 'Atk', drop: 'SpA' },
+  { id: 'naughty', boost: 'Atk', drop: 'SpD' },
+  { id: 'bold',    boost: 'Def', drop: 'Atk' },
+  { id: 'relaxed', boost: 'Def', drop: 'Spe' },
+  { id: 'impish',  boost: 'Def', drop: 'SpA' },
+  { id: 'lax',     boost: 'Def', drop: 'SpD' },
+  { id: 'timid',   boost: 'Spe', drop: 'Atk' },
+  { id: 'hasty',   boost: 'Spe', drop: 'Def' },
+  { id: 'jolly',   boost: 'Spe', drop: 'SpA' },
+  { id: 'naive',   boost: 'Spe', drop: 'SpD' },
+  { id: 'modest',  boost: 'SpA', drop: 'Atk' },
+  { id: 'mild',    boost: 'SpA', drop: 'Def' },
+  { id: 'quiet',   boost: 'SpA', drop: 'Spe' },
+  { id: 'rash',    boost: 'SpA', drop: 'SpD' },
+  { id: 'calm',    boost: 'SpD', drop: 'Atk' },
+  { id: 'gentle',  boost: 'SpD', drop: 'Def' },
+  { id: 'sassy',   boost: 'SpD', drop: 'Spe' },
+  { id: 'careful', boost: 'SpD', drop: 'SpA' },
+  { id: 'docile',  boost: null,  drop: null  },
+  { id: 'serious', boost: null,  drop: null  },
+  { id: 'bashful', boost: null,  drop: null  },
+  { id: 'quirky',  boost: null,  drop: null  },
+] as const;
+
 export function TeamBuilder({ onTeamSaved, initialTeam = [] }: Props) {
   const [team, setTeam] = useState<Partial<PokemonSet>[]>(initialTeam.length > 0 ? initialTeam : [{}]);
   const [slotSpecies, setSlotSpecies] = useState<(PokemonSpecies | null)[]>(Array(6).fill(null));
@@ -119,9 +147,18 @@ export function TeamBuilder({ onTeamSaved, initialTeam = [] }: Props) {
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <label style={lbl}>Nature</label>
-            <input value={team[selectedSlot]?.nature ?? 'hardy'}
+            <select
+              value={team[selectedSlot]?.nature ?? 'hardy'}
               onChange={(e) => updateSlotField(selectedSlot, 'nature', e.target.value)}
-              style={{ ...inp, width: 100 }} />
+              style={{ ...inp, width: 160 }}
+            >
+              {NATURES.map((n) => (
+                <option key={n.id} value={n.id}>
+                  {n.id.charAt(0).toUpperCase() + n.id.slice(1)}
+                  {n.boost ? ` (+${n.boost} / -${n.drop})` : ' (neutral)'}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <label style={lbl}>Moves</label>
