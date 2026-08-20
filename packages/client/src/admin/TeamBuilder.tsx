@@ -1,5 +1,5 @@
 // packages/client/src/admin/TeamBuilder.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { PokemonSpecies, PokemonSet } from '@poke-fighter/shared';
 import { PokemonSearchDropdown } from './PokemonSearchDropdown.js';
 import { MoveSearchDropdown } from './MoveSearchDropdown.js';
@@ -19,6 +19,7 @@ export function TeamBuilder({ onTeamSaved, initialTeam = [] }: Props) {
     const updated = [...team];
     updated[selectedSlot] = {
       speciesId: species.id,
+      nickname: species.displayName,
       level: 50,
       ability: Object.values(species.abilities)[0] ?? '',
       moves: ['', '', '', ''] as [string, string, string, string],
@@ -38,8 +39,11 @@ export function TeamBuilder({ onTeamSaved, initialTeam = [] }: Props) {
     setTeam(updated);
   }
 
-  const isValid = team.some((s) => s.speciesId) && team.every((s) => !s.speciesId || s.moves?.every(Boolean));
   const currentSpecies = slotSpecies[selectedSlot];
+
+  useEffect(() => {
+    onTeamSaved(team.filter((s): s is PokemonSet => !!s.speciesId));
+  }, [team, onTeamSaved]);
 
   return (
     <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -87,6 +91,15 @@ export function TeamBuilder({ onTeamSaved, initialTeam = [] }: Props) {
         <div style={{ background: '#111', border: '1px solid #333', borderRadius: 4, padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div style={{ color: '#aaa', fontSize: 11 }}>Species #{team[selectedSlot]!.speciesId} — slot {selectedSlot + 1}</div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <label style={lbl}>Name</label>
+            <input
+              value={team[selectedSlot]?.nickname ?? ''}
+              onChange={(e) => updateSlotField(selectedSlot, 'nickname', e.target.value.slice(0, 20))}
+              maxLength={20}
+              style={{ ...inp, width: 160 }}
+            />
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <label style={lbl}>Level</label>
             <input type="number" min={1} max={100} value={team[selectedSlot]?.level ?? 50}
               onChange={(e) => updateSlotField(selectedSlot, 'level', Number(e.target.value))}
@@ -118,13 +131,6 @@ export function TeamBuilder({ onTeamSaved, initialTeam = [] }: Props) {
         </div>
       )}
 
-      <button
-        onClick={() => onTeamSaved(team.filter((s): s is PokemonSet => !!s.speciesId))}
-        disabled={!isValid}
-        style={{ background: isValid ? '#27ae60' : '#333', color: isValid ? '#fff' : '#888', border: 'none', padding: '10px 20px', cursor: isValid ? 'pointer' : 'default', borderRadius: 4, fontFamily: 'inherit', letterSpacing: 2 }}
-      >
-        SAVE TEAM
-      </button>
     </div>
   );
 }
