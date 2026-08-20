@@ -6,6 +6,7 @@ interface SlotConfig {
   type: 'player' | 'npc';
   displayName: string;
   profileId?: string;
+  defaultTeam?: import('@poke-fighter/shared').PokemonSet[];
 }
 
 interface Props {
@@ -17,7 +18,7 @@ interface Props {
 
 export function SlotAssignmentStep({ teamASlots, teamBSlots, onNext, onBack }: Props) {
   const [waitingPlayers, setWaitingPlayers] = useState<string[]>([]);
-  const [savedPlayers, setSavedPlayers] = useState<{ profileId: string; displayName: string }[]>([]);
+  const [savedPlayers, setSavedPlayers] = useState<{ profileId: string; displayName: string; defaultTeam?: import('@poke-fighter/shared').PokemonSet[] }[]>([]);
   const [savedNpcs, setSavedNpcs] = useState<{ profileId: string; name: string }[]>([]);
   const [slots, setSlots] = useState<SlotConfig[]>(() => [
     ...Array.from({ length: teamASlots }, (_, i) => ({ slotId: `a${i + 1}`, type: 'player' as const, displayName: '' })),
@@ -30,7 +31,13 @@ export function SlotAssignmentStep({ teamASlots, teamBSlots, onNext, onBack }: P
     socket.emit('admin:action', { type: 'registry:list', data: { resource: 'npcs' } } as any);
 
     socket.on('registry:data' as any, (payload: any) => {
-      if (payload.resource === 'players') setSavedPlayers(payload.data);
+      if (payload.resource === 'players') {
+        setSavedPlayers(payload.data.map((p: any) => ({
+          profileId: p.profileId,
+          displayName: p.displayName,
+          defaultTeam: p.defaultTeam?.pokemon,
+        })));
+      }
       if (payload.resource === 'npcs') setSavedNpcs(payload.data.map((n: any) => ({ profileId: n.profileId, name: n.name })));
     });
 
@@ -109,7 +116,11 @@ function SlotRow({ slot, index, onUpdate, waitingPlayers, savedPlayers, savedNpc
       {slot.type === 'player' ? (
         <select
           value={slot.displayName}
-          onChange={(e) => onUpdate(index, { displayName: e.target.value })}
+          onChange={(e) => {
+            const name = e.target.value;
+            const player = savedPlayers.find((p) => p.displayName === name);
+            onUpdate(index, { displayName: name, defaultTeam: player?.defaultTeam });
+          }}
           style={selectStyle}
         >
           <option value="">— select player —</option>
