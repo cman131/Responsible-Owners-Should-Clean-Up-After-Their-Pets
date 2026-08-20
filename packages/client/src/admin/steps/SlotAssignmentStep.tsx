@@ -118,7 +118,7 @@ function SlotRow({ slot, index, onUpdate, waitingPlayers, savedPlayers, savedNpc
           value={slot.displayName}
           onChange={(e) => {
             const name = e.target.value;
-            const player = savedPlayers.find((p) => p.displayName === name);
+            const player = savedPlayers.find((p: { profileId: string; displayName: string; defaultTeam?: import('@poke-fighter/shared').PokemonSet[] }) => p.displayName === name);
             onUpdate(index, { displayName: name, defaultTeam: player?.defaultTeam });
           }}
           style={selectStyle}

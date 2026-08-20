@@ -47,7 +47,7 @@ describe('SlotAssignmentStep — defaultTeam threading', () => {
     });
 
     const selects = screen.getAllByRole('combobox');
-    const playerTypeSelect = selects[0];
+    const playerTypeSelect = selects[0]!;
     fireEvent.change(playerTypeSelect, { target: { value: 'player' } });
 
     const playerNameSelects = screen.getAllByRole('combobox');

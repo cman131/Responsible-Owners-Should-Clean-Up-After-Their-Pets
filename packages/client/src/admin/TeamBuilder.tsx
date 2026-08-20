@@ -47,6 +47,7 @@ export function TeamBuilder({ onTeamSaved, initialTeam = [], onSendToBank }: Pro
       </div>
 
       <PokemonSlotEditor
+        key={selectedSlot}
         value={team[selectedSlot] ?? {}}
         onChange={handleSlotChange}
       />

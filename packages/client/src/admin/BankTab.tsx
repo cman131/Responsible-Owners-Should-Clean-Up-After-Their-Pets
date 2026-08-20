@@ -24,7 +24,8 @@ export function BankTab({ bank, teamSize, onBankChange, onMoveToTeam }: Props) {
   }
 
   function openEdit(index: number) {
-    setDraft({ ...bank[index], evs: { ...bank[index].evs }, ivs: { ...bank[index].ivs } });
+    const entry = bank[index]!;
+    setDraft({ ...entry, evs: { ...entry.evs }, ivs: { ...entry.ivs } });
     setModal({ kind: 'edit', index });
     setSelectedIndex(null);
   }

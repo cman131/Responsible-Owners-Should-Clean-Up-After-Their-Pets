@@ -38,14 +38,14 @@ export function PlayerProfileEditor({ profile, onBack }: Props) {
     const playerProfile: PlayerProfile = {
       profileId: profile?.profileId ?? uuidv4(),
       displayName: name.trim(),
-      defaultTeam: team.length > 0
-        ? {
-            templateId: profile?.defaultTeam?.templateId ?? uuidv4(),
-            name: `${name.trim()}'s Team`,
-            pokemon: team,
-            createdAt: profile?.defaultTeam?.createdAt ?? now,
-          }
-        : undefined,
+      ...(team.length > 0 ? {
+        defaultTeam: {
+          templateId: profile?.defaultTeam?.templateId ?? uuidv4(),
+          name: `${name.trim()}'s Team`,
+          pokemon: team,
+          createdAt: profile?.defaultTeam?.createdAt ?? now,
+        },
+      } : {}),
       bank,
       createdAt: profile?.createdAt ?? now,
     };

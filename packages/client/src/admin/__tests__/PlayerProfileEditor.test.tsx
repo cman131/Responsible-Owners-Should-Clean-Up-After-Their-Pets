@@ -77,7 +77,7 @@ describe('PlayerProfileEditor', () => {
   it('pre-fills name and bank from existing profile', () => {
     const profile = {
       profileId: 'p1', displayName: 'Misty', createdAt: '2026-01-01T00:00:00Z',
-      bank: [{ speciesId: 120, nickname: 'Staryu', level: 30, nature: 'bold', moves: ['','','',''], ability: 'Illuminate', evs:{hp:0,atk:0,def:0,spa:0,spd:0,spe:0}, ivs:{hp:31,atk:31,def:31,spa:31,spd:31,spe:31} }],
+      bank: [{ speciesId: 120, nickname: 'Staryu', level: 30, nature: 'bold', moves: ['','','',''] as [string, string, string, string], ability: 'Illuminate', evs:{hp:0,atk:0,def:0,spa:0,spd:0,spe:0}, ivs:{hp:31,atk:31,def:31,spa:31,spd:31,spe:31} }],
     };
     render(<PlayerProfileEditor profile={profile} onBack={vi.fn()} />);
     expect(screen.getByDisplayValue('Misty')).toBeTruthy();
