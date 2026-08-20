@@ -178,6 +178,15 @@ describe('MoveSearchDropdown', () => {
     expect(mockSocket.emit).not.toHaveBeenCalled();
   });
 
+  it('shows fallback pill with move id when value is set but move is not in learnset', () => {
+    render(<MoveSearchDropdown {...defaultProps} value='shadowball' />);
+    act(() => { dataResultsHandler?.({ resource: 'moves', results: [flamethrower, icebeam] }); });
+    // 'shadowball' is not in the learnset — should show fallback pill, not search input
+    expect(screen.queryByPlaceholderText(/search moves/i)).toBeNull();
+    expect(screen.getByText('shadowball')).toBeTruthy();
+    expect(screen.getByText('✕')).toBeTruthy();
+  });
+
   it('ignores data:results responses not triggered by this instance', () => {
     render(<MoveSearchDropdown {...defaultProps} />);
     act(() => { dataResultsHandler?.({ resource: 'moves', results: [flamethrower] }); });
