@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import type { PokemonSpecies, PokemonSet } from '@poke-fighter/shared';
 import { PokemonSearchDropdown } from './PokemonSearchDropdown.js';
+import { MoveSearchDropdown } from './MoveSearchDropdown.js';
 import { TYPE_COLORS } from './pokemonTypeColors.js';
 
 interface Props {
@@ -98,16 +99,20 @@ export function TeamBuilder({ onTeamSaved, initialTeam = [] }: Props) {
               style={{ ...inp, width: 100 }} />
           </div>
           <div>
-            <label style={lbl}>Moves (IDs)</label>
+            <label style={lbl}>Moves</label>
             {[0, 1, 2, 3].map((mi) => (
-              <input key={mi} placeholder={`Move ${mi + 1} id`}
-                value={(team[selectedSlot]?.moves ?? [])[mi] ?? ''}
-                onChange={(e) => {
-                  const moves = [...((team[selectedSlot]?.moves ?? ['', '', '', '']) as string[])];
-                  moves[mi] = e.target.value;
-                  updateSlotField(selectedSlot, 'moves', moves as [string, string, string, string]);
-                }}
-                style={{ ...inp, display: 'block', marginBottom: 4, width: '100%' }} />
+              <div key={mi} style={{ marginBottom: 8 }}>
+                <MoveSearchDropdown
+                  speciesId={team[selectedSlot]!.speciesId!}
+                  value={((team[selectedSlot]?.moves ?? ['', '', '', '']) as string[])[mi] ?? ''}
+                  selectedMoves={(team[selectedSlot]?.moves ?? ['', '', '', '']) as string[]}
+                  onChange={(moveId) => {
+                    const moves = [...((team[selectedSlot]?.moves ?? ['', '', '', '']) as string[])];
+                    moves[mi] = moveId;
+                    updateSlotField(selectedSlot, 'moves', moves as [string, string, string, string]);
+                  }}
+                />
+              </div>
             ))}
           </div>
         </div>
