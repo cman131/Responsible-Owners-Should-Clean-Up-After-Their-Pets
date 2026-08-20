@@ -37,6 +37,10 @@ const NATURES = [
   { id: 'quirky',  boost: null,  drop: null  },
 ] as const;
 
+function toShowdownId(name: string) {
+  return name.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
 export function PokemonSlotEditor({ value, onChange }: Props) {
   const [currentSpecies, setCurrentSpecies] = useState<PokemonSpecies | null>(null);
 
@@ -54,7 +58,7 @@ export function PokemonSlotEditor({ value, onChange }: Props) {
     });
   }
 
-  function updateField(field: keyof PokemonSet, v: unknown) {
+  function updateField<K extends keyof PokemonSet>(field: K, v: PokemonSet[K]) {
     onChange({ ...value, [field]: v });
   }
 
@@ -90,7 +94,7 @@ export function PokemonSlotEditor({ value, onChange }: Props) {
             </div>
             <img
               src={currentSpecies
-                ? `https://play.pokemonshowdown.com/sprites/ani/${currentSpecies.name}.gif`
+                ? `https://play.pokemonshowdown.com/sprites/ani/${toShowdownId(currentSpecies.name)}.gif`
                 : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${value.speciesId}.png`}
               alt=""
               style={{ imageRendering: 'pixelated', width: 80, height: 80 }}
@@ -132,20 +136,23 @@ export function PokemonSlotEditor({ value, onChange }: Props) {
           </div>
           <div>
             <label style={lbl}>Moves</label>
-            {[0, 1, 2, 3].map((mi) => (
-              <div key={mi} style={{ marginBottom: 8 }}>
-                <MoveSearchDropdown
-                  speciesId={value.speciesId!}
-                  value={((value.moves ?? ['', '', '', '']) as string[])[mi] ?? ''}
-                  selectedMoves={(value.moves ?? ['', '', '', '']) as string[]}
-                  onChange={(moveId) => {
-                    const moves = [...((value.moves ?? ['', '', '', '']) as string[])];
-                    moves[mi] = moveId;
-                    updateField('moves', moves as [string, string, string, string]);
-                  }}
-                />
-              </div>
-            ))}
+            {(() => {
+              const currentMoves = (value.moves ?? ['', '', '', '']) as [string, string, string, string];
+              return [0, 1, 2, 3].map((mi) => (
+                <div key={mi} style={{ marginBottom: 8 }}>
+                  <MoveSearchDropdown
+                    speciesId={value.speciesId!}
+                    value={currentMoves[mi] ?? ''}
+                    selectedMoves={currentMoves}
+                    onChange={(moveId) => {
+                      const moves = [...currentMoves] as [string, string, string, string];
+                      moves[mi] = moveId;
+                      updateField('moves', moves);
+                    }}
+                  />
+                </div>
+              ));
+            })()}
           </div>
         </div>
       )}
