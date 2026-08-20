@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { TeamBuilder } from '../TeamBuilder.js';
 import type { PokemonSet } from '@poke-fighter/shared';
 
@@ -16,9 +16,9 @@ export function TeamBuilderStep({ slots, onNext, onBack }: Props) {
   const [activeSlot, setActiveSlot] = useState(allSlots[0]?.slotId ?? '');
   const [teams, setTeams] = useState<Record<string, PokemonSet[]>>({});
 
-  function saveTeam(slotId: string, team: PokemonSet[]) {
-    setTeams((prev) => ({ ...prev, [slotId]: team }));
-  }
+  const handleTeamSaved = useCallback((team: PokemonSet[]) => {
+    setTeams((prev) => ({ ...prev, [activeSlot]: team }));
+  }, [activeSlot]);
 
   const allFilled = allSlots.every((s) => (teams[s.slotId]?.length ?? 0) > 0);
 
@@ -47,7 +47,7 @@ export function TeamBuilderStep({ slots, onNext, onBack }: Props) {
           <TeamBuilder
             key={activeSlot}
             initialTeam={teams[activeSlot] ?? []}
-            onTeamSaved={(team) => saveTeam(activeSlot, team)}
+            onTeamSaved={handleTeamSaved}
           />
         </div>
       )}
