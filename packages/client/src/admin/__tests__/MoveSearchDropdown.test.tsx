@@ -166,4 +166,15 @@ describe('MoveSearchDropdown', () => {
     render(<MoveSearchDropdown {...defaultProps} onChange={onChange} />);
     expect(onChange).not.toHaveBeenCalled();
   });
+
+  it('does not emit keyword query in all-moves mode while learnset fetch is pending', () => {
+    render(<MoveSearchDropdown {...defaultProps} />);
+    // learnset fetch is now pending (pendingLearnsetFetch.current = true)
+    // switch to all-moves mode and type before learnset response arrives
+    fireEvent.click(screen.getByRole('checkbox'));
+    mockSocket.emit.mockClear();
+    fireEvent.change(screen.getByPlaceholderText(/search all moves/i), { target: { value: 'fl' } });
+    // should NOT emit because pendingLearnsetFetch is still true
+    expect(mockSocket.emit).not.toHaveBeenCalled();
+  });
 });

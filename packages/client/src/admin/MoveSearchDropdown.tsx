@@ -61,9 +61,12 @@ export function MoveSearchDropdown({ speciesId, value, selectedMoves, onChange }
 
   function handleChange(q: string) {
     setQuery(q);
+    setHighlighted(0);
     if (allMovesMode) {
       if (q.length >= 2) {
-        getSocket().emit('admin:action', { type: 'data:query', data: { resource: 'moves', query: q } } as any);
+        if (!pendingLearnsetFetch.current) {
+          getSocket().emit('admin:action', { type: 'data:query', data: { resource: 'moves', query: q } } as any);
+        }
         setOpen(true);
       } else {
         setResults([]);
