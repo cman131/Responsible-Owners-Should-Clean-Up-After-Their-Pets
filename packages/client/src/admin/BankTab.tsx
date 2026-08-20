@@ -24,7 +24,7 @@ export function BankTab({ bank, teamSize, onBankChange, onMoveToTeam }: Props) {
   }
 
   function openEdit(index: number) {
-    setDraft(bank[index]);
+    setDraft({ ...bank[index], evs: { ...bank[index].evs }, ivs: { ...bank[index].ivs } });
     setModal({ kind: 'edit', index });
     setSelectedIndex(null);
   }
@@ -89,7 +89,7 @@ export function BankTab({ bank, teamSize, onBankChange, onMoveToTeam }: Props) {
                     <button
                       onClick={() => !teamFull && handleMoveToTeam(pokemon, index)}
                       disabled={teamFull}
-                      style={popBtn(teamFull ? '#333' : '#27ae60')}
+                      style={popBtn(teamFull ? '#333' : '#27ae60', teamFull)}
                     >→ MOVE TO TEAM</button>
                     <button onClick={() => handleRemove(index)} style={popBtn('#c0392b')}>✕ REMOVE</button>
                   </div>
@@ -128,6 +128,6 @@ export function BankTab({ bank, teamSize, onBankChange, onMoveToTeam }: Props) {
 }
 
 const addBtn: React.CSSProperties = { background: '#27ae60', border: 'none', color: '#fff', padding: '4px 12px', borderRadius: 3, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, letterSpacing: 1 };
-function popBtn(bg: string): React.CSSProperties {
-  return { display: 'block', width: '100%', background: bg, border: 'none', color: '#fff', padding: '4px 0', borderRadius: 3, fontSize: 9, cursor: bg === '#333' ? 'not-allowed' : 'pointer', marginBottom: 3, letterSpacing: 1, fontFamily: 'inherit' };
+function popBtn(bg: string, disabled = false): React.CSSProperties {
+  return { display: 'block', width: '100%', background: bg, border: 'none', color: '#fff', padding: '4px 0', borderRadius: 3, fontSize: 9, cursor: disabled ? 'not-allowed' : 'pointer', marginBottom: 3, letterSpacing: 1, fontFamily: 'inherit' };
 }
