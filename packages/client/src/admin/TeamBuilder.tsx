@@ -91,7 +91,17 @@ export function TeamBuilder({ onTeamSaved, initialTeam = [] }: Props) {
       {/* Slot editor */}
       {team[selectedSlot]?.speciesId && (
         <div style={{ background: '#111', border: '1px solid #333', borderRadius: 4, padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ color: '#aaa', fontSize: 11 }}>{currentSpecies?.displayName ?? team[selectedSlot]?.nickname ?? `#${team[selectedSlot]!.speciesId}`} — slot {selectedSlot + 1}</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ color: '#aaa', fontSize: 11 }}>{currentSpecies?.displayName ?? team[selectedSlot]?.nickname ?? `#${team[selectedSlot]!.speciesId}`} — slot {selectedSlot + 1}</div>
+            <img
+              src={currentSpecies
+                ? `https://play.pokemonshowdown.com/sprites/ani/${currentSpecies.name}.gif`
+                : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${team[selectedSlot]!.speciesId}.png`}
+              alt=""
+              style={{ imageRendering: 'pixelated', width: 80, height: 80 }}
+              loading="lazy"
+            />
+          </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <label style={lbl}>Name</label>
             <input
