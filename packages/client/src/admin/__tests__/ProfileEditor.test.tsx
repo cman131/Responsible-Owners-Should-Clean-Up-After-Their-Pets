@@ -4,6 +4,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('../../socket.js', () => ({ getSocket: vi.fn() }));
 vi.mock('uuid', () => ({ v4: vi.fn(() => 'generated-uuid') }));
+vi.mock('../PlayerProfileEditor.js', () => ({
+  PlayerProfileEditor: ({ profile, onBack }: any) => (
+    <div>
+      <span>player-profile-editor</span>
+      <button onClick={onBack}>player-back</button>
+    </div>
+  ),
+}));
 vi.mock('../TeamBuilder.js', () => ({
   TeamBuilder: ({ onTeamSaved, initialTeam }: any) => (
     <div>
@@ -97,17 +105,8 @@ describe('ProfileEditor — NPC', () => {
 });
 
 describe('ProfileEditor — Player', () => {
-  it('shows DISPLAY NAME label and emits registry:save-player on save', () => {
+  it('renders PlayerProfileEditor for player type', () => {
     render(<ProfileEditor type="player" profile={null} onBack={vi.fn()} />);
-    expect(screen.getByText(/display name/i)).toBeTruthy();
-    fireEvent.change(screen.getByPlaceholderText(/ash/i), { target: { value: 'Gary Oak' } });
-    fireEvent.click(screen.getByText('save-team'));
-    fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
-    expect(mockSocket.emit).toHaveBeenCalledWith('admin:action', expect.objectContaining({
-      type: 'registry:save-player',
-      data: expect.objectContaining({
-        profile: expect.objectContaining({ displayName: 'Gary Oak' }),
-      }),
-    }));
+    expect(screen.getByText('player-profile-editor')).toBeTruthy();
   });
 });
