@@ -24,6 +24,7 @@ export interface PlayerProfile {
   profileId: string;
   displayName: string;
   defaultTeam?: TeamTemplate;
+  bank?: PokemonSet[];
   createdAt: string;
 }
 
