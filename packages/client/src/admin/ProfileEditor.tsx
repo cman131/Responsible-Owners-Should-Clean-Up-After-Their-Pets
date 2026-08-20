@@ -23,7 +23,8 @@ export function ProfileEditor({ type, profile, onBack }: Props) {
   const [team, setTeam] = useState<PokemonSet[]>(existingTeam);
 
   const isNew = profile === null;
-  const isValid = name.trim().length > 0 && team.length > 0;
+  const teamIsValid = team.length > 0 && team.every((s) => s.moves.some(Boolean));
+  const isValid = name.trim().length > 0 && teamIsValid;
   const typeLabel = type === 'npc' ? 'NPC' : 'PLAYER';
   const nameLabel = type === 'npc' ? 'NAME' : 'DISPLAY NAME';
   const namePlaceholder = type === 'npc' ? 'e.g. Gym Leader Misty' : 'e.g. Ash Ketchum';
@@ -79,7 +80,7 @@ export function ProfileEditor({ type, profile, onBack }: Props) {
 
         {!isValid && (
           <div style={{ marginTop: 8, color: '#e74c3c', fontSize: 11 }}>
-            {name.trim().length === 0 ? 'Name is required.' : 'Add at least 1 Pokémon with all 4 moves filled.'}
+            {name.trim().length === 0 ? 'Name is required.' : 'Add at least 1 Pokémon with at least 1 move.'}
           </div>
         )}
       </div>
