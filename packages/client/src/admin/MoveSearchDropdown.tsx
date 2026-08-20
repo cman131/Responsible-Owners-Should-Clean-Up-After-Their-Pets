@@ -46,6 +46,7 @@ export function MoveSearchDropdown({ speciesId, value, selectedMoves, onChange }
     setAllMovesMode(false);
     allModeRef.current = false;
     setOpen(false);
+    onChange('');
     getSocket().emit('admin:action', { type: 'data:query', data: { resource: 'moves', speciesId } } as any);
   }, [speciesId]);
 

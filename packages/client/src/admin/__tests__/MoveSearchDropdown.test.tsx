@@ -141,12 +141,14 @@ describe('MoveSearchDropdown', () => {
   });
 
   it('re-fetches learnset when speciesId prop changes', () => {
-    const { rerender } = render(<MoveSearchDropdown {...defaultProps} />);
+    const onChange = vi.fn();
+    const { rerender } = render(<MoveSearchDropdown {...defaultProps} onChange={onChange} />);
     act(() => { dataResultsHandler?.({ resource: 'moves', results: [flamethrower] }); });
-    rerender(<MoveSearchDropdown {...defaultProps} speciesId={9} />);
+    rerender(<MoveSearchDropdown {...defaultProps} onChange={onChange} speciesId={9} />);
     expect(mockSocket.emit).toHaveBeenLastCalledWith(
       'admin:action',
       expect.objectContaining({ type: 'data:query', data: expect.objectContaining({ resource: 'moves', speciesId: 9 }) })
     );
+    expect(onChange).toHaveBeenCalledWith('');
   });
 });
