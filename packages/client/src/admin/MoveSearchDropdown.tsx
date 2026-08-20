@@ -21,16 +21,18 @@ export function MoveSearchDropdown({ speciesId, value, selectedMoves, onChange }
   const [learnsetCache, setLearnsetCache] = useState<Move[]>([]);
   const [selectedMove, setSelectedMove] = useState<Move | null>(null);
   const [open, setOpen] = useState(false);
-  const allModeRef = useRef(false);
-
-  useEffect(() => { allModeRef.current = allMovesMode; }, [allMovesMode]);
+  const pendingLearnsetFetch = useRef(false);
+  const isFirstMount = useRef(true);
 
   useEffect(() => {
     const socket = getSocket();
     const handler = (payload: any) => {
       if (payload.resource !== 'moves') return;
       const moves = payload.results as Move[];
-      if (!allModeRef.current) setLearnsetCache(moves);
+      if (pendingLearnsetFetch.current) {
+        setLearnsetCache(moves);
+        pendingLearnsetFetch.current = false;
+      }
       setResults(moves);
       setHighlighted(0);
     };
@@ -39,14 +41,17 @@ export function MoveSearchDropdown({ speciesId, value, selectedMoves, onChange }
   }, []);
 
   useEffect(() => {
+    if (!isFirstMount.current) {
+      onChange('');
+    }
+    isFirstMount.current = false;
     setQuery('');
     setResults([]);
     setLearnsetCache([]);
     setSelectedMove(null);
     setAllMovesMode(false);
-    allModeRef.current = false;
     setOpen(false);
-    onChange('');
+    pendingLearnsetFetch.current = true;
     getSocket().emit('admin:action', { type: 'data:query', data: { resource: 'moves', speciesId } } as any);
   }, [speciesId]);
 
@@ -59,12 +64,14 @@ export function MoveSearchDropdown({ speciesId, value, selectedMoves, onChange }
     if (allMovesMode) {
       if (q.length >= 2) {
         getSocket().emit('admin:action', { type: 'data:query', data: { resource: 'moves', query: q } } as any);
+        setOpen(true);
       } else {
         setResults([]);
+        setOpen(false);
       }
     } else {
       const lower = q.toLowerCase();
-      setResults(q ? learnsetCache.filter((m) => m.id.includes(lower) || m.name.toLowerCase().includes(lower)) : learnsetCache);
+      setResults(q ? learnsetCache.filter((m) => m.id.toLowerCase().includes(lower) || m.name.toLowerCase().includes(lower)) : learnsetCache);
       setOpen(true);
     }
   }
@@ -98,7 +105,6 @@ export function MoveSearchDropdown({ speciesId, value, selectedMoves, onChange }
 
   function toggleAllMovesMode(checked: boolean) {
     setAllMovesMode(checked);
-    allModeRef.current = checked;
     setQuery('');
     setResults(checked ? [] : learnsetCache);
     setOpen(!checked);

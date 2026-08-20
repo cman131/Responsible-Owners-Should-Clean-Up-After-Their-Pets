@@ -151,4 +151,19 @@ describe('MoveSearchDropdown', () => {
     );
     expect(onChange).toHaveBeenCalledWith('');
   });
+
+  it('shows results in all-moves mode after server responds', () => {
+    render(<MoveSearchDropdown {...defaultProps} />);
+    act(() => { dataResultsHandler?.({ resource: 'moves', results: [] }); });
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.change(screen.getByPlaceholderText(/search all moves/i), { target: { value: 'ice' } });
+    act(() => { dataResultsHandler?.({ resource: 'moves', results: [icebeam] }); });
+    expect(screen.getByText('Ice Beam')).toBeTruthy();
+  });
+
+  it('does NOT call onChange on initial mount', () => {
+    const onChange = vi.fn();
+    render(<MoveSearchDropdown {...defaultProps} onChange={onChange} />);
+    expect(onChange).not.toHaveBeenCalled();
+  });
 });
