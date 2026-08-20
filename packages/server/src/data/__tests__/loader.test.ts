@@ -38,4 +38,11 @@ describe('DataLoader', () => {
     const loader = new DataLoader();
     expect(loader.getTypeEffectiveness('Normal', 'Ghost')).toBe(0);
   });
+
+  it('getAllMoves returns all loaded moves including flamethrower', () => {
+    const loader = new DataLoader();
+    const moves = loader.getAllMoves();
+    expect(moves.length).toBeGreaterThan(0);
+    expect(moves.some((m) => m.id === 'flamethrower')).toBe(true);
+  });
 });

@@ -65,6 +65,10 @@ export class DataLoader {
     return Array.from(this.species.values());
   }
 
+  getAllMoves(): Move[] {
+    return Array.from(this.moves.values());
+  }
+
   getTypeEffectiveness(attackingType: PokemonType, defendingType: PokemonType): number {
     return this.typeChart[attackingType]?.[defendingType] ?? 1;
   }

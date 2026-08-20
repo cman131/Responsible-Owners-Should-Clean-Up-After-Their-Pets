@@ -1,6 +1,35 @@
 import { describe, it, expect } from 'vitest';
-import { pokemonMatchesQuery } from '../handlers/adminHandlers.js';
-import type { PokemonSpecies } from '@poke-fighter/shared';
+import { pokemonMatchesQuery, moveMatchesQuery } from '../handlers/adminHandlers.js';
+import type { PokemonSpecies, Move } from '@poke-fighter/shared';
+
+const makeMove = (overrides: Partial<Move> = {}): Move => ({
+  id: 'flamethrower',
+  name: 'Flamethrower',
+  type: 'Fire',
+  category: 'special',
+  basePower: 90,
+  accuracy: 100,
+  pp: 15,
+  priority: 0,
+  target: 'normal',
+  makesContact: false,
+  ...overrides,
+});
+
+describe('moveMatchesQuery', () => {
+  it('matches by move id (case-insensitive)', () => {
+    expect(moveMatchesQuery(makeMove({ id: 'flamethrower' }), 'flame')).toBe(true);
+    expect(moveMatchesQuery(makeMove({ id: 'flamethrower' }), 'FLAME')).toBe(true);
+  });
+
+  it('matches by move name', () => {
+    expect(moveMatchesQuery(makeMove({ name: 'Flamethrower' }), 'thrower')).toBe(true);
+  });
+
+  it('does not match an unrelated query', () => {
+    expect(moveMatchesQuery(makeMove({ id: 'flamethrower', name: 'Flamethrower' }), 'tackle')).toBe(false);
+  });
+});
 
 const makeSpecies = (overrides: Partial<PokemonSpecies>): PokemonSpecies => ({
   id: 1,

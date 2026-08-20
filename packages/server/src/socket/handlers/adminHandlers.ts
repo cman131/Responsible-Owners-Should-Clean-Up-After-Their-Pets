@@ -1,7 +1,7 @@
 import type { Socket, Server } from 'socket.io';
 import type {
   ServerToClientEvents, ClientToServerEvents, AdminActionPayload,
-  MoveAction, SwitchAction, BattleState, PokemonSpecies,
+  MoveAction, SwitchAction, BattleState, PokemonSpecies, Move,
 } from '@poke-fighter/shared';
 import type { BattleRoom } from '../BattleRoom.js';
 import type { RegistryStore } from '../../registry/RegistryStore.js';
@@ -9,6 +9,11 @@ import type { RegistryStore } from '../../registry/RegistryStore.js';
 export function pokemonMatchesQuery(s: PokemonSpecies, query: string): boolean {
   const q = query.toLowerCase();
   return s.name.toLowerCase().includes(q) || s.displayName.toLowerCase().includes(q) || String(s.id).includes(q);
+}
+
+export function moveMatchesQuery(m: Move, query: string): boolean {
+  const q = query.toLowerCase();
+  return m.id.toLowerCase().includes(q) || m.name.toLowerCase().includes(q);
 }
 
 export function registerAdminHandlers(
@@ -60,8 +65,15 @@ export function registerAdminHandlers(
               results = data.getAllSpecies().filter((s) => !query || pokemonMatchesQuery(s, query)).slice(0, 30);
               break;
             case 'moves': {
-              const species = data.getSpecies(Number(query));
-              results = (species?.learnset ?? []).map((id) => data.getMove(id)).filter(Boolean);
+              const { speciesId, query: moveQuery } = payload.data as { resource: 'moves'; speciesId?: number; query?: string };
+              if (speciesId !== undefined) {
+                const species = data.getSpecies(speciesId);
+                results = (species?.learnset ?? []).map((id) => data.getMove(id)).filter(Boolean);
+              } else if (moveQuery) {
+                results = data.getAllMoves().filter((m) => moveMatchesQuery(m, moveQuery)).slice(0, 30);
+              } else {
+                results = [];
+              }
               break;
             }
             default:
