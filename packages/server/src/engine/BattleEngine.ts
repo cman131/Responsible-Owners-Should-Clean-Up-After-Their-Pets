@@ -154,7 +154,7 @@ export class BattleEngine {
 
       const effectiveness = this.data.getCombinedEffectiveness(move.type, defTypes);
       if (effectiveness === 0) {
-        events.push({ type: 'move-used', data: { note: 'no-effect', targetSlotId } });
+        events.push({ type: 'move-used', data: { note: 'no-effect', targetSlotId, attackerName: attacker.nickname, moveName: move.name } });
         continue;
       }
 
