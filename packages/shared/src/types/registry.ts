@@ -2,7 +2,7 @@ import type { PokemonType } from './pokemon.js';
 
 export interface PokemonSet {
   speciesId: number;
-  nickname?: string;
+  nickname: string;
   level: number;
   ability: string;
   heldItem?: string;

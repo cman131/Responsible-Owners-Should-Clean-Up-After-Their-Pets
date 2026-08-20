@@ -27,7 +27,7 @@ export interface MoveSlot {
 export interface PartyMember {
   instanceId: string;       // unique per battle (uuid)
   speciesId: number;
-  nickname?: string;
+  nickname: string;
   level: number;
   currentHp: number;
   maxHp: number;
