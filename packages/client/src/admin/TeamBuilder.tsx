@@ -57,7 +57,9 @@ export function TeamBuilder({ onTeamSaved, initialTeam = [] }: Props) {
             onClick={() => { setSelectedSlot(i); if (!team[i]) { const t = [...team]; t[i] = {}; setTeam(t); } }}
             style={{ background: selectedSlot === i ? '#2980b9' : '#1a1a2e', border: `1px solid ${selectedSlot === i ? '#3498db' : '#333'}`, color: '#fff', padding: '4px 10px', borderRadius: 3, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11 }}
           >
-            {team[i]?.speciesId ? `#${team[i]!.speciesId}` : `Slot ${i + 1}`}
+            {team[i]?.speciesId
+                ? (slotSpecies[i]?.displayName ?? team[i]!.nickname ?? `#${team[i]!.speciesId}`)
+                : `Slot ${i + 1}`}
           </button>
         ))}
       </div>
@@ -89,7 +91,7 @@ export function TeamBuilder({ onTeamSaved, initialTeam = [] }: Props) {
       {/* Slot editor */}
       {team[selectedSlot]?.speciesId && (
         <div style={{ background: '#111', border: '1px solid #333', borderRadius: 4, padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ color: '#aaa', fontSize: 11 }}>Species #{team[selectedSlot]!.speciesId} — slot {selectedSlot + 1}</div>
+          <div style={{ color: '#aaa', fontSize: 11 }}>{currentSpecies?.displayName ?? team[selectedSlot]?.nickname ?? `#${team[selectedSlot]!.speciesId}`} — slot {selectedSlot + 1}</div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <label style={lbl}>Name</label>
             <input
