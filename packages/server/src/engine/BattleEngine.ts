@@ -129,7 +129,7 @@ export class BattleEngine {
     // Spend PP
     moveSlot.currentPp = Math.max(0, moveSlot.currentPp - 1);
 
-    events.push({ type: 'move-used', data: { attackerSlotId, moveId: move.id, moveName: move.name } });
+    events.push({ type: 'move-used', data: { attackerSlotId, attackerName: attacker.nickname, moveId: move.id, moveName: move.name } });
 
     if (move.category === 'status') {
       return { newState: s, events };

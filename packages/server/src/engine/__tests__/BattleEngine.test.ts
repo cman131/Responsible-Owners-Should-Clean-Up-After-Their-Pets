@@ -37,6 +37,20 @@ describe('BattleEngine.resolveTurn', () => {
     expect(moveEvents[0]!.data['attackerSlotId']).toBe('slot-a1'); // faster acts first
   });
 
+  it('includes attackerName in move-used event', () => {
+    const state = make1v1State();
+    const engine = new BattleEngine();
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const moveUsed = events.find(
+      (e) => e.type === 'move-used' && e.data['attackerSlotId'] === 'slot-a1'
+    );
+    expect(moveUsed).toBeDefined();
+    expect(moveUsed!.data['attackerName']).toBe('Charizard');
+  });
+
   it('detects win condition when all party faint', () => {
     const state = make1v1State();
     state.teams[1]!.slots[0]!.party[0]!.currentHp = 1;
