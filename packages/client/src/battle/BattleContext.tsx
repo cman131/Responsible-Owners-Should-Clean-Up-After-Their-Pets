@@ -90,7 +90,7 @@ export function BattleProvider({ mySlotId, children }: Props) {
 
 function eventToText(event: import('@poke-fighter/shared').TurnResolveEvent): string {
   switch (event.type) {
-    case 'move-used': return `${String(event.data['attackerSlotId'])} used ${String(event.data['moveName'])}!`;
+    case 'move-used': return `${String(event.data['attackerName'])} used ${String(event.data['moveName'])}!`;
     case 'damage-dealt': return `Dealt ${String(event.data['damage'])} damage to ${String(event.data['targetSlotId'])}.`;
     case 'faint': return `${String(event.data['slotId'])}'s Pokémon fainted!`;
     case 'heal': return `${String(event.data['slotId'])} restored HP.`;
