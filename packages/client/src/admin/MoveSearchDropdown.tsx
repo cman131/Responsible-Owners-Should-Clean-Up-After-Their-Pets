@@ -22,7 +22,7 @@ export function MoveSearchDropdown({ speciesId, value, selectedMoves, onChange }
   const [selectedMove, setSelectedMove] = useState<Move | null>(null);
   const [open, setOpen] = useState(false);
   const pendingLearnsetFetch = useRef(false);
-  const isFirstMount = useRef(true);
+  const prevSpeciesId = useRef<number | null>(null);
   const pendingAllMovesQuery = useRef(false);
 
   useEffect(() => {
@@ -47,10 +47,10 @@ export function MoveSearchDropdown({ speciesId, value, selectedMoves, onChange }
   }, []);
 
   useEffect(() => {
-    if (!isFirstMount.current) {
+    if (prevSpeciesId.current !== null && prevSpeciesId.current !== speciesId) {
       onChange('');
     }
-    isFirstMount.current = false;
+    prevSpeciesId.current = speciesId;
     setQuery('');
     setResults([]);
     setLearnsetCache([]);
