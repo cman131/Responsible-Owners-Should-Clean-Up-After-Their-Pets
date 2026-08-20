@@ -9,7 +9,7 @@ vi.mock('../TeamBuilder.js', () => ({
     <div>
       <span>team-builder-initial-{initialTeam?.length ?? 0}</span>
       <button onClick={() => onTeamSaved([
-        { speciesId: 25, level: 50, ability: 'Static', moves: ['thunderbolt', 'quickattack', 'irontail', 'thunder'], evs: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 }, ivs: { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 }, nature: 'timid' },
+        { speciesId: 25, nickname: 'Pikachu', level: 50, ability: 'Static', moves: ['thunderbolt', 'quickattack', 'irontail', 'thunder'], evs: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 }, ivs: { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 }, nature: 'timid' },
       ])}>save-team</button>
     </div>
   ),
@@ -28,13 +28,13 @@ beforeEach(() => {
 
 const existingNpc: NpcProfile = {
   profileId: 'npc-1', name: 'Gym Leader Misty',
-  team: { templateId: 't1', name: "Misty's Team", pokemon: [{ speciesId: 54, level: 50, ability: 'Damp', moves: ['surf', 'psychic', 'icebeam', 'encore'], evs: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 }, ivs: { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 }, nature: 'modest' }], createdAt: '2024-01-01' },
+  team: { templateId: 't1', name: "Misty's Team", pokemon: [{ speciesId: 54, nickname: 'Psyduck', level: 50, ability: 'Damp', moves: ['surf', 'psychic', 'icebeam', 'encore'], evs: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 }, ivs: { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 }, nature: 'modest' }], createdAt: '2024-01-01' },
   createdAt: '2024-01-01',
 };
 
 const existingPlayer: PlayerProfile = {
   profileId: 'player-1', displayName: 'Ash Ketchum',
-  defaultTeam: { templateId: 't2', name: "Ash's Team", pokemon: [{ speciesId: 25, level: 50, ability: 'Static', moves: ['thunderbolt', 'quickattack', 'irontail', 'thunder'], evs: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 }, ivs: { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 }, nature: 'timid' }], createdAt: '2024-01-01' },
+  defaultTeam: { templateId: 't2', name: "Ash's Team", pokemon: [{ speciesId: 25, nickname: 'Pikachu', level: 50, ability: 'Static', moves: ['thunderbolt', 'quickattack', 'irontail', 'thunder'], evs: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 }, ivs: { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 }, nature: 'timid' }], createdAt: '2024-01-01' },
   createdAt: '2024-01-01',
 };
 
