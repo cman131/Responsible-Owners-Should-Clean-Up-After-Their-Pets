@@ -30,7 +30,7 @@ export function SwitchPanel({ party, onSwitch, onCancel, label = 'CHOOSE POKÉMO
               opacity: mon.fainted ? 0.5 : 1,
             }}
           >
-            <span>Species #{mon.speciesId} L{mon.level}</span>
+            <span>{mon.nickname} L{mon.level}</span>
             <span style={{ color: mon.fainted ? '#e74c3c' : '#2ecc71', fontSize: 11 }}>
               {mon.fainted ? 'FAINTED' : `HP ${mon.currentHp}/${mon.maxHp}`}
             </span>
