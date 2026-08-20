@@ -98,7 +98,7 @@ export class BattleConfigurator {
     };
 
     // Only set optional fields if defined (exactOptionalPropertyTypes)
-    if (set.nickname !== undefined) member.nickname = set.nickname;
+    member.nickname = set.nickname;                          // required — always present
     if (set.heldItem !== undefined) member.heldItem = set.heldItem;
     if (set.teraType !== undefined) member.teraType = set.teraType;
 
