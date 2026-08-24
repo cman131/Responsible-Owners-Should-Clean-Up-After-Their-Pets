@@ -23,11 +23,12 @@ export function useBattle(): BattleContextValue {
 
 interface Props {
   mySlotId: string;
+  initialState?: BattleState | null;
   children: React.ReactNode;
 }
 
-export function BattleProvider({ mySlotId, children }: Props) {
-  const [state, setState] = useState<BattleState | null>(null);
+export function BattleProvider({ mySlotId, initialState, children }: Props) {
+  const [state, setState] = useState<BattleState | null>(initialState ?? null);
   const [actionRequest, setActionRequest] = useState<ActionRequestPayload | null>(null);
   const [switchRequest, setSwitchRequest] = useState<SwitchRequestPayload | null>(null);
   const [turnLog, setTurnLog] = useState<string[]>([]);

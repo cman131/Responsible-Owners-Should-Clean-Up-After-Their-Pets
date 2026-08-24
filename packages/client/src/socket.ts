@@ -20,6 +20,11 @@ export function connectAsAdmin(adminToken: string): void {
   s.connect();
 }
 
+export function connectAsPlayer(): void {
+  const s = getSocket();
+  if (!s.connected) s.connect();
+}
+
 export function disconnectSocket(): void {
   socket?.disconnect();
   socket = null;

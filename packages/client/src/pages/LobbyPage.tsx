@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getSocket } from '../socket.js';
+import { getSocket, connectAsPlayer } from '../socket.js';
 import type { LobbyErrorPayload, BattleJoinOption, BattleState } from '@poke-fighter/shared';
 
 type Phase = 'browse' | 'waiting';
@@ -28,6 +28,7 @@ export function LobbyPage() {
   }, [battles, selectedBattleId, selectedSlotId]);
 
   useEffect(() => {
+    connectAsPlayer();
     const socket = getSocket();
 
     socket.on('lobby:battles', (payload: { battles: BattleJoinOption[] }) => {
@@ -39,8 +40,8 @@ export function LobbyPage() {
       setPhase('browse');
     });
 
-    socket.on('state:sync', (_state: BattleState) => {
-      navigate('/battle');
+    socket.on('state:sync', (state: BattleState) => {
+      navigate('/battle', { state: { battleState: state } });
     });
 
     return () => {

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { BattleProvider, useBattle } from '../battle/BattleContext.js';
 import { BattleCanvas } from '../battle/BattleCanvas.js';
 import { MovePanel } from '../battle/overlays/MovePanel.js';
@@ -7,13 +8,16 @@ import { TurnLog } from '../battle/overlays/TurnLog.js';
 import { HpBar } from '../battle/overlays/HpBar.js';
 import { StatusBadge } from '../battle/overlays/StatusBadge.js';
 import { ExpBar } from '../battle/overlays/ExpBar.js';
+import type { BattleState } from '@poke-fighter/shared';
 
 // Temporary — in real app, slotId comes from lobby state
 const MY_SLOT_ID = sessionStorage.getItem('mySlotId') ?? 'slot-a1';
 
 export function BattlePage() {
+  const location = useLocation();
+  const initialState = (location.state as { battleState?: BattleState } | null)?.battleState ?? null;
   return (
-    <BattleProvider mySlotId={MY_SLOT_ID}>
+    <BattleProvider mySlotId={MY_SLOT_ID} initialState={initialState}>
       <BattleView />
     </BattleProvider>
   );

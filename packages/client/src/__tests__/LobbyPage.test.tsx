@@ -13,6 +13,7 @@ const mockSocket = {
 
 vi.mock('../socket.js', () => ({
   getSocket: vi.fn(() => mockSocket),
+  connectAsPlayer: vi.fn(),
 }));
 
 import { LobbyPage } from '../pages/LobbyPage.js';
