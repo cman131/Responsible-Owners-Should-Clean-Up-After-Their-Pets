@@ -20,7 +20,7 @@ export function AdminRouter() {
   if (activeBattle) {
     return <ControlPanel battleId={activeBattle} onBack={() => setActiveBattle(null)} />;
   }
-  if (mode === 'setup') return <SetupPanel onBack={() => setMode(null)} />;
+  if (mode === 'setup') return <SetupPanel onBack={() => setMode(null)} onWatch={handleWatch} />;
   if (mode === 'registry') return <RegistryPanel onBack={() => setMode(null)} />;
   if (mode === 'battles') return <BattlesPanel onBack={() => setMode(null)} onWatch={handleWatch} />;
   return (

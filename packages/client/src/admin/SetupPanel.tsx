@@ -5,18 +5,27 @@ import { TeamStructureStep } from './steps/TeamStructureStep.js';
 import { SlotAssignmentStep } from './steps/SlotAssignmentStep.js';
 import { TeamBuilderStep } from './steps/TeamBuilderStep.js';
 import { BattleSettingsStep } from './steps/BattleSettingsStep.js';
+import { BattleWaitingScreen } from './BattleWaitingScreen.js';
 
 type Step = 'structure' | 'assignment' | 'teams' | 'settings' | 'started';
 
-interface SetupPanelProps {
-  onBack: () => void;
+interface SlotConfig {
+  slotId: string;
+  displayName: string;
+  type: 'player' | 'npc';
 }
 
-export function SetupPanel({ onBack }: SetupPanelProps) {
+interface SetupPanelProps {
+  onBack: () => void;
+  onWatch: (battleId: string) => void;
+}
+
+export function SetupPanel({ onBack, onWatch }: SetupPanelProps) {
   const [step, setStep] = useState<Step>('structure');
   const [structure, setStructure] = useState({ teamASlots: 1, teamBSlots: 1 });
   const [slotAssignment, setSlotAssignment] = useState<{ teamA: any[]; teamB: any[] } | null>(null);
   const [slotTeams, setSlotTeams] = useState<any[]>([]);
+  const [battleId, setBattleId] = useState<string | null>(null);
 
   function handleStructureNext(config: { teamASlots: number; teamBSlots: number }) {
     setStructure(config);
@@ -35,7 +44,8 @@ export function SetupPanel({ onBack }: SetupPanelProps) {
 
   function handleStart({ label, timerSeconds }: { label: string; timerSeconds: number }) {
     const socket = getSocket();
-    const battleId = uuidv4();
+    const id = uuidv4();
+    setBattleId(id);
 
     function buildSlotsWithTeams(slots: any[]) {
       return slots.map((slot: any) => {
@@ -52,7 +62,7 @@ export function SetupPanel({ onBack }: SetupPanelProps) {
     socket.emit('admin:action', {
       type: 'start-battle',
       data: {
-        battleId,
+        battleId: id,
         label,
         turnTimerSeconds: timerSeconds,
         teams: [
@@ -64,13 +74,14 @@ export function SetupPanel({ onBack }: SetupPanelProps) {
     setStep('started');
   }
 
-  if (step === 'started') {
+  if (step === 'started' && battleId && slotAssignment) {
     return (
-      <div style={{ padding: 48, textAlign: 'center' }}>
-        <h2 style={{ color: '#27ae60', fontSize: 24 }}>Battle Started!</h2>
-        <p style={{ color: '#aaa', marginTop: 12 }}>Waiting for players to join the battle room...</p>
-        <button onClick={onBack} style={{ marginTop: 24, background: 'none', border: '1px solid #555', color: '#aaa', padding: '6px 16px', borderRadius: 3, cursor: 'pointer', fontFamily: 'inherit' }}>← HUB</button>
-      </div>
+      <BattleWaitingScreen
+        battleId={battleId}
+        slotAssignment={slotAssignment as { teamA: SlotConfig[]; teamB: SlotConfig[] }}
+        onBack={onBack}
+        onWatch={onWatch}
+      />
     );
   }
 

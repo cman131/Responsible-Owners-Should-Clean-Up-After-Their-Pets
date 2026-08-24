@@ -11,7 +11,7 @@ import { SetupPanel } from '../SetupPanel.js';
 describe('SetupPanel', () => {
   it('renders a back-to-hub button and calls onBack when clicked', () => {
     const onBack = vi.fn();
-    render(<SetupPanel onBack={onBack} />);
+    render(<SetupPanel onBack={onBack} onWatch={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: /hub/i }));
     expect(onBack).toHaveBeenCalled();
   });
