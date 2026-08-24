@@ -15,6 +15,19 @@ export function LobbyPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (selectedBattleId === null) return;
+    const battle = battles.find((b) => b.battleId === selectedBattleId);
+    if (!battle) {
+      setSelectedBattleId(null);
+      setSelectedSlotId(null);
+      return;
+    }
+    if (selectedSlotId !== null && !battle.slots.find((s) => s.slotId === selectedSlotId)) {
+      setSelectedSlotId(null);
+    }
+  }, [battles, selectedBattleId, selectedSlotId]);
+
+  useEffect(() => {
     const socket = getSocket();
 
     socket.on('lobby:battles', (payload: { battles: BattleJoinOption[] }) => {
