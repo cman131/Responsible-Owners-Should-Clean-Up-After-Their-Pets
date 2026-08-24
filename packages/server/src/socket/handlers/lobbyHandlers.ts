@@ -6,28 +6,48 @@ import type { BattleRoom } from '../BattleRoom.js';
 export function registerLobbyHandlers(
   socket: Socket<ClientToServerEvents, ServerToClientEvents>,
   lobby: LobbyManager,
-  getRoom: (battleId: string) => BattleRoom | undefined
+  getRoom: (battleId: string) => BattleRoom | undefined,
+  notifyAdmins: () => void,
+  notifyAdminsOfSlotStatus: (battleId: string) => void,
+  notifyPlayersOfBattles: () => void,
 ): void {
   socket.on('player:join', (payload: PlayerJoinPayload) => {
-    const result = lobby.registerPlayer(socket.id, payload.displayName);
+    const { battleId, slotId } = payload;
+
+    const room = getRoom(battleId);
+    if (!room) {
+      socket.emit('lobby:error', { code: 'BATTLE_NOT_FOUND', message: 'Battle not found or has ended.' });
+      return;
+    }
+
+    const state = room.getStateSnapshot();
+    const slot = state.teams.flatMap((t) => t.slots).find((s) => s.slotId === slotId);
+    if (!slot || slot.isNpc || slot.isSpectator) {
+      socket.emit('lobby:error', { code: 'BATTLE_NOT_FOUND', message: 'Slot not available.' });
+      return;
+    }
+
+    const existing = lobby.getBySlotId(slotId);
+    if (existing && existing.disconnectedAt === undefined) {
+      socket.emit('lobby:error', { code: 'SLOT_TAKEN', message: 'That slot is already taken.' });
+      return;
+    }
+
+    const result = lobby.registerPlayer(socket.id, slot.displayName);
     if (!result.ok) {
       socket.emit('lobby:error', { code: result.code, message: result.message });
       return;
     }
 
     const player = result.player;
-    console.log(`Player joined: ${player.displayName} (${socket.id})`);
+    player.battleSlotId = slotId;
+    player.battleId = battleId;
+    socket.data['battleId'] = battleId;
 
-    // If player is reconnecting into an active battle, rejoin the room and send snapshot
-    if (player.battleId) {
-      socket.join(`battle:${player.battleId}`);
-      const room = getRoom(player.battleId);
-      if (room) {
-        socket.emit('state:sync', room.getStateSnapshot());
-      }
-      return;
-    }
+    socket.join(`battle:${battleId}`);
+    socket.emit('state:sync', room.getStateSnapshot());
 
-    socket.join('lobby');
+    notifyAdminsOfSlotStatus(battleId);
+    notifyPlayersOfBattles();
   });
 }
