@@ -1,7 +1,7 @@
 import type { Server as HttpServer } from 'node:http';
 import { join } from 'node:path';
 import { Server } from 'socket.io';
-import type { ServerToClientEvents, ClientToServerEvents, BattleState, SlotState } from '@poke-fighter/shared';
+import type { ServerToClientEvents, ClientToServerEvents, BattleState, SlotState, BattleJoinOption } from '@poke-fighter/shared';
 import { LobbyManager } from './LobbyManager.js';
 import { BattleRoom } from './BattleRoom.js';
 import { registerLobbyHandlers } from './handlers/lobbyHandlers.js';
@@ -41,8 +41,17 @@ export class SocketServer {
           if (s.data['isAdmin']) s.emit('lobby:players', players);
         }
       };
-      registerLobbyHandlers(socket, this.lobby, (id) => this.rooms.get(id), notifyAdminsOfLobby);
+
+      registerLobbyHandlers(
+        socket,
+        this.lobby,
+        (id) => this.rooms.get(id),
+        notifyAdminsOfLobby,
+        this.notifyAdminsOfSlotStatus.bind(this),
+        this.notifyPlayersOfBattles.bind(this),
+      );
       registerBattleHandlers(socket, this.lobby, (id) => this.rooms.get(id));
+
       if (socket.data['isAdmin']) {
         registerAdminHandlers(socket, this.io, (id) => this.rooms.get(id), this.startBattle.bind(this), this.db, this.lobby);
         socket.emit('admin:authenticated');
@@ -54,16 +63,68 @@ export class SocketServer {
         socket.on('admin:action', () => {
           socket.emit('admin:error', { message: 'Unauthorized' });
         });
+        // Push current battle list immediately to this new non-admin connection
+        const battles = this.getBattleJoinOptions();
+        socket.emit('lobby:battles', { battles });
       }
 
       socket.on('disconnect', () => {
         const player = this.lobby.getBySocketId(socket.id);
         if (player) {
+          const { battleId } = player;
           console.log(`Disconnected: ${player.displayName}`);
           this.lobby.markDisconnected(socket.id);
+          if (battleId) {
+            this.notifyAdminsOfSlotStatus(battleId);
+          }
+          this.notifyPlayersOfBattles();
         }
       });
     });
+  }
+
+  private getBattleJoinOptions(): BattleJoinOption[] {
+    const options: BattleJoinOption[] = [];
+    for (const [battleId, room] of this.rooms) {
+      const state = room.getStateSnapshot();
+      const available = state.teams
+        .flatMap((t) => t.slots)
+        .filter((s) => !s.isNpc && !s.isSpectator && !this.lobby.getBySlotId(s.slotId));
+      if (available.length > 0) {
+        options.push({
+          battleId,
+          label: state.label,
+          slots: available.map((s) => ({ slotId: s.slotId, displayName: s.displayName })),
+        });
+      }
+    }
+    return options;
+  }
+
+  private notifyPlayersOfBattles(): void {
+    const battles = this.getBattleJoinOptions();
+    for (const s of this.io.sockets.sockets.values()) {
+      if (!s.data['isAdmin'] && !s.data['battleId']) {
+        s.emit('lobby:battles', { battles });
+      }
+    }
+  }
+
+  private notifyAdminsOfSlotStatus(battleId: string): void {
+    const room = this.rooms.get(battleId);
+    if (!room) return;
+    const state = room.getStateSnapshot();
+    const slots = state.teams
+      .flatMap((t) => t.slots)
+      .filter((s) => !s.isNpc && !s.isSpectator)
+      .map((s) => ({
+        slotId: s.slotId,
+        displayName: s.displayName,
+        joined: !!this.lobby.getBySlotId(s.slotId),
+      }));
+    for (const s of this.io.sockets.sockets.values()) {
+      if (s.data['isAdmin']) s.emit('lobby:slot-status', { battleId, slots });
+    }
   }
 
   private notifyAdminsOfBattles(): void {
@@ -128,6 +189,7 @@ export class SocketServer {
       this.db.battles.markEnded(initialState.battleId, winningTeamId);
       this.rooms.delete(initialState.battleId);
       this.notifyAdminsOfBattles();
+      this.notifyPlayersOfBattles();
     });
 
     room.onSwitchRequest((slots: SlotState[]) => {
