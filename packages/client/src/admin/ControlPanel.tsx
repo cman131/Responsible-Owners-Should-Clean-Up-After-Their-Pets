@@ -12,9 +12,9 @@ interface NpcSlotRequest {
   request: ActionRequestPayload;
 }
 
-interface Props { battleId: string }
+interface Props { battleId: string; onBack: () => void }
 
-function ControlPanelInner({ battleId }: Props) {
+function ControlPanelInner({ battleId, onBack }: Props) {
   const { state, turnLog } = useBattle();
   const [npcRequests, setNpcRequests] = useState<NpcSlotRequest[]>([]);
   const [paused, setPaused] = useState(false);
@@ -55,7 +55,10 @@ function ControlPanelInner({ battleId }: Props) {
   return (
     <div style={{ background: '#0d0d1a', minHeight: '100vh', display: 'flex', gap: 16, padding: 16 }}>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <div style={{ color: '#e74c3c', fontSize: 12, letterSpacing: 2 }}>ADMIN VIEW — {battleId}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <button onClick={onBack} style={{ background: 'none', border: '1px solid #555', color: '#aaa', padding: '4px 12px', borderRadius: 3, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11 }}>← BATTLES</button>
+          <div style={{ color: '#e74c3c', fontSize: 12, letterSpacing: 2 }}>ADMIN VIEW — {battleId}</div>
+        </div>
         <BattleCanvas
           state={state}
           mySlotId="__admin__"
@@ -80,10 +83,10 @@ function ControlPanelInner({ battleId }: Props) {
   );
 }
 
-export function ControlPanel({ battleId }: Props) {
+export function ControlPanel({ battleId, onBack }: Props) {
   return (
     <BattleProvider mySlotId="__admin__">
-      <ControlPanelInner battleId={battleId} />
+      <ControlPanelInner battleId={battleId} onBack={onBack} />
     </BattleProvider>
   );
 }
