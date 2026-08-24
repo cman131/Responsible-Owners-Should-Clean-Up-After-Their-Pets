@@ -108,6 +108,20 @@ describe('registerLobbyHandlers – player:join', () => {
     expect(socket.emit).toHaveBeenCalledWith('lobby:error', expect.objectContaining({ code: expect.any(String) }));
   });
 
+  it('emits lobby:error when slot is spectator', () => {
+    const spectatorRoom = makeRoom({ isSpectator: true });
+    registerLobbyHandlers(
+      socket as any,
+      lobby as any,
+      (id) => (id === 'battle-1' ? (spectatorRoom as any) : undefined),
+      notifyAdmins,
+      notifyAdminsOfSlotStatus,
+      notifyPlayersOfBattles,
+    );
+    socket.trigger('player:join', { battleId: 'battle-1', slotId: 'slot-a1' });
+    expect(socket.emit).toHaveBeenCalledWith('lobby:error', expect.objectContaining({ code: expect.any(String) }));
+  });
+
   it('emits SLOT_TAKEN when an active player holds the slot', () => {
     lobby.getBySlotId.mockReturnValue({ socketId: 'other-sock', displayName: 'Conor', disconnectedAt: undefined });
     socket.trigger('player:join', { battleId: 'battle-1', slotId: 'slot-a1' });

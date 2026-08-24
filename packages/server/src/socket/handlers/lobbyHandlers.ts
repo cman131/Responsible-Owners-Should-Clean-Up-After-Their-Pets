@@ -45,7 +45,7 @@ export function registerLobbyHandlers(
     socket.data['battleId'] = battleId;
 
     socket.join(`battle:${battleId}`);
-    socket.emit('state:sync', room.getStateSnapshot());
+    socket.emit('state:sync', state);
 
     notifyAdminsOfSlotStatus(battleId);
     notifyPlayersOfBattles();
