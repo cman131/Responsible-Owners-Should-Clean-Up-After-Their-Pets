@@ -4,7 +4,8 @@ import type {
   MoveAction, SwitchAction, BattleState, PokemonSpecies, Move,
 } from '@poke-fighter/shared';
 import type { BattleRoom } from '../BattleRoom.js';
-import type { RegistryStore } from '../../registry/RegistryStore.js';
+import type { LobbyManager } from '../LobbyManager.js';
+import type { AppDatabase } from '../../db/Database.js';
 
 export function pokemonMatchesQuery(s: PokemonSpecies, query: string): boolean {
   const q = query.toLowerCase();
@@ -21,7 +22,8 @@ export function registerAdminHandlers(
   io: Server<ClientToServerEvents, ServerToClientEvents>,
   getRoom: (battleId: string) => BattleRoom | undefined,
   startBattle: (config: BattleState) => BattleRoom,
-  registry: RegistryStore
+  db: AppDatabase,
+  lobby: LobbyManager
 ): void {
   socket.on('admin:action', async (payload: AdminActionPayload) => {
     switch (payload.type) {
@@ -51,7 +53,18 @@ export function registerAdminHandlers(
         const { BattleConfigurator } = await import('../../setup/BattleConfigurator.js');
         const configurator = new BattleConfigurator();
         const state = configurator.build({ battleId, label, turnTimerSeconds, teams });
+        db.battles.insert(state);
         startBattle(state);
+        break;
+      }
+      case 'battles:list': {
+        socket.emit('battles:data', { battles: db.battles.list() });
+        break;
+      }
+      case 'battles:connect': {
+        const { battleId } = payload.data as { battleId: string };
+        const state = db.battles.get(battleId);
+        if (state) socket.emit('state:sync', state);
         break;
       }
       case 'data:query': {
@@ -101,51 +114,55 @@ export function registerAdminHandlers(
         }
         break;
       }
+      case 'lobby:list': {
+        const players = lobby.getWaitingPlayers().map((p) => p.displayName);
+        socket.emit('lobby:players', players);
+        break;
+      }
       case 'force-switch':
-        // Deferred to later plans
         break;
       case 'registry:list': {
         const { resource } = payload.data as { resource: 'players' | 'npcs' | 'teams' };
-        const data = resource === 'players' ? registry.listPlayers()
-          : resource === 'npcs' ? registry.listNpcs()
-          : registry.listTeams();
+        const data = resource === 'players' ? db.players.list()
+          : resource === 'npcs' ? db.npcs.list()
+          : db.teams.list();
         socket.emit('registry:data', { resource, data });
         break;
       }
       case 'registry:save-player': {
         const { profile } = payload.data as { profile: import('@poke-fighter/shared').PlayerProfile };
-        registry.savePlayer(profile);
-        socket.emit('registry:data', { resource: 'players', data: registry.listPlayers() });
+        db.players.save(profile);
+        socket.emit('registry:data', { resource: 'players', data: db.players.list() });
         break;
       }
       case 'registry:delete-player': {
         const { profileId } = payload.data as { profileId: string };
-        registry.deletePlayer(profileId);
-        socket.emit('registry:data', { resource: 'players', data: registry.listPlayers() });
+        db.players.delete(profileId);
+        socket.emit('registry:data', { resource: 'players', data: db.players.list() });
         break;
       }
       case 'registry:save-npc': {
         const { profile } = payload.data as { profile: import('@poke-fighter/shared').NpcProfile };
-        registry.saveNpc(profile);
-        socket.emit('registry:data', { resource: 'npcs', data: registry.listNpcs() });
+        db.npcs.save(profile);
+        socket.emit('registry:data', { resource: 'npcs', data: db.npcs.list() });
         break;
       }
       case 'registry:delete-npc': {
         const { profileId } = payload.data as { profileId: string };
-        registry.deleteNpc(profileId);
-        socket.emit('registry:data', { resource: 'npcs', data: registry.listNpcs() });
+        db.npcs.delete(profileId);
+        socket.emit('registry:data', { resource: 'npcs', data: db.npcs.list() });
         break;
       }
       case 'registry:save-team': {
         const { template } = payload.data as { template: import('@poke-fighter/shared').TeamTemplate };
-        registry.saveTeam(template);
-        socket.emit('registry:data', { resource: 'teams', data: registry.listTeams() });
+        db.teams.save(template);
+        socket.emit('registry:data', { resource: 'teams', data: db.teams.list() });
         break;
       }
       case 'registry:delete-team': {
         const { templateId } = payload.data as { templateId: string };
-        registry.deleteTeam(templateId);
-        socket.emit('registry:data', { resource: 'teams', data: registry.listTeams() });
+        db.teams.delete(templateId);
+        socket.emit('registry:data', { resource: 'teams', data: db.teams.list() });
         break;
       }
     }

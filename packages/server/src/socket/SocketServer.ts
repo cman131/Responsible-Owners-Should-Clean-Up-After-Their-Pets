@@ -7,7 +7,7 @@ import { BattleRoom } from './BattleRoom.js';
 import { registerLobbyHandlers } from './handlers/lobbyHandlers.js';
 import { registerBattleHandlers } from './handlers/battleHandlers.js';
 import { registerAdminHandlers } from './handlers/adminHandlers.js';
-import { RegistryStore } from '../registry/RegistryStore.js';
+import { AppDatabase } from '../db/Database.js';
 
 interface SocketServerOptions { adminToken: string }
 
@@ -15,14 +15,14 @@ export class SocketServer {
   private readonly io: Server<ClientToServerEvents, ServerToClientEvents>;
   private readonly lobby = new LobbyManager();
   private readonly rooms = new Map<string, BattleRoom>();
-  private readonly registry: RegistryStore;
+  private readonly db: AppDatabase;
 
   constructor(httpServer: HttpServer, { adminToken }: SocketServerOptions) {
     this.io = new Server(httpServer, {
       cors: { origin: '*' },
     });
 
-    this.registry = new RegistryStore(join(process.cwd(), 'data/registry'));
+    this.db = new AppDatabase(join(process.cwd(), 'data/poke-fighter.db'));
 
     this.io.use((socket, next) => {
       const token = socket.handshake.auth['token'] as string | undefined;
@@ -35,10 +35,25 @@ export class SocketServer {
     this.io.on('connection', (socket) => {
       console.log(`Connected: ${socket.id} (admin=${socket.data['isAdmin'] ?? false})`);
 
-      registerLobbyHandlers(socket, this.lobby, (id) => this.rooms.get(id));
+      const notifyAdminsOfLobby = () => {
+        const players = this.lobby.getWaitingPlayers().map((p) => p.displayName);
+        for (const s of this.io.sockets.sockets.values()) {
+          if (s.data['isAdmin']) s.emit('lobby:players', players);
+        }
+      };
+      registerLobbyHandlers(socket, this.lobby, (id) => this.rooms.get(id), notifyAdminsOfLobby);
       registerBattleHandlers(socket, this.lobby, (id) => this.rooms.get(id));
       if (socket.data['isAdmin']) {
-        registerAdminHandlers(socket, this.io, (id) => this.rooms.get(id), this.startBattle.bind(this), this.registry);
+        registerAdminHandlers(socket, this.io, (id) => this.rooms.get(id), this.startBattle.bind(this), this.db, this.lobby);
+        socket.emit('admin:authenticated');
+      } else {
+        const providedToken = socket.handshake.auth['token'] as string | undefined;
+        if (providedToken) {
+          socket.emit('admin:error', { message: 'Invalid admin token' });
+        }
+        socket.on('admin:action', () => {
+          socket.emit('admin:error', { message: 'Unauthorized' });
+        });
       }
 
       socket.on('disconnect', () => {
@@ -51,25 +66,40 @@ export class SocketServer {
     });
   }
 
+  private notifyAdminsOfBattles(): void {
+    const summaries = this.db.battles.list();
+    for (const s of this.io.sockets.sockets.values()) {
+      if (s.data['isAdmin']) s.emit('battles:data', { battles: summaries });
+    }
+  }
+
   startBattle(initialState: BattleState): BattleRoom {
     const room = new BattleRoom({ initialState: structuredClone(initialState), timerSeconds: initialState.turnTimerSeconds });
     this.rooms.set(initialState.battleId, room);
 
-    // Wire participants: join their sockets to the battle room and set battleId
+    for (const team of initialState.teams) {
+      for (const slot of team.slots) {
+        if (slot.isNpc || slot.isSpectator) continue;
+        const player = this.lobby.getByName(slot.displayName);
+        if (player) {
+          player.battleSlotId = slot.slotId;
+          player.battleId = initialState.battleId;
+        }
+      }
+    }
+
     for (const team of initialState.teams) {
       for (const slot of team.slots) {
         if (slot.isSpectator) continue;
-        // Find player assigned to this slot
         const player = this.lobby.getBySlotId(slot.slotId);
         if (!player) continue;
-        player.battleId = initialState.battleId;
         const socket = this.io.sockets.sockets.get(player.socketId);
         socket?.join(`battle:${initialState.battleId}`);
       }
     }
 
-    // Broadcast start AFTER sockets are in the room
     this.io.to(`battle:${initialState.battleId}`).emit('battle:start', { state: initialState });
+    this.notifyAdminsOfBattles();
 
     room.onTurnResolved((events, newState) => {
       this.io.to(`battle:${initialState.battleId}`).emit('turn:resolve', {
@@ -77,6 +107,8 @@ export class SocketServer {
         events,
         state: newState,
       });
+      this.db.battles.updateState(initialState.battleId, newState);
+      this.notifyAdminsOfBattles();
     });
 
     room.onExpAward((awards) => {
@@ -93,7 +125,9 @@ export class SocketServer {
 
     room.onBattleEnd((winningTeamId, finalState) => {
       this.io.to(`battle:${initialState.battleId}`).emit('battle:end', { winningTeamId, state: finalState });
+      this.db.battles.markEnded(initialState.battleId, winningTeamId);
       this.rooms.delete(initialState.battleId);
+      this.notifyAdminsOfBattles();
     });
 
     room.onSwitchRequest((slots: SlotState[]) => {
