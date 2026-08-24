@@ -36,6 +36,9 @@ export interface AdminActionPayload {
     | 'force-faint'    // force a pokemon to faint
     | 'forfeit'        // end battle, declare other team winner
     | 'force-switch'   // force a pokemon switch
+    | 'lobby:list'
+    | 'battles:list'
+    | 'battles:connect'
     | 'registry:list'
     | 'registry:save-player'
     | 'registry:delete-player'
@@ -117,6 +120,19 @@ export interface LobbyErrorPayload {
   message: string;
 }
 
+export interface BattleSummary {
+  battleId: string;
+  label: string;
+  status: 'active' | 'ended';
+  winningTeamId: string | null;
+  startedAt: number;
+  endedAt: number | null;
+  turnNumber: number;
+  teams: Array<{
+    slots: Array<{ displayName: string; isNpc: boolean }>;
+  }>;
+}
+
 // ── Event map (used to type Socket.io) ───────────────────────────────────────
 
 export interface ServerToClientEvents {
@@ -132,6 +148,10 @@ export interface ServerToClientEvents {
   'state:sync': (state: BattleState) => void;
   'registry:data': (payload: { resource: string; data: unknown[] }) => void;
   'data:results': (payload: { resource: string; results: unknown[] }) => void;
+  'lobby:players': (players: string[]) => void;
+  'battles:data': (payload: { battles: BattleSummary[] }) => void;
+  'admin:authenticated': () => void;
+  'admin:error': (payload: { message: string }) => void;
   'npc:action-request': (payload: {
     battleId: string;
     slots: Array<{ slotId: string; displayName: string; request: ActionRequestPayload }>;
