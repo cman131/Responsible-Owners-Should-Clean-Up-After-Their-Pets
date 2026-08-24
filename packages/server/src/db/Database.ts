@@ -182,11 +182,7 @@ export class AppDatabase {
 
   constructor(dbPath: string) {
     this.conn = new Database(dbPath);
-    try {
-      this.conn.pragma('journal_mode = WAL');
-    } catch {
-      // WAL mode not supported for :memory: databases — ignore
-    }
+    this.conn.pragma('journal_mode = WAL');
     this.conn.exec(`
       CREATE TABLE IF NOT EXISTS players (
         profileId    TEXT PRIMARY KEY,
