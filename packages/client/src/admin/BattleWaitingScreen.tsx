@@ -47,7 +47,7 @@ export function BattleWaitingScreen({ battleId, slotAssignment, onBack, onWatch 
         <div key={slot.slotId} style={styles.slotRow}>
           <div style={{ ...styles.dot, background: '#555' }} />
           <div style={styles.slotName}>{slot.displayName}</div>
-          <div style={styles.npcLabel}>🤖 Bot</div>
+          <div style={styles.npcLabel}>🤖 NPC</div>
         </div>
       );
     }
@@ -84,7 +84,7 @@ export function BattleWaitingScreen({ battleId, slotAssignment, onBack, onWatch 
       </div>
 
       <div style={styles.body}>
-        <div style={styles.subtitle}>Players joining the lobby...</div>
+        <div style={styles.subtitle}>Waiting for players to connect...</div>
         {renderTeam('Team A', slotAssignment.teamA)}
         <div style={styles.divider} />
         {renderTeam('Team B', slotAssignment.teamB)}

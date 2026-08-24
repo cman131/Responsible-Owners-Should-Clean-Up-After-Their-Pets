@@ -19,7 +19,7 @@ import { BattleWaitingScreen } from '../BattleWaitingScreen.js';
 
 const slotAssignment = {
   teamA: [{ slotId: 'slot-a1', displayName: 'Conor', type: 'player' as const }],
-  teamB: [{ slotId: 'slot-b1', displayName: 'Ash NPC', type: 'npc' as const }],
+  teamB: [{ slotId: 'slot-b1', displayName: 'Ash Ketchum', type: 'npc' as const }],
 };
 
 describe('BattleWaitingScreen', () => {
@@ -40,7 +40,7 @@ describe('BattleWaitingScreen', () => {
       />
     );
     expect(screen.getByText('Conor')).toBeTruthy();
-    expect(screen.getByText('Ash NPC')).toBeTruthy();
+    expect(screen.getByText('Ash Ketchum')).toBeTruthy();
   });
 
   it('requests slot status on mount', () => {
@@ -67,7 +67,7 @@ describe('BattleWaitingScreen', () => {
         onWatch={vi.fn()}
       />
     );
-    expect(screen.getByText(/waiting/i)).toBeTruthy();
+    expect(screen.getByText(/waiting for players to connect/i)).toBeTruthy();
   });
 
   it('shows Joined indicator after lobby:slot-status event marks slot joined', () => {
