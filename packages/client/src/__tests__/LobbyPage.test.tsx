@@ -1,34 +1,131 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent, act } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
-import { LobbyPage } from '../pages/LobbyPage.js';
 
-// Mock socket module
+let socketHandlers: Record<string, (payload: unknown) => void> = {};
+const mockSocket = {
+  emit: vi.fn(),
+  on: vi.fn((event: string, handler: (payload: unknown) => void) => {
+    socketHandlers[event] = handler;
+  }),
+  off: vi.fn(),
+};
+
 vi.mock('../socket.js', () => ({
-  connectAsPlayer: vi.fn(),
-  getSocket: vi.fn(() => ({
-    on: vi.fn(),
-    off: vi.fn(),
-  })),
+  getSocket: vi.fn(() => mockSocket),
 }));
 
+import { LobbyPage } from '../pages/LobbyPage.js';
+
+const mockBattles = [
+  {
+    battleId: 'battle-1',
+    label: 'Friday Night Brawl',
+    slots: [
+      { slotId: 'slot-a1', displayName: 'Conor' },
+      { slotId: 'slot-b1', displayName: 'Kyle' },
+    ],
+  },
+];
+
 describe('LobbyPage', () => {
-  it('renders the login form', () => {
-    render(<MemoryRouter><LobbyPage /></MemoryRouter>);
-    expect(screen.getByPlaceholderText(/enter your name/i)).toBeTruthy();
-    expect(screen.getByRole('button', { name: /join/i })).toBeTruthy();
+  beforeEach(() => {
+    socketHandlers = {};
+    mockSocket.emit.mockClear();
+    mockSocket.on.mockClear();
+    mockSocket.off.mockClear();
   });
 
-  it('disables submit for empty name', () => {
+  it('shows empty state when no battles are available', () => {
     render(<MemoryRouter><LobbyPage /></MemoryRouter>);
-    const button = screen.getByRole('button', { name: /join/i }) as HTMLButtonElement;
-    expect(button.disabled).toBe(true);
+    act(() => {
+      socketHandlers['lobby:battles']?.({ battles: [] });
+    });
+    expect(screen.getByText(/no active battles/i)).toBeTruthy();
   });
 
-  it('enables submit when name is typed', async () => {
+  it('renders a battle card for each available battle', () => {
     render(<MemoryRouter><LobbyPage /></MemoryRouter>);
-    fireEvent.change(screen.getByPlaceholderText(/enter your name/i), { target: { value: 'Ash' } });
-    const button = screen.getByRole('button', { name: /join/i }) as HTMLButtonElement;
-    expect(button.disabled).toBe(false);
+    act(() => {
+      socketHandlers['lobby:battles']?.({ battles: mockBattles });
+    });
+    expect(screen.getByText('Friday Night Brawl')).toBeTruthy();
+  });
+
+  it('shows slot count on battle card', () => {
+    render(<MemoryRouter><LobbyPage /></MemoryRouter>);
+    act(() => {
+      socketHandlers['lobby:battles']?.({ battles: mockBattles });
+    });
+    expect(screen.getByText(/2 slots/i)).toBeTruthy();
+  });
+
+  it('shows slot dropdown after selecting a battle', () => {
+    render(<MemoryRouter><LobbyPage /></MemoryRouter>);
+    act(() => {
+      socketHandlers['lobby:battles']?.({ battles: mockBattles });
+    });
+    fireEvent.click(screen.getByText('Friday Night Brawl'));
+    expect(screen.getByRole('combobox')).toBeTruthy();
+  });
+
+  it('JOIN BATTLE button is disabled until both battle and slot are selected', () => {
+    render(<MemoryRouter><LobbyPage /></MemoryRouter>);
+    act(() => {
+      socketHandlers['lobby:battles']?.({ battles: mockBattles });
+    });
+    const btn = screen.getByRole('button', { name: /join battle/i }) as HTMLButtonElement;
+    expect(btn.disabled).toBe(true);
+  });
+
+  it('emits player:join with battleId and slotId on submit', () => {
+    render(<MemoryRouter><LobbyPage /></MemoryRouter>);
+    act(() => {
+      socketHandlers['lobby:battles']?.({ battles: mockBattles });
+    });
+    fireEvent.click(screen.getByText('Friday Night Brawl'));
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'slot-a1' } });
+    fireEvent.click(screen.getByRole('button', { name: /join battle/i }));
+    expect(mockSocket.emit).toHaveBeenCalledWith('player:join', {
+      battleId: 'battle-1',
+      slotId: 'slot-a1',
+    });
+  });
+
+  it('shows waiting screen after joining', () => {
+    render(<MemoryRouter><LobbyPage /></MemoryRouter>);
+    act(() => {
+      socketHandlers['lobby:battles']?.({ battles: mockBattles });
+    });
+    fireEvent.click(screen.getByText('Friday Night Brawl'));
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'slot-a1' } });
+    fireEvent.click(screen.getByRole('button', { name: /join battle/i }));
+    expect(screen.getByText(/waiting/i)).toBeTruthy();
+  });
+
+  it('shows display name in waiting screen derived from selected slot', () => {
+    render(<MemoryRouter><LobbyPage /></MemoryRouter>);
+    act(() => {
+      socketHandlers['lobby:battles']?.({ battles: mockBattles });
+    });
+    fireEvent.click(screen.getByText('Friday Night Brawl'));
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'slot-a1' } });
+    fireEvent.click(screen.getByRole('button', { name: /join battle/i }));
+    expect(screen.getByText(/conor/i)).toBeTruthy();
+  });
+
+  it('shows error and stays in browse phase on lobby:error', () => {
+    render(<MemoryRouter><LobbyPage /></MemoryRouter>);
+    act(() => {
+      socketHandlers['lobby:battles']?.({ battles: mockBattles });
+    });
+    fireEvent.click(screen.getByText('Friday Night Brawl'));
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'slot-a1' } });
+    fireEvent.click(screen.getByRole('button', { name: /join battle/i }));
+    act(() => {
+      socketHandlers['lobby:error']?.({ code: 'SLOT_TAKEN', message: 'That slot is already taken.' });
+    });
+    expect(screen.getByText(/already taken/i)).toBeTruthy();
+    expect(screen.queryByText(/waiting for the battle/i)).toBeFalsy();
   });
 });

@@ -1,39 +1,53 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { connectAsPlayer, getSocket } from '../socket.js';
-import type { LobbyErrorPayload } from '@poke-fighter/shared';
+import { getSocket } from '../socket.js';
+import type { LobbyErrorPayload, BattleJoinOption, BattleState } from '@poke-fighter/shared';
 
-type Phase = 'login' | 'waiting';
+type Phase = 'browse' | 'waiting';
 
 export function LobbyPage() {
-  const [name, setName] = useState('');
-  const [phase, setPhase] = useState<Phase>('login');
+  const [phase, setPhase] = useState<Phase>('browse');
+  const [battles, setBattles] = useState<BattleJoinOption[]>([]);
+  const [selectedBattleId, setSelectedBattleId] = useState<string | null>(null);
+  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [joinedDisplayName, setJoinedDisplayName] = useState<string>('');
   const navigate = useNavigate();
 
   useEffect(() => {
     const socket = getSocket();
 
-    socket.on('lobby:error', (payload: LobbyErrorPayload) => {
-      setError(payload.message);
-      setPhase('login');
+    socket.on('lobby:battles', (payload: { battles: BattleJoinOption[] }) => {
+      setBattles(payload.battles);
     });
 
-    socket.on('battle:start', () => {
+    socket.on('lobby:error', (payload: LobbyErrorPayload) => {
+      setError(payload.message);
+      setPhase('browse');
+    });
+
+    socket.on('state:sync', (_state: BattleState) => {
       navigate('/battle');
     });
 
     return () => {
+      socket.off('lobby:battles');
       socket.off('lobby:error');
-      socket.off('battle:start');
+      socket.off('state:sync');
     };
   }, [navigate]);
 
-  function handleJoin(e: React.FormEvent) {
-    e.preventDefault();
-    if (!name.trim()) return;
+  function handleJoin() {
+    if (!selectedBattleId || !selectedSlotId) return;
+
+    const battle = battles.find((b) => b.battleId === selectedBattleId);
+    const slot = battle?.slots.find((s) => s.slotId === selectedSlotId);
+    if (!slot) return;
+
     setError(null);
-    connectAsPlayer(name.trim());
+    setJoinedDisplayName(slot.displayName);
+    sessionStorage.setItem('mySlotId', selectedSlotId);
+    getSocket().emit('player:join', { battleId: selectedBattleId, slotId: selectedSlotId });
     setPhase('waiting');
   }
 
@@ -42,36 +56,68 @@ export function LobbyPage() {
       <div style={styles.container}>
         <h1 style={styles.title}>POKE FIGHTER</h1>
         <div style={styles.box}>
-          <p style={styles.waiting}>Welcome, <strong>{name}</strong>!</p>
-          <p style={styles.subtitle}>Waiting for the admin to set up a battle...</p>
+          <p style={styles.waiting}>Welcome, <strong>{joinedDisplayName}</strong>!</p>
+          <p style={styles.subtitle}>Waiting for the battle to begin...</p>
           <div style={styles.spinner}>■ ■ ■</div>
         </div>
       </div>
     );
   }
 
+  const selectedBattle = battles.find((b) => b.battleId === selectedBattleId) ?? null;
+  const canJoin = selectedBattleId !== null && selectedSlotId !== null;
+
   return (
     <div style={styles.container}>
       <h1 style={styles.title}>POKE FIGHTER</h1>
-      <form onSubmit={handleJoin} style={styles.box}>
-        <label style={styles.label}>Enter your trainer name</label>
-        <input
-          style={styles.input}
-          placeholder="Enter your name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          maxLength={20}
-          autoFocus
-        />
+      <div style={styles.box}>
+        <div style={styles.sectionLabel}>Select Battle</div>
+
+        {battles.length === 0 ? (
+          <p style={styles.emptyText}>No active battles yet. Check with your admin.</p>
+        ) : (
+          battles.map((b) => (
+            <div
+              key={b.battleId}
+              onClick={() => { setSelectedBattleId(b.battleId); setSelectedSlotId(null); }}
+              style={{
+                ...styles.battleCard,
+                borderColor: selectedBattleId === b.battleId ? '#27ae60' : '#333',
+                background: selectedBattleId === b.battleId ? '#0d1a12' : '#111',
+              }}
+            >
+              <div style={styles.battleLabel}>{b.label}</div>
+              <div style={styles.slotCount}>{b.slots.length} slot{b.slots.length !== 1 ? 's' : ''} available</div>
+            </div>
+          ))
+        )}
+
+        {selectedBattle && (
+          <div style={styles.slotSection}>
+            <div style={styles.sectionLabel}>You are...</div>
+            <select
+              style={styles.select}
+              value={selectedSlotId ?? ''}
+              onChange={(e) => setSelectedSlotId(e.target.value || null)}
+            >
+              <option value="">— pick your slot —</option>
+              {selectedBattle.slots.map((s) => (
+                <option key={s.slotId} value={s.slotId}>{s.displayName}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {error && <p style={styles.error}>{error}</p>}
+
         <button
-          type="submit"
-          style={styles.button}
-          disabled={!name.trim()}
+          style={{ ...styles.button, opacity: canJoin ? 1 : 0.5 }}
+          disabled={!canJoin}
+          onClick={handleJoin}
         >
           JOIN BATTLE
         </button>
-      </form>
+      </div>
     </div>
   );
 }
@@ -79,12 +125,17 @@ export function LobbyPage() {
 const styles = {
   container: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', minHeight: '100vh', gap: 24 },
   title: { fontSize: 48, letterSpacing: 8, color: '#f0c040' },
-  box: { background: '#0d0d1a', border: '2px solid #3498db', borderRadius: 8, padding: 32, display: 'flex', flexDirection: 'column' as const, gap: 16, minWidth: 320 },
-  label: { color: '#aaa', fontSize: 12, letterSpacing: 2, textTransform: 'uppercase' as const },
-  input: { background: '#1a1a2e', border: '1px solid #3498db', color: '#fff', padding: '8px 12px', fontSize: 16, borderRadius: 4, fontFamily: 'inherit' },
-  button: { background: '#2980b9', color: '#fff', border: 'none', padding: '10px 20px', fontSize: 14, letterSpacing: 2, cursor: 'pointer', borderRadius: 4, fontFamily: 'inherit' },
+  box: { background: '#0d0d1a', border: '2px solid #3498db', borderRadius: 8, padding: 32, display: 'flex', flexDirection: 'column' as const, gap: 14, minWidth: 320, maxWidth: 400 },
+  sectionLabel: { color: '#aaa', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' as const },
+  emptyText: { color: '#555', fontSize: 13 },
+  battleCard: { border: '2px solid #333', borderRadius: 6, padding: '12px 14px', cursor: 'pointer' },
+  battleLabel: { color: '#fff', fontSize: 14, fontWeight: 'bold' as const },
+  slotCount: { color: '#aaa', fontSize: 11, marginTop: 3 },
+  slotSection: { display: 'flex', flexDirection: 'column' as const, gap: 10, borderTop: '1px solid #222', paddingTop: 14 },
+  select: { width: '100%', padding: 8, background: '#1a1a2e', color: '#fff', border: '1px solid #3498db', borderRadius: 4, fontFamily: 'inherit' },
   error: { color: '#e74c3c', fontSize: 12 },
+  button: { background: '#2980b9', color: '#fff', border: 'none', padding: '10px 20px', fontSize: 14, letterSpacing: 2, cursor: 'pointer', borderRadius: 4, fontFamily: 'inherit' },
   waiting: { color: '#fff', fontSize: 18 },
   subtitle: { color: '#aaa', fontSize: 14 },
-  spinner: { color: '#3498db', fontSize: 24, textAlign: 'center' as const, animation: 'pulse 1s infinite' },
+  spinner: { color: '#3498db', fontSize: 24, textAlign: 'center' as const },
 };
