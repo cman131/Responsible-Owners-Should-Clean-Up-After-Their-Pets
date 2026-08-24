@@ -1,28 +1,33 @@
-// packages/client/src/admin/AdminRouter.tsx
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { getSocket } from '../socket.js';
 import { HubPanel } from './HubPanel.js';
 import { SetupPanel } from './SetupPanel.js';
 import { RegistryPanel } from './RegistryPanel.js';
 import { ControlPanel } from './ControlPanel.js';
+import { BattlesPanel } from './BattlesPanel.js';
 
-type Mode = 'setup' | 'registry' | null;
+type Mode = 'setup' | 'registry' | 'battles' | null;
 
 export function AdminRouter() {
   const [mode, setMode] = useState<Mode>(null);
   const [activeBattle, setActiveBattle] = useState<string | null>(null);
 
-  useEffect(() => {
-    const socket = getSocket();
-    const onBattleStart = (payload: { state: { battleId: string } }) => {
-      setActiveBattle(payload.state.battleId);
-    };
-    socket.on('battle:start', onBattleStart);
-    return () => { socket.off('battle:start', onBattleStart); };
-  }, []);
+  function handleWatch(battleId: string) {
+    getSocket().emit('admin:action', { type: 'battles:connect', data: { battleId } } as any);
+    setActiveBattle(battleId);
+  }
 
-  if (activeBattle) return <ControlPanel battleId={activeBattle} />;
+  if (activeBattle) {
+    return <ControlPanel battleId={activeBattle} onBack={() => setActiveBattle(null)} />;
+  }
   if (mode === 'setup') return <SetupPanel onBack={() => setMode(null)} />;
   if (mode === 'registry') return <RegistryPanel onBack={() => setMode(null)} />;
-  return <HubPanel onSetup={() => setMode('setup')} onRegistry={() => setMode('registry')} />;
+  if (mode === 'battles') return <BattlesPanel onBack={() => setMode(null)} onWatch={handleWatch} />;
+  return (
+    <HubPanel
+      onSetup={() => setMode('setup')}
+      onRegistry={() => setMode('registry')}
+      onBattles={() => setMode('battles')}
+    />
+  );
 }

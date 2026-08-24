@@ -1,10 +1,10 @@
-// packages/client/src/admin/HubPanel.tsx
 interface HubPanelProps {
   onSetup: () => void;
+  onBattles: () => void;
   onRegistry: () => void;
 }
 
-export function HubPanel({ onSetup, onRegistry }: HubPanelProps) {
+export function HubPanel({ onSetup, onBattles, onRegistry }: HubPanelProps) {
   return (
     <div style={{ minHeight: '100vh', background: '#0d0d1a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 32 }}>
       <h1 style={{ fontSize: 32, letterSpacing: 6, color: '#e74c3c' }}>ADMIN</h1>
@@ -14,8 +14,13 @@ export function HubPanel({ onSetup, onRegistry }: HubPanelProps) {
           <div style={{ color: '#e74c3c', letterSpacing: 2, fontSize: 13 }}>BATTLE SETUP</div>
           <div style={{ color: '#666', fontSize: 11, marginTop: 4 }}>Start a new battle</div>
         </button>
-        <button onClick={onRegistry} style={tile('#27ae60')}>
+        <button onClick={onBattles} style={tile('#3498db')}>
           <div style={{ fontSize: 32 }}>📋</div>
+          <div style={{ color: '#3498db', letterSpacing: 2, fontSize: 13 }}>BATTLES</div>
+          <div style={{ color: '#666', fontSize: 11, marginTop: 4 }}>Active & history</div>
+        </button>
+        <button onClick={onRegistry} style={tile('#27ae60')}>
+          <div style={{ fontSize: 32 }}>👤</div>
           <div style={{ color: '#27ae60', letterSpacing: 2, fontSize: 13 }}>REGISTRY</div>
           <div style={{ color: '#666', fontSize: 11, marginTop: 4 }}>Manage NPCs & Players</div>
         </button>
