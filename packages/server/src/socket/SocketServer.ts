@@ -161,6 +161,7 @@ export class SocketServer {
 
     this.io.to(`battle:${initialState.battleId}`).emit('battle:start', { state: initialState });
     this.notifyAdminsOfBattles();
+    this.notifyPlayersOfBattles();  // push new battle to connected players
 
     room.onTurnResolved((events, newState) => {
       this.io.to(`battle:${initialState.battleId}`).emit('turn:resolve', {
