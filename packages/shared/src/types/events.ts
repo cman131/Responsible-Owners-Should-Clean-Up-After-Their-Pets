@@ -3,13 +3,14 @@ import type { BattleState, PartyMember } from './battle.js';
 // ── Client → Server ──────────────────────────────────────────────────────────
 
 export interface PlayerJoinPayload {
-  displayName: string;
+  battleId: string;
+  slotId: string;
 }
 
 export interface MoveAction {
   type: 'move';
   moveIndex: 0 | 1 | 2 | 3;
-  targetSlotId?: string;  // required for single-target moves
+  targetSlotId?: string;
   terastallize?: boolean;
 }
 
@@ -30,13 +31,14 @@ export interface SwitchSubmitPayload {
 
 export interface AdminActionPayload {
   type:
-    | 'npc-action'     // submit move for NPC slot
+    | 'npc-action'
     | 'pause'
     | 'unpause'
-    | 'force-faint'    // force a pokemon to faint
-    | 'forfeit'        // end battle, declare other team winner
-    | 'force-switch'   // force a pokemon switch
+    | 'force-faint'
+    | 'forfeit'
+    | 'force-switch'
     | 'lobby:list'
+    | 'lobby:slot-status'
     | 'battles:list'
     | 'battles:connect'
     | 'registry:list'
@@ -65,9 +67,9 @@ export interface TurnStartPayload {
 export interface ActionRequestPayload {
   slotId: string;
   validMoves: Array<{ index: 0 | 1 | 2 | 3; moveId: string; pp: number; disabled: boolean }>;
-  legalTargets: string[];        // slotIds of valid target slots
+  legalTargets: string[];
   canSwitch: boolean;
-  switchTargets: string[];       // instanceIds of switchable party members
+  switchTargets: string[];
   canTerastallize: boolean;
   timerSeconds: number;
 }
@@ -91,7 +93,7 @@ export interface TurnResolveEvent {
 export interface TurnResolvePayload {
   turnNumber: number;
   events: TurnResolveEvent[];
-  state: BattleState;  // full state snapshot after resolution
+  state: BattleState;
 }
 
 export interface SwitchRequestPayload {
@@ -116,7 +118,7 @@ export interface BattleEndPayload {
 }
 
 export interface LobbyErrorPayload {
-  code: 'NAME_TAKEN' | 'BATTLE_FULL' | 'INVALID_NAME';
+  code: 'NAME_TAKEN' | 'BATTLE_FULL' | 'INVALID_NAME' | 'BATTLE_NOT_FOUND' | 'SLOT_TAKEN';
   message: string;
 }
 
@@ -131,6 +133,17 @@ export interface BattleSummary {
   teams: Array<{
     slots: Array<{ displayName: string; isNpc: boolean }>;
   }>;
+}
+
+export interface BattleJoinOption {
+  battleId: string;
+  label: string;
+  slots: Array<{ slotId: string; displayName: string }>;
+}
+
+export interface SlotStatusPayload {
+  battleId: string;
+  slots: Array<{ slotId: string; displayName: string; joined: boolean }>;
 }
 
 // ── Event map (used to type Socket.io) ───────────────────────────────────────
@@ -149,6 +162,8 @@ export interface ServerToClientEvents {
   'registry:data': (payload: { resource: string; data: unknown[] }) => void;
   'data:results': (payload: { resource: string; results: unknown[] }) => void;
   'lobby:players': (players: string[]) => void;
+  'lobby:battles': (payload: { battles: BattleJoinOption[] }) => void;
+  'lobby:slot-status': (payload: SlotStatusPayload) => void;
   'battles:data': (payload: { battles: BattleSummary[] }) => void;
   'admin:authenticated': () => void;
   'admin:error': (payload: { message: string }) => void;
