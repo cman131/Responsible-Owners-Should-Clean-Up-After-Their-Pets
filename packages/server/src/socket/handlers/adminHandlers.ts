@@ -119,6 +119,22 @@ export function registerAdminHandlers(
         socket.emit('lobby:players', players);
         break;
       }
+      case 'lobby:slot-status': {
+        const { battleId } = payload.data as { battleId: string };
+        const room = getRoom(battleId);
+        if (!room) break;
+        const state = room.getStateSnapshot();
+        const slots = state.teams
+          .flatMap((t) => t.slots)
+          .filter((s) => !s.isNpc && !s.isSpectator)
+          .map((s) => ({
+            slotId: s.slotId,
+            displayName: s.displayName,
+            joined: !!lobby.getBySlotId(s.slotId),
+          }));
+        socket.emit('lobby:slot-status', { battleId, slots });
+        break;
+      }
       case 'force-switch':
         break;
       case 'registry:list': {
