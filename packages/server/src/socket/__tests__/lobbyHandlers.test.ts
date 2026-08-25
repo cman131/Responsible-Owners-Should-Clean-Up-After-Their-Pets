@@ -51,6 +51,7 @@ function makeRoom(slotOverrides: Partial<{ isNpc: boolean; isSpectator: boolean 
         { teamId: 'team-b', slots: [{ slotId: 'slot-b1', displayName: 'Kyle', isNpc: false, isSpectator: false }] },
       ],
     })),
+    getPendingActionRequest: vi.fn(() => null),
   };
 }
 

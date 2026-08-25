@@ -91,3 +91,40 @@ describe('BattleRoom', () => {
     }
   });
 });
+
+describe('getPendingActionRequest', () => {
+  it('returns an action request for a human slot that has not yet submitted', () => {
+    const state = make1v1State();
+    // make slot-a1 a human slot (not NPC)
+    state.teams[0]!.slots[0]!.isNpc = false;
+    const room = new BattleRoom({ initialState: state, timerSeconds: 60 });
+    const req = room.getPendingActionRequest('slot-a1');
+    expect(req).not.toBeNull();
+    expect(req!.slotId).toBe('slot-a1');
+    expect(req!.validMoves).toHaveLength(4);
+    expect(req!.legalTargets).toContain('slot-b1');
+  });
+
+  it('returns null after the slot has submitted an action', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.isNpc = false;
+    const room = new BattleRoom({ initialState: state, timerSeconds: 60 });
+    room.submitAction('slot-a1', { type: 'move', moveIndex: 0 });
+    expect(room.getPendingActionRequest('slot-a1')).toBeNull();
+  });
+
+  it('returns null for an NPC slot', () => {
+    const state = make1v1State();
+    // slot-b1 is NPC by default in make1v1State
+    const room = new BattleRoom({ initialState: state, timerSeconds: 60 });
+    expect(room.getPendingActionRequest('slot-b1')).toBeNull();
+  });
+
+  it('returns null for a fainted slot', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.isNpc = false;
+    state.teams[0]!.slots[0]!.party[0]!.fainted = true;
+    const room = new BattleRoom({ initialState: state, timerSeconds: 60 });
+    expect(room.getPendingActionRequest('slot-a1')).toBeNull();
+  });
+});

@@ -47,6 +47,10 @@ export function registerLobbyHandlers(
     socket.join(`battle:${battleId}`);
     socket.emit('state:sync', state);
 
+    // Re-send action:request if this slot missed it (joined after turn started)
+    const pending = room.getPendingActionRequest(slotId);
+    if (pending) socket.emit('action:request', pending);
+
     notifyAdminsOfSlotStatus(battleId);
     notifyPlayersOfBattles();
   });

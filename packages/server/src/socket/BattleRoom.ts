@@ -132,6 +132,30 @@ export class BattleRoom {
     return structuredClone(this.state);
   }
 
+  getPendingActionRequest(slotId: string): ActionRequestPayload | null {
+    if (this.pendingActions.has(slotId)) return null;
+    const slot = this.findSlot(slotId);
+    if (!slot || slot.isNpc || slot.isSpectator) return null;
+    const active = slot.party[slot.activePokemonIndex];
+    if (!active || active.fainted) return null;
+    return {
+      slotId: slot.slotId,
+      validMoves: active.moves.map((m, i) => ({
+        index: i as 0 | 1 | 2 | 3,
+        moveId: m.moveId,
+        pp: m.currentPp,
+        disabled: false,
+      })),
+      legalTargets: this.getOpposingSlotIds(slotId),
+      canSwitch: slot.party.some((p, i) => i !== slot.activePokemonIndex && !p.fainted),
+      switchTargets: slot.party
+        .filter((p, i) => i !== slot.activePokemonIndex && !p.fainted)
+        .map((p) => p.instanceId),
+      canTerastallize: !active.hasTerastallized && !!active.teraType,
+      timerSeconds: this.timerSeconds,
+    };
+  }
+
   forceFaint(slotId: string): void {
     const s = structuredClone(this.state);
     let mon: import('@poke-fighter/shared').PartyMember | undefined;
