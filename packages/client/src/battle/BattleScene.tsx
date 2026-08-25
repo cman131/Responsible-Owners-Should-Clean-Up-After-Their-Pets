@@ -8,8 +8,9 @@ interface Props {
 
 export function BattleScene({ state, mySlotId }: Props) {
   const myTeamIdx = state.teams.findIndex((t) => t.slots.some((s) => s.slotId === mySlotId));
-  const foeTeamIdx = myTeamIdx === 0 ? 1 : 0;
-  const myTeam = state.teams[myTeamIdx];
+  const resolvedMyTeamIdx = myTeamIdx === -1 ? 0 : myTeamIdx;
+  const foeTeamIdx = resolvedMyTeamIdx === 0 ? 1 : 0;
+  const myTeam = state.teams[resolvedMyTeamIdx];
   const foeTeam = state.teams[foeTeamIdx];
 
   const mySlot = myTeam?.slots.find((s) => s.slotId === mySlotId);

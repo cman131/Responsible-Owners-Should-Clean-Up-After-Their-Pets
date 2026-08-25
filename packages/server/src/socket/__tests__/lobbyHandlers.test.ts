@@ -34,7 +34,10 @@ function makeLobby() {
   };
 }
 
-function makeRoom(slotOverrides: Partial<{ isNpc: boolean; isSpectator: boolean }> = {}) {
+function makeRoom(
+  slotOverrides: Partial<{ isNpc: boolean; isSpectator: boolean }> = {},
+  methodOverrides: Partial<{ getPendingActionRequest: ReturnType<typeof vi.fn> }> = {},
+) {
   const defaultSlotA = {
     slotId: 'slot-a1',
     displayName: 'Conor',
@@ -51,7 +54,7 @@ function makeRoom(slotOverrides: Partial<{ isNpc: boolean; isSpectator: boolean 
         { teamId: 'team-b', slots: [{ slotId: 'slot-b1', displayName: 'Kyle', isNpc: false, isSpectator: false }] },
       ],
     })),
-    getPendingActionRequest: vi.fn(() => null),
+    getPendingActionRequest: methodOverrides.getPendingActionRequest ?? vi.fn(() => null),
   };
 }
 
@@ -176,5 +179,33 @@ describe('registerLobbyHandlers – player:join', () => {
     socket.trigger('player:join', { battleId: 'battle-1', slotId: 'slot-a1' });
     expect(notifyAdminsOfSlotStatus).toHaveBeenCalledWith('battle-1');
     expect(notifyPlayersOfBattles).toHaveBeenCalled();
+  });
+
+  it('emits action:request when getPendingActionRequest returns a pending request', () => {
+    const pendingRequest = {
+      slotId: 'slot-a1',
+      validMoves: [{ index: 0 as const, moveId: 'tackle', pp: 35, disabled: false }],
+      legalTargets: ['slot-b1'],
+      canSwitch: false,
+      switchTargets: [],
+      canTerastallize: false,
+      timerSeconds: 60,
+    };
+
+    const roomWithPending = makeRoom({}, { getPendingActionRequest: vi.fn(() => pendingRequest) });
+    registerLobbyHandlers(
+      socket as any,
+      lobby as any,
+      (id) => (id === 'battle-1' ? (roomWithPending as any) : undefined),
+      notifyAdmins,
+      notifyAdminsOfSlotStatus,
+      notifyPlayersOfBattles,
+    );
+
+    lobby.getBySlotId.mockReturnValue(undefined);
+    lobby.registerPlayer.mockReturnValue({ ok: true, player: { displayName: 'Conor', battleId: null, battleSlotId: null } });
+    socket.trigger('player:join', { battleId: 'battle-1', slotId: 'slot-a1' });
+
+    expect(socket.emit).toHaveBeenCalledWith('action:request', pendingRequest);
   });
 });

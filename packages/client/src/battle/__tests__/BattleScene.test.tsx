@@ -86,4 +86,15 @@ describe('BattleScene', () => {
     // Only the enemy sprite img should be present; own slot uses a div
     expect(imgs.length).toBe(1);
   });
+
+  it('renders both teams when mySlotId is not found in any team (admin view)', () => {
+    const state = makeState('a1', 'b1');
+    render(<BattleScene state={state} mySlotId="__admin__" />);
+    const imgs = screen.getAllByRole('img') as HTMLImageElement[];
+    // Both bulbasaur (team 0) and charizard (team 1) should be rendered
+    const bulbasaurImg = imgs.find((img) => img.src.includes('bulbasaur'));
+    const charizardImg = imgs.find((img) => img.src.includes('charizard'));
+    expect(bulbasaurImg).toBeTruthy();
+    expect(charizardImg).toBeTruthy();
+  });
 });
