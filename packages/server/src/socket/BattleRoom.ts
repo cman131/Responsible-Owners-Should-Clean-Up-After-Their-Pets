@@ -133,6 +133,8 @@ export class BattleRoom {
   }
 
   getPendingActionRequest(slotId: string): ActionRequestPayload | null {
+    if (this.awaitingForcedSwitches.size > 0) return null;
+    if (this.state.phase !== 'action') return null;
     if (this.pendingActions.has(slotId)) return null;
     const slot = this.findSlot(slotId);
     if (!slot || slot.isNpc || slot.isSpectator) return null;
