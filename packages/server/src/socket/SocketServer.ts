@@ -135,7 +135,7 @@ export class SocketServer {
   }
 
   startBattle(initialState: BattleState): BattleRoom {
-    const room = new BattleRoom({ initialState: structuredClone(initialState), timerSeconds: initialState.turnTimerSeconds });
+    const room = new BattleRoom({ initialState: structuredClone(initialState) });
     this.rooms.set(initialState.battleId, room);
 
     for (const team of initialState.teams) {

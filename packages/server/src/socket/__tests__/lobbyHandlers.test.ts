@@ -189,7 +189,6 @@ describe('registerLobbyHandlers – player:join', () => {
       canSwitch: false,
       switchTargets: [],
       canTerastallize: false,
-      timerSeconds: 60,
     };
 
     const roomWithPending = makeRoom({}, { getPendingActionRequest: vi.fn(() => pendingRequest) });

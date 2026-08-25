@@ -33,18 +33,6 @@ export function registerAdminHandlers(
         room?.submitAction(slotId, action);
         break;
       }
-      case 'pause': {
-        const { battleId } = payload.data as { battleId: string };
-        getRoom(battleId)?.pause();
-        const state = getRoom(battleId)?.getState();
-        if (state) io.to(`battle:${battleId}`).emit('state:sync', state);
-        break;
-      }
-      case 'unpause': {
-        const { battleId } = payload.data as { battleId: string };
-        getRoom(battleId)?.unpause();
-        break;
-      }
       case 'start-battle': {
         const { battleId, label, turnTimerSeconds, teams } = payload.data as {
           battleId: string; label: string; turnTimerSeconds: number;

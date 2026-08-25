@@ -7,7 +7,6 @@ type Action = MoveAction | SwitchAction;
 
 interface BattleRoomOptions {
   initialState: BattleState;
-  timerSeconds: number;
 }
 
 type TurnResolvedCallback = (events: TurnResolveEvent[], newState: BattleState) => void;
@@ -19,8 +18,6 @@ export class BattleRoom {
   private state: BattleState;
   private readonly engine = new BattleEngine();
   private readonly pendingActions = new Map<string, Action>();
-  private timer: ReturnType<typeof setTimeout> | null = null;
-  private readonly timerSeconds: number;
   private onTurnResolvedCb: TurnResolvedCallback | null = null;
   private onBattleEndCb: BattleEndCallback | null = null;
   private onSwitchRequestCb: SwitchRequestCallback | null = null;
@@ -29,12 +26,9 @@ export class BattleRoom {
   private onNpcActionRequiredCb: NpcActionRequiredCallback | null = null;
   private readonly data = new DataLoader();
   private awaitingForcedSwitches = new Set<string>();
-  private paused = false;
 
-  constructor({ initialState, timerSeconds }: BattleRoomOptions) {
+  constructor({ initialState }: BattleRoomOptions) {
     this.state = structuredClone(initialState);
-    this.timerSeconds = timerSeconds;
-    this.startTimer();
     // Defer NPC request emission so SocketServer can wire up onNpcActionRequired first
     setTimeout(() => {
       const npcRequests = this.buildNpcRequests();
@@ -73,13 +67,11 @@ export class BattleRoom {
       this.awaitingForcedSwitches.delete(slotId);
       const s = structuredClone(this.state);
       let switched = false;
-      // Find and update slot in cloned state
       for (const team of s.teams) {
         const slot = team.slots.find((sl) => sl.slotId === slotId);
         if (!slot) continue;
         const newIndex = slot.party.findIndex((p) => p.instanceId === (action as SwitchAction).targetInstanceId);
         if (newIndex === -1 || slot.party[newIndex]?.fainted) {
-          // Invalid target — reject and restore awaiting state
           this.awaitingForcedSwitches.add(slotId);
           return { ok: false, reason: 'Invalid switch target' };
         }
@@ -98,9 +90,6 @@ export class BattleRoom {
       } catch (err) {
         console.error('[BattleRoom] onTurnResolvedCb (forced switch) threw:', err);
       }
-      if (this.awaitingForcedSwitches.size === 0) {
-        this.startTimer();
-      }
       return { ok: true };
     }
 
@@ -116,16 +105,6 @@ export class BattleRoom {
     }
 
     return { ok: true };
-  }
-
-  pause(): void {
-    this.paused = true;
-    if (this.timer) clearTimeout(this.timer);
-  }
-
-  unpause(): void {
-    this.paused = false;
-    this.startTimer();
   }
 
   getStateSnapshot(): BattleState {
@@ -154,7 +133,6 @@ export class BattleRoom {
         .filter((p, i) => i !== slot.activePokemonIndex && !p.fainted)
         .map((p) => p.instanceId),
       canTerastallize: !active.hasTerastallized && !!active.teraType,
-      timerSeconds: this.timerSeconds,
     };
   }
 
@@ -167,7 +145,7 @@ export class BattleRoom {
       mon = slot.party[slot.activePokemonIndex];
       break;
     }
-    if (!mon || mon.fainted) return; // already fainted — no-op
+    if (!mon || mon.fainted) return;
 
     mon.fainted = true;
     mon.currentHp = 0;
@@ -185,7 +163,6 @@ export class BattleRoom {
       console.error('[BattleRoom] forceFaint onTurnResolvedCb threw:', err);
     }
 
-    // Check for pending switches (mon with living replacements)
     const switchSlots = this.getPendingSwitchSlots(s);
     if (switchSlots.length > 0) {
       this.awaitingForcedSwitches = new Set(switchSlots.map((sl) => sl.slotId));
@@ -194,13 +171,11 @@ export class BattleRoom {
       } catch (err) {
         console.error('[BattleRoom] forceFaint onSwitchRequestCb threw:', err);
       }
-      return; // timer starts when forced switches are submitted
+      return;
     }
 
-    // Check for battle end
     const winner = this.checkWinner(s);
     if (winner !== null) {
-      if (this.timer) clearTimeout(this.timer);
       s.phase = 'ended';
       s.winner = winner;
       this.state = s;
@@ -210,13 +185,10 @@ export class BattleRoom {
       } catch (err) {
         console.error('[BattleRoom] forceFaint onBattleEndCb threw:', err);
       }
-    } else {
-      this.startTimer();
     }
   }
 
   forfeit(teamId: string): void {
-    if (this.timer) clearTimeout(this.timer);
     const s = structuredClone(this.state);
     const teamIdx = s.teams.findIndex((t) => t.teamId === teamId);
     if (teamIdx === -1) return;
@@ -250,7 +222,7 @@ export class BattleRoom {
         if (!active || !active.fainted) continue;
         const hasLiving = slot.party.some((p, i) => i !== slot.activePokemonIndex && !p.fainted);
         if (hasLiving) pending.push(slot);
-        else slot.isSpectator = true; // no remaining pokemon
+        else slot.isSpectator = true;
       }
     }
     return pending;
@@ -262,13 +234,11 @@ export class BattleRoom {
       const faintedInstanceId = event.data['instanceId'];
       if (typeof faintedInstanceId !== 'string') continue;
 
-      // Find the fainted team index
       const faintedTeamIdx = newState.teams.findIndex((t) =>
         t.slots.some((s) => s.party.some((p) => p.instanceId === faintedInstanceId))
       );
       if (faintedTeamIdx === -1) continue;
 
-      // Find fainted mon
       let faintedMon: PartyMember | undefined;
       for (const team of newState.teams) {
         for (const slot of team.slots) {
@@ -284,13 +254,11 @@ export class BattleRoom {
 
       const expYield = calcExpYield({ baseExpYield: species.baseExpYield, level: faintedMon.level });
 
-      // Winning team is the other team
       const winningTeamIdx = faintedTeamIdx === 0 ? 1 : 0;
       const recipients = newState.teams[winningTeamIdx]?.slots.flatMap((s) => s.party) ?? [];
 
       const awards = distributeExp({ expYield, recipients });
 
-      // Apply exp and check level-ups
       for (const award of awards) {
         for (const team of newState.teams) {
           for (const slot of team.slots) {
@@ -343,21 +311,6 @@ export class BattleRoom {
     return this.activeSlotsNeedingAction().every((slotId) => this.pendingActions.has(slotId));
   }
 
-  private startTimer(): void {
-    if (this.timer) clearTimeout(this.timer);
-    if (this.paused) return;
-
-    this.timer = setTimeout(() => {
-      // Auto-submit for slots that haven't submitted
-      for (const slotId of this.activeSlotsNeedingAction()) {
-        if (!this.pendingActions.has(slotId)) {
-          this.pendingActions.set(slotId, { type: 'move', moveIndex: 0 });
-        }
-      }
-      this.resolveTurn();
-    }, this.timerSeconds * 1000);
-  }
-
   private buildNpcRequests(): Array<{ slotId: string; displayName: string; request: ActionRequestPayload }> {
     const result: Array<{ slotId: string; displayName: string; request: ActionRequestPayload }> = [];
     for (const team of this.state.teams) {
@@ -380,7 +333,6 @@ export class BattleRoom {
             canSwitch: false,
             switchTargets: [],
             canTerastallize: !active.hasTerastallized && !!active.teraType,
-            timerSeconds: this.timerSeconds,
           },
         });
       }
@@ -397,8 +349,6 @@ export class BattleRoom {
   }
 
   private resolveTurn(): void {
-    if (this.timer) clearTimeout(this.timer);
-
     const actions = Object.fromEntries(this.pendingActions);
     this.pendingActions.clear();
 
@@ -421,7 +371,7 @@ export class BattleRoom {
       } catch (err) {
         console.error('[BattleRoom] onSwitchRequest callback threw:', err);
       }
-      return; // Don't start timer until forced switches are submitted
+      return;
     }
 
     if (newState.phase === 'ended' && newState.winner !== undefined) {
@@ -432,7 +382,6 @@ export class BattleRoom {
         console.error('[BattleRoom] onBattleEnd callback threw:', err);
       }
     } else {
-      this.startTimer();
       const npcRequests = this.buildNpcRequests();
       if (npcRequests.length > 0) {
         this.onNpcActionRequiredCb?.(npcRequests);

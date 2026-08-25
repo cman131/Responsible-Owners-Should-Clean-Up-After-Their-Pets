@@ -32,8 +32,6 @@ export interface SwitchSubmitPayload {
 export interface AdminActionPayload {
   type:
     | 'npc-action'
-    | 'pause'
-    | 'unpause'
     | 'force-faint'
     | 'forfeit'
     | 'force-switch'
@@ -71,7 +69,6 @@ export interface ActionRequestPayload {
   canSwitch: boolean;
   switchTargets: string[];
   canTerastallize: boolean;
-  timerSeconds: number;
 }
 
 export interface TurnResolveEvent {
