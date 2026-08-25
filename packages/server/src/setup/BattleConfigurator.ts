@@ -80,6 +80,7 @@ export class BattleConfigurator {
     const member: PartyMember = {
       instanceId: uuidv4(),
       speciesId: set.speciesId,
+      speciesName: species.name,
       level: set.level,
       currentHp: stats.hp,
       maxHp: stats.hp,

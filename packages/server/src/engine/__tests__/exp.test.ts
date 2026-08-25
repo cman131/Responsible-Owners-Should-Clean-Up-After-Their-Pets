@@ -4,7 +4,7 @@ import type { PartyMember } from '@poke-fighter/shared';
 
 function makeMon(overrides: Partial<PartyMember> = {}): PartyMember {
   return {
-    instanceId: 'mon-1', speciesId: 6, level: 50,
+    instanceId: 'mon-1', speciesId: 6, speciesName: 'charizard', level: 50,
     currentHp: 100, maxHp: 100,
     stats: { hp: 100, atk: 100, def: 100, spa: 100, spd: 100, spe: 100 },
     ability: 'blaze', moves: [

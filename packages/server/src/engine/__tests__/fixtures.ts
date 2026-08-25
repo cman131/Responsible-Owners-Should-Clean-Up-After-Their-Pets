@@ -13,6 +13,7 @@ export function makePokemon(overrides: Partial<PartyMember> = {}): PartyMember {
   return {
     instanceId: uuidv4(),
     speciesId: 6,
+    speciesName: 'charizard',
     nickname: 'Charizard',
     level: 50,
     currentHp: 100, maxHp: 100,

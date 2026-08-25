@@ -27,6 +27,7 @@ export interface MoveSlot {
 export interface PartyMember {
   instanceId: string;       // unique per battle (uuid)
   speciesId: number;
+  speciesName: string;      // internal PS name, e.g. 'charizard' — used for sprite URLs
   nickname: string;
   level: number;
   currentHp: number;
