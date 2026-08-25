@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('../../socket.js', () => ({ getSocket: vi.fn() }));
@@ -18,7 +18,15 @@ vi.mock('../MoveSearchDropdown.js', () => ({
   ),
 }));
 
+import { getSocket } from '../../socket.js';
 import { PokemonSlotEditor } from '../PokemonSlotEditor.js';
+
+const mockSocket = { emit: vi.fn(), on: vi.fn(), off: vi.fn() };
+
+beforeEach(() => {
+  vi.mocked(getSocket).mockReturnValue(mockSocket as any);
+  vi.clearAllMocks();
+});
 
 describe('PokemonSlotEditor', () => {
   it('renders the species search', () => {
@@ -55,5 +63,25 @@ describe('PokemonSlotEditor', () => {
       level: 50,
       nature: 'hardy',
     }));
+  });
+
+  it('auto-fetches species and shows displayName for pre-loaded speciesId', () => {
+    render(<PokemonSlotEditor
+      value={{ speciesId: 34, nickname: 'Sammy', level: 50, nature: 'hardy', moves: ['','','',''], ability: 'Poison Point', evs:{hp:0,atk:0,def:0,spa:0,spd:0,spe:0}, ivs:{hp:31,atk:31,def:31,spa:31,spd:31,spe:31} }}
+      onChange={vi.fn()}
+    />);
+
+    expect(screen.getByText('Sammy')).toBeTruthy();
+    expect(mockSocket.emit).toHaveBeenCalledWith('admin:action', expect.objectContaining({
+      type: 'data:query',
+      data: expect.objectContaining({ resource: 'pokemon', query: '34' }),
+    }));
+
+    const handler = mockSocket.on.mock.calls.find(([e]: [string]) => e === 'data:results')?.[1];
+    act(() => {
+      handler({ resource: 'pokemon', results: [{ id: 34, name: 'nidoking', displayName: 'Nidoking', types: ['Poison', 'Ground'], baseStats: {hp:81,atk:102,def:77,spa:85,spd:75,spe:85}, abilities: { 0: 'Poison Point' }, baseExpYield: 227, expGrowth: 'MediumSlow', learnset: [], evolutionStage: 3 }] });
+    });
+
+    expect(screen.getAllByText('Nidoking').length).toBeGreaterThan(0);
   });
 });

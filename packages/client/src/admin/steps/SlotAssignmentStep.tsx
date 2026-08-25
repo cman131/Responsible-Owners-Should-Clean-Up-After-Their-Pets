@@ -19,7 +19,7 @@ interface Props {
 export function SlotAssignmentStep({ teamASlots, teamBSlots, onNext, onBack }: Props) {
   const [waitingPlayers, setWaitingPlayers] = useState<string[]>([]);
   const [savedPlayers, setSavedPlayers] = useState<{ profileId: string; displayName: string; defaultTeam?: import('@poke-fighter/shared').PokemonSet[] }[]>([]);
-  const [savedNpcs, setSavedNpcs] = useState<{ profileId: string; name: string }[]>([]);
+  const [savedNpcs, setSavedNpcs] = useState<{ profileId: string; name: string; defaultTeam?: import('@poke-fighter/shared').PokemonSet[] }[]>([]);
   const [slots, setSlots] = useState<SlotConfig[]>(() => [
     ...Array.from({ length: teamASlots }, (_, i) => ({ slotId: `a${i + 1}`, type: 'player' as const, displayName: '' })),
     ...Array.from({ length: teamBSlots }, (_, i) => ({ slotId: `b${i + 1}`, type: 'npc' as const, displayName: '' })),
@@ -27,8 +27,13 @@ export function SlotAssignmentStep({ teamASlots, teamBSlots, onNext, onBack }: P
 
   useEffect(() => {
     const socket = getSocket();
+    socket.emit('admin:action', { type: 'lobby:list', data: {} } as any);
     socket.emit('admin:action', { type: 'registry:list', data: { resource: 'players' } } as any);
     socket.emit('admin:action', { type: 'registry:list', data: { resource: 'npcs' } } as any);
+
+    socket.on('lobby:players' as any, (players: string[]) => {
+      setWaitingPlayers(players);
+    });
 
     socket.on('registry:data' as any, (payload: any) => {
       if (payload.resource === 'players') {
@@ -38,10 +43,13 @@ export function SlotAssignmentStep({ teamASlots, teamBSlots, onNext, onBack }: P
           defaultTeam: p.defaultTeam?.pokemon,
         })));
       }
-      if (payload.resource === 'npcs') setSavedNpcs(payload.data.map((n: any) => ({ profileId: n.profileId, name: n.name })));
+      if (payload.resource === 'npcs') setSavedNpcs(payload.data.map((n: any) => ({ profileId: n.profileId, name: n.name, defaultTeam: n.team?.pokemon })));
     });
 
-    return () => { socket.off('registry:data' as any); };
+    return () => {
+      socket.off('lobby:players' as any);
+      socket.off('registry:data' as any);
+    };
   }, []);
 
   function updateSlot(index: number, update: Partial<SlotConfig>) {
@@ -130,7 +138,11 @@ function SlotRow({ slot, index, onUpdate, waitingPlayers, savedPlayers, savedNpc
       ) : (
         <select
           value={slot.displayName}
-          onChange={(e) => onUpdate(index, { displayName: e.target.value })}
+          onChange={(e) => {
+            const name = e.target.value;
+            const npc = savedNpcs.find((n: { profileId: string; name: string; defaultTeam?: import('@poke-fighter/shared').PokemonSet[] }) => n.name === name);
+            onUpdate(index, { displayName: name, defaultTeam: npc?.defaultTeam });
+          }}
           style={selectStyle}
         >
           <option value="">— select NPC —</option>

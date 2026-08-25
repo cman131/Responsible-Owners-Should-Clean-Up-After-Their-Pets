@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { connectAsAdmin } from '../socket.js';
+import { useState, useEffect, useRef } from 'react';
+import { connectAsAdmin, getSocket } from '../socket.js';
 import { AdminRouter } from './AdminRouter.js';
 
 const SESSION_KEY = 'poke_admin_session';
@@ -23,24 +23,69 @@ function saveSession(token: string): void {
 export function AdminShell() {
   const [token, setToken] = useState('');
   const [authenticated, setAuthenticated] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const pendingToken = useRef<string | null>(null);
 
   useEffect(() => {
     const session = loadSession();
     if (session) {
+      pendingToken.current = session.token;
+      setConnecting(true);
       connectAsAdmin(session.token);
-      setAuthenticated(true);
     }
+  }, []);
+
+  useEffect(() => {
+    const socket = getSocket();
+
+    const onAuthenticated = () => {
+      if (pendingToken.current) {
+        saveSession(pendingToken.current);
+        pendingToken.current = null;
+      }
+      setConnecting(false);
+      setAuthenticated(true);
+    };
+
+    const onError = ({ message }: { message: string }) => {
+      localStorage.removeItem(SESSION_KEY);
+      pendingToken.current = null;
+      setConnecting(false);
+      setAuthenticated(false);
+      setError(message);
+    };
+
+    socket.on('admin:authenticated', onAuthenticated);
+    socket.on('admin:error', onError);
+    return () => {
+      socket.off('admin:authenticated', onAuthenticated);
+      socket.off('admin:error', onError);
+    };
   }, []);
 
   function handleConnect(e: React.FormEvent) {
     e.preventDefault();
-    if (!token.trim()) return;
-    connectAsAdmin(token.trim());
-    saveSession(token.trim());
-    setAuthenticated(true);
+    const t = token.trim();
+    if (!t) return;
+    setError(null);
+    setConnecting(true);
+    pendingToken.current = t;
+    connectAsAdmin(t);
   }
 
   if (authenticated) return <AdminRouter />;
+
+  if (connecting) {
+    return (
+      <div style={styles.container}>
+        <h1 style={styles.title}>ADMIN</h1>
+        <div style={styles.box}>
+          <p style={{ color: '#aaa', textAlign: 'center', margin: 0 }}>Verifying token...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={styles.container}>
@@ -55,6 +100,7 @@ export function AdminShell() {
           placeholder="Enter admin token"
           autoFocus
         />
+        {error && <p style={styles.error}>{error}</p>}
         <button type="submit" style={styles.button} disabled={!token.trim()}>
           CONNECT AS ADMIN
         </button>
@@ -70,4 +116,5 @@ const styles = {
   label: { color: '#aaa', fontSize: 12, letterSpacing: 2, textTransform: 'uppercase' as const },
   input: { background: '#1a1a2e', border: '1px solid #e74c3c', color: '#fff', padding: '8px 12px', fontSize: 16, borderRadius: 4, fontFamily: 'inherit' },
   button: { background: '#c0392b', color: '#fff', border: 'none', padding: '10px 20px', fontSize: 14, letterSpacing: 2, cursor: 'pointer', borderRadius: 4, fontFamily: 'inherit' },
+  error: { color: '#e74c3c', fontSize: 12, margin: 0 },
 };
