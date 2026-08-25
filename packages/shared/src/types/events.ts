@@ -173,6 +173,7 @@ export interface ServerToClientEvents {
 export interface ClientToServerEvents {
   'player:join': (payload: PlayerJoinPayload) => void;
   'action:submit': (payload: ActionSubmitPayload) => void;
+  'action:resync': () => void;
   'switch:submit': (payload: SwitchSubmitPayload) => void;
   'admin:action': (payload: AdminActionPayload) => void;
 }

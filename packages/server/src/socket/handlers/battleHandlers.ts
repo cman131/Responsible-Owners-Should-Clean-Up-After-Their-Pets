@@ -8,6 +8,15 @@ export function registerBattleHandlers(
   lobby: LobbyManager,
   getRoom: (battleId: string) => BattleRoom | undefined
 ): void {
+  socket.on('action:resync', () => {
+    const player = lobby.getBySocketId(socket.id);
+    if (!player?.battleId || !player?.battleSlotId) return;
+    const room = getRoom(player.battleId);
+    if (!room) return;
+    const pending = room.getPendingActionRequest(player.battleSlotId);
+    if (pending) socket.emit('action:request', pending);
+  });
+
   socket.on('action:submit', (payload: ActionSubmitPayload) => {
     const player = lobby.getBySocketId(socket.id);
     if (!player?.battleId) return;

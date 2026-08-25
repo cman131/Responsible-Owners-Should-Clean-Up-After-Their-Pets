@@ -64,6 +64,10 @@ export class BattleRoom {
 
   onPlayerActionRequired(cb: PlayerActionRequiredCallback): void { this.onPlayerActionRequiredCb = cb; }
 
+  getPendingNpcRequests(): Array<{ slotId: string; displayName: string; request: ActionRequestPayload }> {
+    return this.buildNpcRequests();
+  }
+
   submitAction(slotId: string, action: Action): { ok: boolean; reason?: string } {
     // Handle forced switch (after faint) — must come before normal validation
     if (this.awaitingForcedSwitches.has(slotId)) {

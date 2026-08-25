@@ -53,6 +53,11 @@ export function registerAdminHandlers(
         const { battleId } = payload.data as { battleId: string };
         const state = db.battles.get(battleId);
         if (state) socket.emit('state:sync', state);
+        const liveRoom = getRoom(battleId);
+        if (liveRoom) {
+          const npcRequests = liveRoom.getPendingNpcRequests();
+          if (npcRequests.length > 0) socket.emit('npc:action-request', { battleId, slots: npcRequests });
+        }
         break;
       }
       case 'data:query': {

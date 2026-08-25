@@ -56,6 +56,7 @@ export function BattleProvider({ mySlotId, initialState, children }: Props) {
     socket.on('action:request', (payload: ActionRequestPayload) => {
       if (payload.slotId === mySlotId) setActionRequest(payload);
     });
+    socket.emit('action:resync');
 
     socket.on('switch:request', (payload: SwitchRequestPayload) => {
       if (payload.slotId === mySlotId) setSwitchRequest(payload);
