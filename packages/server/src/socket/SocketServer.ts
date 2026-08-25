@@ -213,6 +213,15 @@ export class SocketServer {
       }
     });
 
+    room.onPlayerActionRequired((requests) => {
+      for (const { slotId, request } of requests) {
+        const player = this.lobby.getBySlotId(slotId);
+        if (!player) continue;
+        const socket = this.io.sockets.sockets.get(player.socketId);
+        socket?.emit('action:request', request);
+      }
+    });
+
     return room;
   }
 }

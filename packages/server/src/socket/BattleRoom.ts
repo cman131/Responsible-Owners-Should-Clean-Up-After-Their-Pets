@@ -13,6 +13,7 @@ type TurnResolvedCallback = (events: TurnResolveEvent[], newState: BattleState) 
 type BattleEndCallback = (winningTeamId: string, finalState: BattleState) => void;
 type SwitchRequestCallback = (slots: SlotState[]) => void;
 type NpcActionRequiredCallback = (slots: Array<{ slotId: string; displayName: string; request: ActionRequestPayload }>) => void;
+type PlayerActionRequiredCallback = (requests: Array<{ slotId: string; request: ActionRequestPayload }>) => void;
 
 export class BattleRoom {
   private state: BattleState;
@@ -24,6 +25,7 @@ export class BattleRoom {
   private onExpAwardCb: ((awards: ExpAward[]) => void) | null = null;
   private onLevelUpCb: ((result: LevelUpResult, newStats: Stats) => void) | null = null;
   private onNpcActionRequiredCb: NpcActionRequiredCallback | null = null;
+  private onPlayerActionRequiredCb: PlayerActionRequiredCallback | null = null;
   private readonly data = new DataLoader();
   private awaitingForcedSwitches = new Set<string>();
 
@@ -33,6 +35,8 @@ export class BattleRoom {
     setTimeout(() => {
       const npcRequests = this.buildNpcRequests();
       if (npcRequests.length > 0) this.onNpcActionRequiredCb?.(npcRequests);
+      const playerRequests = this.buildPlayerRequests();
+      if (playerRequests.length > 0) this.onPlayerActionRequiredCb?.(playerRequests);
     }, 0);
   }
 
@@ -57,6 +61,8 @@ export class BattleRoom {
   onLevelUp(cb: (result: LevelUpResult, newStats: Stats) => void): void { this.onLevelUpCb = cb; }
 
   onNpcActionRequired(cb: NpcActionRequiredCallback): void { this.onNpcActionRequiredCb = cb; }
+
+  onPlayerActionRequired(cb: PlayerActionRequiredCallback): void { this.onPlayerActionRequiredCb = cb; }
 
   submitAction(slotId: string, action: Action): { ok: boolean; reason?: string } {
     // Handle forced switch (after faint) — must come before normal validation
@@ -340,6 +346,36 @@ export class BattleRoom {
     return result;
   }
 
+  private buildPlayerRequests(): Array<{ slotId: string; request: ActionRequestPayload }> {
+    const result: Array<{ slotId: string; request: ActionRequestPayload }> = [];
+    for (const team of this.state.teams) {
+      for (const slot of team.slots) {
+        if (slot.isNpc || slot.isSpectator) continue;
+        const active = slot.party[slot.activePokemonIndex];
+        if (!active || active.fainted) continue;
+        result.push({
+          slotId: slot.slotId,
+          request: {
+            slotId: slot.slotId,
+            validMoves: active.moves.map((m, i) => ({
+              index: i as 0 | 1 | 2 | 3,
+              moveId: m.moveId,
+              pp: m.currentPp,
+              disabled: false,
+            })),
+            legalTargets: this.getOpposingSlotIds(slot.slotId),
+            canSwitch: slot.party.some((p, i) => i !== slot.activePokemonIndex && !p.fainted),
+            switchTargets: slot.party
+              .filter((p, i) => i !== slot.activePokemonIndex && !p.fainted)
+              .map((p) => p.instanceId),
+            canTerastallize: !active.hasTerastallized && !!active.teraType,
+          },
+        });
+      }
+    }
+    return result;
+  }
+
   private getOpposingSlotIds(slotId: string): string[] {
     const teamIdx = this.state.teams.findIndex((t) => t.slots.some((s) => s.slotId === slotId));
     const foeTeamIdx = teamIdx === 0 ? 1 : 0;
@@ -385,6 +421,10 @@ export class BattleRoom {
       const npcRequests = this.buildNpcRequests();
       if (npcRequests.length > 0) {
         this.onNpcActionRequiredCb?.(npcRequests);
+      }
+      const playerRequests = this.buildPlayerRequests();
+      if (playerRequests.length > 0) {
+        this.onPlayerActionRequiredCb?.(playerRequests);
       }
     }
   }

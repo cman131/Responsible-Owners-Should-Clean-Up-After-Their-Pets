@@ -86,3 +86,49 @@ describe('getPendingActionRequest', () => {
     expect(room.getPendingActionRequest('slot-a1')).toBeNull();
   });
 });
+
+describe('onPlayerActionRequired', () => {
+  it('fires deferred at construction with one entry per active human slot', async () => {
+    // make1v1State has slot-a1 (isNpc=false) and slot-b1 (isNpc=true)
+    const state = make1v1State();
+    const room = new BattleRoom({ initialState: state });
+    const cb = vi.fn();
+    room.onPlayerActionRequired(cb);
+    // Must not fire synchronously
+    expect(cb).not.toHaveBeenCalled();
+    await new Promise<void>((r) => setTimeout(r, 0));
+    expect(cb).toHaveBeenCalledOnce();
+    const requests: Array<{ slotId: string; request: unknown }> = cb.mock.calls[0]![0];
+    expect(requests).toHaveLength(1);
+    expect(requests[0]!.slotId).toBe('slot-a1');
+  });
+
+  it('fires again after resolveTurn with the next turn human slots', async () => {
+    const state = make1v1State();
+    const room = new BattleRoom({ initialState: state });
+    const cb = vi.fn();
+    room.onPlayerActionRequired(cb);
+    await new Promise<void>((r) => setTimeout(r, 0));
+    cb.mockClear();
+
+    // Both slots submit — triggers resolveTurn synchronously
+    room.submitAction('slot-a1', { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' });
+    room.submitAction('slot-b1', { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' });
+
+    // resolveTurn fires synchronously — callback fires synchronously in else-branch
+    expect(cb).toHaveBeenCalledOnce();
+    const requests: Array<{ slotId: string; request: unknown }> = cb.mock.calls[0]![0];
+    expect(requests[0]!.slotId).toBe('slot-a1');
+  });
+
+  it('excludes NPC and spectator slots', async () => {
+    const state = make1v1State();
+    // slot-b1 is isNpc=true, slot-a1 is isNpc=false
+    const room = new BattleRoom({ initialState: state });
+    const cb = vi.fn();
+    room.onPlayerActionRequired(cb);
+    await new Promise<void>((r) => setTimeout(r, 0));
+    const requests: Array<{ slotId: string }> = cb.mock.calls[0]![0];
+    expect(requests.every((r) => r.slotId !== 'slot-b1')).toBe(true);
+  });
+});
