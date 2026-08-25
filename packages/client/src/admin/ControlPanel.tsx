@@ -3,7 +3,7 @@ import { getSocket } from '../socket.js';
 import { BattleProvider, useBattle } from '../battle/BattleContext.js';
 import { BattleScene } from '../battle/BattleScene.js';
 import { TurnLog } from '../battle/overlays/TurnLog.js';
-import { NpcActionPanel } from './NpcActionPanel.js';
+import { NpcTabPanel } from './NpcTabPanel.js';
 import type { ActionRequestPayload, AdminActionPayload } from '@poke-fighter/shared';
 
 interface NpcSlotRequest {
@@ -70,7 +70,7 @@ function ControlPanelInner({ battleId, onBack }: Props) {
         </div>
       </div>
       <div style={{ width: 300, display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <NpcActionPanel battleId={battleId} npcRequests={npcRequests} />
+        <NpcTabPanel battleId={battleId} npcRequests={npcRequests} state={state} />
       </div>
     </div>
   );
