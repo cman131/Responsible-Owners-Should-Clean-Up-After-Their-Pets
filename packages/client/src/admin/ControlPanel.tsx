@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getSocket } from '../socket.js';
 import { BattleProvider, useBattle } from '../battle/BattleContext.js';
-import { BattleCanvas } from '../battle/BattleCanvas.js';
+import { BattleScene } from '../battle/BattleScene.js';
 import { TurnLog } from '../battle/overlays/TurnLog.js';
 import { NpcActionPanel } from './NpcActionPanel.js';
 import type { ActionRequestPayload, AdminActionPayload } from '@poke-fighter/shared';
@@ -59,14 +59,7 @@ function ControlPanelInner({ battleId, onBack }: Props) {
           <button onClick={onBack} style={{ background: 'none', border: '1px solid #555', color: '#aaa', padding: '4px 12px', borderRadius: 3, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11 }}>← BATTLES</button>
           <div style={{ color: '#e74c3c', fontSize: 12, letterSpacing: 2 }}>ADMIN VIEW — {battleId}</div>
         </div>
-        <BattleCanvas
-          state={state}
-          mySlotId="__admin__"
-          targetingMoveIndex={null}
-          legalTargets={[]}
-          onTargetSelected={() => {}}
-          onCancelTargeting={() => {}}
-        />
+        {state && <BattleScene state={state} mySlotId="__admin__" />}
         <TurnLog messages={turnLog} />
         <div style={{ display: 'flex', gap: 8 }}>
           <button onClick={togglePause} style={{ ...btnStyle, background: paused ? '#27ae60' : '#e67e22' }}>

@@ -8,13 +8,12 @@ import { TurnLog } from '../battle/overlays/TurnLog.js';
 import { ExpBar } from '../battle/overlays/ExpBar.js';
 import type { BattleState } from '@poke-fighter/shared';
 
-const MY_SLOT_ID = sessionStorage.getItem('mySlotId') ?? 'a1';
-
 export function BattlePage() {
   const location = useLocation();
   const initialState = (location.state as { battleState?: BattleState } | null)?.battleState ?? null;
+  const mySlotId = sessionStorage.getItem('mySlotId') ?? 'a1';
   return (
-    <BattleProvider mySlotId={MY_SLOT_ID} initialState={initialState}>
+    <BattleProvider mySlotId={mySlotId} initialState={initialState}>
       <BattleView />
     </BattleProvider>
   );
