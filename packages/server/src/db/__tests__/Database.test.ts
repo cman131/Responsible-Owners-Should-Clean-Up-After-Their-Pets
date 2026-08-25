@@ -47,7 +47,6 @@ const makeBattleState = (overrides: Partial<BattleState> = {}): BattleState => (
     trickroom: 0,
     gravity: 0,
   },
-  turnTimerSeconds: 60,
   ...overrides,
 });
 

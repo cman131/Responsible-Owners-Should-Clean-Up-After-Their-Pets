@@ -18,7 +18,6 @@ interface TeamConfig {
 interface BuildConfig {
   battleId: string;
   label: string;
-  turnTimerSeconds: number;
   teams: [TeamConfig, TeamConfig];
 }
 
@@ -43,7 +42,6 @@ export class BattleConfigurator {
       phase: 'action',
       teams,
       field: defaultField(),
-      turnTimerSeconds: config.turnTimerSeconds,
     };
   }
 

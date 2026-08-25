@@ -42,7 +42,7 @@ export function SetupPanel({ onBack, onWatch }: SetupPanelProps) {
     setStep('settings');
   }
 
-  function handleStart({ label, timerSeconds }: { label: string; timerSeconds: number }) {
+  function handleStart({ label }: { label: string }) {
     const socket = getSocket();
     const id = uuidv4();
     setBattleId(id);
@@ -64,7 +64,6 @@ export function SetupPanel({ onBack, onWatch }: SetupPanelProps) {
       data: {
         battleId: id,
         label,
-        turnTimerSeconds: timerSeconds,
         teams: [
           { slots: buildSlotsWithTeams(slotAssignment!.teamA) },
           { slots: buildSlotsWithTeams(slotAssignment!.teamB) },

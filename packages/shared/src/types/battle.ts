@@ -85,5 +85,4 @@ export interface BattleState {
   teams: [TeamState, TeamState];
   field: FieldState;
   winner?: 0 | 1;
-  turnTimerSeconds: number;
 }

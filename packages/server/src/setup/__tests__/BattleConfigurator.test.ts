@@ -17,7 +17,6 @@ describe('BattleConfigurator', () => {
     const state = config.build({
       battleId: 'test-battle',
       label: 'Test',
-      turnTimerSeconds: 60,
       teams: [
         { slots: [{ slotId: 'a1', displayName: 'Ash', isNpc: false, party: [mockSet] }] },
         { slots: [{ slotId: 'b1', displayName: 'Gary', isNpc: true, party: [mockSet] }] },
@@ -33,7 +32,7 @@ describe('BattleConfigurator', () => {
   it('calculates correct HP from EVs/IVs/nature', () => {
     const config = new BattleConfigurator();
     const state = config.build({
-      battleId: 'x', label: 'x', turnTimerSeconds: 60,
+      battleId: 'x', label: 'x',
       teams: [
         { slots: [{ slotId: 'a1', displayName: 'P', isNpc: false, party: [mockSet] }] },
         { slots: [{ slotId: 'b1', displayName: 'Q', isNpc: true, party: [mockSet] }] },

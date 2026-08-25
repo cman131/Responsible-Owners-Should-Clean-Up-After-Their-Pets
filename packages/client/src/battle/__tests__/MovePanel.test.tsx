@@ -15,7 +15,6 @@ const mockRequest: ActionRequestPayload = {
   canSwitch: false,
   switchTargets: [],
   canTerastallize: true,
-  timerSeconds: 60,
 };
 
 describe('MovePanel', () => {

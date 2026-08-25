@@ -64,6 +64,5 @@ export function make1v1State(): BattleState {
     phase: 'action',
     teams: [teamA, teamB],
     field: defaultField(),
-    turnTimerSeconds: 60,
   };
 }

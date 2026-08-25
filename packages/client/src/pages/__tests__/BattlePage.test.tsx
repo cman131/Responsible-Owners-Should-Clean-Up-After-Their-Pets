@@ -42,7 +42,6 @@ function makeState(): BattleState {
       { stealthRock: false, spikes: 0, toxicSpikes: 0, stickyWeb: false, reflect: 0, lightScreen: 0, auroraVeil: 0 },
       { stealthRock: false, spikes: 0, toxicSpikes: 0, stickyWeb: false, reflect: 0, lightScreen: 0, auroraVeil: 0 },
     ]},
-    turnTimerSeconds: 60,
   };
 }
 

@@ -17,7 +17,6 @@ interface Props { battleId: string; onBack: () => void }
 function ControlPanelInner({ battleId, onBack }: Props) {
   const { state, turnLog } = useBattle();
   const [npcRequests, setNpcRequests] = useState<NpcSlotRequest[]>([]);
-  const [paused, setPaused] = useState(false);
 
   useEffect(() => {
     const socket = getSocket();
@@ -47,11 +46,6 @@ function ControlPanelInner({ battleId, onBack }: Props) {
     }
   }
 
-  function togglePause() {
-    sendAdminAction(paused ? 'unpause' : 'pause', {});
-    setPaused(!paused);
-  }
-
   return (
     <div style={{ background: '#0d0d1a', minHeight: '100vh', display: 'flex', gap: 16, padding: 16 }}>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -62,9 +56,6 @@ function ControlPanelInner({ battleId, onBack }: Props) {
         {state && <BattleScene state={state} mySlotId="__admin__" />}
         <TurnLog messages={turnLog} />
         <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={togglePause} style={{ ...btnStyle, background: paused ? '#27ae60' : '#e67e22' }}>
-            {paused ? 'UNPAUSE' : 'PAUSE'}
-          </button>
           <button onClick={() => handleForfeit('team-a')} style={{ ...btnStyle, background: '#555' }}>FORFEIT TEAM A</button>
           <button onClick={() => handleForfeit('team-b')} style={{ ...btnStyle, background: '#555' }}>FORFEIT TEAM B</button>
         </div>

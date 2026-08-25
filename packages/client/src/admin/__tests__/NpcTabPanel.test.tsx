@@ -24,7 +24,6 @@ const makeRequest = (slotId: string, legalTargets: string[]): ActionRequestPaylo
   canSwitch: false,
   switchTargets: [],
   canTerastallize: false,
-  timerSeconds: 60,
 });
 
 const npcRequests = [
@@ -45,7 +44,6 @@ const state: BattleState = {
     { stealthRock: false, spikes: 0, toxicSpikes: 0, stickyWeb: false, reflect: 0, lightScreen: 0, auroraVeil: 0 },
     { stealthRock: false, spikes: 0, toxicSpikes: 0, stickyWeb: false, reflect: 0, lightScreen: 0, auroraVeil: 0 },
   ]},
-  turnTimerSeconds: 60,
 };
 
 describe('NpcTabPanel', () => {
