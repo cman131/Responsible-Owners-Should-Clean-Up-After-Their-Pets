@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { PokemonSpecies, PokemonSet } from '@poke-fighter/shared';
 import { PokemonSearchDropdown } from './PokemonSearchDropdown.js';
 import { MoveSearchDropdown } from './MoveSearchDropdown.js';
 import { TYPE_COLORS } from './pokemonTypeColors.js';
+import { getSocket } from '../socket.js';
+import { toShowdownId } from '../battle/utils.js';
 
 interface Props {
   value: Partial<PokemonSet>;
@@ -37,12 +39,29 @@ const NATURES = [
   { id: 'quirky',  boost: null,  drop: null  },
 ] as const;
 
-function toShowdownId(name: string) {
-  return name.toLowerCase().replace(/[^a-z0-9]/g, '');
-}
-
 export function PokemonSlotEditor({ value, onChange }: Props) {
   const [currentSpecies, setCurrentSpecies] = useState<PokemonSpecies | null>(null);
+
+  useEffect(() => {
+    if (!value.speciesId || currentSpecies?.id === value.speciesId) return;
+
+    let alive = true;
+    const socket = getSocket();
+
+    function handleResults(payload: { resource: string; results: unknown[] }) {
+      if (!alive || payload.resource !== 'pokemon') return;
+      const found = (payload.results as PokemonSpecies[]).find((r) => r.id === value.speciesId);
+      if (found) setCurrentSpecies(found);
+    }
+
+    socket.on('data:results', handleResults);
+    socket.emit('admin:action', { type: 'data:query', data: { resource: 'pokemon', query: `${value.speciesId}` } } as any);
+
+    return () => {
+      alive = false;
+      socket.off('data:results', handleResults);
+    };
+  }, [value.speciesId, currentSpecies?.id]);
 
   function pickPokemon(species: PokemonSpecies) {
     setCurrentSpecies(species);
@@ -58,13 +77,18 @@ export function PokemonSlotEditor({ value, onChange }: Props) {
     });
   }
 
+  function clearSlot() {
+    setCurrentSpecies(null);
+    onChange({});
+  }
+
   function updateField<K extends keyof PokemonSet>(field: K, v: PokemonSet[K]) {
     onChange({ ...value, [field]: v });
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <PokemonSearchDropdown onSelect={pickPokemon} />
+      {!value.speciesId && <PokemonSearchDropdown onSelect={pickPokemon} />}
 
       {currentSpecies && (
         <div style={{ background: '#0d1a2e', border: '1px solid #2980b9', borderRadius: 4, padding: '6px 10px', display: 'flex', alignItems: 'center', gap: 10, fontSize: 11, flexWrap: 'wrap' }}>
@@ -92,14 +116,17 @@ export function PokemonSlotEditor({ value, onChange }: Props) {
             <div style={{ color: '#aaa', fontSize: 11 }}>
               {currentSpecies?.displayName ?? value.nickname ?? `#${value.speciesId}`}
             </div>
-            <img
-              src={currentSpecies
-                ? `https://play.pokemonshowdown.com/sprites/ani/${toShowdownId(currentSpecies.name)}.gif`
-                : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${value.speciesId}.png`}
-              alt=""
-              style={{ imageRendering: 'pixelated', width: 80, height: 80 }}
-              loading="lazy"
-            />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button onClick={clearSlot} style={{ background: 'none', border: '1px solid #555', color: '#aaa', padding: '2px 8px', borderRadius: 3, cursor: 'pointer', fontFamily: 'inherit', fontSize: 10, letterSpacing: 1 }}>✕ CLEAR</button>
+              <img
+                src={currentSpecies
+                  ? `https://play.pokemonshowdown.com/sprites/ani/${toShowdownId(currentSpecies.name)}.gif`
+                  : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${value.speciesId}.png`}
+                alt=""
+                style={{ imageRendering: 'pixelated', width: 80, height: 80 }}
+                loading="lazy"
+              />
+            </div>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <label style={lbl}>Name</label>
