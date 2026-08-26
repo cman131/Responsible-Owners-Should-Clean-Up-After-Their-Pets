@@ -1,6 +1,6 @@
 import type {
   BattleState, SlotState, PartyMember, MoveAction, SwitchAction,
-  TurnResolveEvent, PokemonType,
+  TurnResolveEvent, PokemonType, VolatileStatusEntry,
 } from '@poke-fighter/shared';
 import { DataLoader } from '../data/loader.js';
 import { calcDamage, randomDamageFactor } from './damage.js';
@@ -271,12 +271,22 @@ export class BattleEngine {
         if (!active || active.fainted) continue;
 
         if (active.status) {
-          // Pre-increment toxic counter so first tick = 1/16 (Gen 9 schedule)
+          let volatileEntry: VolatileStatusEntry | undefined;
+
           if (active.status === 'tox') {
-            active.volatileStatus.push({ name: 'toxic-counter' });
+            let toxEntry = active.volatileStatus.find(v => v.name === 'toxic');
+            if (!toxEntry) {
+              toxEntry = { name: 'toxic', counter: 0 };
+              active.volatileStatus.push(toxEntry);
+            }
+            toxEntry.counter = (toxEntry.counter ?? 0) + 1;
+            volatileEntry = toxEntry;
+          } else if (active.status === 'slp') {
+            volatileEntry = active.volatileStatus.find(v => v.name === 'sleep');
           }
-          const toxicCounter = active.volatileStatus.filter((v) => v.name === 'toxic-counter').length;
-          const tick = tickStatus(active.status, active.maxHp, toxicCounter);
+
+          const tick = tickStatus(active.status, active.maxHp, volatileEntry);
+
           if (tick.hpDelta !== 0) {
             const damage = Math.min(-tick.hpDelta, active.currentHp);
             active.currentHp -= damage;
@@ -285,6 +295,16 @@ export class BattleEngine {
               active.fainted = true;
               active.currentHp = 0;
               events.push({ type: 'faint', data: { slotId: slot.slotId, instanceId: active.instanceId } });
+            }
+          }
+
+          if (active.status === 'slp') {
+            if (tick.cured) {
+              active.volatileStatus = active.volatileStatus.filter(v => v.name !== 'sleep');
+              delete active.status;
+              events.push({ type: 'status-cured', data: { slotId: slot.slotId, status: 'slp' } });
+            } else if (volatileEntry) {
+              volatileEntry.counter = (volatileEntry.counter ?? 1) - 1;
             }
           }
         }

@@ -33,3 +33,29 @@ describe('PARALYSIS_SPEED_MOD', () => {
     expect(PARALYSIS_SPEED_MOD).toBe(0.5);
   });
 });
+
+describe('tickStatus for sleep', () => {
+  it('returns cured: true when sleep volatile entry counter is 0', () => {
+    const result = tickStatus('slp', 100, { name: 'sleep', counter: 0 });
+    expect(result.cured).toBe(true);
+  });
+
+  it('returns cured: false when sleep counter is greater than 0', () => {
+    const result = tickStatus('slp', 100, { name: 'sleep', counter: 2 });
+    expect(result.cured).toBe(false);
+  });
+
+  it('returns cured: true when no volatile entry is provided', () => {
+    const result = tickStatus('slp', 100, undefined);
+    expect(result.cured).toBe(true);
+  });
+});
+
+describe('tickStatus for toxic', () => {
+  it('deals escalating damage based on the counter in the volatile entry', () => {
+    const r1 = tickStatus('tox', 160, { name: 'toxic', counter: 1 });
+    const r3 = tickStatus('tox', 160, { name: 'toxic', counter: 3 });
+    expect(r1.hpDelta).toBe(-10); // floor(160 * 1/16) = 10
+    expect(r3.hpDelta).toBe(-30); // floor(160 * 3/16) = 30
+  });
+});
