@@ -1,5 +1,5 @@
 import type {
-  PartyMember, StatBoosts, StatusCondition, PokemonType, TurnResolveEvent,
+  PartyMember, StatBoosts, StatusCondition, PokemonType, TurnResolveEvent, Move,
 } from '@poke-fighter/shared';
 import { canApplyStatus } from './status.js';
 
@@ -35,4 +35,20 @@ export function applyStatBoost(
     changes[key] = actual;
   }
   return { type: 'stat-change', data: { slotId, changes } };
+}
+
+const STATUS_CONDITIONS = new Set<string>(['brn', 'par', 'psn', 'tox', 'slp', 'frz']);
+
+export function evaluateSecondaryEffect(
+  move: Move,
+  target: PartyMember,
+  targetSlotId: string,
+  targetTypes: PokemonType[],
+): TurnResolveEvent | null {
+  if (!move.effect || move.effectChance === undefined) return null;
+  if (Math.random() * 100 >= move.effectChance) return null;
+  if (STATUS_CONDITIONS.has(move.effect)) {
+    return applyStatus(target, targetSlotId, move.effect as StatusCondition, targetTypes);
+  }
+  return null;
 }

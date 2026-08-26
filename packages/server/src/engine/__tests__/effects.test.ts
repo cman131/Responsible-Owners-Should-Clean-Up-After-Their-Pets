@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { applyStatus, applyStatBoost } from '../effects.js';
+import { describe, it, expect, vi } from 'vitest';
+import { applyStatus, applyStatBoost, evaluateSecondaryEffect } from '../effects.js';
+import type { Move } from '@poke-fighter/shared';
 import { makePokemon } from './fixtures.js';
 
 describe('applyStatus', () => {
@@ -75,5 +76,43 @@ describe('applyStatBoost', () => {
     applyStatBoost(mon, 'slot-a1', { spa: 1, spd: 1 });
     expect(mon.statBoosts.spa).toBe(1);
     expect(mon.statBoosts.spd).toBe(1);
+  });
+});
+
+describe('evaluateSecondaryEffect', () => {
+  it('returns null if the move has no effect or effectChance', () => {
+    const move = {} as Move;
+    const target = makePokemon({ ability: '' });
+    expect(evaluateSecondaryEffect(move, target, 'slot-b1', ['Normal'])).toBeNull();
+  });
+
+  it('applies the status when the random roll succeeds', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0); // 0 * 100 = 0, which is < 30
+    const move = { effect: 'psn', effectChance: 30 } as unknown as Move;
+    const target = makePokemon({ ability: '' });
+    const event = evaluateSecondaryEffect(move, target, 'slot-b1', ['Normal']);
+    expect(event).not.toBeNull();
+    expect(target.status).toBe('psn');
+    vi.restoreAllMocks();
+  });
+
+  it('returns null when the random roll fails', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.99); // 99 >= 30
+    const move = { effect: 'brn', effectChance: 30 } as unknown as Move;
+    const target = makePokemon({ ability: '' });
+    const event = evaluateSecondaryEffect(move, target, 'slot-b1', ['Normal']);
+    expect(event).toBeNull();
+    expect(target.status).toBeUndefined();
+    vi.restoreAllMocks();
+  });
+
+  it('returns null if the target is immune to the secondary status', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0); // roll succeeds
+    const move = { effect: 'brn', effectChance: 10 } as unknown as Move;
+    const target = makePokemon({ ability: '' });
+    const event = evaluateSecondaryEffect(move, target, 'slot-b1', ['Fire']); // Fire immune to burn
+    expect(event).toBeNull();
+    expect(target.status).toBeUndefined();
+    vi.restoreAllMocks();
   });
 });
