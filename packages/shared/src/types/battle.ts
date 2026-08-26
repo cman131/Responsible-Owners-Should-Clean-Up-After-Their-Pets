@@ -8,6 +8,11 @@ export type WeatherType = 'sun' | 'rain' | 'sand' | 'snow';
 
 export type TerrainType = 'electric' | 'grassy' | 'misty' | 'psychic';
 
+export interface VolatileStatusEntry {
+  name: string;
+  counter?: number;
+}
+
 export interface StatBoosts {
   atk: number;  // -6 to +6
   def: number;
@@ -37,7 +42,7 @@ export interface PartyMember {
   heldItem?: string;        // item id
   moves: [MoveSlot, MoveSlot, MoveSlot, MoveSlot];
   status?: StatusCondition;
-  volatileStatus: string[]; // e.g. 'confusion', 'leechseed', 'encore'
+  volatileStatus: VolatileStatusEntry[]; // e.g. 'confusion', 'leechseed', 'encore'
   statBoosts: StatBoosts;
   teraType?: PokemonType;
   hasTerastallized: boolean;

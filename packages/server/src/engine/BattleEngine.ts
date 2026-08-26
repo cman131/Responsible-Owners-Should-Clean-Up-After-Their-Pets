@@ -273,9 +273,9 @@ export class BattleEngine {
         if (active.status) {
           // Pre-increment toxic counter so first tick = 1/16 (Gen 9 schedule)
           if (active.status === 'tox') {
-            active.volatileStatus.push('toxic-counter');
+            active.volatileStatus.push({ name: 'toxic-counter' });
           }
-          const toxicCounter = active.volatileStatus.filter((v) => v === 'toxic-counter').length;
+          const toxicCounter = active.volatileStatus.filter((v) => v.name === 'toxic-counter').length;
           const tick = tickStatus(active.status, active.maxHp, toxicCounter);
           if (tick.hpDelta !== 0) {
             const damage = Math.min(-tick.hpDelta, active.currentHp);
