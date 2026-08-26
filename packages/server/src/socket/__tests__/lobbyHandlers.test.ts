@@ -190,7 +190,7 @@ describe('registerLobbyHandlers – player:join', () => {
       canTerastallize: false,
     };
 
-    const roomWithPending = makeRoom({}, { getPendingActionRequest: vi.fn(() => pendingRequest) });
+    const roomWithPending = makeRoom({}, { getPendingActionRequest: vi.fn<any[], any>(() => pendingRequest) });
     registerLobbyHandlers(
       socket as any,
       lobby as any,
