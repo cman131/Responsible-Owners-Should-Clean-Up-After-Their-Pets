@@ -99,4 +99,18 @@ describe('formatTargetNames', () => {
     const state = makeState([]);
     expect(formatTargetNames(['unknown-slot'], state)).toBe('unknown-slot');
   });
+
+  it('returns empty string for empty targets array', () => {
+    const state = makeState([]);
+    expect(formatTargetNames([], state)).toBe('');
+  });
+
+  it('exactly 3 targets — no ellipsis', () => {
+    const state = makeState([
+      { slotId: 's1', displayName: 'Ash' },
+      { slotId: 's2', displayName: 'Misty' },
+      { slotId: 's3', displayName: 'Brock' },
+    ]);
+    expect(formatTargetNames(['s1', 's2', 's3'], state)).toBe('Ash, Misty, Brock');
+  });
 });
