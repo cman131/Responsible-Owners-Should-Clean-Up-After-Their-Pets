@@ -9,6 +9,8 @@ import { ExpBar } from '../battle/overlays/ExpBar.js';
 import { classifyTarget, getTargetLabel, getSlotDisplayName, formatTargetNames } from '../battle/targeting.js';
 import type { BattleState, ActionRequestPayload } from '@poke-fighter/shared';
 
+type ValidMove = ActionRequestPayload['validMoves'][number];
+
 export function BattlePage() {
   const location = useLocation();
   const initialState = (location.state as { battleState?: BattleState } | null)?.battleState ?? null;
@@ -29,7 +31,6 @@ function hpColor(current: number, max: number): string {
 
 function BattleView() {
   const { state, mySlotId, actionRequest, switchRequest, turnLog, submitAction } = useBattle();
-  type ValidMove = ActionRequestPayload['validMoves'][number];
   const [targetingMove, setTargetingMove] = useState<ValidMove | null>(null);
   const [selectedTarget, setSelectedTarget] = useState<string>('');
   const [terastallize, setTerastallize] = useState(false);

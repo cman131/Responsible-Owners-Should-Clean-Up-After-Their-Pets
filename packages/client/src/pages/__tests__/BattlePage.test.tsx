@@ -102,6 +102,18 @@ describe('BattlePage', () => {
     expect(screen.getByRole('combobox')).toBeTruthy();
   });
 
+  it('auto-submits self-targeting move without showing targeting UI', () => {
+    renderBattlePage(makeState());
+    const onCall = mockSocket.on.mock.calls.find((c) => c[0] === 'action:request');
+    act(() => {
+      onCall![1]({ slotId: 'a1', validMoves: [{ index: 0, moveId: 'roost', pp: 10, disabled: false, targetType: 'self', legalTargets: ['a1'] }], canSwitch: false, switchTargets: [], canTerastallize: false });
+    });
+    fireEvent.click(screen.getByText('roost'));
+    expect(mockSocket.emit).toHaveBeenCalledWith('action:submit', expect.objectContaining({ action: expect.objectContaining({ type: 'move', targetSlotId: 'a1' }) }));
+    expect(screen.queryByRole('combobox')).toBeNull();
+    expect(screen.queryByText('Confirm')).toBeNull();
+  });
+
   it('shows waiting message when no action request is pending', () => {
     renderBattlePage(makeState());
     expect(screen.getByText('Waiting for others...')).toBeTruthy();

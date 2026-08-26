@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getSocket } from '../socket.js';
+import { classifyTarget } from '../battle/targeting.js';
 import type { ActionRequestPayload, BattleState } from '@poke-fighter/shared';
 
 interface NpcSlotRequest {
@@ -55,12 +56,15 @@ export function NpcTabPanel({ battleId, npcRequests, state }: Props) {
     setSelectedTarget('');
   }
 
-  function handleMoveClick(slotId: string, moveIndex: 0 | 1 | 2 | 3, legalTargets: string[]) {
-    if (legalTargets.length === 1) {
-      submitNpcAction(slotId, moveIndex, legalTargets[0]);
+  function handleMoveClick(slotId: string, mv: ActionRequestPayload['validMoves'][number]) {
+    const mode = classifyTarget(mv.targetType);
+    if (mode === 'auto' || (mode === 'choose' && mv.legalTargets.length === 1)) {
+      submitNpcAction(slotId, mv.index, mv.legalTargets[0]);
+    } else if (mode === 'choose') {
+      setPendingMove({ slotId, moveIndex: mv.index });
+      setSelectedTarget(mv.legalTargets[0] ?? '');
     } else {
-      setPendingMove({ slotId, moveIndex });
-      setSelectedTarget(legalTargets[0] ?? '');
+      submitNpcAction(slotId, mv.index);
     }
   }
 
@@ -125,7 +129,7 @@ export function NpcTabPanel({ battleId, npcRequests, state }: Props) {
                 <button
                   key={mv.index}
                   disabled={disabled}
-                  onClick={() => handleMoveClick(activeRequest.slotId, mv.index, mv.legalTargets)}
+                  onClick={() => handleMoveClick(activeRequest.slotId, mv)}
                   style={{ ...styles.moveBtn, opacity: disabled ? 0.4 : 1, cursor: disabled ? 'not-allowed' : 'pointer' }}
                 >
                   <span style={{ textTransform: 'capitalize', fontSize: 11 }}>{mv.moveId}</span>
