@@ -26,13 +26,15 @@ const pikachu: PokemonSet = {
 describe('TeamBuilder nature field', () => {
   it('renders nature as a select/combobox, not a text input', () => {
     render(<TeamBuilder onTeamSaved={vi.fn()} initialTeam={[pikachu]} />);
-    expect(screen.getByRole('combobox')).toBeTruthy();
+    expect(screen.getAllByRole('combobox').length).toBeGreaterThan(0);
   });
 
   it('has all 25 natures as options', () => {
     render(<TeamBuilder onTeamSaved={vi.fn()} initialTeam={[pikachu]} />);
-    const select = screen.getByRole('combobox') as HTMLSelectElement;
-    expect(select.options.length).toBe(25);
+    const selects = screen.getAllByRole('combobox') as HTMLSelectElement[];
+    const natureSelect = selects.find((s) => s.options.length === 25)!;
+    expect(natureSelect).toBeTruthy();
+    expect(natureSelect.options.length).toBe(25);
   });
 
   it('labels non-neutral natures with stat shorthand', () => {
@@ -47,7 +49,8 @@ describe('TeamBuilder nature field', () => {
 
   it('pre-selects the current nature value', () => {
     render(<TeamBuilder onTeamSaved={vi.fn()} initialTeam={[pikachu]} />);
-    const select = screen.getByRole('combobox') as HTMLSelectElement;
-    expect(select.value).toBe('timid');
+    const selects = screen.getAllByRole('combobox') as HTMLSelectElement[];
+    const natureSelect = selects.find((s) => s.options.length === 25)!;
+    expect(natureSelect.value).toBe('timid');
   });
 });
