@@ -19,7 +19,7 @@ Add a compact inline chip row to each HP bar row in the battle view. When a Pok�
 
 ### Active effects definition
 
-The indicator is shown when any of the following is true:
+The indicator is shown when `mon.fainted` is false AND any of the following is true:
 - `mon.status` is set (any status condition)
 - `mon.volatileStatus.length > 0`
 - Any value in `mon.statBoosts` is non-zero
@@ -37,7 +37,7 @@ Chips appear inside a `position: relative` wrapper div that is the last item in 
 - `confusion` → CNF, `leechseed` → SEED, `encore` → ENC
 - Unknown names: first 3 chars uppercased
 
-**Stat-only fallback chip:** If stat boosts are non-zero but there is no status and no volatile status, show a single `±` chip in purple (`#9b59b6`) so the indicator is still present.
+**Stat-only fallback chip:** If stat boosts are non-zero but there is no status and no volatile status, show a single `±` chip in gray (`#7f8c8d`) so the indicator is still present. (Purple is avoided because it is already used for PSN.)
 
 **Overflow:** Show up to 3 chips inline. Additional effects collapse to a `+N` label.
 
@@ -70,6 +70,7 @@ In `BattlePage.tsx`, both the enemy HP rows and the own-team HP rows receive `<E
 ## Testing
 
 - `EffectsIndicator` returns `null` when `status` is undefined, `volatileStatus` is empty, and all stat boosts are 0
+- `EffectsIndicator` returns `null` when `mon.fainted` is true
 - Renders status chip with correct color when `status` is set
 - Renders volatile chips with abbreviations
 - Renders `±` chip when only stat boosts are non-zero
