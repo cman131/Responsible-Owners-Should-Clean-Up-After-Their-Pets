@@ -25,12 +25,14 @@ export function getLegalTargets(
   const allySlots = nonSpectatorSlots(allyTeam);
   const foeSlots = foeTeam ? nonSpectatorSlots(foeTeam) : [];
   const attackerIdx = allySlots.findIndex((s) => s.slotId === attackerSlotId);
+  if (attackerIdx === -1) return [];
 
   const isLiving = (s: SlotState) => !s.party[s.activePokemonIndex]?.fainted;
   const isLivingAlly = (s: SlotState) => s.slotId !== attackerSlotId && isLiving(s);
 
   const allLivingFoes = () => foeSlots.filter(isLiving).map((s) => s.slotId);
   const allLivingAllies = () => allySlots.filter(isLivingAlly).map((s) => s.slotId);
+  // Foe slot array indices mirror ally positional indices by convention (slot 0 = left, etc.)
   const adjacentLivingFoes = () =>
     foeSlots.filter((s, i) => isLiving(s) && isAdjacent(attackerIdx, i)).map((s) => s.slotId);
   const adjacentLivingAllies = () =>
