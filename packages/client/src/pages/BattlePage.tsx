@@ -6,7 +6,8 @@ import { MovePanel } from '../battle/overlays/MovePanel.js';
 import { SwitchPanel } from '../battle/overlays/SwitchPanel.js';
 import { TurnLog } from '../battle/overlays/TurnLog.js';
 import { ExpBar } from '../battle/overlays/ExpBar.js';
-import type { BattleState } from '@poke-fighter/shared';
+import { classifyTarget, getTargetLabel, getSlotDisplayName, formatTargetNames } from '../battle/targeting.js';
+import type { BattleState, ActionRequestPayload } from '@poke-fighter/shared';
 
 export function BattlePage() {
   const location = useLocation();
@@ -26,24 +27,17 @@ function hpColor(current: number, max: number): string {
   return '#e74c3c';
 }
 
-function getSlotDisplayName(state: BattleState, slotId: string): string {
-  for (const team of state.teams) {
-    const slot = team.slots.find((s) => s.slotId === slotId);
-    if (slot) return slot.displayName;
-  }
-  return slotId;
-}
-
 function BattleView() {
   const { state, mySlotId, actionRequest, switchRequest, turnLog, submitAction } = useBattle();
-  const [targetingMoveIndex, setTargetingMoveIndex] = useState<0 | 1 | 2 | 3 | null>(null);
+  type ValidMove = ActionRequestPayload['validMoves'][number];
+  const [targetingMove, setTargetingMove] = useState<ValidMove | null>(null);
   const [selectedTarget, setSelectedTarget] = useState<string>('');
   const [terastallize, setTerastallize] = useState(false);
   const [showSwitchPanel, setShowSwitchPanel] = useState(false);
 
   // Reset targeting state when a new action request arrives
   useEffect(() => {
-    setTargetingMoveIndex(null);
+    setTargetingMove(null);
     setSelectedTarget('');
   }, [actionRequest]);
 
@@ -63,11 +57,11 @@ function BattleView() {
     if (!actionRequest) return;
     const move = actionRequest.validMoves[moveIndex];
     if (!move) return;
-    if (actionRequest.legalTargets.length > 1) {
-      setTargetingMoveIndex(moveIndex);
-      setSelectedTarget(actionRequest.legalTargets[0] ?? '');
-    } else {
-      const autoTarget = actionRequest.legalTargets[0];
+
+    const mode = classifyTarget(move.targetType);
+
+    if (mode === 'auto') {
+      const autoTarget = move.legalTargets[0];
       submitAction({
         slotId: mySlotId,
         action: {
@@ -78,21 +72,30 @@ function BattleView() {
         },
       });
       setTerastallize(false);
+      return;
+    }
+
+    setTargetingMove(move);
+    if (mode === 'choose') {
+      setSelectedTarget(move.legalTargets[0] ?? '');
     }
   }
 
   function handleConfirmTarget() {
-    if (targetingMoveIndex === null || !actionRequest) return;
+    if (!targetingMove || !actionRequest) return;
+    const mode = classifyTarget(targetingMove.targetType);
+
     submitAction({
       slotId: mySlotId,
       action: {
         type: 'move',
-        moveIndex: targetingMoveIndex,
-        targetSlotId: selectedTarget,
+        moveIndex: targetingMove.index,
+        ...(mode === 'choose' ? { targetSlotId: selectedTarget } : {}),
         ...(terastallize ? { terastallize } : {}),
       },
     });
-    setTargetingMoveIndex(null);
+    setTargetingMove(null);
+    setSelectedTarget('');
     setTerastallize(false);
   }
 
@@ -175,32 +178,47 @@ function BattleView() {
                 onSelectMove={handleMoveSelect}
                 onSwitchRequested={() => setShowSwitchPanel(true)}
               />
-              {targetingMoveIndex !== null && (
-                <div style={{ marginTop: 8, background: '#0d0d1a', border: '1px solid #3498db', borderRadius: 4, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ color: '#aaa', fontSize: 11 }}>Target:</span>
-                  <select
-                    value={selectedTarget}
-                    onChange={(e) => setSelectedTarget(e.target.value)}
-                    style={{ flex: 1, background: '#111', border: '1px solid #555', color: '#fff', padding: '4px 8px', borderRadius: 3, fontFamily: 'inherit', fontSize: 12 }}
-                  >
-                    {actionRequest.legalTargets.map((t) => (
-                      <option key={t} value={t}>{getSlotDisplayName(state, t)}</option>
-                    ))}
-                  </select>
-                  <button
-                    onClick={handleConfirmTarget}
-                    style={{ background: '#2980b9', color: '#fff', border: 'none', padding: '4px 14px', borderRadius: 3, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12 }}
-                  >
-                    Confirm
-                  </button>
-                  <button
-                    onClick={() => setTargetingMoveIndex(null)}
-                    style={{ background: 'none', border: '1px solid #555', color: '#aaa', padding: '4px 10px', borderRadius: 3, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12 }}
-                  >
-                    ✕
-                  </button>
-                </div>
-              )}
+              {targetingMove !== null && (() => {
+                const mode = classifyTarget(targetingMove.targetType);
+                return (
+                  <div style={{ marginTop: 8, background: '#0d0d1a', border: '1px solid #3498db', borderRadius: 4, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ color: '#aaa', fontSize: 11 }}>
+                      {mode === 'choose' ? 'Target:' : 'Targets:'}
+                    </span>
+                    {mode === 'choose' ? (
+                      <select
+                        value={selectedTarget}
+                        onChange={(e) => setSelectedTarget(e.target.value)}
+                        style={{ flex: 1, background: '#111', border: '1px solid #555', color: '#fff', padding: '4px 8px', borderRadius: 3, fontFamily: 'inherit', fontSize: 12 }}
+                      >
+                        {targetingMove.legalTargets.map((t) => (
+                          <option key={t} value={t}>{getSlotDisplayName(state, t)}</option>
+                        ))}
+                      </select>
+                    ) : mode === 'listed' ? (
+                      <span style={{ flex: 1, color: '#fff', fontSize: 12 }}>
+                        {formatTargetNames(targetingMove.legalTargets, state)}
+                      </span>
+                    ) : (
+                      <span style={{ flex: 1, color: '#fff', fontSize: 12 }}>
+                        {getTargetLabel(targetingMove.targetType)}
+                      </span>
+                    )}
+                    <button
+                      onClick={handleConfirmTarget}
+                      style={{ background: '#2980b9', color: '#fff', border: 'none', padding: '4px 14px', borderRadius: 3, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12 }}
+                    >
+                      Confirm
+                    </button>
+                    <button
+                      onClick={() => { setTargetingMove(null); setSelectedTarget(''); }}
+                      style={{ background: 'none', border: '1px solid #555', color: '#aaa', padding: '4px 10px', borderRadius: 3, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12 }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                );
+              })()}
               {actionRequest.canTerastallize && (
                 <div style={{ marginTop: 10, borderTop: '1px solid #333', paddingTop: 10 }}>
                   <label style={{ color: '#aaa', fontSize: 11 }}>

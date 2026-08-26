@@ -15,12 +15,11 @@ beforeEach(() => {
 const makeRequest = (slotId: string, legalTargets: string[]): ActionRequestPayload => ({
   slotId,
   validMoves: [
-    { index: 0, moveId: 'surf', pp: 15, disabled: false },
-    { index: 1, moveId: 'icebeam', pp: 10, disabled: false },
-    { index: 2, moveId: 'blizzard', pp: 5, disabled: false },
-    { index: 3, moveId: 'flash', pp: 20, disabled: false },
+    { index: 0, moveId: 'surf', pp: 15, disabled: false, targetType: 'normal', legalTargets },
+    { index: 1, moveId: 'icebeam', pp: 10, disabled: false, targetType: 'normal', legalTargets },
+    { index: 2, moveId: 'blizzard', pp: 5, disabled: false, targetType: 'allAdjacentFoes', legalTargets },
+    { index: 3, moveId: 'flash', pp: 20, disabled: false, targetType: 'normal', legalTargets },
   ],
-  legalTargets,
   canSwitch: false,
   switchTargets: [],
   canTerastallize: false,

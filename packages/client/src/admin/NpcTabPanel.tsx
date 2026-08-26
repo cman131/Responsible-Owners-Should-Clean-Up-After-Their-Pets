@@ -91,9 +91,9 @@ export function NpcTabPanel({ battleId, npcRequests, state }: Props) {
 
       {activeRequest && (
         <div style={styles.tabBody}>
-          {/* VS summary */}
+          {/* VS summary — unique targets across all moves */}
           <div style={styles.vsSummary}>
-            {activeRequest.request.legalTargets.map((targetSlotId) => {
+            {[...new Set(activeRequest.request.validMoves.flatMap((m) => m.legalTargets))].map((targetSlotId) => {
               const mon = getActiveMon(targetSlotId);
               const pct = mon && !mon.fainted ? mon.currentHp / mon.maxHp : 0;
               const barColor = pct > 0.5 ? '#27ae60' : pct > 0.2 ? '#f39c12' : '#e74c3c';
@@ -125,7 +125,7 @@ export function NpcTabPanel({ battleId, npcRequests, state }: Props) {
                 <button
                   key={mv.index}
                   disabled={disabled}
-                  onClick={() => handleMoveClick(activeRequest.slotId, mv.index, activeRequest.request.legalTargets)}
+                  onClick={() => handleMoveClick(activeRequest.slotId, mv.index, mv.legalTargets)}
                   style={{ ...styles.moveBtn, opacity: disabled ? 0.4 : 1, cursor: disabled ? 'not-allowed' : 'pointer' }}
                 >
                   <span style={{ textTransform: 'capitalize', fontSize: 11 }}>{mv.moveId}</span>
@@ -136,7 +136,9 @@ export function NpcTabPanel({ battleId, npcRequests, state }: Props) {
           </div>
 
           {/* Target selector — multi-target only */}
-          {pendingMove?.slotId === activeRequest.slotId && (
+          {pendingMove?.slotId === activeRequest.slotId && (() => {
+            const pendingMoveLegalTargets = activeRequest.request.validMoves.find((m) => m.index === pendingMove.moveIndex)?.legalTargets ?? [];
+            return (
             <div style={styles.targetRow}>
               <span style={{ color: '#aaa', fontSize: 10 }}>Target:</span>
               <select
@@ -144,7 +146,7 @@ export function NpcTabPanel({ battleId, npcRequests, state }: Props) {
                 onChange={(e) => setSelectedTarget(e.target.value)}
                 style={styles.targetSelect}
               >
-                {activeRequest.request.legalTargets.map((t) => (
+                {pendingMoveLegalTargets.map((t) => (
                   <option key={t} value={t}>{getDisplayName(t)}</option>
                 ))}
               </select>
@@ -156,7 +158,8 @@ export function NpcTabPanel({ battleId, npcRequests, state }: Props) {
               </button>
               <button onClick={() => setPendingMove(null)} style={styles.cancelBtn}>✕</button>
             </div>
-          )}
+            );
+          })()}
         </div>
       )}
     </div>

@@ -87,7 +87,7 @@ describe('BattlePage', () => {
     const onCall = mockSocket.on.mock.calls.find((c) => c[0] === 'action:request');
     expect(onCall).toBeTruthy();
     act(() => {
-      onCall![1]({ slotId: 'a1', validMoves: [{ index: 0, moveId: 'tackle', pp: 35, disabled: false }], legalTargets: ['b1'], canSwitch: false, switchTargets: [], canTerastallize: false });
+      onCall![1]({ slotId: 'a1', validMoves: [{ index: 0, moveId: 'tackle', pp: 35, disabled: false, targetType: 'normal', legalTargets: ['b1'] }], canSwitch: false, switchTargets: [], canTerastallize: false });
     });
     expect(screen.getByText('tackle')).toBeTruthy();
   });
@@ -96,7 +96,7 @@ describe('BattlePage', () => {
     renderBattlePage(makeState());
     const onCall = mockSocket.on.mock.calls.find((c) => c[0] === 'action:request');
     act(() => {
-      onCall![1]({ slotId: 'a1', validMoves: [{ index: 0, moveId: 'tackle', pp: 35, disabled: false }], legalTargets: ['b1', 'b2'], canSwitch: false, switchTargets: [], canTerastallize: false });
+      onCall![1]({ slotId: 'a1', validMoves: [{ index: 0, moveId: 'tackle', pp: 35, disabled: false, targetType: 'normal', legalTargets: ['b1', 'b2'] }], canSwitch: false, switchTargets: [], canTerastallize: false });
     });
     fireEvent.click(screen.getByText('tackle'));
     expect(screen.getByRole('combobox')).toBeTruthy();
