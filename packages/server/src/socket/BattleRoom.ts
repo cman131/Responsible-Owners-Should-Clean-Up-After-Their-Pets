@@ -132,18 +132,7 @@ export class BattleRoom {
     if (!active || active.fainted) return null;
     return {
       slotId: slot.slotId,
-      validMoves: active.moves.map((m, i) => {
-        const moveData = this.data.getMove(m.moveId);
-        const targetType = moveData?.target ?? 'normal';
-        return {
-          index: i as 0 | 1 | 2 | 3,
-          moveId: m.moveId,
-          pp: m.currentPp,
-          disabled: false,
-          targetType,
-          legalTargets: getLegalTargets(this.state, slotId, targetType),
-        };
-      }),
+      validMoves: this.buildValidMoves(slotId, active.moves),
       canSwitch: slot.party.some((p, i) => i !== slot.activePokemonIndex && !p.fainted),
       switchTargets: slot.party
         .filter((p, i) => i !== slot.activePokemonIndex && !p.fainted)
@@ -315,6 +304,22 @@ export class BattleRoom {
     return undefined;
   }
 
+  private buildValidMoves(slotId: string, moves: PartyMember['moves']): ActionRequestPayload['validMoves'] {
+    return moves.map((m, i) => {
+      const moveData = this.data.getMove(m.moveId);
+      if (!moveData) console.warn(`[BattleRoom] Unknown moveId "${m.moveId}" — defaulting targetType to 'normal'`);
+      const targetType = moveData?.target ?? 'normal';
+      return {
+        index: i as 0 | 1 | 2 | 3,
+        moveId: m.moveId,
+        pp: m.currentPp,
+        disabled: false,
+        targetType,
+        legalTargets: getLegalTargets(this.state, slotId, targetType),
+      };
+    });
+  }
+
   private activeSlotsNeedingAction(): string[] {
     return this.state.teams.flatMap((team) =>
       team.slots
@@ -339,18 +344,7 @@ export class BattleRoom {
           displayName: slot.displayName,
           request: {
             slotId: slot.slotId,
-            validMoves: active.moves.map((m, i) => {
-              const moveData = this.data.getMove(m.moveId);
-              const targetType = moveData?.target ?? 'normal';
-              return {
-                index: i as 0 | 1 | 2 | 3,
-                moveId: m.moveId,
-                pp: m.currentPp,
-                disabled: false,
-                targetType,
-                legalTargets: getLegalTargets(this.state, slot.slotId, targetType),
-              };
-            }),
+            validMoves: this.buildValidMoves(slot.slotId, active.moves),
             canSwitch: false,
             switchTargets: [],
             canTerastallize: !active.hasTerastallized && !!active.teraType,
@@ -372,18 +366,7 @@ export class BattleRoom {
           slotId: slot.slotId,
           request: {
             slotId: slot.slotId,
-            validMoves: active.moves.map((m, i) => {
-              const moveData = this.data.getMove(m.moveId);
-              const targetType = moveData?.target ?? 'normal';
-              return {
-                index: i as 0 | 1 | 2 | 3,
-                moveId: m.moveId,
-                pp: m.currentPp,
-                disabled: false,
-                targetType,
-                legalTargets: getLegalTargets(this.state, slot.slotId, targetType),
-              };
-            }),
+            validMoves: this.buildValidMoves(slot.slotId, active.moves),
             canSwitch: slot.party.some((p, i) => i !== slot.activePokemonIndex && !p.fainted),
             switchTargets: slot.party
               .filter((p, i) => i !== slot.activePokemonIndex && !p.fainted)

@@ -62,7 +62,7 @@ describe('getPendingActionRequest', () => {
     expect(req!.slotId).toBe('slot-a1');
     expect(req!.validMoves).toHaveLength(4);
     expect(req!.validMoves[0]!.legalTargets).toContain('slot-b1');
-    expect(req!.validMoves[0]!.targetType).toBeDefined();
+    expect(req!.validMoves[0]!.targetType).toBe('normal'); // flamethrower targets normal
   });
 
   it('returns null after the slot has submitted an action', () => {
