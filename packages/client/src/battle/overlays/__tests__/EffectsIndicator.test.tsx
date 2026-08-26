@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { EffectsIndicator } from '../EffectsIndicator.js';
 import type { PartyMember, MoveSlot } from '@poke-fighter/shared';
@@ -89,6 +89,83 @@ describe('EffectsIndicator', () => {
         })} />
       );
       expect(getByText('+1')).toBeTruthy();
+    });
+  });
+
+  describe('popover', () => {
+    it('does not show popover before hover', () => {
+      render(<EffectsIndicator mon={makeMon({ status: 'brn' })} />);
+      expect(screen.queryByTestId('effects-popover')).toBeNull();
+    });
+
+    it('shows popover on mouseenter and hides on mouseleave', () => {
+      const { container } = render(<EffectsIndicator mon={makeMon({ status: 'brn' })} />);
+      const wrapper = container.firstChild as HTMLElement;
+      fireEvent.mouseEnter(wrapper);
+      expect(screen.getByTestId('effects-popover')).toBeTruthy();
+      fireEvent.mouseLeave(wrapper);
+      expect(screen.queryByTestId('effects-popover')).toBeNull();
+    });
+
+    it('popover shows status chip in effects section', () => {
+      const { container } = render(<EffectsIndicator mon={makeMon({ status: 'par' })} />);
+      fireEvent.mouseEnter(container.firstChild as HTMLElement);
+      const popover = screen.getByTestId('effects-popover');
+      expect(popover.textContent).toContain('PAR');
+    });
+
+    it('popover shows volatile status chip in effects section', () => {
+      const { container } = render(
+        <EffectsIndicator mon={makeMon({ volatileStatus: [{ name: 'confusion' }] })} />
+      );
+      fireEvent.mouseEnter(container.firstChild as HTMLElement);
+      const popover = screen.getByTestId('effects-popover');
+      expect(popover.textContent).toContain('CNF');
+    });
+
+    it('popover shows ATK stat row when only ATK is boosted', () => {
+      const { container } = render(
+        <EffectsIndicator mon={makeMon({
+          status: 'brn',
+          statBoosts: { atk: -2, def: 0, spa: 0, spd: 0, spe: 0, accuracy: 0, evasion: 0 },
+        })} />
+      );
+      fireEvent.mouseEnter(container.firstChild as HTMLElement);
+      const popover = screen.getByTestId('effects-popover');
+      expect(popover.textContent).toContain('ATK');
+      expect(popover.textContent).toContain('STAT STAGES');
+    });
+
+    it('popover footnote lists zero stats when some boosts are non-zero', () => {
+      const { container } = render(
+        <EffectsIndicator mon={makeMon({
+          status: 'brn',
+          statBoosts: { atk: 1, def: 0, spa: 0, spd: 0, spe: 0, accuracy: 0, evasion: 0 },
+        })} />
+      );
+      fireEvent.mouseEnter(container.firstChild as HTMLElement);
+      const popover = screen.getByTestId('effects-popover');
+      expect(popover.textContent).toContain('at 0');
+      expect(popover.textContent).toContain('DEF');
+    });
+
+    it('popover omits stat section when all boosts are zero', () => {
+      const { container } = render(<EffectsIndicator mon={makeMon({ status: 'slp' })} />);
+      fireEvent.mouseEnter(container.firstChild as HTMLElement);
+      const popover = screen.getByTestId('effects-popover');
+      expect(popover.textContent).not.toContain('STAT STAGES');
+    });
+
+    it('popover omits effects section when only stat boosts are active', () => {
+      const { container } = render(
+        <EffectsIndicator mon={makeMon({
+          statBoosts: { atk: 0, def: 0, spa: 2, spd: 0, spe: 0, accuracy: 0, evasion: 0 },
+        })} />
+      );
+      fireEvent.mouseEnter(container.firstChild as HTMLElement);
+      const popover = screen.getByTestId('effects-popover');
+      expect(popover.textContent).not.toContain('EFFECTS');
+      expect(popover.textContent).toContain('STAT STAGES');
     });
   });
 });

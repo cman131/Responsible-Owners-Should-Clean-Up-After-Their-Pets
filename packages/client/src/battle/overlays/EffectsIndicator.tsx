@@ -30,6 +30,7 @@ const STAT_LABELS: Array<{ key: keyof StatBoosts; label: string }> = [
 const MAX_VISIBLE = 3;
 
 interface Chip {
+  id: string;
   label: string;
   color: string;
 }
@@ -45,13 +46,13 @@ function hasAnyBoost(boosts: StatBoosts): boolean {
 function buildChips(mon: PartyMember): Chip[] {
   const chips: Chip[] = [];
   if (mon.status) {
-    chips.push({ label: STATUS_LABELS[mon.status], color: STATUS_COLORS[mon.status] });
+    chips.push({ id: `status-${mon.status}`, label: STATUS_LABELS[mon.status], color: STATUS_COLORS[mon.status] });
   }
   for (const vs of mon.volatileStatus) {
-    chips.push({ label: abbrev(vs.name), color: '#3498db' });
+    chips.push({ id: `volatile-${vs.name}`, label: abbrev(vs.name), color: '#3498db' });
   }
   if (chips.length === 0 && hasAnyBoost(mon.statBoosts)) {
-    chips.push({ label: '±', color: '#7f8c8d' });
+    chips.push({ id: 'stat-boost', label: '±', color: '#7f8c8d' });
   }
   return chips;
 }
@@ -82,9 +83,9 @@ export function EffectsIndicator({ mon }: Props) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {visible.map((chip, i) => (
+      {visible.map((chip) => (
         <span
-          key={i}
+          key={chip.id}
           style={{
             background: chip.color,
             color: '#fff',
