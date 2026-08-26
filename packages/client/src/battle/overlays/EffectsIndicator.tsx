@@ -27,6 +27,8 @@ const STAT_LABELS: Array<{ key: keyof StatBoosts; label: string }> = [
   { key: 'evasion', label: 'EVA' },
 ];
 
+const MAX_VISIBLE = 3;
+
 interface Chip {
   label: string;
   color: string;
@@ -66,7 +68,6 @@ export function EffectsIndicator({ mon }: Props) {
   const chips = buildChips(mon);
   if (chips.length === 0) return null;
 
-  const MAX_VISIBLE = 3;
   const visible = chips.slice(0, MAX_VISIBLE);
   const overflow = chips.length - MAX_VISIBLE;
 
@@ -125,8 +126,8 @@ export function EffectsIndicator({ mon }: Props) {
                     {STATUS_LABELS[mon.status]}
                   </span>
                 )}
-                {mon.volatileStatus.map((vs, i) => (
-                  <span key={i} style={{ background: '#3498db', color: '#fff', fontSize: 9, padding: '2px 6px', borderRadius: 2, fontWeight: 'bold' }}>
+                {mon.volatileStatus.map((vs) => (
+                  <span key={vs.name} style={{ background: '#3498db', color: '#fff', fontSize: 9, padding: '2px 6px', borderRadius: 2, fontWeight: 'bold' }}>
                     {abbrev(vs.name)}
                   </span>
                 ))}

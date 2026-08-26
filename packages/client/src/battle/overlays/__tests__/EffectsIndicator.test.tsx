@@ -41,4 +41,54 @@ describe('EffectsIndicator', () => {
       expect(container.firstChild).toBeNull();
     });
   });
+
+  describe('chip display', () => {
+    it('shows status chip text for status condition', () => {
+      const { getByText } = render(<EffectsIndicator mon={makeMon({ status: 'brn' })} />);
+      expect(getByText('BRN')).toBeTruthy();
+    });
+
+    it('shows PAR chip for paralysis', () => {
+      const { getByText } = render(<EffectsIndicator mon={makeMon({ status: 'par' })} />);
+      expect(getByText('PAR')).toBeTruthy();
+    });
+
+    it('abbreviates known volatile status names', () => {
+      const { getByText } = render(
+        <EffectsIndicator mon={makeMon({ volatileStatus: [{ name: 'confusion' }] })} />
+      );
+      expect(getByText('CNF')).toBeTruthy();
+    });
+
+    it('falls back to first 3 chars uppercased for unknown volatile names', () => {
+      const { getByText } = render(
+        <EffectsIndicator mon={makeMon({ volatileStatus: [{ name: 'perish' }] })} />
+      );
+      expect(getByText('PER')).toBeTruthy();
+    });
+
+    it('shows ± chip when only stat boosts are active', () => {
+      const { getByText } = render(
+        <EffectsIndicator mon={makeMon({ statBoosts: { atk: 2, def: 0, spa: 0, spd: 0, spe: 0, accuracy: 0, evasion: 0 } })} />
+      );
+      expect(getByText('±')).toBeTruthy();
+    });
+
+    it('does not show ± chip when status is also present', () => {
+      const { queryByText } = render(
+        <EffectsIndicator mon={makeMon({ status: 'brn', statBoosts: { atk: 2, def: 0, spa: 0, spd: 0, spe: 0, accuracy: 0, evasion: 0 } })} />
+      );
+      expect(queryByText('±')).toBeNull();
+    });
+
+    it('collapses chips beyond 3 to +N overflow label', () => {
+      const { getByText } = render(
+        <EffectsIndicator mon={makeMon({
+          status: 'brn',
+          volatileStatus: [{ name: 'confusion' }, { name: 'encore' }, { name: 'leechseed' }],
+        })} />
+      );
+      expect(getByText('+1')).toBeTruthy();
+    });
+  });
 });
