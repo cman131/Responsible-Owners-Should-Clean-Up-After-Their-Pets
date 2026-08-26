@@ -1,13 +1,15 @@
 import type {
   BattleState, SlotState, PartyMember, MoveAction, SwitchAction,
-  TurnResolveEvent, PokemonType, VolatileStatusEntry,
+  TurnResolveEvent, PokemonType, VolatileStatusEntry, StatusCondition, StatBoosts,
 } from '@poke-fighter/shared';
 import { DataLoader } from '../data/loader.js';
 import { calcDamage, randomDamageFactor } from './damage.js';
 import { getEffectiveStat } from './stats.js';
-import { tickStatus, PARALYSIS_SPEED_MOD } from './status.js';
+import { tickStatus, PARALYSIS_SPEED_MOD, PARALYSIS_FULL_PARALYSIS_CHANCE } from './status.js';
 import { getAbilityHooks } from './abilities.js';
 import { getItemHooks } from './items.js';
+import { applyStatus, applyStatBoost, evaluateSecondaryEffect } from './effects.js';
+import { executeStatusMove } from './moves.js';
 
 type Action = MoveAction | SwitchAction;
 
@@ -115,6 +117,16 @@ export class BattleEngine {
     const attacker = attackerSlot.party[attackerSlot.activePokemonIndex];
     if (!attacker) return { newState: s, events };
 
+    // Can't-move checks
+    if (attacker.status === 'slp') {
+      events.push({ type: 'move-used', data: { attackerSlotId, attackerName: attacker.nickname, note: 'asleep' } });
+      return { newState: s, events };
+    }
+    if (attacker.status === 'par' && Math.random() < PARALYSIS_FULL_PARALYSIS_CHANCE) {
+      events.push({ type: 'move-used', data: { attackerSlotId, attackerName: attacker.nickname, note: 'full-paralysis' } });
+      return { newState: s, events };
+    }
+
     const moveSlot = attacker.moves[action.moveIndex];
     if (!moveSlot) return { newState: s, events };
     const move = this.data.getMove(moveSlot.moveId);
@@ -132,6 +144,47 @@ export class BattleEngine {
     events.push({ type: 'move-used', data: { attackerSlotId, attackerName: attacker.nickname, moveId: move.id, moveName: move.name } });
 
     if (move.category === 'status') {
+      const result = executeStatusMove(moveSlot.moveId);
+
+      let affectedMember: PartyMember;
+      let affectedSlotId: string;
+      if (result.targetsSelf) {
+        affectedMember = attacker;
+        affectedSlotId = attackerSlotId;
+      } else {
+        const foeSlotId = action.targetSlotId ?? this.getSpreadTargets(s, attackerSlotId, 'normal')[0];
+        const foeSlot = foeSlotId ? this.findSlot(s, foeSlotId) : null;
+        const foeMember = foeSlot?.party[foeSlot.activePokemonIndex];
+        affectedMember = foeMember ?? attacker;
+        affectedSlotId = foeSlotId ?? attackerSlotId;
+      }
+
+      if (result.statusToApply) {
+        const targetSpecies = this.data.getSpecies(affectedMember.speciesId);
+        const targetTypes = affectedMember.hasTerastallized && affectedMember.teraType
+          ? [affectedMember.teraType] as PokemonType[]
+          : (targetSpecies?.types ?? ['Normal']) as PokemonType[];
+        const event = applyStatus(affectedMember, affectedSlotId, result.statusToApply as StatusCondition, targetTypes);
+        if (event) events.push(event);
+      }
+
+      if (result.statBoostDeltas) {
+        const event = applyStatBoost(
+          affectedMember,
+          affectedSlotId,
+          result.statBoostDeltas as Partial<Record<keyof StatBoosts, number>>,
+        );
+        events.push(event);
+      }
+
+      if (result.heals) {
+        const heal = Math.min(Math.floor(affectedMember.maxHp / 2), affectedMember.maxHp - affectedMember.currentHp);
+        if (heal > 0) {
+          affectedMember.currentHp += heal;
+          events.push({ type: 'heal', data: { slotId: affectedSlotId, amount: heal, remainingHp: affectedMember.currentHp } });
+        }
+      }
+
       return { newState: s, events };
     }
 
@@ -221,6 +274,29 @@ export class BattleEngine {
         damage: actualDamage, effectiveness, remainingHp: target.currentHp,
       }});
 
+      // Secondary status effect from move data (e.g. Flamethrower 10% burn)
+      if (actualDamage > 0) {
+        const secondaryEvent = evaluateSecondaryEffect(move, target, targetSlotId, defTypes);
+        if (secondaryEvent) events.push(secondaryEvent);
+      }
+
+      // Defender's ability triggers (e.g. Static, Flame Body)
+      const defenderAbilityHooks = getAbilityHooks(target.ability);
+      if (defenderAbilityHooks.onAfterHit && actualDamage > 0) {
+        const afterHitResult = defenderAbilityHooks.onAfterHit({
+          user: target, state: s, moveType: move.type, basePower: move.basePower,
+          target: attacker, isPhysical,
+        });
+        if (afterHitResult?.statusToApply) {
+          const attackerSpecies = this.data.getSpecies(attacker.speciesId);
+          const attackerTypes = attacker.hasTerastallized && attacker.teraType
+            ? [attacker.teraType] as PokemonType[]
+            : (attackerSpecies?.types ?? ['Normal']) as PokemonType[];
+          const event = applyStatus(attacker, attackerSlotId, afterHitResult.statusToApply as StatusCondition, attackerTypes);
+          if (event) events.push(event);
+        }
+      }
+
       if (target.currentHp <= 0) {
         target.fainted = true;
         target.currentHp = 0;
@@ -257,6 +333,31 @@ export class BattleEngine {
     const previousMon = slot.party[slot.activePokemonIndex]?.instanceId;
     slot.activePokemonIndex = newIndex;
     events.push({ type: 'volatile-applied', data: { note: 'switch', slotId, from: previousMon, to: targetInstanceId } });
+
+    // Apply incoming ability's switch-in effect (e.g. Intimidate drops opponent attack)
+    const incoming = slot.party[slot.activePokemonIndex];
+    if (incoming) {
+      const incomingAbilityHooks = getAbilityHooks(incoming.ability);
+      const switchInResult = incomingAbilityHooks.onSwitchIn?.({ user: incoming, state: s });
+      if (switchInResult?.statBoostDeltas) {
+        const incomingTeamIndex = s.teams.findIndex(t => t.slots.some(sl => sl.slotId === slotId));
+        const foeTeamIndex = incomingTeamIndex === 0 ? 1 : 0;
+        const foeTeam = s.teams[foeTeamIndex];
+        if (foeTeam) {
+          for (const foeSlot of foeTeam.slots) {
+            const foePokemon = foeSlot.party[foeSlot.activePokemonIndex];
+            if (foePokemon && !foePokemon.fainted) {
+              const event = applyStatBoost(
+                foePokemon,
+                foeSlot.slotId,
+                switchInResult.statBoostDeltas as Partial<Record<keyof StatBoosts, number>>,
+              );
+              events.push(event);
+            }
+          }
+        }
+      }
+    }
 
     return { newState: s, events };
   }
