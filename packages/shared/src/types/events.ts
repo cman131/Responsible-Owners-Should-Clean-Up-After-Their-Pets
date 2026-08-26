@@ -1,4 +1,5 @@
 import type { BattleState, PartyMember } from './battle.js';
+import type { MoveTarget } from './pokemon.js';
 
 // ── Client → Server ──────────────────────────────────────────────────────────
 
@@ -64,8 +65,14 @@ export interface TurnStartPayload {
 
 export interface ActionRequestPayload {
   slotId: string;
-  validMoves: Array<{ index: 0 | 1 | 2 | 3; moveId: string; pp: number; disabled: boolean }>;
-  legalTargets: string[];
+  validMoves: Array<{
+    index: 0 | 1 | 2 | 3;
+    moveId: string;
+    pp: number;
+    disabled: boolean;
+    targetType: MoveTarget;
+    legalTargets: string[];
+  }>;
   canSwitch: boolean;
   switchTargets: string[];
   canTerastallize: boolean;
