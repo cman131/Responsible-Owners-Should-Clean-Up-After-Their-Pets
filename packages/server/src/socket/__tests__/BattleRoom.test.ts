@@ -61,7 +61,8 @@ describe('getPendingActionRequest', () => {
     expect(req).not.toBeNull();
     expect(req!.slotId).toBe('slot-a1');
     expect(req!.validMoves).toHaveLength(4);
-    expect(req!.legalTargets).toContain('slot-b1');
+    expect(req!.validMoves[0]!.legalTargets).toContain('slot-b1');
+    expect(req!.validMoves[0]!.targetType).toBeDefined();
   });
 
   it('returns null after the slot has submitted an action', () => {

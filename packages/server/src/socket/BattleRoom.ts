@@ -1,5 +1,6 @@
 import type { BattleState, MoveAction, SwitchAction, TurnResolveEvent, SlotState, PartyMember, Stats, ActionRequestPayload } from '@poke-fighter/shared';
 import { BattleEngine } from '../engine/index.js';
+import { getLegalTargets } from '../engine/targeting.js';
 import { calcExpYield, distributeExp, checkLevelUps, type ExpAward, type LevelUpResult } from '../engine/exp.js';
 import { DataLoader } from '../data/loader.js';
 
@@ -131,13 +132,18 @@ export class BattleRoom {
     if (!active || active.fainted) return null;
     return {
       slotId: slot.slotId,
-      validMoves: active.moves.map((m, i) => ({
-        index: i as 0 | 1 | 2 | 3,
-        moveId: m.moveId,
-        pp: m.currentPp,
-        disabled: false,
-      })),
-      legalTargets: this.getOpposingSlotIds(slotId),
+      validMoves: active.moves.map((m, i) => {
+        const moveData = this.data.getMove(m.moveId);
+        const targetType = moveData?.target ?? 'normal';
+        return {
+          index: i as 0 | 1 | 2 | 3,
+          moveId: m.moveId,
+          pp: m.currentPp,
+          disabled: false,
+          targetType,
+          legalTargets: getLegalTargets(this.state, slotId, targetType),
+        };
+      }),
       canSwitch: slot.party.some((p, i) => i !== slot.activePokemonIndex && !p.fainted),
       switchTargets: slot.party
         .filter((p, i) => i !== slot.activePokemonIndex && !p.fainted)
@@ -333,13 +339,18 @@ export class BattleRoom {
           displayName: slot.displayName,
           request: {
             slotId: slot.slotId,
-            validMoves: active.moves.map((m, i) => ({
-              index: i as 0 | 1 | 2 | 3,
-              moveId: m.moveId,
-              pp: m.currentPp,
-              disabled: false,
-            })),
-            legalTargets: this.getOpposingSlotIds(slot.slotId),
+            validMoves: active.moves.map((m, i) => {
+              const moveData = this.data.getMove(m.moveId);
+              const targetType = moveData?.target ?? 'normal';
+              return {
+                index: i as 0 | 1 | 2 | 3,
+                moveId: m.moveId,
+                pp: m.currentPp,
+                disabled: false,
+                targetType,
+                legalTargets: getLegalTargets(this.state, slot.slotId, targetType),
+              };
+            }),
             canSwitch: false,
             switchTargets: [],
             canTerastallize: !active.hasTerastallized && !!active.teraType,
@@ -361,13 +372,18 @@ export class BattleRoom {
           slotId: slot.slotId,
           request: {
             slotId: slot.slotId,
-            validMoves: active.moves.map((m, i) => ({
-              index: i as 0 | 1 | 2 | 3,
-              moveId: m.moveId,
-              pp: m.currentPp,
-              disabled: false,
-            })),
-            legalTargets: this.getOpposingSlotIds(slot.slotId),
+            validMoves: active.moves.map((m, i) => {
+              const moveData = this.data.getMove(m.moveId);
+              const targetType = moveData?.target ?? 'normal';
+              return {
+                index: i as 0 | 1 | 2 | 3,
+                moveId: m.moveId,
+                pp: m.currentPp,
+                disabled: false,
+                targetType,
+                legalTargets: getLegalTargets(this.state, slot.slotId, targetType),
+              };
+            }),
             canSwitch: slot.party.some((p, i) => i !== slot.activePokemonIndex && !p.fainted),
             switchTargets: slot.party
               .filter((p, i) => i !== slot.activePokemonIndex && !p.fainted)
@@ -378,14 +394,6 @@ export class BattleRoom {
       }
     }
     return result;
-  }
-
-  private getOpposingSlotIds(slotId: string): string[] {
-    const teamIdx = this.state.teams.findIndex((t) => t.slots.some((s) => s.slotId === slotId));
-    const foeTeamIdx = teamIdx === 0 ? 1 : 0;
-    return this.state.teams[foeTeamIdx]?.slots
-      .filter((s) => !s.isSpectator && !s.party[s.activePokemonIndex]?.fainted)
-      .map((s) => s.slotId) ?? [];
   }
 
   private resolveTurn(): void {
