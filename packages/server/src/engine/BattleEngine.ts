@@ -126,6 +126,10 @@ export class BattleEngine {
       events.push({ type: 'move-used', data: { attackerSlotId, attackerName: attacker.nickname, note: 'full-paralysis' } });
       return { newState: s, events };
     }
+    if (attacker.status === 'frz') {
+      events.push({ type: 'move-used', data: { attackerSlotId, attackerName: attacker.nickname, note: 'frozen' } });
+      return { newState: s, events };
+    }
 
     const moveSlot = attacker.moves[action.moveIndex];
     if (!moveSlot) return { newState: s, events };
@@ -155,8 +159,13 @@ export class BattleEngine {
         const foeSlotId = action.targetSlotId ?? this.getSpreadTargets(s, attackerSlotId, 'normal')[0];
         const foeSlot = foeSlotId ? this.findSlot(s, foeSlotId) : null;
         const foeMember = foeSlot?.party[foeSlot.activePokemonIndex];
-        affectedMember = foeMember ?? attacker;
-        affectedSlotId = foeSlotId ?? attackerSlotId;
+        if (foeMember) {
+          affectedMember = foeMember;
+          affectedSlotId = foeSlotId!;
+        } else {
+          affectedMember = attacker;
+          affectedSlotId = attackerSlotId;
+        }
       }
 
       if (result.statusToApply) {
@@ -407,6 +416,11 @@ export class BattleEngine {
             } else if (volatileEntry) {
               volatileEntry.counter = (volatileEntry.counter ?? 1) - 1;
             }
+          }
+
+          if (active.status === 'frz' && tick.thawed) {
+            delete active.status;
+            events.push({ type: 'status-cured', data: { slotId: slot.slotId, status: 'frz' } });
           }
         }
 
