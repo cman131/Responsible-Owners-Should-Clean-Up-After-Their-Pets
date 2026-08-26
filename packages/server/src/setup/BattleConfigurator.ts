@@ -84,6 +84,7 @@ export class BattleConfigurator {
       maxHp: stats.hp,
       stats,
       ability: set.ability,
+      nickname: set.nickname ?? species.displayName,
       moves: set.moves.map((moveId) => ({
         moveId,
         currentPp: this.data.getMove(moveId)?.pp ?? 0,
@@ -97,7 +98,6 @@ export class BattleConfigurator {
     };
 
     // Only set optional fields if defined (exactOptionalPropertyTypes)
-    member.nickname = set.nickname || species.displayName;   // fallback to species name for legacy data
     if (set.heldItem !== undefined) member.heldItem = set.heldItem;
     if (set.teraType !== undefined) member.teraType = set.teraType;
 

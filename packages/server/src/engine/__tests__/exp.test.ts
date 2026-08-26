@@ -7,7 +7,7 @@ function makeMon(overrides: Partial<PartyMember> = {}): PartyMember {
     instanceId: 'mon-1', speciesId: 6, speciesName: 'charizard', level: 50,
     currentHp: 100, maxHp: 100,
     stats: { hp: 100, atk: 100, def: 100, spa: 100, spd: 100, spe: 100 },
-    ability: 'blaze', moves: [
+    ability: 'blaze', nickname: 'Test', moves: [
       { moveId: 'flamethrower', currentPp: 15, maxPp: 15 },
       { moveId: 'airslash', currentPp: 15, maxPp: 15 },
       { moveId: 'roost', currentPp: 10, maxPp: 10 },
