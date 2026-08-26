@@ -1,4 +1,4 @@
-import type { PartyMember, BattleState, PokemonType } from '@poke-fighter/shared';
+import type { PartyMember, BattleState, PokemonType, StatBoosts } from '@poke-fighter/shared';
 
 export interface AbilityContext {
   user: PartyMember;
@@ -12,10 +12,11 @@ export interface AttackContext extends AbilityContext {
 }
 
 export interface AbilityHooks {
-  onAttackerModifier?: (ctx: AttackContext) => number;   // multiply attack stat
-  onDefenderModifier?: (ctx: AttackContext) => number;   // multiply defense stat
-  onDamageModifier?: (ctx: AttackContext) => number;     // multiply final damage
-  onSwitchIn?: (ctx: AbilityContext) => void;
+  onAttackerModifier?: (ctx: AttackContext) => number;
+  onDefenderModifier?: (ctx: AttackContext) => number;
+  onDamageModifier?: (ctx: AttackContext) => number;
+  onSwitchIn?: (ctx: AbilityContext) => { statBoostDeltas?: Partial<StatBoosts> } | null;
+  onAfterHit?: (ctx: AttackContext & { isPhysical: boolean }) => { statusToApply?: string } | null;
   onStatusImmunity?: (ctx: AbilityContext & { status: string }) => boolean;
   onWeatherImmunity?: (ctx: AbilityContext & { weather: string }) => boolean;
   onSpeedModifier?: (ctx: AbilityContext) => number;
@@ -23,9 +24,7 @@ export interface AbilityHooks {
 
 const ABILITY_HOOKS: Record<string, AbilityHooks> = {
   intimidate: {
-    onSwitchIn: (_ctx) => {
-      // lowers adjacent opponents' attack by 1 stage — BattleEngine applies the stat drop
-    },
+    onSwitchIn: () => ({ statBoostDeltas: { atk: -1 } }),
   },
   levitate: {
     onStatusImmunity: ({ status }) => status === 'Ground',
