@@ -31,6 +31,7 @@ export function applyStatBoost(
     const current = member.statBoosts[key];
     const next = Math.max(-6, Math.min(6, current + delta));
     const actual = next - current;
+    if (actual === 0) continue;
     member.statBoosts[key] = next;
     changes[key] = actual;
   }

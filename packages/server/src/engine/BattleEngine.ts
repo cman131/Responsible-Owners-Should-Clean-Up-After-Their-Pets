@@ -159,7 +159,7 @@ export class BattleEngine {
         const foeSlotId = action.targetSlotId ?? this.getSpreadTargets(s, attackerSlotId, 'normal')[0];
         const foeSlot = foeSlotId ? this.findSlot(s, foeSlotId) : null;
         const foeMember = foeSlot?.party[foeSlot.activePokemonIndex];
-        if (foeMember) {
+        if (foeMember && !foeMember.fainted) {
           affectedMember = foeMember;
           affectedSlotId = foeSlotId!;
         } else {
@@ -284,14 +284,14 @@ export class BattleEngine {
       }});
 
       // Secondary status effect from move data (e.g. Flamethrower 10% burn)
-      if (actualDamage > 0) {
+      if (actualDamage > 0 && target.currentHp > 0) {
         const secondaryEvent = evaluateSecondaryEffect(move, target, targetSlotId, defTypes);
         if (secondaryEvent) events.push(secondaryEvent);
       }
 
       // Defender's ability triggers (e.g. Static, Flame Body)
       const defenderAbilityHooks = getAbilityHooks(target.ability);
-      if (defenderAbilityHooks.onAfterHit && actualDamage > 0) {
+      if (defenderAbilityHooks.onAfterHit && actualDamage > 0 && target.currentHp > 0) {
         const afterHitResult = defenderAbilityHooks.onAfterHit({
           user: target, state: s, moveType: move.type, basePower: move.basePower,
           target: attacker, isPhysical,
