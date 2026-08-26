@@ -7,6 +7,7 @@ import { SwitchPanel } from '../battle/overlays/SwitchPanel.js';
 import { TurnLog } from '../battle/overlays/TurnLog.js';
 import { ExpBar } from '../battle/overlays/ExpBar.js';
 import { classifyTarget, getTargetLabel, getSlotDisplayName, formatTargetNames } from '../battle/targeting.js';
+import { EffectsIndicator } from '../battle/overlays/EffectsIndicator.js';
 import type { BattleState, ActionRequestPayload } from '@poke-fighter/shared';
 
 type ValidMove = ActionRequestPayload['validMoves'][number];
@@ -123,6 +124,7 @@ function BattleView() {
                     <div style={{ background: hpColor(mon.currentHp, mon.maxHp), height: 6, borderRadius: 3, width: `${(mon.currentHp / mon.maxHp) * 100}%` }} />
                   </div>
                   <span style={{ color: '#aaa', fontSize: 9, width: 65, textAlign: 'right' }}>{mon.currentHp}/{mon.maxHp}</span>
+                  <EffectsIndicator mon={mon} />
                 </>
               ) : (
                 <span style={{ color: '#555', fontSize: 9 }}>FAINTED</span>
@@ -151,6 +153,7 @@ function BattleView() {
                     <div style={{ background: hpColor(mon.currentHp, mon.maxHp), height: 6, borderRadius: 3, width: `${(mon.currentHp / mon.maxHp) * 100}%` }} />
                   </div>
                   <span style={{ color: '#aaa', fontSize: 9, width: 65, textAlign: 'right' }}>{mon.currentHp}/{mon.maxHp}</span>
+                  <EffectsIndicator mon={mon} />
                 </>
               ) : (
                 <span style={{ color: '#555', fontSize: 9 }}>FAINTED</span>
