@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import type { PartyMember, StatBoosts, StatusCondition } from '@poke-fighter/shared';
 
+// fnt is required by Record<StatusCondition, string> but is unreachable:
+// the component guards with `if (mon.fainted) return null` before building chips.
 const STATUS_LABELS: Record<StatusCondition, string> = {
   brn: 'BRN', par: 'PAR', slp: 'SLP', frz: 'FRZ',
   psn: 'PSN', tox: 'TOX', fnt: 'FNT',

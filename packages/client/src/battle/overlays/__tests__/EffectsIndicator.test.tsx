@@ -81,6 +81,13 @@ describe('EffectsIndicator', () => {
       expect(queryByText('±')).toBeNull();
     });
 
+    it('does not show ± chip when volatile status is also present', () => {
+      const { queryByText } = render(
+        <EffectsIndicator mon={makeMon({ volatileStatus: [{ name: 'confusion' }], statBoosts: { atk: 2, def: 0, spa: 0, spd: 0, spe: 0, accuracy: 0, evasion: 0 } })} />
+      );
+      expect(queryByText('±')).toBeNull();
+    });
+
     it('collapses chips beyond 3 to +N overflow label', () => {
       const { getByText } = render(
         <EffectsIndicator mon={makeMon({
