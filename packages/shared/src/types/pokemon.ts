@@ -63,6 +63,8 @@ export interface Move {
   target: MoveTarget;
   makesContact: boolean;
   effectId?: string;    // identifier for special effect handling
+  effect?: string;        // status id ('brn', 'par', 'psn', 'frz', 'slp') for secondary effects
+  effectChance?: number;  // integer 0–100
 }
 
 export interface Ability {

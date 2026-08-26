@@ -20,6 +20,8 @@ export const MoveSchema = z.object({
   ]),
   makesContact: z.boolean(),
   effectId: z.string().optional(),
+  effect: z.string().optional(),
+  effectChance: z.number().int().min(0).max(100).optional(),
 });
 
 export type ValidatedMove = z.infer<typeof MoveSchema>;
