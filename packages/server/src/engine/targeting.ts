@@ -1,4 +1,12 @@
-import type { BattleState, MoveTarget } from '@poke-fighter/shared';
+import type { BattleState, MoveTarget, TeamState, SlotState } from '@poke-fighter/shared';
+
+function nonSpectatorSlots(team: TeamState): SlotState[] {
+  return team.slots.filter((s) => !s.isSpectator);
+}
+
+function isAdjacent(attackerIdx: number, targetIdx: number): boolean {
+  return Math.abs(attackerIdx - targetIdx) <= 1;
+}
 
 export function getLegalTargets(
   state: BattleState,
@@ -8,49 +16,52 @@ export function getLegalTargets(
   const attackerTeamIdx = state.teams.findIndex((t) =>
     t.slots.some((s) => s.slotId === attackerSlotId)
   );
-
   if (attackerTeamIdx === -1) return [];
 
   const foeTeamIdx = attackerTeamIdx === 0 ? 1 : 0;
-  const allyTeam = state.teams[attackerTeamIdx];
+  const allyTeam = state.teams[attackerTeamIdx]!;
   const foeTeam = state.teams[foeTeamIdx];
 
-  const livingFoeSlots = () =>
-    (foeTeam?.slots ?? [])
-      .filter((s) => !s.isSpectator && !s.party[s.activePokemonIndex]?.fainted)
-      .map((s) => s.slotId);
+  const allySlots = nonSpectatorSlots(allyTeam);
+  const foeSlots = foeTeam ? nonSpectatorSlots(foeTeam) : [];
+  const attackerIdx = allySlots.findIndex((s) => s.slotId === attackerSlotId);
 
-  const livingAllySlots = () =>
-    (allyTeam?.slots ?? [])
-      .filter((s) => s.slotId !== attackerSlotId && !s.isSpectator && !s.party[s.activePokemonIndex]?.fainted)
-      .map((s) => s.slotId);
+  const isLiving = (s: SlotState) => !s.party[s.activePokemonIndex]?.fainted;
+  const isLivingAlly = (s: SlotState) => s.slotId !== attackerSlotId && isLiving(s);
+
+  const allLivingFoes = () => foeSlots.filter(isLiving).map((s) => s.slotId);
+  const allLivingAllies = () => allySlots.filter(isLivingAlly).map((s) => s.slotId);
+  const adjacentLivingFoes = () =>
+    foeSlots.filter((s, i) => isLiving(s) && isAdjacent(attackerIdx, i)).map((s) => s.slotId);
+  const adjacentLivingAllies = () =>
+    allySlots.filter((s, i) => isLivingAlly(s) && isAdjacent(attackerIdx, i)).map((s) => s.slotId);
 
   switch (target) {
     case 'normal':
-    case 'randomNormal':
     case 'adjacentFoe':
-      return livingFoeSlots();
+    case 'randomNormal':
+      return adjacentLivingFoes();
     case 'self':
       return [attackerSlotId];
     case 'allAdjacentFoes':
     case 'foeSide':
-      return livingFoeSlots();
+      return allLivingFoes();
     case 'adjacentAlly':
-      return livingAllySlots();
+      return adjacentLivingAllies();
+    case 'adjacentAllyOrSelf':
+      return [attackerSlotId, ...adjacentLivingAllies()];
     case 'allAdjacent':
-      return [...livingFoeSlots(), ...livingAllySlots()];
+      return [...adjacentLivingFoes(), ...adjacentLivingAllies()];
     case 'any':
-      return [attackerSlotId, ...livingFoeSlots(), ...livingAllySlots()];
+      return [attackerSlotId, ...allLivingFoes(), ...allLivingAllies()];
     case 'allies':
-      return livingAllySlots();
+      return allLivingAllies();
     case 'allyTeam':
     case 'allySide':
     case 'all':
     case 'scripted':
-      return [attackerSlotId]; // field effects — handled specially
-    case 'adjacentAllyOrSelf':
-      return [attackerSlotId, ...livingAllySlots()];
+      return [attackerSlotId];
     default:
-      return livingFoeSlots();
+      return adjacentLivingFoes();
   }
 }
