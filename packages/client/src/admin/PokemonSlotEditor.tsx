@@ -147,6 +147,24 @@ export function PokemonSlotEditor({ value, onChange }: Props) {
             />
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <label style={lbl}>Ability</label>
+            {currentSpecies ? (
+              <select
+                value={value.ability ?? ''}
+                onChange={(e) => updateField('ability', e.target.value)}
+                style={{ ...inp, width: 200 }}
+              >
+                {Object.values(currentSpecies.abilities).map((a) => (
+                  <option key={a} value={a}>{a}</option>
+                ))}
+              </select>
+            ) : (
+              <select disabled value={value.ability ?? ''} style={{ ...inp, width: 200 }}>
+                <option value={value.ability ?? ''}>{value.ability ?? ''}</option>
+              </select>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <label style={lbl}>Nature</label>
             <select
               value={value.nature ?? 'hardy'}
