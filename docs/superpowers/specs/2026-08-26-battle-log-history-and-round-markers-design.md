@@ -123,8 +123,8 @@ This is a client-only display type — not added to shared.
 - `turnLog` state: `string[]` → `LogEntry[]`
 - `BattleContextValue.turnLog`: `string[]` → `LogEntry[]`
 - `battle:start` handler: push `{ type: 'normal', text: 'Battle started! Turn 1' }`
-- `turn:resolve` handler: prepend `{ type: 'round-start', text: '-------Round N-------' }` (using `turnNumber` from payload), then append each event converted via `eventToText` as `{ type: 'normal', text }`. Filter out empty strings before wrapping.
-- New `battle:history` listener: convert all stored turns to `LogEntry[]` using the same round-start + events pattern, then **replace** `turnLog` entirely (handles both first connect and reconnect). Added to the `useEffect` cleanup.
+- `turn:resolve` handler: prepend `{ type: 'round-start', text: '-------Round N-------' }` where N = `turnNumber - 1` (the payload's `turnNumber` is the *next* turn after resolution; subtract 1 to label the round that just happened), then append each event converted via `eventToText` as `{ type: 'normal', text }`. Filter out empty strings before wrapping.
+- New `battle:history` listener: convert all stored turns to `LogEntry[]` using the same round-start + events pattern (N = `turn.turnNumber - 1` for each entry), then **replace** `turnLog` entirely (handles both first connect and reconnect). Added to the `useEffect` cleanup.
 
 ### TurnLog changes
 
