@@ -79,9 +79,11 @@ Neutral labels ("TEAM A" / "TEAM B") are used instead of "MY TEAM" / "ENEMY" sin
 
 **Header row:** `display: flex, alignItems: center, width: 800`. Contains:
 - `← BATTLES` back button (left)
-- `{state?.label} Turn {state?.turnNumber}` turn label (center-left)
+- `{state.label} Turn {state.turnNumber}` turn label (center-left) — hidden when state is null
 - `ADMIN VIEW` badge (center)
 - `[FORFEIT TEAM A] [FORFEIT TEAM B]` buttons pushed right via `marginLeft: auto`
+
+**Pre-battle null state:** When `state` is null (battle not yet started), the HP bars, BattleScene, and turn label are not rendered — same guard pattern as the current code (`{state && <BattleScene />}`). The header back button and forfeit buttons are always visible.
 
 **Empty NPC state:** When `npcRequests` is empty (between turns), `ControlPanel` renders a placeholder in the action slot — same muted style as `BattleView`'s "Waiting for others..." box — so the layout height is stable across turns. `NpcTabPanel` continues to return `null` when empty; the empty-state placeholder is `ControlPanel`'s responsibility.
 
