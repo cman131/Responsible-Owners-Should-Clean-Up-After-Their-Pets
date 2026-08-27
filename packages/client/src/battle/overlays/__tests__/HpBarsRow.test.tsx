@@ -73,4 +73,10 @@ describe('HpBarsRow', () => {
     expect(screen.getByText('a1 L50')).toBeTruthy();
     expect(screen.getByText('a2 L50')).toBeTruthy();
   });
+
+  it('renders label and no slot rows when slots is empty', () => {
+    render(<HpBarsRow slots={[]} label="ENEMY" variant="enemy" />);
+    expect(screen.getByText('ENEMY')).toBeTruthy();
+    expect(screen.queryByText(/L\d+/)).toBeNull(); // no "L50" or similar level text
+  });
 });

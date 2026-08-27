@@ -9,7 +9,8 @@ interface Props {
 }
 
 function hpColor(current: number, max: number): string {
-  const pct = current / max;
+  if (max <= 0) return '#e74c3c';
+  const pct = Math.min(1, current / max);
   if (pct > 0.5) return '#27ae60';
   if (pct > 0.2) return '#f39c12';
   return '#e74c3c';
@@ -42,7 +43,7 @@ export function HpBarsRow({ slots, label, variant, highlightSlotId }: Props) {
             {mon && !mon.fainted ? (
               <>
                 <div style={{ flex: 1, background: '#333', height: 6, borderRadius: 3 }}>
-                  <div style={{ background: hpColor(mon.currentHp, mon.maxHp), height: 6, borderRadius: 3, width: `${(mon.currentHp / mon.maxHp) * 100}%` }} />
+                  <div style={{ background: hpColor(mon.currentHp, mon.maxHp), height: 6, borderRadius: 3, width: `${mon.maxHp > 0 ? Math.min(100, (mon.currentHp / mon.maxHp) * 100) : 0}%` }} />
                 </div>
                 <span style={{ color: '#aaa', fontSize: 9, width: 65, textAlign: 'right' }}>
                   {mon.currentHp}/{mon.maxHp}
