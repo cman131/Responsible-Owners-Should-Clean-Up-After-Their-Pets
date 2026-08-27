@@ -181,3 +181,18 @@ describe('AppDatabase.battles', () => {
     expect(db.battles.get('nonexistent')).toBeNull();
   });
 });
+
+describe('AppDatabase.battles – event log', () => {
+  let db: AppDatabase;
+  beforeEach(() => { db = new AppDatabase(':memory:'); });
+  afterEach(() => { db.close(); });
+
+  it('getEventLog returns [] for a battle with no turns yet', () => {
+    db.battles.insert(makeBattleState());
+    expect(db.battles.getEventLog('b1')).toEqual([]);
+  });
+
+  it('getEventLog returns [] for an unknown battleId', () => {
+    expect(db.battles.getEventLog('does-not-exist')).toEqual([]);
+  });
+});

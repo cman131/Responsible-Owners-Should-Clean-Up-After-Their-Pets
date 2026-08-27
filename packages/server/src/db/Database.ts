@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3';
-import type { PlayerProfile, NpcProfile, TeamTemplate, BattleState, BattleSummary, PokemonSet } from '@poke-fighter/shared';
+import type { PlayerProfile, NpcProfile, TeamTemplate, BattleState, BattleSummary, PokemonSet, TurnResolveEvent } from '@poke-fighter/shared';
 
 class PlayersStore {
   constructor(private readonly db: InstanceType<typeof Database>) {}
@@ -171,6 +171,13 @@ class BattlesStore {
       { currentState: string } | undefined;
     return row ? JSON.parse(row.currentState) as BattleState : null;
   }
+
+  getEventLog(battleId: string): Array<{ turnNumber: number; events: TurnResolveEvent[] }> {
+    const row = this.db.prepare('SELECT eventLog FROM battles WHERE battleId = ?').get(battleId) as
+      { eventLog: string } | undefined;
+    if (!row) return [];
+    return JSON.parse(row.eventLog) as Array<{ turnNumber: number; events: TurnResolveEvent[] }>;
+  }
 }
 
 export class AppDatabase {
@@ -216,6 +223,11 @@ export class AppDatabase {
         currentState   TEXT NOT NULL
       );
     `);
+    try {
+      this.conn.exec(`ALTER TABLE battles ADD COLUMN eventLog TEXT NOT NULL DEFAULT '[]'`);
+    } catch {
+      // column already exists — safe to ignore
+    }
     this.players = new PlayersStore(this.conn);
     this.npcs = new NpcsStore(this.conn);
     this.teams = new TeamsStore(this.conn);
