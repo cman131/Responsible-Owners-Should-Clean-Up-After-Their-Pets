@@ -4,6 +4,8 @@ import type {
   BattleState, ActionRequestPayload, TurnResolvePayload, SwitchRequestPayload,
 } from '@poke-fighter/shared';
 
+export type LogEntry = { type: 'normal' | 'round-start'; text: string };
+
 interface BattleContextValue {
   state: BattleState | null;
   mySlotId: string;

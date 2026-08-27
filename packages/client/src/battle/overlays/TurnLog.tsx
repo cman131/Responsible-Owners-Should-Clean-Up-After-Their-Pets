@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
+import type { LogEntry } from '../BattleContext.js';
 
-interface Props { messages: string[] }
+interface Props { messages: LogEntry[] }
 
 export function TurnLog({ messages }: Props) {
   const endRef = useRef<HTMLDivElement>(null);
@@ -13,8 +14,14 @@ export function TurnLog({ messages }: Props) {
     <div style={styles.container}>
       <div style={styles.label}>BATTLE LOG</div>
       <div style={styles.log}>
-        {messages.filter(Boolean).map((msg, i) => (
-          <div key={i} style={styles.message}>{msg}</div>
+        {messages.filter((m) => m.text).map((m, i) => (
+          <div
+            key={i}
+            data-testid="log-entry"
+            style={m.type === 'round-start' ? styles.roundStart : styles.message}
+          >
+            {m.text}
+          </div>
         ))}
         <div ref={endRef} />
       </div>
@@ -27,4 +34,5 @@ const styles = {
   label: { color: '#555', fontSize: 10, letterSpacing: 2 },
   log: { maxHeight: 150, overflowY: 'auto' as const, display: 'flex', flexDirection: 'column' as const, gap: 3 },
   message: { color: '#ccc', fontSize: 13, fontFamily: 'inherit', lineHeight: 1.4 },
+  roundStart: { color: '#f0c040', fontSize: 11, letterSpacing: 2, textAlign: 'center' as const, fontFamily: 'inherit', lineHeight: 1.4 },
 };
