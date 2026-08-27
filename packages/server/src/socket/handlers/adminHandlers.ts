@@ -51,8 +51,13 @@ export function registerAdminHandlers(
       }
       case 'battles:connect': {
         const { battleId } = payload.data as { battleId: string };
+        const prevBattleId = socket.data['watchingBattleId'] as string | undefined;
+        if (prevBattleId) socket.leave(`battle:${prevBattleId}`);
+        socket.join(`battle:${battleId}`);
+        socket.data['watchingBattleId'] = battleId;
         const state = db.battles.get(battleId);
         if (state) socket.emit('state:sync', state);
+        socket.emit('battle:history', { turns: db.battles.getEventLog(battleId) });
         const liveRoom = getRoom(battleId);
         if (liveRoom) {
           const npcRequests = liveRoom.getPendingNpcRequests();
