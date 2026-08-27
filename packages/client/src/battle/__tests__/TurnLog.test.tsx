@@ -24,7 +24,7 @@ describe('TurnLog', () => {
     const { container } = render(<TurnLog messages={messages} />);
     const entries = container.querySelectorAll('[data-testid="log-entry"]');
     expect(entries).toHaveLength(1);
-    expect(entries[0].textContent).toBe('Bulbasaur fainted!');
+    expect(entries[0]!.textContent).toBe('Bulbasaur fainted!');
   });
 
   it('renders multiple entries in order', () => {
@@ -34,7 +34,7 @@ describe('TurnLog', () => {
     ];
     const { container } = render(<TurnLog messages={messages} />);
     const items = container.querySelectorAll('[data-testid="log-entry"]');
-    expect(items[0].textContent).toBe('-------Round 2-------');
-    expect(items[1].textContent).toBe('Squirtle used Surf!');
+    expect(items[0]!.textContent).toBe('-------Round 2-------');
+    expect(items[1]!.textContent).toBe('Squirtle used Surf!');
   });
 });
