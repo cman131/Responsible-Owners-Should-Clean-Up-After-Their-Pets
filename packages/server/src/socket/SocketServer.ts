@@ -49,6 +49,7 @@ export class SocketServer {
         notifyAdminsOfLobby,
         this.notifyAdminsOfSlotStatus.bind(this),
         this.notifyPlayersOfBattles.bind(this),
+        (battleId) => this.db.battles.getEventLog(battleId),
       );
       registerBattleHandlers(socket, this.lobby, (id) => this.rooms.get(id));
 
@@ -170,6 +171,7 @@ export class SocketServer {
         state: newState,
       });
       this.db.battles.updateState(initialState.battleId, newState);
+      this.db.battles.appendTurnEvents(initialState.battleId, { turnNumber: newState.turnNumber, events });
       this.notifyAdminsOfBattles();
     });
 
