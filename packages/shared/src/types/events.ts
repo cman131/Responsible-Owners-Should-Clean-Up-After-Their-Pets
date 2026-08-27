@@ -169,6 +169,7 @@ export interface ServerToClientEvents {
   'lobby:battles': (payload: { battles: BattleJoinOption[] }) => void;
   'lobby:slot-status': (payload: SlotStatusPayload) => void;
   'battles:data': (payload: { battles: BattleSummary[] }) => void;
+  'battle:history': (payload: { turns: Array<{ turnNumber: number; events: TurnResolveEvent[] }> }) => void;
   'admin:authenticated': () => void;
   'admin:error': (payload: { message: string }) => void;
   'npc:action-request': (payload: {
