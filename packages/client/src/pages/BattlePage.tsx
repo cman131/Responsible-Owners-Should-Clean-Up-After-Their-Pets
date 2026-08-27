@@ -6,8 +6,8 @@ import { MovePanel } from '../battle/overlays/MovePanel.js';
 import { SwitchPanel } from '../battle/overlays/SwitchPanel.js';
 import { TurnLog } from '../battle/overlays/TurnLog.js';
 import { ExpBar } from '../battle/overlays/ExpBar.js';
+import { HpBarsRow } from '../battle/overlays/HpBarsRow.js';
 import { classifyTarget, getTargetLabel, getSlotDisplayName, formatTargetNames } from '../battle/targeting.js';
-import { EffectsIndicator } from '../battle/overlays/EffectsIndicator.js';
 import type { BattleState, ActionRequestPayload } from '@poke-fighter/shared';
 
 type ValidMove = ActionRequestPayload['validMoves'][number];
@@ -21,13 +21,6 @@ export function BattlePage() {
       <BattleView />
     </BattleProvider>
   );
-}
-
-function hpColor(current: number, max: number): string {
-  const pct = current / max;
-  if (pct > 0.5) return '#27ae60';
-  if (pct > 0.2) return '#f39c12';
-  return '#e74c3c';
 }
 
 function BattleView() {
@@ -110,58 +103,21 @@ function BattleView() {
     <div style={{ background: '#0d0d1a', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: 16, gap: 12 }}>
       <div style={{ color: '#f0c040', fontSize: 12, letterSpacing: 2 }}>{state.label} — Turn {state.turnNumber}</div>
 
-      {/* Enemy HP bars */}
-      <div style={{ width: 800, background: '#0d0d1a', border: '1px solid #555', borderRadius: 4, padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: 5 }}>
-        <span style={{ color: '#e74c3c', fontSize: 9, letterSpacing: 1 }}>ENEMY</span>
-        {foeTeam?.slots.filter((s) => !s.isSpectator).map((slot) => {
-          const mon = slot.party[slot.activePokemonIndex];
-          return (
-            <div key={slot.slotId} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ color: '#fff', fontSize: 10, width: 130 }}>{slot.displayName}{mon ? ` L${mon.level}` : ''}</span>
-              {mon && !mon.fainted ? (
-                <>
-                  <div style={{ flex: 1, background: '#333', height: 6, borderRadius: 3 }}>
-                    <div style={{ background: hpColor(mon.currentHp, mon.maxHp), height: 6, borderRadius: 3, width: `${(mon.currentHp / mon.maxHp) * 100}%` }} />
-                  </div>
-                  <span style={{ color: '#aaa', fontSize: 9, width: 65, textAlign: 'right' }}>{mon.currentHp}/{mon.maxHp}</span>
-                  <EffectsIndicator mon={mon} />
-                </>
-              ) : (
-                <span style={{ color: '#555', fontSize: 9 }}>FAINTED</span>
-              )}
-            </div>
-          );
-        })}
-      </div>
+      <HpBarsRow
+        label="ENEMY"
+        variant="enemy"
+        slots={foeTeam?.slots.filter((s) => !s.isSpectator) ?? []}
+      />
 
       {/* Battle scene */}
       <BattleScene state={state} mySlotId={mySlotId} />
 
-      {/* Own team HP bars */}
-      <div style={{ width: 800, background: '#0d0d1a', border: '1px solid #2980b9', borderRadius: 4, padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: 5 }}>
-        <span style={{ color: '#3498db', fontSize: 9, letterSpacing: 1 }}>MY TEAM</span>
-        {myTeam?.slots.filter((s) => !s.isSpectator).map((slot) => {
-          const mon = slot.party[slot.activePokemonIndex];
-          const isSelf = slot.slotId === mySlotId;
-          return (
-            <div key={slot.slotId} style={{ display: 'flex', alignItems: 'center', gap: 8, background: isSelf ? '#0d1a2e' : 'transparent', borderRadius: 2, padding: '2px 4px' }}>
-              <span style={{ color: '#f0c040', fontSize: 10, width: 14 }}>{isSelf ? '▶' : ''}</span>
-              <span style={{ color: isSelf ? '#fff' : '#aaa', fontSize: 10, width: 130 }}>{slot.displayName}{mon ? ` L${mon.level}` : ''}</span>
-              {mon && !mon.fainted ? (
-                <>
-                  <div style={{ flex: 1, background: '#333', height: 6, borderRadius: 3 }}>
-                    <div style={{ background: hpColor(mon.currentHp, mon.maxHp), height: 6, borderRadius: 3, width: `${(mon.currentHp / mon.maxHp) * 100}%` }} />
-                  </div>
-                  <span style={{ color: '#aaa', fontSize: 9, width: 65, textAlign: 'right' }}>{mon.currentHp}/{mon.maxHp}</span>
-                  <EffectsIndicator mon={mon} />
-                </>
-              ) : (
-                <span style={{ color: '#555', fontSize: 9 }}>FAINTED</span>
-              )}
-            </div>
-          );
-        })}
-      </div>
+      <HpBarsRow
+        label="MY TEAM"
+        variant="own"
+        slots={myTeam?.slots.filter((s) => !s.isSpectator) ?? []}
+        highlightSlotId={mySlotId}
+      />
 
       {myActiveMon && <ExpBar instanceId={myActiveMon.instanceId} />}
 
