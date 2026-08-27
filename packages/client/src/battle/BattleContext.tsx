@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { getSocket } from '../socket.js';
 import type {
-  BattleState, ActionRequestPayload, TurnResolvePayload, SwitchRequestPayload,
+  BattleState, ActionRequestPayload, TurnResolvePayload, SwitchRequestPayload, TurnResolveEvent,
 } from '@poke-fighter/shared';
 
 export type LogEntry = { type: 'normal' | 'round-start'; text: string };
@@ -11,7 +11,7 @@ interface BattleContextValue {
   mySlotId: string;
   actionRequest: ActionRequestPayload | null;
   switchRequest: SwitchRequestPayload | null;
-  turnLog: string[];
+  turnLog: LogEntry[];
   submitAction: (payload: import('@poke-fighter/shared').ActionSubmitPayload) => void;
 }
 
@@ -33,26 +33,40 @@ export function BattleProvider({ mySlotId, initialState, children }: Props) {
   const [state, setState] = useState<BattleState | null>(initialState ?? null);
   const [actionRequest, setActionRequest] = useState<ActionRequestPayload | null>(null);
   const [switchRequest, setSwitchRequest] = useState<SwitchRequestPayload | null>(null);
-  const [turnLog, setTurnLog] = useState<string[]>([]);
+  const [turnLog, setTurnLog] = useState<LogEntry[]>([]);
 
   useEffect(() => {
     const socket = getSocket();
 
     socket.on('battle:start', ({ state: s }) => {
       setState(s);
-      setTurnLog([`Battle started! Turn ${s.turnNumber}`]);
+      setTurnLog([{ type: 'normal', text: `Battle started! Turn ${s.turnNumber}` }]);
     });
 
     socket.on('state:sync', (s: BattleState) => {
       setState(s);
     });
 
-    socket.on('turn:resolve', ({ turnNumber: _turnNumber, events, state: s }: TurnResolvePayload) => {
+    socket.on('turn:resolve', ({ turnNumber, events, state: s }: TurnResolvePayload) => {
       setState(s);
-      setTurnLog((prev) => [
-        ...prev,
-        ...events.map((e) => eventToText(e)),
-      ].slice(-50));
+      const roundEntry: LogEntry = { type: 'round-start', text: `-------Round ${turnNumber - 1}-------` };
+      const eventEntries: LogEntry[] = events
+        .map((e) => eventToText(e))
+        .filter(Boolean)
+        .map((text) => ({ type: 'normal' as const, text }));
+      setTurnLog((prev) => [...prev, roundEntry, ...eventEntries].slice(-50));
+    });
+
+    socket.on('battle:history', ({ turns }: { turns: Array<{ turnNumber: number; events: TurnResolveEvent[] }> }) => {
+      const entries: LogEntry[] = [];
+      for (const turn of turns) {
+        entries.push({ type: 'round-start', text: `-------Round ${turn.turnNumber - 1}-------` });
+        for (const event of turn.events) {
+          const text = eventToText(event);
+          if (text) entries.push({ type: 'normal', text });
+        }
+      }
+      setTurnLog(entries);
     });
 
     socket.on('action:request', (payload: ActionRequestPayload) => {
@@ -65,7 +79,7 @@ export function BattleProvider({ mySlotId, initialState, children }: Props) {
     });
 
     socket.on('battle:end', ({ winningTeamId }) => {
-      setTurnLog((prev) => [...prev, `Battle over! Winner: ${winningTeamId}`]);
+      setTurnLog((prev) => [...prev, { type: 'normal', text: `Battle over! Winner: ${winningTeamId}` }]);
       setActionRequest(null);
     });
 
@@ -73,6 +87,7 @@ export function BattleProvider({ mySlotId, initialState, children }: Props) {
       socket.off('battle:start');
       socket.off('state:sync');
       socket.off('turn:resolve');
+      socket.off('battle:history');
       socket.off('action:request');
       socket.off('switch:request');
       socket.off('battle:end');
@@ -92,7 +107,7 @@ export function BattleProvider({ mySlotId, initialState, children }: Props) {
   );
 }
 
-function eventToText(event: import('@poke-fighter/shared').TurnResolveEvent): string {
+function eventToText(event: TurnResolveEvent): string {
   switch (event.type) {
     case 'move-used': return `${String(event.data['attackerName'])} used ${String(event.data['moveName'])}!`;
     case 'damage-dealt': return `Dealt ${String(event.data['damage'])} damage to ${String(event.data['targetSlotId'])}.`;
