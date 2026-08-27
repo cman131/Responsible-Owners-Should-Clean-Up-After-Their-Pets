@@ -82,6 +82,7 @@ describe('registerLobbyHandlers – player:join', () => {
       notifyAdmins,
       notifyAdminsOfSlotStatus,
       notifyPlayersOfBattles,
+      vi.fn(() => []),  // getEventLog — NEW
     );
   });
 
@@ -107,6 +108,7 @@ describe('registerLobbyHandlers – player:join', () => {
       notifyAdmins,
       notifyAdminsOfSlotStatus,
       notifyPlayersOfBattles,
+      vi.fn(() => []),  // getEventLog — NEW
     );
     socket.trigger('player:join', { battleId: 'battle-1', slotId: 'slot-a1' });
     expect(socket.emit).toHaveBeenCalledWith('lobby:error', expect.objectContaining({ code: expect.any(String) }));
@@ -121,6 +123,7 @@ describe('registerLobbyHandlers – player:join', () => {
       notifyAdmins,
       notifyAdminsOfSlotStatus,
       notifyPlayersOfBattles,
+      vi.fn(() => []),  // getEventLog — NEW
     );
     socket.trigger('player:join', { battleId: 'battle-1', slotId: 'slot-a1' });
     expect(socket.emit).toHaveBeenCalledWith('lobby:error', expect.objectContaining({ code: expect.any(String) }));
@@ -198,6 +201,7 @@ describe('registerLobbyHandlers – player:join', () => {
       notifyAdmins,
       notifyAdminsOfSlotStatus,
       notifyPlayersOfBattles,
+      vi.fn(() => []),  // getEventLog — NEW
     );
 
     lobby.getBySlotId.mockReturnValue(undefined);
@@ -205,5 +209,24 @@ describe('registerLobbyHandlers – player:join', () => {
     socket.trigger('player:join', { battleId: 'battle-1', slotId: 'slot-a1' });
 
     expect(socket.emit).toHaveBeenCalledWith('action:request', pendingRequest);
+  });
+
+  it('emits battle:history after state:sync on successful join', () => {
+    const turn = { turnNumber: 1, events: [{ type: 'faint' as const, data: { slotId: 'a1', instanceId: 'i1' } }] };
+    const getEventLog = vi.fn(() => [turn]);
+    registerLobbyHandlers(
+      socket as any,
+      lobby as any,
+      (id) => (id === 'battle-1' ? (room as any) : undefined),
+      notifyAdmins,
+      notifyAdminsOfSlotStatus,
+      notifyPlayersOfBattles,
+      getEventLog,
+    );
+    lobby.getBySlotId.mockReturnValue(undefined);
+    lobby.registerPlayer.mockReturnValue({ ok: true, player: { displayName: 'Conor', battleId: null, battleSlotId: null } });
+    socket.trigger('player:join', { battleId: 'battle-1', slotId: 'slot-a1' });
+    expect(socket.emit).toHaveBeenCalledWith('battle:history', { turns: [turn] });
+    expect(getEventLog).toHaveBeenCalledWith('battle-1');
   });
 });

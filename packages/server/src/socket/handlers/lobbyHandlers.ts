@@ -1,5 +1,5 @@
 import type { Socket } from 'socket.io';
-import type { ServerToClientEvents, ClientToServerEvents, PlayerJoinPayload } from '@poke-fighter/shared';
+import type { ServerToClientEvents, ClientToServerEvents, PlayerJoinPayload, TurnResolveEvent } from '@poke-fighter/shared';
 import type { LobbyManager } from '../LobbyManager.js';
 import type { BattleRoom } from '../BattleRoom.js';
 
@@ -10,6 +10,7 @@ export function registerLobbyHandlers(
   notifyAdmins: () => void,
   notifyAdminsOfSlotStatus: (battleId: string) => void,
   notifyPlayersOfBattles: () => void,
+  getEventLog: (battleId: string) => Array<{ turnNumber: number; events: TurnResolveEvent[] }>,
 ): void {
   socket.on('player:join', (payload: PlayerJoinPayload) => {
     const { battleId, slotId } = payload;
@@ -46,8 +47,8 @@ export function registerLobbyHandlers(
 
     socket.join(`battle:${battleId}`);
     socket.emit('state:sync', state);
+    socket.emit('battle:history', { turns: getEventLog(battleId) });
 
-    // Re-send action:request if this slot missed it (joined after turn started)
     const pending = room.getPendingActionRequest(slotId);
     if (pending) socket.emit('action:request', pending);
 
