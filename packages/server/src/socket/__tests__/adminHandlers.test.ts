@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { pokemonMatchesQuery, moveMatchesQuery, registerAdminHandlers } from '../handlers/adminHandlers.js';
-import type { PokemonSpecies, Move } from '@poke-fighter/shared';
+import type { PokemonSpecies, Move, BattleState } from '@poke-fighter/shared';
 import { AppDatabase } from '../../db/Database.js';
 
 const makeMove = (overrides: Partial<Move> = {}): Move => ({
@@ -121,7 +121,7 @@ describe('registerAdminHandlers – battles:connect', () => {
   });
 
   it('emits battle:history with empty turns for a battle with no history', () => {
-    const makeBattleState = () => ({
+    const makeBattleState = (): BattleState => ({
       battleId: 'b1', label: 'Test', turnNumber: 0, phase: 'action' as const,
       teams: [
         { teamId: 'team-a', slots: [{ slotId: 'a1', displayName: 'A', isNpc: false, isSpectator: false, party: [], activePokemonIndex: 0 }] },
@@ -135,7 +135,7 @@ describe('registerAdminHandlers – battles:connect', () => {
   });
 
   it('emits battle:history with accumulated turns', () => {
-    const makeBattleState = () => ({
+    const makeBattleState = (): BattleState => ({
       battleId: 'b1', label: 'Test', turnNumber: 0, phase: 'action' as const,
       teams: [
         { teamId: 'team-a', slots: [{ slotId: 'a1', displayName: 'A', isNpc: false, isSpectator: false, party: [], activePokemonIndex: 0 }] },
