@@ -195,4 +195,20 @@ describe('AppDatabase.battles – event log', () => {
   it('getEventLog returns [] for an unknown battleId', () => {
     expect(db.battles.getEventLog('does-not-exist')).toEqual([]);
   });
+
+  it('appendTurnEvents stores a turn and getEventLog returns it', () => {
+    db.battles.insert(makeBattleState());
+    const turn = { turnNumber: 1, events: [{ type: 'faint' as const, data: { slotId: 'a1', instanceId: 'i1' } }] };
+    db.battles.appendTurnEvents('b1', turn);
+    expect(db.battles.getEventLog('b1')).toEqual([turn]);
+  });
+
+  it('appendTurnEvents accumulates multiple turns in order', () => {
+    db.battles.insert(makeBattleState());
+    const turn1 = { turnNumber: 1, events: [{ type: 'faint' as const, data: { slotId: 'a1', instanceId: 'i1' } }] };
+    const turn2 = { turnNumber: 2, events: [{ type: 'heal' as const, data: { slotId: 'b1' } }] };
+    db.battles.appendTurnEvents('b1', turn1);
+    db.battles.appendTurnEvents('b1', turn2);
+    expect(db.battles.getEventLog('b1')).toEqual([turn1, turn2]);
+  });
 });

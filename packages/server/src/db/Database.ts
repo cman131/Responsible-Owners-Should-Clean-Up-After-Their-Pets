@@ -178,6 +178,13 @@ class BattlesStore {
     if (!row) return [];
     return JSON.parse(row.eventLog) as Array<{ turnNumber: number; events: TurnResolveEvent[] }>;
   }
+
+  appendTurnEvents(battleId: string, turn: { turnNumber: number; events: TurnResolveEvent[] }): void {
+    const current = this.getEventLog(battleId);
+    current.push(turn);
+    this.db.prepare('UPDATE battles SET eventLog = @eventLog WHERE battleId = @battleId')
+      .run({ battleId, eventLog: JSON.stringify(current) });
+  }
 }
 
 export class AppDatabase {
