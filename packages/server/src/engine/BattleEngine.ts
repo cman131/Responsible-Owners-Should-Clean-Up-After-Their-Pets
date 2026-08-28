@@ -227,105 +227,104 @@ export class BattleEngine {
         continue;
       }
 
-      // STAB
-      const attackerSpecies = this.data.getSpecies(attacker.speciesId);
-      const attackerTypes = attacker.hasTerastallized && attacker.teraType
-        ? [attacker.teraType] as PokemonType[]
-        : (attackerSpecies?.types ?? ['Normal']) as PokemonType[];
-      const stab = attackerTypes.includes(move.type);
+      const secs = move.secondaries ?? [];
+      const multihitSec = secs.find(sec => sec.kind === 'multihit');
+      const hitCount = multihitSec ? this.rollHitCount(multihitSec.hits) : 1;
 
       const isPhysical = move.category === 'physical';
-      const rawAtkStat = isPhysical ? attacker.stats.atk : attacker.stats.spa;
-      const boostKey = isPhysical ? 'atk' as const : 'spa' as const;
-
-      const rawDefStat = isPhysical ? target.stats.def : target.stats.spd;
-      const defBoostKey = isPhysical ? 'def' as const : 'spd' as const;
-
-      const critStage = computeCritStage(move.critRatio, attacker.volatileStatus);
-      const isCritical = this.rng() < critProbability(critStage);
-      const atkBoost = isCritical
-        ? Math.max(0, attacker.statBoosts[boostKey])
-        : attacker.statBoosts[boostKey];
-      const defBoost = isCritical
-        ? Math.min(0, target.statBoosts[defBoostKey])
-        : target.statBoosts[defBoostKey];
-
-      let atkStat = getEffectiveStat(rawAtkStat, atkBoost, boostKey);
-
-      const abilityHooks = getAbilityHooks(attacker.ability);
-      if (abilityHooks.onAttackerModifier) {
-        atkStat = Math.floor(atkStat * abilityHooks.onAttackerModifier({
-          user: attacker, state: s, moveType: move.type, basePower: move.basePower, target,
-        }));
-      }
-
-      const defStat = getEffectiveStat(rawDefStat, defBoost, defBoostKey);
-
-      // Spread penalty
-      const isSpread = targetSlotIds.length > 1;
-      let otherModifiers = isSpread ? 0.75 : 1;
-
       const itemHooks = getItemHooks(attacker.heldItem);
-      if (itemHooks.onAttackerModifier) {
-        otherModifiers *= itemHooks.onAttackerModifier({
-          holder: attacker, state: s, moveType: move.type, basePower: move.basePower, target, isPhysical,
+
+      let totalDamage = 0;
+      for (let hit = 0; hit < hitCount; hit++) {
+        if (target.fainted) break;
+
+        const attackerSpecies = this.data.getSpecies(attacker.speciesId);
+        const attackerTypes = attacker.hasTerastallized && attacker.teraType
+          ? [attacker.teraType] as PokemonType[]
+          : (attackerSpecies?.types ?? ['Normal']) as PokemonType[];
+        const stab = attackerTypes.includes(move.type);
+
+        const rawAtkStat = isPhysical ? attacker.stats.atk : attacker.stats.spa;
+        const boostKey = isPhysical ? 'atk' as const : 'spa' as const;
+        const rawDefStat = isPhysical ? target.stats.def : target.stats.spd;
+        const defBoostKey = isPhysical ? 'def' as const : 'spd' as const;
+
+        const critStage = computeCritStage(move.critRatio, attacker.volatileStatus);
+        const isCritical = this.rng() < critProbability(critStage);
+        const atkBoost = isCritical ? Math.max(0, attacker.statBoosts[boostKey]) : attacker.statBoosts[boostKey];
+        const defBoost = isCritical ? Math.min(0, target.statBoosts[defBoostKey]) : target.statBoosts[defBoostKey];
+
+        let atkStat = getEffectiveStat(rawAtkStat, atkBoost, boostKey);
+        const abilityHooks = getAbilityHooks(attacker.ability);
+        if (abilityHooks.onAttackerModifier) {
+          atkStat = Math.floor(atkStat * abilityHooks.onAttackerModifier({
+            user: attacker, state: s, moveType: move.type, basePower: move.basePower, target,
+          }));
+        }
+        const defStat = getEffectiveStat(rawDefStat, defBoost, defBoostKey);
+        const isSpread = targetSlotIds.length > 1;
+        let otherModifiers = isSpread ? 0.75 : 1;
+        if (itemHooks.onAttackerModifier) {
+          otherModifiers *= itemHooks.onAttackerModifier({
+            holder: attacker, state: s, moveType: move.type, basePower: move.basePower, target, isPhysical,
+          });
+        }
+
+        const { damage } = calcDamage({
+          level: attacker.level,
+          attackStat: atkStat,
+          defenseStat: defStat,
+          basePower: move.basePower,
+          typeEffectiveness: effectiveness,
+          stab,
+          isBurned: isPhysical && attacker.status === 'brn',
+          randomFactor: randomDamageFactor(),
+          isCritical,
+          moveType: move.type,
+          ...(s.field.weather ? { weather: s.field.weather.type } : {}),
+          otherModifiers,
         });
+
+        let finalDamage = damage;
+        const abilityDmgMod = abilityHooks.onDamageModifier?.({ user: attacker, state: s, moveType: move.type, basePower: move.basePower, target });
+        if (abilityDmgMod !== undefined) finalDamage = Math.floor(finalDamage * abilityDmgMod);
+        const itemDmgMod = itemHooks.onDamageModifier?.({ holder: attacker, state: s, moveType: move.type, basePower: move.basePower, target, isPhysical });
+        if (itemDmgMod !== undefined) finalDamage = Math.floor(finalDamage * itemDmgMod);
+
+        const actualDamage = Math.min(finalDamage, target.currentHp);
+        target.currentHp -= actualDamage;
+        totalDamage += actualDamage;
+
+        events.push({ type: 'damage-dealt', data: {
+          attackerSlotId, targetSlotId, moveId: move.id,
+          damage: actualDamage, effectiveness, remainingHp: target.currentHp,
+        }});
+
+        if (isCritical) {
+          events.push({ type: 'crit', data: { slotId: targetSlotId } });
+        }
+
+        if (target.currentHp <= 0) {
+          target.fainted = true;
+          target.currentHp = 0;
+          events.push({ type: 'faint', data: { slotId: targetSlotId, instanceId: target.instanceId } });
+        }
       }
 
-      const { damage } = calcDamage({
-        level: attacker.level,
-        attackStat: atkStat,
-        defenseStat: defStat,
-        basePower: move.basePower,
-        typeEffectiveness: effectiveness,
-        stab,
-        isBurned: isPhysical && attacker.status === 'brn',
-        randomFactor: randomDamageFactor(),
-        isCritical,
-        moveType: move.type,
-        ...(s.field.weather ? { weather: s.field.weather.type } : {}),
-        otherModifiers,
-      });
+      // Post-hit secondaries (applied after final hit, uses accumulated totalDamage)
+      if (totalDamage > 0) {
+        if (!target.fainted) {
+          const secondaryEvent = evaluateSecondaryEffect(move, target, targetSlotId, defTypes);
+          if (secondaryEvent) events.push(secondaryEvent);
+          const volatileEvent = evaluateVolatileEffect(move.id, target, targetSlotId, attackerSlotId);
+          if (volatileEvent) events.push(volatileEvent);
+        }
 
-      // Apply onDamageModifier from ability and item
-      let finalDamage = damage;
-      const abilityDmgMod = abilityHooks.onDamageModifier?.({ user: attacker, state: s, moveType: move.type, basePower: move.basePower, target });
-      if (abilityDmgMod !== undefined) finalDamage = Math.floor(finalDamage * abilityDmgMod);
-      const itemDmgMod = itemHooks.onDamageModifier?.({ holder: attacker, state: s, moveType: move.type, basePower: move.basePower, target, isPhysical });
-      if (itemDmgMod !== undefined) finalDamage = Math.floor(finalDamage * itemDmgMod);
-
-      const actualDamage = Math.min(finalDamage, target.currentHp);
-      target.currentHp -= actualDamage;
-
-      events.push({ type: 'damage-dealt', data: {
-        attackerSlotId, targetSlotId, moveId: move.id,
-        damage: actualDamage, effectiveness, remainingHp: target.currentHp,
-      }});
-
-      if (isCritical) {
-        events.push({ type: 'crit', data: { slotId: targetSlotId } });
-      }
-
-      // Secondary status effect from move data (e.g. Flamethrower 10% burn)
-      if (actualDamage > 0 && target.currentHp > 0) {
-        const secondaryEvent = evaluateSecondaryEffect(move, target, targetSlotId, defTypes);
-        if (secondaryEvent) events.push(secondaryEvent);
-      }
-
-      if (actualDamage > 0 && target.currentHp > 0) {
-        const volatileEvent = evaluateVolatileEffect(move.id, target, targetSlotId, attackerSlotId);
-        if (volatileEvent) events.push(volatileEvent);
-      }
-
-      // Data-driven secondaries (move.secondaries[])
-      if (move.secondaries && move.secondaries.length > 0) {
-        const postSecs = move.secondaries.filter(sec =>
-          sec.kind !== 'multihit' && sec.kind !== 'ohko' && sec.kind !== 'charge'
-        );
-        if (postSecs.length > 0 && actualDamage > 0 && target.currentHp > 0) {
-          const secCtx: SecondaryContext = {
+        const postSecs = secs.filter(sec => sec.kind !== 'multihit' && sec.kind !== 'ohko' && sec.kind !== 'charge');
+        if (postSecs.length > 0) {
+          events.push(...applySecondaries({
             secondaries: postSecs,
-            totalDamage: actualDamage,
+            totalDamage,
             user: attacker,
             userSlotId: attackerSlotId,
             target,
@@ -334,17 +333,16 @@ export class BattleEngine {
             battle: s,
             rng: this.rng,
             movedSlotIds,
-          };
-          events.push(...applySecondaries(secCtx));
+          }));
         }
       }
 
       // Defender's ability triggers (e.g. Static, Flame Body)
       const defenderAbilityHooks = getAbilityHooks(target.ability);
-      if (defenderAbilityHooks.onAfterHit && actualDamage > 0 && target.currentHp > 0) {
+      if (defenderAbilityHooks.onAfterHit && totalDamage > 0 && !target.fainted) {
         const afterHitResult = defenderAbilityHooks.onAfterHit({
           user: target, state: s, moveType: move.type, basePower: move.basePower,
-          target: attacker, isPhysical,
+          target: attacker, isPhysical: move.category === 'physical',
         });
         if (afterHitResult?.statusToApply) {
           const attackerSpecies = this.data.getSpecies(attacker.speciesId);
@@ -356,15 +354,9 @@ export class BattleEngine {
         }
       }
 
-      if (target.currentHp <= 0) {
-        target.fainted = true;
-        target.currentHp = 0;
-        events.push({ type: 'faint', data: { slotId: targetSlotId, instanceId: target.instanceId } });
-      }
-
       // Life Orb recoil etc.
-      if (actualDamage > 0 && itemHooks.onAfterDamageTaken) {
-        const { hpDelta } = itemHooks.onAfterDamageTaken({ holder: attacker, state: s, damageTaken: actualDamage });
+      if (totalDamage > 0 && itemHooks.onAfterDamageTaken) {
+        const { hpDelta } = itemHooks.onAfterDamageTaken({ holder: attacker, state: s, damageTaken: totalDamage });
         if (hpDelta < 0) {
           const recoil = Math.min(-hpDelta, attacker.currentHp);
           attacker.currentHp -= recoil;
@@ -528,5 +520,18 @@ export class BattleEngine {
       if (mon && !mon.fainted) { targets.push(mon); resolvedSlotIds.push(id); }
     }
     return { targets, targetSlotIds: resolvedSlotIds };
+  }
+
+  private rollHitCount(hits: number | [number, number]): number {
+    if (typeof hits === 'number') return hits;
+    const [min, max] = hits;
+    if (min === 2 && max === 5) {
+      const r = this.rng();
+      if (r < 3 / 8) return 2;
+      if (r < 6 / 8) return 3;
+      if (r < 7 / 8) return 4;
+      return 5;
+    }
+    return min + Math.floor(this.rng() * (max - min + 1));
   }
 }

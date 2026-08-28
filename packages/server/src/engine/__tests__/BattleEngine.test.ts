@@ -631,3 +631,58 @@ describe('Secondary effects — single-hit wiring', () => {
     expect(p2.statBoosts.def).toBe(-1);
   });
 });
+
+describe('Multi-hit moves', () => {
+  it('Bullet Seed hits the number of times determined by rng', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'bulletseed', currentPp: 30, maxPp: 30 };
+    // rng: accuracy=0(hit), hitCount=0(→2 hits), then per hit: crit=1(no), damage falls back to Math.random
+    const rolls = [0, 0, 1, 1];
+    let i = 0;
+    const engine = new BattleEngine({ rng: () => rolls[i++ % rolls.length]! });
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const damageEvents = events.filter(e => e.type === 'damage-dealt' && e.data['targetSlotId'] === 'slot-b1');
+    expect(damageEvents).toHaveLength(2);
+  });
+
+  it('multi-hit stops early if target faints mid-sequence', () => {
+    const state = make1v1State();
+    state.teams[1]!.slots[0]!.party[0]!.currentHp = 1;
+    state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'bulletseed', currentPp: 30, maxPp: 30 };
+    const rolls = [0, 0, 1, 1];
+    let i = 0;
+    const engine = new BattleEngine({ rng: () => rolls[i++ % rolls.length]! });
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const damageEvents = events.filter(e => e.type === 'damage-dealt' && e.data['targetSlotId'] === 'slot-b1');
+    expect(damageEvents).toHaveLength(1);
+    expect(events.some(e => e.type === 'faint' && e.data['slotId'] === 'slot-b1')).toBe(true);
+  });
+
+  it('hit count distribution over 400 trials is approximately 3/8, 3/8, 1/8, 1/8', () => {
+    const counts = { 2: 0, 3: 0, 4: 0, 5: 0 };
+    for (let trial = 0; trial < 400; trial++) {
+      const state = make1v1State();
+      state.teams[1]!.slots[0]!.party[0]!.currentHp = 9999;
+      state.teams[1]!.slots[0]!.party[0]!.maxHp = 9999;
+      state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'bulletseed', currentPp: 30, maxPp: 30 };
+      let first = true;
+      const engine = new BattleEngine({ rng: () => { if (first) { first = false; return 0; } return Math.random(); } });
+      const { events } = engine.resolveTurn(state, {
+        'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },
+        'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+      });
+      const hits = events.filter(e => e.type === 'damage-dealt' && e.data['targetSlotId'] === 'slot-b1').length;
+      counts[hits as 2|3|4|5] = (counts[hits as 2|3|4|5] ?? 0) + 1;
+    }
+    expect(counts[2]! / 400).toBeCloseTo(3 / 8, 1);
+    expect(counts[3]! / 400).toBeCloseTo(3 / 8, 1);
+    expect(counts[4]! / 400).toBeCloseTo(1 / 8, 1);
+    expect(counts[5]! / 400).toBeCloseTo(1 / 8, 1);
+  });
+});
