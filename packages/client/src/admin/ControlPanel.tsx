@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { getSocket } from '../socket.js';
 import { BattleProvider, useBattle } from '../battle/BattleContext.js';
 import { BattleScene } from '../battle/BattleScene.js';
+import { HpBarsRow } from '../battle/overlays/HpBarsRow.js';
 import { TurnLog } from '../battle/overlays/TurnLog.js';
 import { NpcTabPanel } from './NpcTabPanel.js';
 import type { ActionRequestPayload, AdminActionPayload } from '@poke-fighter/shared';
@@ -24,7 +25,6 @@ function ControlPanelInner({ battleId, onBack }: Props) {
     const onNpcRequest = (payload: { battleId: string; slots: NpcSlotRequest[] }) => {
       if (payload.battleId === battleId) setNpcRequests(payload.slots);
     };
-
     const onTurnResolve = () => setNpcRequests([]);
 
     socket.on('npc:action-request', onNpcRequest);
@@ -46,22 +46,51 @@ function ControlPanelInner({ battleId, onBack }: Props) {
     }
   }
 
+  const teamASlots = state?.teams[0]?.slots.filter((s) => !s.isSpectator) ?? [];
+  const teamBSlots = state?.teams[1]?.slots.filter((s) => !s.isSpectator) ?? [];
+
   return (
-    <div style={{ background: '#0d0d1a', minHeight: '100vh', display: 'flex', gap: 16, padding: 16 }}>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <button onClick={onBack} style={{ background: 'none', border: '1px solid #555', color: '#aaa', padding: '4px 12px', borderRadius: 3, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11 }}>← BATTLES</button>
-          <div style={{ color: '#e74c3c', fontSize: 12, letterSpacing: 2 }}>ADMIN VIEW — {battleId}</div>
-        </div>
-        {state && <BattleScene state={state} mySlotId="__admin__" />}
-        <TurnLog messages={turnLog} />
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={() => handleForfeit('team-a')} style={{ ...btnStyle, background: '#555' }}>FORFEIT TEAM A</button>
-          <button onClick={() => handleForfeit('team-b')} style={{ ...btnStyle, background: '#555' }}>FORFEIT TEAM B</button>
+    <div style={{ background: '#0d0d1a', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: 16, gap: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: 800 }}>
+        <button
+          onClick={onBack}
+          style={{ background: 'none', border: '1px solid #555', color: '#aaa', padding: '4px 12px', borderRadius: 3, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11 }}
+        >
+          ← BATTLES
+        </button>
+        {state && (
+          <span style={{ color: '#f0c040', fontSize: 12, letterSpacing: 1 }}>
+            {state.label} Turn {state.turnNumber}
+          </span>
+        )}
+        <span style={{ color: '#e74c3c', fontSize: 12, letterSpacing: 2 }}>ADMIN VIEW</span>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+          <button onClick={() => handleForfeit('team-a')} style={btnStyle}>FORFEIT TEAM A</button>
+          <button onClick={() => handleForfeit('team-b')} style={btnStyle}>FORFEIT TEAM B</button>
         </div>
       </div>
-      <div style={{ width: 300, display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <NpcTabPanel battleId={battleId} npcRequests={npcRequests} state={state} />
+
+      {state && (
+        <>
+          <HpBarsRow label="TEAM B" variant="enemy" slots={teamBSlots} />
+          <BattleScene state={state} mySlotId="__admin__" />
+          <HpBarsRow label="TEAM A" variant="own" slots={teamASlots} />
+        </>
+      )}
+
+      <div style={{ display: 'flex', gap: 16, width: 800 }}>
+        <div style={{ flex: 1 }}>
+          {npcRequests.length > 0 ? (
+            <NpcTabPanel battleId={battleId} npcRequests={npcRequests} state={state} />
+          ) : (
+            <div style={{ background: '#0d0d1a', border: '1px solid #333', borderRadius: 6, padding: 16, color: '#555', fontSize: 13, textAlign: 'center' }}>
+              No pending NPC actions
+            </div>
+          )}
+        </div>
+        <div style={{ width: 300 }}>
+          <TurnLog messages={turnLog} />
+        </div>
       </div>
     </div>
   );
@@ -75,4 +104,14 @@ export function ControlPanel({ battleId, onBack }: Props) {
   );
 }
 
-const btnStyle = { color: '#fff', border: 'none', padding: '8px 16px', fontSize: 12, letterSpacing: 1, cursor: 'pointer', borderRadius: 4, fontFamily: 'inherit' };
+const btnStyle = {
+  color: '#fff',
+  border: 'none',
+  padding: '6px 14px',
+  fontSize: 11,
+  letterSpacing: 1,
+  cursor: 'pointer',
+  borderRadius: 3,
+  fontFamily: 'inherit',
+  background: '#555',
+};
