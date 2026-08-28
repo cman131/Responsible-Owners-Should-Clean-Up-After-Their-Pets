@@ -319,8 +319,8 @@ export class BattleEngine {
 
       // Data-driven secondaries (move.secondaries[])
       if (move.secondaries && move.secondaries.length > 0) {
-        const postSecs = move.secondaries.filter(s =>
-          s.kind !== 'multihit' && s.kind !== 'ohko' && s.kind !== 'charge'
+        const postSecs = move.secondaries.filter(sec =>
+          sec.kind !== 'multihit' && sec.kind !== 'ohko' && sec.kind !== 'charge'
         );
         if (postSecs.length > 0 && actualDamage > 0 && target.currentHp > 0) {
           const secCtx: SecondaryContext = {
