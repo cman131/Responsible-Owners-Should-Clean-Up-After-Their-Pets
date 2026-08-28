@@ -278,7 +278,7 @@ export class BattleEngine {
         randomFactor: randomDamageFactor(),
         isCritical,
         moveType: move.type,
-        weather: s.field.weather?.type,
+        ...(s.field.weather ? { weather: s.field.weather.type } : {}),
         otherModifiers,
       });
 

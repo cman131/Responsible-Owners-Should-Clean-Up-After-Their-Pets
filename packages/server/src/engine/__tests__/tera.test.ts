@@ -31,7 +31,8 @@ describe('Tera type', () => {
     teraState.teams[0]!.slots[0]!.party[0]!.speciesId = 9; // Blastoise
     teraState.teams[0]!.slots[0]!.party[0]!.teraType = 'Fire';
 
-    const engine = new BattleEngine();
+    // rng=0.5: accuracy roll 0.5*100=50 < 100 → hit; crit roll 0.5 < 1/24 → false → no crit
+    const engine = new BattleEngine({ rng: () => 0.5 });
 
     // To avoid randomness, run each scenario 10 times and compare min/max damage
     let maxDmgNoTera = 0;
