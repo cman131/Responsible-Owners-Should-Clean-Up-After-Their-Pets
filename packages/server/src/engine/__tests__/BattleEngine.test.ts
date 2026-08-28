@@ -161,4 +161,22 @@ describe('Sleep prevents moving', () => {
     const p2 = newState.teams[1]!.slots[0]!.party[0]!;
     expect(p2.currentHp).toBe(100);
   });
+
+  it('a sleeping pokemon with counter 0 wakes up and deals damage on the same turn', () => {
+    const state = make1v1State();
+    const p1 = state.teams[0]!.slots[0]!.party[0]!;
+    p1.status = 'slp';
+    p1.volatileStatus = [{ name: 'sleep', counter: 0 }];
+    const engine = new BattleEngine();
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    // p1 woke up and attacked — p2 should have taken damage
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2.currentHp).toBeLessThan(100);
+    // p1 status cleared
+    expect(newState.teams[0]!.slots[0]!.party[0]!.status).toBeUndefined();
+    expect(events.some(e => e.type === 'status-cured')).toBe(true);
+  });
 });

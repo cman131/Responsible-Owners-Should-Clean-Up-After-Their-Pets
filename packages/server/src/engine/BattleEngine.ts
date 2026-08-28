@@ -5,7 +5,8 @@ import type {
 import { DataLoader } from '../data/loader.js';
 import { calcDamage, randomDamageFactor } from './damage.js';
 import { getEffectiveStat } from './stats.js';
-import { tickStatus, PARALYSIS_SPEED_MOD, PARALYSIS_FULL_PARALYSIS_CHANCE } from './status.js';
+import { tickStatus, PARALYSIS_SPEED_MOD } from './status.js';
+import { EffectEngine, SlotContext } from './EffectEngine.js';
 import { getAbilityHooks } from './abilities.js';
 import { getItemHooks } from './items.js';
 import { applyStatus, applyStatBoost, evaluateSecondaryEffect } from './effects.js';
@@ -20,6 +21,7 @@ export interface TurnResult {
 
 export class BattleEngine {
   private readonly data = new DataLoader();
+  private readonly effectEngine = new EffectEngine();
 
   resolveTurn(state: BattleState, actions: Record<string, Action>): TurnResult {
     const events: TurnResolveEvent[] = [];
@@ -117,19 +119,9 @@ export class BattleEngine {
     const attacker = attackerSlot.party[attackerSlot.activePokemonIndex];
     if (!attacker) return { newState: s, events };
 
-    // Can't-move checks
-    if (attacker.status === 'slp') {
-      events.push({ type: 'move-used', data: { attackerSlotId, attackerName: attacker.nickname, note: 'asleep' } });
-      return { newState: s, events };
-    }
-    if (attacker.status === 'par' && Math.random() < PARALYSIS_FULL_PARALYSIS_CHANCE) {
-      events.push({ type: 'move-used', data: { attackerSlotId, attackerName: attacker.nickname, note: 'full-paralysis' } });
-      return { newState: s, events };
-    }
-    if (attacker.status === 'frz') {
-      events.push({ type: 'move-used', data: { attackerSlotId, attackerName: attacker.nickname, note: 'frozen' } });
-      return { newState: s, events };
-    }
+    const preMoveResult = this.effectEngine.runPreMove(attacker, attackerSlotId, s, this.getAllSlots(s));
+    events.push(...preMoveResult.events);
+    if (preMoveResult.blocked) return { newState: s, events };
 
     const moveSlot = attacker.moves[action.moveIndex];
     if (!moveSlot) return { newState: s, events };
@@ -476,5 +468,15 @@ export class BattleEngine {
       if (slot) return slot;
     }
     return null;
+  }
+
+  private getAllSlots(state: BattleState): SlotContext[] {
+    return state.teams.flatMap((team, teamIndex) =>
+      team.slots.map(slot => ({
+        member: slot.party[slot.activePokemonIndex]!,
+        slotId: slot.slotId,
+        teamIndex,
+      }))
+    );
   }
 }
