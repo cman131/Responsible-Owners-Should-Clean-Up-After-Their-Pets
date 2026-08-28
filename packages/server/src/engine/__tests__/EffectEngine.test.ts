@@ -77,3 +77,28 @@ describe('EffectEngine.runPreMove — freeze', () => {
     vi.restoreAllMocks();
   });
 });
+
+describe('EffectEngine.runPreMove — paralysis', () => {
+  it('blocks the move on a full-paralysis roll', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0); // 0 < 0.25 → fully paralyzed
+    const engine = new EffectEngine();
+    const pokemon = makePokemon({ status: 'par' });
+    const result = engine.runPreMove(pokemon, 'slot-a1', emptyState, emptySlots);
+    expect(result.blocked).toBe(true);
+    expect(pokemon.status).toBe('par'); // status stays
+    expect(result.events.some(e => e.type === 'move-blocked')).toBe(true);
+    const evt = result.events.find(e => e.type === 'move-blocked')!;
+    expect(evt.data['reason']).toBe('paralysis');
+    vi.restoreAllMocks();
+  });
+
+  it('allows the move when the paralysis roll does not trigger', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5); // 0.5 >= 0.25 → passes
+    const engine = new EffectEngine();
+    const pokemon = makePokemon({ status: 'par' });
+    const result = engine.runPreMove(pokemon, 'slot-a1', emptyState, emptySlots);
+    expect(result.blocked).toBe(false);
+    expect(pokemon.status).toBe('par'); // status stays
+    vi.restoreAllMocks();
+  });
+});

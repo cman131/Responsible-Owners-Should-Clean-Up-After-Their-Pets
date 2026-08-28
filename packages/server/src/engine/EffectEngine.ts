@@ -1,7 +1,7 @@
 import type {
   PartyMember, BattleState, TurnResolveEvent,
 } from '@poke-fighter/shared';
-import { FREEZE_THAW_CHANCE } from './status.js';
+import { FREEZE_THAW_CHANCE, PARALYSIS_FULL_PARALYSIS_CHANCE } from './status.js';
 
 export interface SlotContext {
   member: PartyMember;
@@ -48,6 +48,13 @@ export class EffectEngine {
       }
       events.push({ type: 'move-blocked', data: { slotId, pokemonName: pokemon.nickname, reason: 'frozen' } });
       return { blocked: true, events };
+    }
+
+    if (pokemon.status === 'par') {
+      if (Math.random() < PARALYSIS_FULL_PARALYSIS_CHANCE) {
+        events.push({ type: 'move-blocked', data: { slotId, pokemonName: pokemon.nickname, reason: 'paralysis' } });
+        return { blocked: true, events };
+      }
     }
 
     return { blocked: false, events };
