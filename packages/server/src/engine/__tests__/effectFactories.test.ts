@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { statModSelf, statModTarget, multiStatModSelf, applyStatusTarget, applyVolatileTarget, applyVolatileSelf, healPercent } from '../effectFactories.js';
-import { makePokemon } from './fixtures.js';
+import { statModSelf, statModTarget, multiStatModSelf, applyStatusTarget, applyVolatileTarget, applyVolatileSelf, healPercent, setWeather, setTerrain, setSideCondition, trickRoom, gravity, custom } from '../effectFactories.js';
+import { makePokemon, make1v1State } from './fixtures.js';
 import type { MoveContext } from '../MoveEffectRegistry.js';
 import type { BattleState, Move } from '@poke-fighter/shared';
 
@@ -192,5 +192,95 @@ describe('healPercent', () => {
     const ctx = makeCtx({ user });
     const { events } = healPercent(0.5)(ctx);
     expect(events).toHaveLength(0);
+  });
+});
+
+describe('setWeather', () => {
+  it('sets the weather and returns a weather-change event', () => {
+    const state = make1v1State();
+    const ctx = makeCtx({ battle: state });
+    const { events } = setWeather('rain', 5)(ctx);
+    expect(state.field.weather?.type).toBe('rain');
+    expect(state.field.weather?.turnsRemaining).toBe(5);
+    expect(state.field.weather?.fromAbility).toBe(false);
+    expect(events[0]!.type).toBe('weather-change');
+    expect(events[0]!.data['weather']).toBe('rain');
+  });
+});
+
+describe('setTerrain', () => {
+  it('sets the terrain for 5 turns and returns a terrain-change event', () => {
+    const state = make1v1State();
+    const ctx = makeCtx({ battle: state });
+    const { events } = setTerrain('electric')(ctx);
+    expect(state.field.terrain?.type).toBe('electric');
+    expect(state.field.terrain?.turnsRemaining).toBe(5);
+    expect(events[0]!.type).toBe('terrain-change');
+  });
+});
+
+describe('setSideCondition', () => {
+  it('sets a numeric ally-side condition on the user team (Reflect, 5 turns)', () => {
+    const state = make1v1State();
+    const ctx = makeCtx({ battle: state, userTeamIndex: 0 });
+    const { events } = setSideCondition('reflect', 5, 'ally')(ctx);
+    expect(state.field.sideConditions[0]!.reflect).toBe(5);
+    expect(events[0]!.type).toBe('side-condition-set');
+    expect(events[0]!.data['side']).toBe(0);
+    expect(events[0]!.data['condition']).toBe('reflect');
+  });
+
+  it('sets a boolean foe-side condition on the foe team (Stealth Rock)', () => {
+    const state = make1v1State();
+    const ctx = makeCtx({ battle: state, userTeamIndex: 0 });
+    const { events } = setSideCondition('stealthRock', true, 'foe')(ctx);
+    expect(state.field.sideConditions[1]!.stealthRock).toBe(true);
+    expect(events[0]!.data['side']).toBe(1);
+  });
+});
+
+describe('trickRoom', () => {
+  it('activates trick room for 5 turns when not active', () => {
+    const state = make1v1State(); // trickroom: 0
+    const ctx = makeCtx({ battle: state });
+    const { events } = trickRoom()(ctx);
+    expect(state.field.trickroom).toBe(5);
+    expect(events[0]!.type).toBe('field-effect-set');
+    expect(events[0]!.data['effect']).toBe('trickroom');
+    expect(events[0]!.data['turnsRemaining']).toBe(5);
+  });
+
+  it('deactivates trick room when already active', () => {
+    const state = make1v1State();
+    state.field.trickroom = 3;
+    const ctx = makeCtx({ battle: state });
+    trickRoom()(ctx);
+    expect(state.field.trickroom).toBe(0);
+  });
+});
+
+describe('gravity', () => {
+  it('activates gravity for 5 turns', () => {
+    const state = make1v1State();
+    const ctx = makeCtx({ battle: state });
+    gravity()(ctx);
+    expect(state.field.gravity).toBe(5);
+  });
+
+  it('deactivates gravity when already active', () => {
+    const state = make1v1State();
+    state.field.gravity = 2;
+    const ctx = makeCtx({ battle: state });
+    gravity()(ctx);
+    expect(state.field.gravity).toBe(0);
+  });
+});
+
+describe('custom', () => {
+  it('delegates to the provided handler function', () => {
+    const inner = vi.fn().mockReturnValue({ events: [] });
+    const ctx = makeCtx();
+    custom(inner)(ctx);
+    expect(inner).toHaveBeenCalledWith(ctx);
   });
 });

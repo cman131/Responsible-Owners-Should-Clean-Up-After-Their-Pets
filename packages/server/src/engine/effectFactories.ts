@@ -59,3 +59,48 @@ export function healPercent(fraction: number): MoveEffectHandler {
     return { events: [{ type: 'heal', data: { slotId: ctx.userSlotId, amount: heal, remainingHp: ctx.user.currentHp } }] };
   };
 }
+
+export function setWeather(type: WeatherType, turns: number): MoveEffectHandler {
+  return (ctx) => {
+    ctx.battle.field.weather = { type, turnsRemaining: turns, fromAbility: false };
+    return { events: [{ type: 'weather-change', data: { weather: type } }] };
+  };
+}
+
+export function setTerrain(type: TerrainType): MoveEffectHandler {
+  return (ctx) => {
+    ctx.battle.field.terrain = { type, turnsRemaining: 5 };
+    return { events: [{ type: 'terrain-change', data: { terrain: type } }] };
+  };
+}
+
+export function setSideCondition(
+  key: keyof SideConditions,
+  value: number | boolean,
+  side: 'ally' | 'foe',
+): MoveEffectHandler {
+  return (ctx) => {
+    const sideIdx = (side === 'ally' ? ctx.userTeamIndex : 1 - ctx.userTeamIndex) as 0 | 1;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (ctx.battle.field.sideConditions[sideIdx] as any)[key] = value;
+    return { events: [{ type: 'side-condition-set', data: { side: sideIdx, condition: key, value } }] };
+  };
+}
+
+export function trickRoom(): MoveEffectHandler {
+  return (ctx) => {
+    ctx.battle.field.trickroom = ctx.battle.field.trickroom > 0 ? 0 : 5;
+    return { events: [{ type: 'field-effect-set', data: { effect: 'trickroom', turnsRemaining: ctx.battle.field.trickroom } }] };
+  };
+}
+
+export function gravity(): MoveEffectHandler {
+  return (ctx) => {
+    ctx.battle.field.gravity = ctx.battle.field.gravity > 0 ? 0 : 5;
+    return { events: [{ type: 'field-effect-set', data: { effect: 'gravity', turnsRemaining: ctx.battle.field.gravity } }] };
+  };
+}
+
+export function custom(fn: MoveEffectHandler): MoveEffectHandler {
+  return fn;
+}
