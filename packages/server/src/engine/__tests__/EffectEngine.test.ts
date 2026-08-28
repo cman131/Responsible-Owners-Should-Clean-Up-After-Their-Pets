@@ -369,4 +369,11 @@ describe('EffectEngine.runPreMove — recharge', () => {
     expect(pokemon.volatileStatus.some(v => v.name === 'recharge')).toBe(false);
     expect(result.events.find(e => e.type === 'move-blocked')?.data['reason']).toBe('recharge');
   });
+
+  it('does not block if no recharge volatile', () => {
+    const engine = new EffectEngine();
+    const pokemon = makePokemon({ volatileStatus: [] });
+    const result = engine.runPreMove(pokemon, 'slot-a1', emptyState, emptySlots);
+    expect(result.blocked).toBe(false);
+  });
 });
