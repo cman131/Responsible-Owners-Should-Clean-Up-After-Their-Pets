@@ -131,6 +131,7 @@ export function applySecondaries(ctx: SecondaryContext): TurnResolveEvent[] {
         if (ctx.rng() * 100 >= sec.chance) break;
         if (!ctx.movedSlotIds.has(ctx.targetSlotId) && !ctx.target.fainted) {
           ctx.target.volatileStatus.push({ name: 'flinch' });
+          events.push({ type: 'volatile-applied', data: { targetSlotId: ctx.targetSlotId, volatile: 'flinch' } });
         }
         break;
       }

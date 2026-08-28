@@ -111,6 +111,16 @@ describe('applySecondaries — flinch kind', () => {
     applySecondaries(ctx);
     expect(ctx.target.volatileStatus.some(v => v.name === 'flinch')).toBe(false);
   });
+
+  it('does not flinch a fainted target', () => {
+    const ctx = makeCtx({
+      secondaries: [{ kind: 'flinch', chance: 100 }],
+      rng: () => 0,
+      target: makePokemon({ currentHp: 0, maxHp: 100, fainted: true }),
+    });
+    applySecondaries(ctx);
+    expect(ctx.target.volatileStatus.some(v => v.name === 'flinch')).toBe(false);
+  });
 });
 
 describe('applySecondaries — confusion kind', () => {
