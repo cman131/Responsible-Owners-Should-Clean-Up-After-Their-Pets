@@ -341,3 +341,32 @@ describe('EffectEngine.runEndOfTurn — yawn', () => {
     expect(pokemon.status).toBe('par'); // unchanged
   });
 });
+
+describe('EffectEngine.runPreMove — flinch', () => {
+  it('blocks move and removes flinch volatile', () => {
+    const engine = new EffectEngine();
+    const pokemon = makePokemon({ volatileStatus: [{ name: 'flinch' }] });
+    const result = engine.runPreMove(pokemon, 'slot-a1', emptyState, emptySlots);
+    expect(result.blocked).toBe(true);
+    expect(pokemon.volatileStatus.some(v => v.name === 'flinch')).toBe(false);
+    expect(result.events.find(e => e.type === 'move-blocked')?.data['reason']).toBe('flinch');
+  });
+
+  it('does not block if no flinch volatile', () => {
+    const engine = new EffectEngine();
+    const pokemon = makePokemon({ volatileStatus: [] });
+    const result = engine.runPreMove(pokemon, 'slot-a1', emptyState, emptySlots);
+    expect(result.blocked).toBe(false);
+  });
+});
+
+describe('EffectEngine.runPreMove — recharge', () => {
+  it('blocks move and removes recharge volatile', () => {
+    const engine = new EffectEngine();
+    const pokemon = makePokemon({ volatileStatus: [{ name: 'recharge' }] });
+    const result = engine.runPreMove(pokemon, 'slot-a1', emptyState, emptySlots);
+    expect(result.blocked).toBe(true);
+    expect(pokemon.volatileStatus.some(v => v.name === 'recharge')).toBe(false);
+    expect(result.events.find(e => e.type === 'move-blocked')?.data['reason']).toBe('recharge');
+  });
+});

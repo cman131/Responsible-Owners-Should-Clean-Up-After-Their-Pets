@@ -30,6 +30,20 @@ export class EffectEngine {
   ): PreMoveResult {
     const events: TurnResolveEvent[] = [];
 
+    const flinchEntry = pokemon.volatileStatus.find(v => v.name === 'flinch');
+    if (flinchEntry) {
+      pokemon.volatileStatus = pokemon.volatileStatus.filter(v => v.name !== 'flinch');
+      events.push({ type: 'move-blocked', data: { slotId, pokemonName: pokemon.nickname, reason: 'flinch' } });
+      return { blocked: true, events };
+    }
+
+    const rechargeEntry = pokemon.volatileStatus.find(v => v.name === 'recharge');
+    if (rechargeEntry) {
+      pokemon.volatileStatus = pokemon.volatileStatus.filter(v => v.name !== 'recharge');
+      events.push({ type: 'move-blocked', data: { slotId, pokemonName: pokemon.nickname, reason: 'recharge' } });
+      return { blocked: true, events };
+    }
+
     if (pokemon.status === 'slp') {
       const entry = pokemon.volatileStatus.find(v => v.name === 'sleep');
       if (!entry || (entry.counter ?? 0) === 0) {
