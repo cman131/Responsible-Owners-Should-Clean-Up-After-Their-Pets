@@ -1,5 +1,5 @@
 import type {
-  PartyMember, StatBoosts, StatusCondition, PokemonType, TurnResolveEvent, Move,
+  PartyMember, StatBoosts, StatusCondition, PokemonType, TurnResolveEvent, Move, BattleState, Secondary,
 } from '@poke-fighter/shared';
 import { canApplyStatus } from './status.js';
 
@@ -92,4 +92,42 @@ export function evaluateVolatileEffect(
 ): TurnResolveEvent | null {
   if (!BOUND_MOVES.has(moveId)) return null;
   return applyVolatile(target, targetSlotId, attackerSlotId, 'bound');
+}
+
+export interface SecondaryContext {
+  secondaries: Secondary[];
+  totalDamage: number;
+  user: PartyMember;
+  userSlotId: string;
+  target: PartyMember;
+  targetSlotId: string;
+  targetTypes: PokemonType[];
+  battle: BattleState;
+  rng: () => number;
+  movedSlotIds: Set<string>;
+}
+
+export function applySecondaries(ctx: SecondaryContext): TurnResolveEvent[] {
+  const events: TurnResolveEvent[] = [];
+  for (const sec of ctx.secondaries) {
+    switch (sec.kind) {
+      case 'status': {
+        if (ctx.rng() * 100 >= sec.chance) break;
+        const member = sec.target === 'user' ? ctx.user : ctx.target;
+        const slotId = sec.target === 'user' ? ctx.userSlotId : ctx.targetSlotId;
+        const types = sec.target === 'user' ? ([] as PokemonType[]) : ctx.targetTypes;
+        const evt = applyStatus(member, slotId, sec.status as StatusCondition, types);
+        if (evt) events.push(evt);
+        break;
+      }
+      case 'stat': {
+        if (ctx.rng() * 100 >= sec.chance) break;
+        const member = sec.target === 'user' ? ctx.user : ctx.target;
+        const slotId = sec.target === 'user' ? ctx.userSlotId : ctx.targetSlotId;
+        events.push(applyStatBoost(member, slotId, { [sec.stat]: sec.stages } as Partial<Record<keyof StatBoosts, number>>));
+        break;
+      }
+    }
+  }
+  return events;
 }
