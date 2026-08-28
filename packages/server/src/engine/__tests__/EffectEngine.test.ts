@@ -102,3 +102,73 @@ describe('EffectEngine.runPreMove — paralysis', () => {
     vi.restoreAllMocks();
   });
 });
+
+describe('EffectEngine.runPreMove — confusion', () => {
+  it('cures confusion and allows the move when counter is 0', () => {
+    const engine = new EffectEngine();
+    const pokemon = makePokemon({ volatileStatus: [{ name: 'confusion', counter: 0 }] });
+    const result = engine.runPreMove(pokemon, 'slot-a1', emptyState, emptySlots);
+    expect(result.blocked).toBe(false);
+    expect(pokemon.volatileStatus.find(v => v.name === 'confusion')).toBeUndefined();
+    expect(result.events.some(e => e.type === 'volatile-cured')).toBe(true);
+    const evt = result.events.find(e => e.type === 'volatile-cured')!;
+    expect(evt.data['volatile']).toBe('confusion');
+  });
+
+  it('decrements counter and blocks on a self-hit roll', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0); // < 0.33 → self-hit; also makes randomDamageFactor deterministic
+    const engine = new EffectEngine();
+    const pokemon = makePokemon({
+      volatileStatus: [{ name: 'confusion', counter: 2 }],
+      currentHp: 100, maxHp: 100,
+    });
+    const result = engine.runPreMove(pokemon, 'slot-a1', emptyState, emptySlots);
+    expect(result.blocked).toBe(true);
+    expect(pokemon.volatileStatus[0]!.counter).toBe(1);
+    expect(pokemon.currentHp).toBeLessThan(100);
+    expect(result.events.some(e => e.type === 'damage-dealt')).toBe(true);
+    const dmgEvt = result.events.find(e => e.type === 'damage-dealt')!;
+    expect(dmgEvt.data['source']).toBe('confusion');
+    vi.restoreAllMocks();
+  });
+
+  it('decrements counter and allows the move when self-hit does not trigger', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.99); // >= 0.33 → no self-hit
+    const engine = new EffectEngine();
+    const pokemon = makePokemon({ volatileStatus: [{ name: 'confusion', counter: 2 }] });
+    const result = engine.runPreMove(pokemon, 'slot-a1', emptyState, emptySlots);
+    expect(result.blocked).toBe(false);
+    expect(pokemon.volatileStatus[0]!.counter).toBe(1);
+    expect(result.events).toHaveLength(0);
+    vi.restoreAllMocks();
+  });
+
+  it('a sleeping pokemon does not roll confusion', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0); // would trigger self-hit if confusion ran
+    const engine = new EffectEngine();
+    const pokemon = makePokemon({
+      status: 'slp',
+      volatileStatus: [{ name: 'sleep', counter: 1 }, { name: 'confusion', counter: 2 }],
+    });
+    const result = engine.runPreMove(pokemon, 'slot-a1', emptyState, emptySlots);
+    expect(result.blocked).toBe(true);
+    // confusion counter must not have changed
+    expect(pokemon.volatileStatus.find(v => v.name === 'confusion')!.counter).toBe(2);
+    vi.restoreAllMocks();
+  });
+
+  it('a confused pokemon faints from self-hit damage', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    const engine = new EffectEngine();
+    const pokemon = makePokemon({
+      volatileStatus: [{ name: 'confusion', counter: 1 }],
+      currentHp: 1, maxHp: 100,
+    });
+    const result = engine.runPreMove(pokemon, 'slot-a1', emptyState, emptySlots);
+    expect(result.blocked).toBe(true);
+    expect(pokemon.fainted).toBe(true);
+    expect(pokemon.currentHp).toBe(0);
+    expect(result.events.some(e => e.type === 'faint')).toBe(true);
+    vi.restoreAllMocks();
+  });
+});
