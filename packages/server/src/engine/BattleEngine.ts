@@ -1,6 +1,6 @@
 import type {
   BattleState, SlotState, PartyMember, MoveAction, SwitchAction,
-  TurnResolveEvent, PokemonType, StatusCondition, StatBoosts,
+  TurnResolveEvent, PokemonType, StatusCondition, StatBoosts, Move,
 } from '@poke-fighter/shared';
 import { DataLoader } from '../data/loader.js';
 import { calcDamage, randomDamageFactor } from './damage.js';
@@ -9,8 +9,9 @@ import { PARALYSIS_SPEED_MOD } from './status.js';
 import { EffectEngine, SlotContext } from './EffectEngine.js';
 import { getAbilityHooks } from './abilities.js';
 import { getItemHooks } from './items.js';
-import { applyStatus, applyStatBoost, evaluateSecondaryEffect, applyVolatile, evaluateVolatileEffect } from './effects.js';
-import { executeStatusMove } from './moves.js';
+import { applyStatus, applyStatBoost, evaluateSecondaryEffect, evaluateVolatileEffect } from './effects.js';
+import { MoveEffectRegistry, MoveContext } from './MoveEffectRegistry.js';
+import { buildDefaultRegistry } from './registrations.js';
 
 type Action = MoveAction | SwitchAction;
 
@@ -22,6 +23,11 @@ export interface TurnResult {
 export class BattleEngine {
   private readonly data = new DataLoader();
   private readonly effectEngine = new EffectEngine();
+  private readonly registry: MoveEffectRegistry;
+
+  constructor({ registry }: { registry?: MoveEffectRegistry } = {}) {
+    this.registry = registry ?? buildDefaultRegistry();
+  }
 
   resolveTurn(state: BattleState, actions: Record<string, Action>): TurnResult {
     const events: TurnResolveEvent[] = [];
@@ -140,63 +146,29 @@ export class BattleEngine {
     events.push({ type: 'move-used', data: { attackerSlotId, attackerName: attacker.nickname, moveId: move.id, moveName: move.name } });
 
     if (move.category === 'status') {
-      const result = executeStatusMove(moveSlot.moveId);
+      const { targets, targetSlotIds } = this.resolveStatusTargets(s, attackerSlotId, action, move);
+      const targetTypes = targets.map(t => this.resolveEffectiveTypes(t));
+      const userTeamIndex = s.teams.findIndex(t => t.slots.some(sl => sl.slotId === attackerSlotId));
 
-      let affectedMember: PartyMember;
-      let affectedSlotId: string;
-      if (result.targetsSelf) {
-        affectedMember = attacker;
-        affectedSlotId = attackerSlotId;
+      const ctx: MoveContext = {
+        battle: s,
+        user: attacker,
+        userSlotId: attackerSlotId,
+        userTeamIndex,
+        targets,
+        targetSlotIds,
+        targetTypes,
+        move,
+      };
+
+      const effectId = move.effectId ?? move.id;
+      const handler = this.registry.get(effectId);
+      if (handler) {
+        events.push(...handler(ctx).events);
       } else {
-        const foeSlotId = action.targetSlotId ?? this.getSpreadTargets(s, attackerSlotId, 'normal')[0];
-        const foeSlot = foeSlotId ? this.findSlot(s, foeSlotId) : null;
-        const foeMember = foeSlot?.party[foeSlot.activePokemonIndex];
-        if (foeMember && !foeMember.fainted) {
-          affectedMember = foeMember;
-          affectedSlotId = foeSlotId!;
-        } else {
-          affectedMember = attacker;
-          affectedSlotId = attackerSlotId;
-        }
+        console.warn(`[MoveEffectRegistry] No handler for effectId="${effectId}" (moveId="${move.id}")`);
+        events.push({ type: 'move-failed', data: { moveId: move.id, reason: 'unimplemented' } });
       }
-
-      if (result.statusToApply) {
-        const targetSpecies = this.data.getSpecies(affectedMember.speciesId);
-        const targetTypes = affectedMember.hasTerastallized && affectedMember.teraType
-          ? [affectedMember.teraType] as PokemonType[]
-          : (targetSpecies?.types ?? ['Normal']) as PokemonType[];
-        const event = applyStatus(affectedMember, affectedSlotId, result.statusToApply as StatusCondition, targetTypes);
-        if (event) events.push(event);
-      }
-
-      if (result.volatileToApply) {
-        const event = applyVolatile(
-          affectedMember,
-          affectedSlotId,
-          attackerSlotId,
-          result.volatileToApply,
-          result.volatileCounter,
-        );
-        if (event) events.push(event);
-      }
-
-      if (result.statBoostDeltas) {
-        const event = applyStatBoost(
-          affectedMember,
-          affectedSlotId,
-          result.statBoostDeltas as Partial<Record<keyof StatBoosts, number>>,
-        );
-        events.push(event);
-      }
-
-      if (result.heals) {
-        const heal = Math.min(Math.floor(affectedMember.maxHp / 2), affectedMember.maxHp - affectedMember.currentHp);
-        if (heal > 0) {
-          affectedMember.currentHp += heal;
-          events.push({ type: 'heal', data: { slotId: affectedSlotId, amount: heal, remainingHp: affectedMember.currentHp } });
-        }
-      }
-
       return { newState: s, events };
     }
 
@@ -453,5 +425,38 @@ export class BattleEngine {
         teamIndex,
       }))
     );
+  }
+
+  private resolveEffectiveTypes(member: PartyMember): PokemonType[] {
+    if (member.hasTerastallized && member.teraType) return [member.teraType];
+    const species = this.data.getSpecies(member.speciesId);
+    return (species?.types ?? ['Normal']) as PokemonType[];
+  }
+
+  private resolveStatusTargets(
+    state: BattleState,
+    attackerSlotId: string,
+    action: MoveAction,
+    move: Move,
+  ): { targets: PartyMember[]; targetSlotIds: string[] } {
+    if (['allySide', 'foeSide', 'all'].includes(move.target)) {
+      return { targets: [], targetSlotIds: [] };
+    }
+    if (['self', 'allyTeam', 'allies', 'adjacentAllyOrSelf', 'adjacentAlly'].includes(move.target)) {
+      const slot = this.findSlot(state, attackerSlotId);
+      const mon = slot?.party[slot.activePokemonIndex];
+      return mon ? { targets: [mon], targetSlotIds: [attackerSlotId] } : { targets: [], targetSlotIds: [] };
+    }
+    const slotIds = action.targetSlotId
+      ? [action.targetSlotId]
+      : this.getSpreadTargets(state, attackerSlotId, move.target);
+    const targets: PartyMember[] = [];
+    const resolvedSlotIds: string[] = [];
+    for (const id of slotIds) {
+      const slot = this.findSlot(state, id);
+      const mon = slot?.party[slot.activePokemonIndex];
+      if (mon && !mon.fainted) { targets.push(mon); resolvedSlotIds.push(id); }
+    }
+    return { targets, targetSlotIds: resolvedSlotIds };
   }
 }
