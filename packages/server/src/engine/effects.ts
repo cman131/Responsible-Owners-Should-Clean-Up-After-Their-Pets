@@ -38,6 +38,8 @@ export function applyStatBoost(
   return { type: 'stat-change', data: { slotId, changes } };
 }
 
+export const BOUND_MOVES = new Set(['bind', 'wrap', 'clamp', 'firespin', 'whirlpool']);
+
 const STATUS_CONDITIONS = new Set<string>(['brn', 'par', 'psn', 'tox', 'slp', 'frz']);
 
 export function evaluateSecondaryEffect(
@@ -52,4 +54,42 @@ export function evaluateSecondaryEffect(
     return applyStatus(target, targetSlotId, move.effect as StatusCondition, targetTypes);
   }
   return null;
+}
+
+export function applyVolatile(
+  target: PartyMember,
+  targetSlotId: string,
+  attackerSlotId: string,
+  volatile: string,
+  explicitCounter?: number,
+): TurnResolveEvent | null {
+  if (target.volatileStatus.some(v => v.name === volatile)) return null;
+
+  let counter: number | undefined;
+  if (explicitCounter !== undefined) {
+    counter = explicitCounter;
+  } else if (volatile === 'confusion') {
+    counter = Math.floor(Math.random() * 4) + 2; // 2–5
+  } else if (volatile === 'bound') {
+    counter = Math.floor(Math.random() * 2) + 4; // 4 or 5
+  }
+
+  const needsSource = volatile === 'leech-seed' || volatile === 'bound';
+  target.volatileStatus.push({
+    name: volatile,
+    ...(counter !== undefined ? { counter } : {}),
+    ...(needsSource ? { sourceSlotId: attackerSlotId } : {}),
+  });
+
+  return { type: 'volatile-applied', data: { targetSlotId, volatile } };
+}
+
+export function evaluateVolatileEffect(
+  moveId: string,
+  target: PartyMember,
+  targetSlotId: string,
+  attackerSlotId: string,
+): TurnResolveEvent | null {
+  if (!BOUND_MOVES.has(moveId)) return null;
+  return applyVolatile(target, targetSlotId, attackerSlotId, 'bound');
 }

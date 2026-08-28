@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { applyStatus, applyStatBoost, evaluateSecondaryEffect } from '../effects.js';
+import { applyStatus, applyStatBoost, evaluateSecondaryEffect, applyVolatile, evaluateVolatileEffect } from '../effects.js';
 import type { Move } from '@poke-fighter/shared';
 import { makePokemon } from './fixtures.js';
 
@@ -114,5 +114,68 @@ describe('evaluateSecondaryEffect', () => {
     expect(event).toBeNull();
     expect(target.status).toBeUndefined();
     vi.restoreAllMocks();
+  });
+});
+
+describe('applyVolatile', () => {
+  it('applies confusion with a random counter 2–5', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0); // floor(0*4)+2 = 2
+    const mon = makePokemon({ ability: '' });
+    const evt = applyVolatile(mon, 'slot-b1', 'slot-a1', 'confusion');
+    expect(mon.volatileStatus.find(v => v.name === 'confusion')?.counter).toBe(2);
+    expect(evt?.type).toBe('volatile-applied');
+    vi.restoreAllMocks();
+  });
+
+  it('applies leech-seed and records sourceSlotId', () => {
+    const mon = makePokemon({ ability: '' });
+    const evt = applyVolatile(mon, 'slot-b1', 'slot-a1', 'leech-seed');
+    const entry = mon.volatileStatus.find(v => v.name === 'leech-seed');
+    expect(entry).toBeDefined();
+    expect(entry!.sourceSlotId).toBe('slot-a1');
+    expect(evt?.type).toBe('volatile-applied');
+  });
+
+  it('returns null if target already has that volatile', () => {
+    const mon = makePokemon({ ability: '', volatileStatus: [{ name: 'confusion', counter: 3 }] });
+    const evt = applyVolatile(mon, 'slot-b1', 'slot-a1', 'confusion');
+    expect(evt).toBeNull();
+    expect(mon.volatileStatus.filter(v => v.name === 'confusion')).toHaveLength(1);
+  });
+
+  it('applies yawn with explicit counter 2', () => {
+    const mon = makePokemon({ ability: '' });
+    applyVolatile(mon, 'slot-b1', 'slot-a1', 'yawn', 2);
+    const entry = mon.volatileStatus.find(v => v.name === 'yawn');
+    expect(entry?.counter).toBe(2);
+  });
+
+  it('applies bound with counter 4 or 5', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0); // floor(0*2)+4 = 4
+    const mon = makePokemon({ ability: '' });
+    applyVolatile(mon, 'slot-b1', 'slot-a1', 'bound');
+    expect(mon.volatileStatus.find(v => v.name === 'bound')?.counter).toBe(4);
+    vi.restoreAllMocks();
+  });
+});
+
+describe('evaluateVolatileEffect', () => {
+  it('applies bound to the target when the move is in BOUND_MOVES', () => {
+    const target = makePokemon({ ability: '', currentHp: 50, maxHp: 100 });
+    const evt = evaluateVolatileEffect('bind', target, 'slot-b1', 'slot-a1');
+    expect(target.volatileStatus.find(v => v.name === 'bound')).toBeDefined();
+    expect(evt?.type).toBe('volatile-applied');
+  });
+
+  it('returns null for a move not in BOUND_MOVES', () => {
+    const target = makePokemon({ ability: '', currentHp: 50 });
+    const evt = evaluateVolatileEffect('flamethrower', target, 'slot-b1', 'slot-a1');
+    expect(evt).toBeNull();
+  });
+
+  it('returns null if target is already bound', () => {
+    const target = makePokemon({ ability: '', volatileStatus: [{ name: 'bound', counter: 3 }] });
+    const evt = evaluateVolatileEffect('wrap', target, 'slot-b1', 'slot-a1');
+    expect(evt).toBeNull();
   });
 });
