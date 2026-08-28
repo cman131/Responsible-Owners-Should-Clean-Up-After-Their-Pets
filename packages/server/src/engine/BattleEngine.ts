@@ -14,6 +14,8 @@ import { applyStatus, applyStatBoost, evaluateSecondaryEffect, evaluateVolatileE
 import { MoveEffectRegistry, MoveContext } from './MoveEffectRegistry.js';
 import { buildDefaultRegistry } from './registrations.js';
 
+const ALWAYS_THAW_MOVES = new Set(['scald', 'steameruption', 'sparklingaria']);
+
 type Action = MoveAction | SwitchAction;
 
 export interface TurnResult {
@@ -199,6 +201,14 @@ export class BattleEngine {
       if (!targetSlot) continue;
       const target = targetSlot.party[targetSlot.activePokemonIndex];
       if (!target || target.fainted) continue;
+
+      if (target.status === 'frz' && (move.type === 'Fire' || ALWAYS_THAW_MOVES.has(move.id))) {
+        delete target.status;
+        events.push({
+          type: 'status-cured',
+          data: { slotId: targetSlotId, status: 'frz', reason: 'fire-hit' },
+        });
+      }
 
       // Type effectiveness
       const targetSpecies = this.data.getSpecies(target.speciesId);

@@ -515,3 +515,44 @@ describe('Accuracy roll', () => {
     expect(newState.teams[1]!.slots[0]!.party[0]!.currentHp).toBe(hpBefore);
   });
 });
+
+describe('Thaw on fire hit', () => {
+  it('thaws a frozen defender struck by a Fire-type move', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.teams[1]!.slots[0]!.party[0]!.status = 'frz';
+
+    const { events, newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' }, // Flamethrower (Fire)
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    const thawEvent = events.find(
+      (e) =>
+        e.type === 'status-cured' &&
+        e.data['slotId'] === 'slot-b1' &&
+        e.data['reason'] === 'fire-hit',
+    );
+    expect(thawEvent).toBeDefined();
+    expect(thawEvent!.data['status']).toBe('frz');
+    // Damage is still dealt after thaw
+    expect(events.some((e) => e.type === 'damage-dealt' && e.data['targetSlotId'] === 'slot-b1')).toBe(true);
+    // Status cleared on defender
+    expect(newState.teams[1]!.slots[0]!.party[0]!.status).toBeUndefined();
+  });
+
+  it('does not fire-thaw a frozen defender struck by a non-Fire move', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    // Replace p1's Flamethrower with Surf (Water type)
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'surf', currentPp: 15, maxPp: 15 };
+    state.teams[1]!.slots[0]!.party[0]!.status = 'frz';
+
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' }, // Surf (Water)
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    expect(events.some((e) => e.type === 'status-cured' && e.data['reason'] === 'fire-hit')).toBe(false);
+  });
+});
