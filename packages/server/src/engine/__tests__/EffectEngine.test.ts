@@ -273,3 +273,71 @@ describe('EffectEngine.runEndOfTurn — leech seed', () => {
     expect(source.currentHp).toBe(51);
   });
 });
+
+describe('EffectEngine.runEndOfTurn — bind', () => {
+  it('deals 1/8 maxHp damage each turn', () => {
+    const engine = new EffectEngine();
+    const pokemon = makePokemon({
+      currentHp: 100, maxHp: 160,
+      volatileStatus: [{ name: 'bound', counter: 4, sourceSlotId: 'slot-b1' }],
+    });
+    engine.runEndOfTurn(pokemon, 'slot-a1', emptyState, emptySlots);
+    expect(pokemon.currentHp).toBe(80); // 160/8=20 damage
+  });
+
+  it('decrements the counter each turn', () => {
+    const engine = new EffectEngine();
+    const pokemon = makePokemon({
+      currentHp: 100, maxHp: 100,
+      volatileStatus: [{ name: 'bound', counter: 3, sourceSlotId: 'slot-b1' }],
+    });
+    engine.runEndOfTurn(pokemon, 'slot-a1', emptyState, emptySlots);
+    expect(pokemon.volatileStatus[0]!.counter).toBe(2);
+  });
+
+  it('removes bound and emits volatile-cured when counter reaches 0', () => {
+    const engine = new EffectEngine();
+    const pokemon = makePokemon({
+      currentHp: 100, maxHp: 100,
+      volatileStatus: [{ name: 'bound', counter: 1, sourceSlotId: 'slot-b1' }],
+    });
+    const result = engine.runEndOfTurn(pokemon, 'slot-a1', emptyState, emptySlots);
+    expect(pokemon.volatileStatus.find(v => v.name === 'bound')).toBeUndefined();
+    expect(result.events.some(e => e.type === 'volatile-cured')).toBe(true);
+    const evt = result.events.find(e => e.type === 'volatile-cured')!;
+    expect(evt.data['volatile']).toBe('bound');
+  });
+});
+
+describe('EffectEngine.runEndOfTurn — yawn', () => {
+  it('decrements the counter each turn', () => {
+    const engine = new EffectEngine();
+    const pokemon = makePokemon({ volatileStatus: [{ name: 'yawn', counter: 2 }] });
+    engine.runEndOfTurn(pokemon, 'slot-a1', emptyState, emptySlots);
+    expect(pokemon.volatileStatus[0]!.counter).toBe(1);
+    expect(pokemon.status).toBeUndefined();
+  });
+
+  it('applies sleep and removes yawn when counter reaches 0', () => {
+    const engine = new EffectEngine();
+    const pokemon = makePokemon({ volatileStatus: [{ name: 'yawn', counter: 1 }] });
+    engine.runEndOfTurn(pokemon, 'slot-a1', emptyState, emptySlots);
+    expect(pokemon.volatileStatus.find(v => v.name === 'yawn')).toBeUndefined();
+    expect(pokemon.status).toBe('slp');
+    const sleepEntry = pokemon.volatileStatus.find(v => v.name === 'sleep');
+    expect(sleepEntry).toBeDefined();
+    expect(sleepEntry!.counter).toBeGreaterThanOrEqual(1);
+    expect(sleepEntry!.counter).toBeLessThanOrEqual(3);
+  });
+
+  it('silently removes yawn when target already has a status (cannot sleep)', () => {
+    const engine = new EffectEngine();
+    const pokemon = makePokemon({
+      status: 'par',
+      volatileStatus: [{ name: 'yawn', counter: 1 }],
+    });
+    engine.runEndOfTurn(pokemon, 'slot-a1', emptyState, emptySlots);
+    expect(pokemon.volatileStatus.find(v => v.name === 'yawn')).toBeUndefined();
+    expect(pokemon.status).toBe('par'); // unchanged
+  });
+});

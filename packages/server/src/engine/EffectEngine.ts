@@ -4,6 +4,7 @@ import type {
 import { FREEZE_THAW_CHANCE, PARALYSIS_FULL_PARALYSIS_CHANCE, CONFUSION_HURT_CHANCE, getBurnDamage, getPoisonDamage, getToxicDamage } from './status.js';
 import { calcDamage, randomDamageFactor } from './damage.js';
 import { getEffectiveStat } from './stats.js';
+import { applyStatus } from './effects.js';
 
 export interface SlotContext {
   member: PartyMember;
@@ -141,6 +142,28 @@ export class EffectEngine {
         }
       }
       if (pokemon.fainted) return { events };
+    }
+
+    const boundEntry = pokemon.volatileStatus.find(v => v.name === 'bound');
+    if (boundEntry) {
+      this.applyDamage(pokemon, slotId, Math.max(1, Math.floor(pokemon.maxHp / 8)), 'bound', events);
+      boundEntry.counter = (boundEntry.counter ?? 1) - 1;
+      if ((boundEntry.counter ?? 0) <= 0) {
+        pokemon.volatileStatus = pokemon.volatileStatus.filter(v => v.name !== 'bound');
+        events.push({ type: 'volatile-cured', data: { slotId, volatile: 'bound' } });
+      }
+      if (pokemon.fainted) return { events };
+    }
+
+    const yawnEntry = pokemon.volatileStatus.find(v => v.name === 'yawn');
+    if (yawnEntry) {
+      yawnEntry.counter = (yawnEntry.counter ?? 1) - 1;
+      if ((yawnEntry.counter ?? 0) <= 0) {
+        pokemon.volatileStatus = pokemon.volatileStatus.filter(v => v.name !== 'yawn');
+        // IMMUNITIES.slp = [] so passing [] as types is correct — no type is immune to sleep
+        const evt = applyStatus(pokemon, slotId, 'slp', []);
+        if (evt) events.push(evt);
+      }
     }
 
     return { events };
