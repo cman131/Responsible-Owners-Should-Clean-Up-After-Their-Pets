@@ -82,6 +82,7 @@ export interface TurnResolveEvent {
   type:
     | 'move-used'
     | 'move-blocked'
+    | 'move-failed'          // registry miss (reason:'unimplemented') or handler logic failure
     | 'damage-dealt'
     | 'heal'
     | 'status-applied'
@@ -89,6 +90,8 @@ export interface TurnResolveEvent {
     | 'stat-change'
     | 'weather-change'
     | 'terrain-change'
+    | 'side-condition-set'   // Reflect, Light Screen, Stealth Rock, Spikes, etc.
+    | 'field-effect-set'     // Trick Room, Gravity
     | 'volatile-applied'
     | 'volatile-cured'
     | 'terastallize'
