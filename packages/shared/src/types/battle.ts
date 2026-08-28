@@ -11,6 +11,7 @@ export type TerrainType = 'electric' | 'grassy' | 'misty' | 'psychic';
 export interface VolatileStatusEntry {
   name: string;
   counter?: number;
+  sourceSlotId?: string;
 }
 
 export interface StatBoosts {

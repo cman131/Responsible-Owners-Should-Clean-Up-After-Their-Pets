@@ -81,6 +81,7 @@ export interface ActionRequestPayload {
 export interface TurnResolveEvent {
   type:
     | 'move-used'
+    | 'move-blocked'
     | 'damage-dealt'
     | 'heal'
     | 'status-applied'
@@ -89,6 +90,7 @@ export interface TurnResolveEvent {
     | 'weather-change'
     | 'terrain-change'
     | 'volatile-applied'
+    | 'volatile-cured'
     | 'terastallize'
     | 'faint';
   data: Record<string, unknown>;
