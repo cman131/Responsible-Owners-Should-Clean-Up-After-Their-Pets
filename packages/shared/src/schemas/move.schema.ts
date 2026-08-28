@@ -1,5 +1,20 @@
 import { z } from 'zod';
 
+const SecondarySchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('status'), status: z.string(), chance: z.number(), target: z.enum(['target', 'user']) }),
+  z.object({ kind: z.literal('stat'), stat: z.string(), stages: z.number().int(), chance: z.number(), target: z.enum(['target', 'user']) }),
+  z.object({ kind: z.literal('flinch'), chance: z.number() }),
+  z.object({ kind: z.literal('confusion'), chance: z.number(), target: z.enum(['target', 'user']) }),
+  z.object({ kind: z.literal('drain'), fraction: z.tuple([z.number(), z.number()]) }),
+  z.object({ kind: z.literal('recoil'), fraction: z.tuple([z.number(), z.number()]) }),
+  z.object({ kind: z.literal('recoil-hp'), fraction: z.tuple([z.number(), z.number()]) }),
+  z.object({ kind: z.literal('multihit'), hits: z.union([z.number().int(), z.tuple([z.number().int(), z.number().int()])]) }),
+  z.object({ kind: z.literal('ohko') }),
+  z.object({ kind: z.literal('selfdestruct'), variant: z.enum(['normal', 'memento', 'healingwish']) }),
+  z.object({ kind: z.literal('charge'), chargeVolatile: z.string() }),
+  z.object({ kind: z.literal('recharge') }),
+]);
+
 export const MoveSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
@@ -23,6 +38,7 @@ export const MoveSchema = z.object({
   effect: z.string().optional(),
   effectChance: z.number().int().min(0).max(100).optional(),
   critRatio: z.number().int().min(0).optional(),
+  secondaries: SecondarySchema.array().optional(),
 });
 
 export type ValidatedMove = z.infer<typeof MoveSchema>;

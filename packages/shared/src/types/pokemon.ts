@@ -1,3 +1,5 @@
+import type { Secondary } from './secondary.js';
+
 export type PokemonType =
   | 'Normal' | 'Fire' | 'Water' | 'Electric' | 'Grass' | 'Ice'
   | 'Fighting' | 'Poison' | 'Ground' | 'Flying' | 'Psychic' | 'Bug'
@@ -66,6 +68,7 @@ export interface Move {
   effect?: string;        // status id ('brn', 'par', 'psn', 'frz', 'slp') for secondary effects
   effectChance?: number;  // integer 0–100
   critRatio?: number;  // 1 = high crit ratio (+1 crit stage); absent/0 = normal
+  secondaries?: Secondary[];
 }
 
 export interface Ability {
