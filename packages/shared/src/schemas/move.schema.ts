@@ -22,6 +22,7 @@ export const MoveSchema = z.object({
   effectId: z.string().optional(),
   effect: z.string().optional(),
   effectChance: z.number().int().min(0).max(100).optional(),
+  critRatio: z.number().int().min(0).optional(),
 });
 
 export type ValidatedMove = z.infer<typeof MoveSchema>;

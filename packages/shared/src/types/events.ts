@@ -95,7 +95,9 @@ export interface TurnResolveEvent {
     | 'volatile-applied'
     | 'volatile-cured'
     | 'terastallize'
-    | 'faint';
+    | 'faint'
+    | 'miss'
+    | 'crit';
   data: Record<string, unknown>;
 }
 
