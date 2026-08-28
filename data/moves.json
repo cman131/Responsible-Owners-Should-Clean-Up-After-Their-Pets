@@ -900,7 +900,9 @@
     "priority": 0,
     "target": "allAdjacentFoes",
     "makesContact": false,
-    "effectId": "blizzard"
+    "effectId": "blizzard",
+    "effect": "frz",
+    "effectChance": 10
   },
   {
     "id": "block",
@@ -978,7 +980,9 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "bodyslam"
+    "effectId": "bodyslam",
+    "effect": "par",
+    "effectChance": 30
   },
   {
     "id": "boltbeak",
@@ -3258,7 +3262,9 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "fireblast"
+    "effectId": "fireblast",
+    "effect": "brn",
+    "effectChance": 10
   },
   {
     "id": "firefang",
@@ -3310,7 +3316,9 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "firepunch"
+    "effectId": "firepunch",
+    "effect": "brn",
+    "effectChance": 10
   },
   {
     "id": "firespin",
@@ -3427,7 +3435,9 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "flamethrower"
+    "effectId": "flamethrower",
+    "effect": "brn",
+    "effectChance": 10
   },
   {
     "id": "flareblitz",
@@ -5507,7 +5517,9 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "icebeam"
+    "effectId": "icebeam",
+    "effect": "frz",
+    "effectChance": 10
   },
   {
     "id": "iceburn",
@@ -5559,7 +5571,9 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "icepunch"
+    "effectId": "icepunch",
+    "effect": "frz",
+    "effectChance": 10
   },
   {
     "id": "iceshard",
@@ -6003,7 +6017,9 @@
     "priority": 0,
     "target": "allAdjacent",
     "makesContact": false,
-    "effectId": "lavaplume"
+    "effectId": "lavaplume",
+    "effect": "brn",
+    "effectChance": 30
   },
   {
     "id": "leafage",
@@ -7942,7 +7958,9 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "poisonjab"
+    "effectId": "poisonjab",
+    "effect": "psn",
+    "effectChance": 30
   },
   {
     "id": "poisonpowder",
@@ -7968,7 +7986,9 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "poisonsting"
+    "effectId": "poisonsting",
+    "effect": "psn",
+    "effectChance": 30
   },
   {
     "id": "poisontail",
@@ -9207,7 +9227,9 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "scald"
+    "effectId": "scald",
+    "effect": "brn",
+    "effectChance": 30
   },
   {
     "id": "scaleshot",
@@ -9860,7 +9882,9 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "sludge"
+    "effectId": "sludge",
+    "effect": "psn",
+    "effectChance": 30
   },
   {
     "id": "sludgebomb",
@@ -9873,7 +9897,9 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "sludgebomb"
+    "effectId": "sludgebomb",
+    "effect": "psn",
+    "effectChance": 30
   },
   {
     "id": "sludgewave",
@@ -11345,7 +11371,9 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "thunder"
+    "effectId": "thunder",
+    "effect": "par",
+    "effectChance": 30
   },
   {
     "id": "thunderbolt",
@@ -11358,7 +11386,9 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "thunderbolt"
+    "effectId": "thunderbolt",
+    "effect": "par",
+    "effectChance": 10
   },
   {
     "id": "thundercage",
@@ -11423,7 +11453,9 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "thunderpunch"
+    "effectId": "thunderpunch",
+    "effect": "par",
+    "effectChance": 10
   },
   {
     "id": "thundershock",
