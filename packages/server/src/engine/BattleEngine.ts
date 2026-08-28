@@ -5,6 +5,7 @@ import type {
 import { DataLoader } from '../data/loader.js';
 import { calcDamage, randomDamageFactor } from './damage.js';
 import { getEffectiveStat } from './stats.js';
+import { computeHitChance } from './accuracy.js';
 import { PARALYSIS_SPEED_MOD } from './status.js';
 import { EffectEngine, SlotContext } from './EffectEngine.js';
 import { getAbilityHooks } from './abilities.js';
@@ -24,8 +25,10 @@ export class BattleEngine {
   private readonly data = new DataLoader();
   private readonly effectEngine = new EffectEngine();
   private readonly registry: MoveEffectRegistry;
+  private readonly rng: () => number;
 
-  constructor({ registry }: { registry?: MoveEffectRegistry } = {}) {
+  constructor({ registry, rng }: { registry?: MoveEffectRegistry; rng?: () => number } = {}) {
+    this.rng = rng ?? Math.random;
     this.registry = registry ?? buildDefaultRegistry();
   }
 
@@ -176,6 +179,20 @@ export class BattleEngine {
     const targetSlotIds = action.targetSlotId
       ? [action.targetSlotId]
       : this.getSpreadTargets(s, attackerSlotId, move.target);
+
+    if (!['self', 'allyTeam'].includes(move.target)) {
+      let defenderEvasion = 0;
+      if (targetSlotIds.length === 1) {
+        const tSlot = this.findSlot(s, targetSlotIds[0]!);
+        const tMon = tSlot && tSlot.party[tSlot.activePokemonIndex];
+        defenderEvasion = tMon?.statBoosts.evasion ?? 0;
+      }
+      const hitChance = computeHitChance(move.accuracy, attacker.statBoosts.accuracy, defenderEvasion);
+      if (hitChance !== 'always' && this.rng() * 100 >= hitChance) {
+        events.push({ type: 'miss', data: { attackerSlotId, moveId: move.id } });
+        return { newState: s, events };
+      }
+    }
 
     for (const targetSlotId of targetSlotIds) {
       const targetSlot = this.findSlot(s, targetSlotId);

@@ -460,3 +460,58 @@ describe('Previously-unimplemented status moves', () => {
     expect(fail!.data['reason']).toBe('unimplemented');
   });
 });
+
+describe('Accuracy roll', () => {
+  it('emits miss event when rng forces a miss (rng returns 1.0)', () => {
+    // Flamethrower accuracy = 100; rng=1.0 → 1.0*100=100 ≥ 100 → miss
+    const engine = new BattleEngine({ rng: () => 1 });
+    const state = make1v1State();
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const missEvent = events.find(
+      (e) => e.type === 'miss' && e.data['attackerSlotId'] === 'slot-a1',
+    );
+    expect(missEvent).toBeDefined();
+    expect(missEvent!.data['moveId']).toBe('flamethrower');
+  });
+
+  it('does not emit miss event when rng forces a hit (rng returns 0)', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(events.some((e) => e.type === 'miss')).toBe(false);
+    expect(events.some((e) => e.type === 'damage-dealt')).toBe(true);
+  });
+
+  it('auto-hit move (accuracy: true) never misses even when rng returns 1', () => {
+    const engine = new BattleEngine({ rng: () => 1 });
+    const state = make1v1State();
+    // Swift has accuracy: true
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swift', currentPp: 20, maxPp: 20 };
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(events.some((e) => e.type === 'miss' && e.data['attackerSlotId'] === 'slot-a1')).toBe(false);
+    expect(
+      events.some((e) => e.type === 'damage-dealt' && e.data['attackerSlotId'] === 'slot-a1'),
+    ).toBe(true);
+  });
+
+  it('a missed move does not reduce target HP', () => {
+    const engine = new BattleEngine({ rng: () => 1 });
+    const state = make1v1State();
+    const hpBefore = state.teams[1]!.slots[0]!.party[0]!.currentHp;
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    // Both miss (rng=1 causes both to miss) → neither takes damage
+    expect(newState.teams[1]!.slots[0]!.party[0]!.currentHp).toBe(hpBefore);
+  });
+});
