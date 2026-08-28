@@ -1,4 +1,4 @@
-import type { StatusCondition, PokemonType, VolatileStatusEntry } from '@poke-fighter/shared';
+import type { StatusCondition, PokemonType } from '@poke-fighter/shared';
 
 export const PARALYSIS_SPEED_MOD = 0.5;
 export const PARALYSIS_FULL_PARALYSIS_CHANCE = 0.25;
@@ -47,34 +47,3 @@ export function getToxicDamage(maxHp: number, toxicCounter: number): number {
   return Math.max(1, Math.floor(maxHp * toxicCounter / 16));
 }
 
-export type StatusTickResult = {
-  hpDelta: number;      // negative = damage, 0 = no change
-  cured: boolean;
-  fullParalysis: boolean;
-  thawed: boolean;
-};
-
-export function tickStatus(
-  status: StatusCondition,
-  maxHp: number,
-  volatileEntry?: VolatileStatusEntry
-): StatusTickResult {
-  switch (status) {
-    case 'brn':
-      return { hpDelta: -getBurnDamage(maxHp), cured: false, fullParalysis: false, thawed: false };
-    case 'psn':
-      return { hpDelta: -getPoisonDamage(maxHp), cured: false, fullParalysis: false, thawed: false };
-    case 'tox': {
-      const counter = volatileEntry?.counter ?? 1;
-      return { hpDelta: -getToxicDamage(maxHp, counter), cured: false, fullParalysis: false, thawed: false };
-    }
-    case 'par':
-      return { hpDelta: 0, cured: false, fullParalysis: Math.random() < PARALYSIS_FULL_PARALYSIS_CHANCE, thawed: false };
-    case 'frz':
-      return { hpDelta: 0, cured: false, fullParalysis: false, thawed: Math.random() < FREEZE_THAW_CHANCE };
-    case 'slp':
-      return { hpDelta: 0, cured: (volatileEntry?.counter ?? 0) === 0, fullParalysis: false, thawed: false };
-    default:
-      return { hpDelta: 0, cured: false, fullParalysis: false, thawed: false };
-  }
-}

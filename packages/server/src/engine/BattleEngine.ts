@@ -1,11 +1,11 @@
 import type {
   BattleState, SlotState, PartyMember, MoveAction, SwitchAction,
-  TurnResolveEvent, PokemonType, VolatileStatusEntry, StatusCondition, StatBoosts,
+  TurnResolveEvent, PokemonType, StatusCondition, StatBoosts,
 } from '@poke-fighter/shared';
 import { DataLoader } from '../data/loader.js';
 import { calcDamage, randomDamageFactor } from './damage.js';
 import { getEffectiveStat } from './stats.js';
-import { tickStatus, PARALYSIS_SPEED_MOD } from './status.js';
+import { PARALYSIS_SPEED_MOD } from './status.js';
 import { EffectEngine, SlotContext } from './EffectEngine.js';
 import { getAbilityHooks } from './abilities.js';
 import { getItemHooks } from './items.js';
@@ -372,49 +372,8 @@ export class BattleEngine {
         const active = slot.party[slot.activePokemonIndex];
         if (!active || active.fainted) continue;
 
-        if (active.status) {
-          let volatileEntry: VolatileStatusEntry | undefined;
-
-          if (active.status === 'tox') {
-            let toxEntry = active.volatileStatus.find(v => v.name === 'toxic');
-            if (!toxEntry) {
-              toxEntry = { name: 'toxic', counter: 0 };
-              active.volatileStatus.push(toxEntry);
-            }
-            toxEntry.counter = (toxEntry.counter ?? 0) + 1;
-            volatileEntry = toxEntry;
-          } else if (active.status === 'slp') {
-            volatileEntry = active.volatileStatus.find(v => v.name === 'sleep');
-          }
-
-          const tick = tickStatus(active.status, active.maxHp, volatileEntry);
-
-          if (tick.hpDelta !== 0) {
-            const damage = Math.min(-tick.hpDelta, active.currentHp);
-            active.currentHp -= damage;
-            events.push({ type: 'damage-dealt', data: { source: 'status', slotId: slot.slotId, damage, remainingHp: active.currentHp } });
-            if (active.currentHp <= 0) {
-              active.fainted = true;
-              active.currentHp = 0;
-              events.push({ type: 'faint', data: { slotId: slot.slotId, instanceId: active.instanceId } });
-            }
-          }
-
-          if (active.status === 'slp') {
-            if (tick.cured) {
-              active.volatileStatus = active.volatileStatus.filter(v => v.name !== 'sleep');
-              delete active.status;
-              events.push({ type: 'status-cured', data: { slotId: slot.slotId, status: 'slp' } });
-            } else if (volatileEntry) {
-              volatileEntry.counter = (volatileEntry.counter ?? 1) - 1;
-            }
-          }
-
-          if (active.status === 'frz' && tick.thawed) {
-            delete active.status;
-            events.push({ type: 'status-cured', data: { slotId: slot.slotId, status: 'frz' } });
-          }
-        }
+        const eotResult = this.effectEngine.runEndOfTurn(active, slot.slotId, s, this.getAllSlots(s));
+        events.push(...eotResult.events);
 
         const itemHooks = getItemHooks(active.heldItem);
         if (itemHooks.onEndOfTurn) {
