@@ -391,6 +391,7 @@ describe('Previously-unimplemented status moves', () => {
       'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
     });
     expect(newState.field.terrain?.type).toBe('electric');
+    // Terrain is set to 5 turns; end-of-turn does not yet decrement terrain, so 5 remains
     expect(newState.field.terrain?.turnsRemaining).toBe(5);
   });
 
@@ -441,6 +442,7 @@ describe('Previously-unimplemented status moves', () => {
       'slot-a1': { type: 'move', moveIndex: 1 },
       'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
     });
+    // Trick room is set to 5 turns; end-of-turn does not yet decrement trickroom, so 5 remains
     expect(newState.field.trickroom).toBe(5);
     expect(events.some(e => e.type === 'field-effect-set')).toBe(true);
   });
