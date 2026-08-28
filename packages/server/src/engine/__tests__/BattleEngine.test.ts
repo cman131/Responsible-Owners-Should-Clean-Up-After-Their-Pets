@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { BattleEngine } from '../BattleEngine.js';
+import { MoveEffectRegistry } from '../MoveEffectRegistry.js';
 import { make1v1State, makePokemon } from './fixtures.js';
 import type { MoveAction, SwitchAction } from '@poke-fighter/shared';
 
@@ -224,5 +225,236 @@ describe('Volatile move dispatch', () => {
     // EOT bind damage should have happened this turn
     const boundDmgEvt = events.find(e => e.type === 'damage-dealt' && e.data['source'] === 'bound');
     expect(boundDmgEvt).toBeDefined();
+  });
+});
+
+describe('Previously-unimplemented status moves', () => {
+  it('Agility raises user Speed by 2 stages', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'agility', currentPp: 30, maxPp: 30 };
+    const { newState } = new BattleEngine().resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1 },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(newState.teams[0]!.slots[0]!.party[0]!.statBoosts.spe).toBe(2);
+  });
+
+  it('Barrier raises user Defense by 2 stages', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'barrier', currentPp: 20, maxPp: 20 };
+    const { newState } = new BattleEngine().resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1 },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(newState.teams[0]!.slots[0]!.party[0]!.statBoosts.def).toBe(2);
+  });
+
+  it('Dragon Dance raises user Attack and Speed by 1 each', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'dragondance', currentPp: 20, maxPp: 20 };
+    const { newState } = new BattleEngine().resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1 },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const p1 = newState.teams[0]!.slots[0]!.party[0]!;
+    expect(p1.statBoosts.atk).toBe(1);
+    expect(p1.statBoosts.spe).toBe(1);
+  });
+
+  it('Quiver Dance raises user SpA, SpD, and Spe by 1 each', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'quiverdance', currentPp: 20, maxPp: 20 };
+    const { newState } = new BattleEngine().resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1 },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const p1 = newState.teams[0]!.slots[0]!.party[0]!;
+    expect(p1.statBoosts.spa).toBe(1);
+    expect(p1.statBoosts.spd).toBe(1);
+    expect(p1.statBoosts.spe).toBe(1);
+  });
+
+  it('Shell Smash applies mixed stat changes', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'shellsmash', currentPp: 15, maxPp: 15 };
+    const { newState } = new BattleEngine().resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1 },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const p1 = newState.teams[0]!.slots[0]!.party[0]!;
+    expect(p1.statBoosts.def).toBe(-1);
+    expect(p1.statBoosts.spd).toBe(-1);
+    expect(p1.statBoosts.atk).toBe(2);
+    expect(p1.statBoosts.spa).toBe(2);
+    expect(p1.statBoosts.spe).toBe(2);
+  });
+
+  it('Leer lowers target Defense by 1', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'leer', currentPp: 30, maxPp: 30 };
+    const { newState } = new BattleEngine().resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.statBoosts.def).toBe(-1);
+  });
+
+  it('Growl lowers target Attack by 1', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+    const { newState } = new BattleEngine().resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.statBoosts.atk).toBe(-1);
+  });
+
+  it('Screech lowers target Defense by 2', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'screech', currentPp: 40, maxPp: 40 };
+    const { newState } = new BattleEngine().resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.statBoosts.def).toBe(-2);
+  });
+
+  it('Charm lowers target Attack by 2', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'charm', currentPp: 20, maxPp: 20 };
+    const { newState } = new BattleEngine().resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.statBoosts.atk).toBe(-2);
+  });
+
+  it('Flash lowers target Accuracy by 1', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'flash', currentPp: 20, maxPp: 20 };
+    const { newState } = new BattleEngine().resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.statBoosts.accuracy).toBe(-1);
+  });
+
+  it('Recover heals user for 50% max HP', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.currentHp = 40;
+    state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'recover', currentPp: 5, maxPp: 5 };
+    const { newState, events } = new BattleEngine().resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1 },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(newState.teams[0]!.slots[0]!.party[0]!.currentHp).toBeGreaterThan(40);
+    expect(events.some(e => e.type === 'heal')).toBe(true);
+  });
+
+  it('Glare applies paralysis to the target', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'glare', currentPp: 30, maxPp: 30 };
+    const { newState } = new BattleEngine().resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.status).toBe('par');
+  });
+
+  it('Hypnosis puts the target to sleep', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'hypnosis', currentPp: 20, maxPp: 20 };
+    const { newState } = new BattleEngine().resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.status).toBe('slp');
+  });
+
+  it('Rain Dance sets rain weather for 5 turns', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'raindance', currentPp: 5, maxPp: 5 };
+    const { newState } = new BattleEngine().resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1 },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(newState.field.weather?.type).toBe('rain');
+    // Weather is set to 5 turns then decremented by 1 at end-of-turn, so 4 remains
+    expect(newState.field.weather?.turnsRemaining).toBe(4);
+  });
+
+  it('Electric Terrain sets electric terrain for 5 turns', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'electricterrain', currentPp: 10, maxPp: 10 };
+    const { newState } = new BattleEngine().resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1 },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(newState.field.terrain?.type).toBe('electric');
+    expect(newState.field.terrain?.turnsRemaining).toBe(5);
+  });
+
+  it('Reflect sets reflect on user team side for 5 turns', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'reflect', currentPp: 20, maxPp: 20 };
+    const { newState } = new BattleEngine().resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1 },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(newState.field.sideConditions[0]!.reflect).toBe(5);
+  });
+
+  it('Light Screen sets lightScreen on user team side for 5 turns', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'lightscreen', currentPp: 30, maxPp: 30 };
+    const { newState } = new BattleEngine().resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1 },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(newState.field.sideConditions[0]!.lightScreen).toBe(5);
+  });
+
+  it('Stealth Rock sets stealthRock on foe team side', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'stealthrock', currentPp: 20, maxPp: 20 };
+    const { newState } = new BattleEngine().resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1 },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(newState.field.sideConditions[1]!.stealthRock).toBe(true);
+  });
+
+  it('Spikes increments spikes layer on foe side', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'spikes', currentPp: 20, maxPp: 20 };
+    const { newState } = new BattleEngine().resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1 },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(newState.field.sideConditions[1]!.spikes).toBe(1);
+  });
+
+  it('Trick Room activates for 5 turns', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'trickroom', currentPp: 5, maxPp: 5 };
+    const { newState, events } = new BattleEngine().resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1 },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(newState.field.trickroom).toBe(5);
+    expect(events.some(e => e.type === 'field-effect-set')).toBe(true);
+  });
+
+  it('emits move-failed with reason unimplemented for an unknown status move', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+    const engine = new BattleEngine({ registry: new MoveEffectRegistry() }); // empty registry
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1 },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const fail = events.find(e => e.type === 'move-failed');
+    expect(fail).toBeDefined();
+    expect(fail!.data['reason']).toBe('unimplemented');
   });
 });
