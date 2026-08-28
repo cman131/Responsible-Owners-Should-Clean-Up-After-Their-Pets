@@ -127,6 +127,21 @@ export function applySecondaries(ctx: SecondaryContext): TurnResolveEvent[] {
         events.push(applyStatBoost(member, slotId, { [sec.stat]: sec.stages } as Partial<Record<keyof StatBoosts, number>>));
         break;
       }
+      case 'flinch': {
+        if (ctx.rng() * 100 >= sec.chance) break;
+        if (!ctx.movedSlotIds.has(ctx.targetSlotId) && !ctx.target.fainted) {
+          ctx.target.volatileStatus.push({ name: 'flinch' });
+        }
+        break;
+      }
+      case 'confusion': {
+        if (ctx.rng() * 100 >= sec.chance) break;
+        const member = sec.target === 'user' ? ctx.user : ctx.target;
+        const mSlotId = sec.target === 'user' ? ctx.userSlotId : ctx.targetSlotId;
+        const evt = applyVolatile(member, mSlotId, ctx.userSlotId, 'confusion');
+        if (evt) events.push(evt);
+        break;
+      }
     }
   }
   return events;

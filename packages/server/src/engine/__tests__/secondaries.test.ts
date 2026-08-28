@@ -82,3 +82,54 @@ describe('applySecondaries — status kind', () => {
     expect(ctx.target.status).toBeUndefined();
   });
 });
+
+describe('applySecondaries — flinch kind', () => {
+  it('adds flinch volatile when roll succeeds and target has not moved', () => {
+    const ctx = makeCtx({
+      secondaries: [{ kind: 'flinch', chance: 30 }],
+      rng: () => 0,
+    });
+    applySecondaries(ctx);
+    expect(ctx.target.volatileStatus.some(v => v.name === 'flinch')).toBe(true);
+  });
+
+  it('does not flinch when target has already moved this turn', () => {
+    const ctx = makeCtx({
+      secondaries: [{ kind: 'flinch', chance: 100 }],
+      rng: () => 0,
+      movedSlotIds: new Set(['slot-b1']),
+    });
+    applySecondaries(ctx);
+    expect(ctx.target.volatileStatus.some(v => v.name === 'flinch')).toBe(false);
+  });
+
+  it('does not flinch when roll fails', () => {
+    const ctx = makeCtx({
+      secondaries: [{ kind: 'flinch', chance: 30 }],
+      rng: () => 0.99,
+    });
+    applySecondaries(ctx);
+    expect(ctx.target.volatileStatus.some(v => v.name === 'flinch')).toBe(false);
+  });
+});
+
+describe('applySecondaries — confusion kind', () => {
+  it('applies confusion volatile when roll succeeds', () => {
+    const ctx = makeCtx({
+      secondaries: [{ kind: 'confusion', chance: 10, target: 'target' }],
+      rng: () => 0,
+    });
+    const events = applySecondaries(ctx);
+    expect(ctx.target.volatileStatus.some(v => v.name === 'confusion')).toBe(true);
+    expect(events.some(e => e.type === 'volatile-applied')).toBe(true);
+  });
+
+  it('does not apply confusion when roll fails', () => {
+    const ctx = makeCtx({
+      secondaries: [{ kind: 'confusion', chance: 10, target: 'target' }],
+      rng: () => 0.99,
+    });
+    applySecondaries(ctx);
+    expect(ctx.target.volatileStatus.some(v => v.name === 'confusion')).toBe(false);
+  });
+});
