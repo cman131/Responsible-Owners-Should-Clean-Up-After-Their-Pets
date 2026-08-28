@@ -16,7 +16,7 @@ vi.mock('../../battle/overlays/TurnLog.js', () => ({
 }));
 vi.mock('../../battle/overlays/HpBarsRow.js', () => ({
   HpBarsRow: ({ label }: { label: string }) =>
-    <div data-testid={`hp-bars-${label.toLowerCase().replace(' ', '-')}`} />,
+    <div data-testid={`hp-bars-${label.toLowerCase().replace(/ /g, '-')}`} />,
 }));
 
 import { ControlPanel } from '../ControlPanel.js';
@@ -120,6 +120,17 @@ describe('ControlPanel', () => {
     expect(mockSocket.emit).toHaveBeenCalledWith('admin:action', {
       type: 'forfeit',
       data: { battleId: 'b1', teamId: 'team-a' },
+    });
+    vi.restoreAllMocks();
+  });
+
+  it('emits forfeit action for team-b when forfeit team b button is clicked and confirmed', () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    render(<ControlPanel battleId="b1" onBack={vi.fn()} />);
+    fireEvent.click(screen.getByText('FORFEIT TEAM B'));
+    expect(mockSocket.emit).toHaveBeenCalledWith('admin:action', {
+      type: 'forfeit',
+      data: { battleId: 'b1', teamId: 'team-b' },
     });
     vi.restoreAllMocks();
   });
