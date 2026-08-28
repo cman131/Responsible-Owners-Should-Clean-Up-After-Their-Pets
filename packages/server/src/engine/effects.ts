@@ -143,6 +143,41 @@ export function applySecondaries(ctx: SecondaryContext): TurnResolveEvent[] {
         if (evt) events.push(evt);
         break;
       }
+      case 'drain': {
+        if (ctx.totalDamage <= 0) break;
+        const heal = Math.floor(ctx.totalDamage * sec.fraction[0] / sec.fraction[1]);
+        const actual = Math.min(heal, ctx.user.maxHp - ctx.user.currentHp);
+        if (actual <= 0) break;
+        ctx.user.currentHp += actual;
+        events.push({ type: 'heal', data: { slotId: ctx.userSlotId, amount: actual, remainingHp: ctx.user.currentHp } });
+        break;
+      }
+      case 'recoil': {
+        const recoilAmt = Math.floor(ctx.totalDamage * sec.fraction[0] / sec.fraction[1]);
+        if (recoilAmt <= 0) break;
+        const taken = Math.min(recoilAmt, ctx.user.currentHp);
+        ctx.user.currentHp -= taken;
+        events.push({ type: 'damage-dealt', data: { source: 'recoil', slotId: ctx.userSlotId, damage: taken, remainingHp: ctx.user.currentHp } });
+        if (ctx.user.currentHp <= 0) {
+          ctx.user.fainted = true;
+          ctx.user.currentHp = 0;
+          events.push({ type: 'faint', data: { slotId: ctx.userSlotId, instanceId: ctx.user.instanceId } });
+        }
+        break;
+      }
+      case 'recoil-hp': {
+        const recoilAmt = Math.floor(ctx.user.maxHp * sec.fraction[0] / sec.fraction[1]);
+        if (recoilAmt <= 0) break;
+        const taken = Math.min(recoilAmt, ctx.user.currentHp);
+        ctx.user.currentHp -= taken;
+        events.push({ type: 'damage-dealt', data: { source: 'recoil', slotId: ctx.userSlotId, damage: taken, remainingHp: ctx.user.currentHp } });
+        if (ctx.user.currentHp <= 0) {
+          ctx.user.fainted = true;
+          ctx.user.currentHp = 0;
+          events.push({ type: 'faint', data: { slotId: ctx.userSlotId, instanceId: ctx.user.instanceId } });
+        }
+        break;
+      }
     }
   }
   return events;

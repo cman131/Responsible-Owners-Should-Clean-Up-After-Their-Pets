@@ -143,3 +143,77 @@ describe('applySecondaries — confusion kind', () => {
     expect(ctx.target.volatileStatus.some(v => v.name === 'confusion')).toBe(false);
   });
 });
+
+describe('applySecondaries — drain kind', () => {
+  it('heals user for half of totalDamage', () => {
+    const ctx = makeCtx({
+      secondaries: [{ kind: 'drain', fraction: [1, 2] }],
+      totalDamage: 80,
+      user: makePokemon({ currentHp: 50, maxHp: 100 }),
+    });
+    const events = applySecondaries(ctx);
+    expect(ctx.user.currentHp).toBe(90);
+    expect(events.some(e => e.type === 'heal')).toBe(true);
+    expect(events.find(e => e.type === 'heal')!.data['amount']).toBe(40);
+  });
+
+  it('caps heal at maxHp', () => {
+    const ctx = makeCtx({
+      secondaries: [{ kind: 'drain', fraction: [1, 2] }],
+      totalDamage: 100,
+      user: makePokemon({ currentHp: 95, maxHp: 100 }),
+    });
+    const events = applySecondaries(ctx);
+    expect(ctx.user.currentHp).toBe(100);
+    expect(events.find(e => e.type === 'heal')!.data['amount']).toBe(5);
+  });
+
+  it('emits no event when user is already at full HP', () => {
+    const ctx = makeCtx({
+      secondaries: [{ kind: 'drain', fraction: [1, 2] }],
+      totalDamage: 60,
+      user: makePokemon({ currentHp: 100, maxHp: 100 }),
+    });
+    const events = applySecondaries(ctx);
+    expect(events.some(e => e.type === 'heal')).toBe(false);
+    expect(ctx.user.currentHp).toBe(100);
+  });
+});
+
+describe('applySecondaries — recoil kind', () => {
+  it('damages user for 1/3 of totalDamage', () => {
+    const ctx = makeCtx({
+      secondaries: [{ kind: 'recoil', fraction: [1, 3] }],
+      totalDamage: 90,
+      user: makePokemon({ currentHp: 80, maxHp: 100 }),
+    });
+    const events = applySecondaries(ctx);
+    expect(ctx.user.currentHp).toBe(50);
+    expect(events.some(e => e.type === 'damage-dealt')).toBe(true);
+    expect(events.find(e => e.type === 'damage-dealt')!.data['damage']).toBe(30);
+  });
+
+  it('faints user if recoil exceeds remaining HP', () => {
+    const ctx = makeCtx({
+      secondaries: [{ kind: 'recoil', fraction: [1, 3] }],
+      totalDamage: 90,
+      user: makePokemon({ currentHp: 20, maxHp: 100 }),
+    });
+    const events = applySecondaries(ctx);
+    expect(ctx.user.currentHp).toBe(0);
+    expect(ctx.user.fainted).toBe(true);
+    expect(events.some(e => e.type === 'faint')).toBe(true);
+  });
+});
+
+describe('applySecondaries — recoil-hp kind', () => {
+  it('damages user for fraction of maxHp', () => {
+    const ctx = makeCtx({
+      secondaries: [{ kind: 'recoil-hp', fraction: [1, 4] }],
+      totalDamage: 999,
+      user: makePokemon({ currentHp: 100, maxHp: 100 }),
+    });
+    applySecondaries(ctx);
+    expect(ctx.user.currentHp).toBe(75);
+  });
+});
