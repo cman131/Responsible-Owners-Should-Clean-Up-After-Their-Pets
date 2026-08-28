@@ -10,7 +10,8 @@ import { PARALYSIS_SPEED_MOD } from './status.js';
 import { EffectEngine, SlotContext } from './EffectEngine.js';
 import { getAbilityHooks } from './abilities.js';
 import { getItemHooks } from './items.js';
-import { applyStatus, applyStatBoost, evaluateSecondaryEffect, evaluateVolatileEffect } from './effects.js';
+import { applyStatus, applyStatBoost, evaluateSecondaryEffect, evaluateVolatileEffect, applySecondaries } from './effects.js';
+import type { SecondaryContext } from './effects.js';
 import { MoveEffectRegistry, MoveContext } from './MoveEffectRegistry.js';
 import { buildDefaultRegistry } from './registrations.js';
 
@@ -42,6 +43,7 @@ export class BattleEngine {
     const order = this.buildActionOrder(s, actions);
 
     // 2. Execute each action
+    const movedSlotIds = new Set<string>();
     for (const slotId of order) {
       const action = actions[slotId];
       if (!action) continue;
@@ -52,7 +54,7 @@ export class BattleEngine {
       if (!active || active.fainted) continue;
 
       if (action.type === 'move') {
-        const moveResult = this.executeMove(s, slotId, action);
+        const moveResult = this.executeMove(s, slotId, action, movedSlotIds);
         events.push(...moveResult.events);
         s = moveResult.newState;
       } else if (action.type === 'switch') {
@@ -60,6 +62,8 @@ export class BattleEngine {
         events.push(...switchResult.events);
         s = switchResult.newState;
       }
+
+      movedSlotIds.add(slotId);
 
       if (this.checkWinCondition(s) !== null) break;
     }
@@ -120,7 +124,8 @@ export class BattleEngine {
   private executeMove(
     state: BattleState,
     attackerSlotId: string,
-    action: MoveAction
+    action: MoveAction,
+    movedSlotIds: Set<string>,
   ): TurnResult {
     const events: TurnResolveEvent[] = [];
     let s = structuredClone(state);
@@ -310,6 +315,28 @@ export class BattleEngine {
       if (actualDamage > 0 && target.currentHp > 0) {
         const volatileEvent = evaluateVolatileEffect(move.id, target, targetSlotId, attackerSlotId);
         if (volatileEvent) events.push(volatileEvent);
+      }
+
+      // Data-driven secondaries (move.secondaries[])
+      if (move.secondaries && move.secondaries.length > 0) {
+        const postSecs = move.secondaries.filter(s =>
+          s.kind !== 'multihit' && s.kind !== 'ohko' && s.kind !== 'charge'
+        );
+        if (postSecs.length > 0 && actualDamage > 0 && target.currentHp > 0) {
+          const secCtx: SecondaryContext = {
+            secondaries: postSecs,
+            totalDamage: actualDamage,
+            user: attacker,
+            userSlotId: attackerSlotId,
+            target,
+            targetSlotId,
+            targetTypes: defTypes,
+            battle: s,
+            rng: this.rng,
+            movedSlotIds,
+          };
+          events.push(...applySecondaries(secCtx));
+        }
       }
 
       // Defender's ability triggers (e.g. Static, Flame Body)

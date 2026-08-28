@@ -610,3 +610,24 @@ describe('Thaw on fire hit', () => {
     expect(events.some((e) => e.type === 'status-cured' && e.data['reason'] === 'fire-hit')).toBe(false);
   });
 });
+
+describe('Secondary effects — single-hit wiring', () => {
+  it('Crunch drops target Defense by 1 stage when secondary roll succeeds', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'crunch', currentPp: 15, maxPp: 15 };
+    // rng sequence for slot-a1 Crunch:
+    //   roll 0 (accuracy): 0 → 0*100=0 < 100 → hit
+    //   roll 1 (crit):     0.5 → 0.5 < 1/24 is false → no crit
+    //   roll 2 (secondary): 0.1 → 0.1*100=10 < 20 → secondary fires → def -1
+    // Note: randomDamageFactor() uses Math.random() directly, not this.rng
+    const rolls = [0, 0.5, 0.1, 0, 0.5, 0.1];
+    let rollIdx = 0;
+    const engine = new BattleEngine({ rng: () => rolls[rollIdx++ % rolls.length]! });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2.statBoosts.def).toBe(-1);
+  });
+});
