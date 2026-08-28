@@ -9,7 +9,7 @@ import { PARALYSIS_SPEED_MOD } from './status.js';
 import { EffectEngine, SlotContext } from './EffectEngine.js';
 import { getAbilityHooks } from './abilities.js';
 import { getItemHooks } from './items.js';
-import { applyStatus, applyStatBoost, evaluateSecondaryEffect } from './effects.js';
+import { applyStatus, applyStatBoost, evaluateSecondaryEffect, applyVolatile, evaluateVolatileEffect } from './effects.js';
 import { executeStatusMove } from './moves.js';
 
 type Action = MoveAction | SwitchAction;
@@ -169,6 +169,17 @@ export class BattleEngine {
         if (event) events.push(event);
       }
 
+      if (result.volatileToApply) {
+        const event = applyVolatile(
+          affectedMember,
+          affectedSlotId,
+          attackerSlotId,
+          result.volatileToApply,
+          result.volatileCounter,
+        );
+        if (event) events.push(event);
+      }
+
       if (result.statBoostDeltas) {
         const event = applyStatBoost(
           affectedMember,
@@ -279,6 +290,11 @@ export class BattleEngine {
       if (actualDamage > 0 && target.currentHp > 0) {
         const secondaryEvent = evaluateSecondaryEffect(move, target, targetSlotId, defTypes);
         if (secondaryEvent) events.push(secondaryEvent);
+      }
+
+      if (actualDamage > 0 && target.currentHp > 0) {
+        const volatileEvent = evaluateVolatileEffect(move.id, target, targetSlotId, attackerSlotId);
+        if (volatileEvent) events.push(volatileEvent);
       }
 
       // Defender's ability triggers (e.g. Static, Flame Body)

@@ -180,3 +180,49 @@ describe('Sleep prevents moving', () => {
     expect(events.some(e => e.type === 'status-cured')).toBe(true);
   });
 });
+
+describe('Volatile move dispatch', () => {
+  it('Confuse Ray applies confusion to the target', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'confuseray', currentPp: 20, maxPp: 20 };
+    const engine = new BattleEngine();
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2.volatileStatus.some(v => v.name === 'confusion')).toBe(true);
+    expect(events.some(e => e.type === 'volatile-applied')).toBe(true);
+  });
+
+  it('Leech Seed applies volatile and drains EOT HP from target', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'leechseed', currentPp: 10, maxPp: 10 };
+    const engine = new BattleEngine();
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    // Leech Seed applied — p2 is now seeded
+    expect(p2.volatileStatus.some(v => v.name === 'leech-seed')).toBe(true);
+    // EOT drained floor(100/8)=12 HP from p2 (p1 used a status move so p2 took no direct damage)
+    expect(p2.currentHp).toBe(88);
+    expect(events.some(e => e.type === 'damage-dealt' && e.data['source'] === 'leech-seed')).toBe(true);
+  });
+
+  it('Bind applies bound volatile to target and deals EOT damage', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'bind', currentPp: 20, maxPp: 20 };
+    const engine = new BattleEngine();
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2.volatileStatus.some(v => v.name === 'bound')).toBe(true);
+    // EOT bind damage should have happened this turn
+    const boundDmgEvt = events.find(e => e.type === 'damage-dealt' && e.data['source'] === 'bound');
+    expect(boundDmgEvt).toBeDefined();
+  });
+});
