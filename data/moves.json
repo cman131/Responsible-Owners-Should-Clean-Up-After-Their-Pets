@@ -10,7 +10,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "10000000voltthunderbolt"
+    "effectId": "10000000voltthunderbolt",
+    "critRatio": 1
   },
   {
     "id": "absorb",
@@ -140,7 +141,8 @@
     "priority": 0,
     "target": "any",
     "makesContact": false,
-    "effectId": "aeroblast"
+    "effectId": "aeroblast",
+    "critRatio": 1
   },
   {
     "id": "afteryou",
@@ -179,7 +181,8 @@
     "priority": 0,
     "target": "allAdjacentFoes",
     "makesContact": false,
-    "effectId": "aircutter"
+    "effectId": "aircutter",
+    "critRatio": 1
   },
   {
     "id": "airslash",
@@ -296,7 +299,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "aquacutter"
+    "effectId": "aquacutter",
+    "critRatio": 1
   },
   {
     "id": "aquajet",
@@ -465,7 +469,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "attackorder"
+    "effectId": "attackorder",
+    "critRatio": 1
   },
   {
     "id": "attract",
@@ -855,7 +860,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "blazekick"
+    "effectId": "blazekick",
+    "critRatio": 1
   },
   {
     "id": "blazingtorque",
@@ -894,9 +900,7 @@
     "priority": 0,
     "target": "allAdjacentFoes",
     "makesContact": false,
-    "effectId": "blizzard",
-    "effect": "frz",
-    "effectChance": 10
+    "effectId": "blizzard"
   },
   {
     "id": "block",
@@ -974,9 +978,7 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "bodyslam",
-    "effect": "par",
-    "effectChance": 30
+    "effectId": "bodyslam"
   },
   {
     "id": "boltbeak",
@@ -1912,7 +1914,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "crabhammer"
+    "effectId": "crabhammer",
+    "critRatio": 1
   },
   {
     "id": "craftyshield",
@@ -1938,7 +1941,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "crosschop"
+    "effectId": "crosschop",
+    "critRatio": 1
   },
   {
     "id": "crosspoison",
@@ -1951,7 +1955,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "crosspoison"
+    "effectId": "crosspoison",
+    "critRatio": 1
   },
   {
     "id": "crunch",
@@ -2614,7 +2619,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "drillrun"
+    "effectId": "drillrun",
+    "critRatio": 1
   },
   {
     "id": "drumbeating",
@@ -2952,7 +2958,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "esperwing"
+    "effectId": "esperwing",
+    "critRatio": 1
   },
   {
     "id": "eternabeam",
@@ -3251,9 +3258,7 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "fireblast",
-    "effect": "brn",
-    "effectChance": 10
+    "effectId": "fireblast"
   },
   {
     "id": "firefang",
@@ -3305,9 +3310,7 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "firepunch",
-    "effect": "brn",
-    "effectChance": 10
+    "effectId": "firepunch"
   },
   {
     "id": "firespin",
@@ -3424,9 +3427,7 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "flamethrower",
-    "effect": "brn",
-    "effectChance": 10
+    "effectId": "flamethrower"
   },
   {
     "id": "flareblitz",
@@ -5506,9 +5507,7 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "icebeam",
-    "effect": "frz",
-    "effectChance": 10
+    "effectId": "icebeam"
   },
   {
     "id": "iceburn",
@@ -5560,9 +5559,7 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "icepunch",
-    "effect": "frz",
-    "effectChance": 10
+    "effectId": "icepunch"
   },
   {
     "id": "iceshard",
@@ -5796,7 +5793,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "ivycudgel"
+    "effectId": "ivycudgel",
+    "critRatio": 1
   },
   {
     "id": "jawlock",
@@ -5874,7 +5872,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "karatechop"
+    "effectId": "karatechop",
+    "critRatio": 1
   },
   {
     "id": "kinesis",
@@ -6004,9 +6003,7 @@
     "priority": 0,
     "target": "allAdjacent",
     "makesContact": false,
-    "effectId": "lavaplume",
-    "effect": "brn",
-    "effectChance": 30
+    "effectId": "lavaplume"
   },
   {
     "id": "leafage",
@@ -6032,7 +6029,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "leafblade"
+    "effectId": "leafblade",
+    "critRatio": 1
   },
   {
     "id": "leafstorm",
@@ -7475,7 +7473,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "nightslash"
+    "effectId": "nightslash",
+    "critRatio": 1
   },
   {
     "id": "nobleroar",
@@ -7943,9 +7942,7 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "poisonjab",
-    "effect": "psn",
-    "effectChance": 30
+    "effectId": "poisonjab"
   },
   {
     "id": "poisonpowder",
@@ -7971,9 +7968,7 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "poisonsting",
-    "effect": "psn",
-    "effectChance": 30
+    "effectId": "poisonsting"
   },
   {
     "id": "poisontail",
@@ -7986,7 +7981,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "poisontail"
+    "effectId": "poisontail",
+    "critRatio": 1
   },
   {
     "id": "pollenpuff",
@@ -8350,7 +8346,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "psychocut"
+    "effectId": "psychocut",
+    "critRatio": 1
   },
   {
     "id": "psychoshift",
@@ -8636,7 +8633,8 @@
     "priority": 0,
     "target": "allAdjacentFoes",
     "makesContact": false,
-    "effectId": "razorleaf"
+    "effectId": "razorleaf",
+    "critRatio": 1
   },
   {
     "id": "razorshell",
@@ -8662,7 +8660,8 @@
     "priority": 0,
     "target": "allAdjacentFoes",
     "makesContact": false,
-    "effectId": "razorwind"
+    "effectId": "razorwind",
+    "critRatio": 1
   },
   {
     "id": "recover",
@@ -9208,9 +9207,7 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "scald",
-    "effect": "brn",
-    "effectChance": 30
+    "effectId": "scald"
   },
   {
     "id": "scaleshot",
@@ -9418,7 +9415,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "shadowclaw"
+    "effectId": "shadowclaw",
+    "critRatio": 1
   },
   {
     "id": "shadowforce",
@@ -9756,7 +9754,8 @@
     "priority": 0,
     "target": "any",
     "makesContact": false,
-    "effectId": "skyattack"
+    "effectId": "skyattack",
+    "critRatio": 1
   },
   {
     "id": "skydrop",
@@ -9821,7 +9820,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "slash"
+    "effectId": "slash",
+    "critRatio": 1
   },
   {
     "id": "sleeppowder",
@@ -9860,9 +9860,7 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "sludge",
-    "effect": "psn",
-    "effectChance": 30
+    "effectId": "sludge"
   },
   {
     "id": "sludgebomb",
@@ -9875,9 +9873,7 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "sludgebomb",
-    "effect": "psn",
-    "effectChance": 30
+    "effectId": "sludgebomb"
   },
   {
     "id": "sludgewave",
@@ -10007,7 +10003,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "snipeshot"
+    "effectId": "snipeshot",
+    "critRatio": 1
   },
   {
     "id": "snore",
@@ -10124,7 +10121,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "spacialrend"
+    "effectId": "spacialrend",
+    "critRatio": 1
   },
   {
     "id": "spark",
@@ -10566,7 +10564,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "stoneedge"
+    "effectId": "stoneedge",
+    "critRatio": 1
   },
   {
     "id": "storedpower",
@@ -11346,9 +11345,7 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "thunder",
-    "effect": "par",
-    "effectChance": 30
+    "effectId": "thunder"
   },
   {
     "id": "thunderbolt",
@@ -11361,9 +11358,7 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "thunderbolt",
-    "effect": "par",
-    "effectChance": 10
+    "effectId": "thunderbolt"
   },
   {
     "id": "thundercage",
@@ -11428,9 +11423,7 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "thunderpunch",
-    "effect": "par",
-    "effectChance": 10
+    "effectId": "thunderpunch"
   },
   {
     "id": "thundershock",
@@ -11651,7 +11644,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "triplearrows"
+    "effectId": "triplearrows",
+    "critRatio": 1
   },
   {
     "id": "tripleaxel",

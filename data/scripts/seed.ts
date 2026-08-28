@@ -139,6 +139,7 @@ const allMoves = gen9.moves.all().map((m) => ({
   target: m.target,
   makesContact: m.flags?.contact === 1,
   effectId: m.id,
+  critRatio: (m.critRatio ?? 1) > 1 ? 1 : undefined,
 }));
 
 writeFileSync(join(dataDir, 'moves.json'), JSON.stringify(allMoves, null, 2));
