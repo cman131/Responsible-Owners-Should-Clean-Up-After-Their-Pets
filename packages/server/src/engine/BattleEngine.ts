@@ -5,7 +5,7 @@ import type {
 import { DataLoader } from '../data/loader.js';
 import { calcDamage, randomDamageFactor } from './damage.js';
 import { getEffectiveStat } from './stats.js';
-import { computeHitChance } from './accuracy.js';
+import { computeHitChance, computeCritStage, critProbability } from './accuracy.js';
 import { PARALYSIS_SPEED_MOD } from './status.js';
 import { EffectEngine, SlotContext } from './EffectEngine.js';
 import { getAbilityHooks } from './abilities.js';
@@ -229,11 +229,23 @@ export class BattleEngine {
         : (attackerSpecies?.types ?? ['Normal']) as PokemonType[];
       const stab = attackerTypes.includes(move.type);
 
-      // Attack stat
       const isPhysical = move.category === 'physical';
       const rawAtkStat = isPhysical ? attacker.stats.atk : attacker.stats.spa;
       const boostKey = isPhysical ? 'atk' as const : 'spa' as const;
-      let atkStat = getEffectiveStat(rawAtkStat, attacker.statBoosts[boostKey], boostKey);
+
+      const rawDefStat = isPhysical ? target.stats.def : target.stats.spd;
+      const defBoostKey = isPhysical ? 'def' as const : 'spd' as const;
+
+      const critStage = computeCritStage(move.critRatio, attacker.volatileStatus);
+      const isCritical = this.rng() < critProbability(critStage);
+      const atkBoost = isCritical
+        ? Math.max(0, attacker.statBoosts[boostKey])
+        : attacker.statBoosts[boostKey];
+      const defBoost = isCritical
+        ? Math.min(0, target.statBoosts[defBoostKey])
+        : target.statBoosts[defBoostKey];
+
+      let atkStat = getEffectiveStat(rawAtkStat, atkBoost, boostKey);
 
       const abilityHooks = getAbilityHooks(attacker.ability);
       if (abilityHooks.onAttackerModifier) {
@@ -242,10 +254,7 @@ export class BattleEngine {
         }));
       }
 
-      // Defense stat
-      const rawDefStat = isPhysical ? target.stats.def : target.stats.spd;
-      const defBoostKey = isPhysical ? 'def' as const : 'spd' as const;
-      const defStat = getEffectiveStat(rawDefStat, target.statBoosts[defBoostKey], defBoostKey);
+      const defStat = getEffectiveStat(rawDefStat, defBoost, defBoostKey);
 
       // Spread penalty
       const isSpread = targetSlotIds.length > 1;
@@ -267,6 +276,9 @@ export class BattleEngine {
         stab,
         isBurned: isPhysical && attacker.status === 'brn',
         randomFactor: randomDamageFactor(),
+        isCritical,
+        moveType: move.type,
+        weather: s.field.weather?.type,
         otherModifiers,
       });
 
@@ -284,6 +296,10 @@ export class BattleEngine {
         attackerSlotId, targetSlotId, moveId: move.id,
         damage: actualDamage, effectiveness, remainingHp: target.currentHp,
       }});
+
+      if (isCritical) {
+        events.push({ type: 'crit', data: { slotId: targetSlotId } });
+      }
 
       // Secondary status effect from move data (e.g. Flamethrower 10% burn)
       if (actualDamage > 0 && target.currentHp > 0) {

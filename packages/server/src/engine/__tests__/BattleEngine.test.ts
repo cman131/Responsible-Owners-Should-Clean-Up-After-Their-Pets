@@ -147,6 +147,60 @@ describe('Intimidate on switch-in', () => {
   });
 });
 
+describe('Critical hits', () => {
+  it('emits crit event when rng forces a crit (both calls return 0)', () => {
+    // Call 0 (accuracy): 0*100=0 < 100 → hit
+    // Call 1 (crit):     0 < 1/24 → crit
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(events.some((e) => e.type === 'crit' && e.data['slotId'] === 'slot-b1')).toBe(true);
+  });
+
+  it('does not emit crit event when rng forces no crit', () => {
+    // Call 0 (accuracy): 0 → hit; Call 1 (crit): 1 → no crit (1 < 1/24 is false)
+    let callIndex = 0;
+    const engine = new BattleEngine({ rng: () => (callIndex++ === 0 ? 0 : 1) });
+    const state = make1v1State();
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(events.some((e) => e.type === 'crit')).toBe(false);
+  });
+
+  it('Focus Energy raises crit stage so rng=0.4 crits (stage 2 threshold = 0.5)', () => {
+    // Call 0 (accuracy): 0 → hit; Call 1 (crit): 0.4 < 0.5 (stage 2) → crit
+    // Without FE: 0.4 < 1/24 (0.042) → false → no crit
+    let c = 0;
+    const rng = () => (c++ === 0 ? 0 : 0.4);
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.volatileStatus.push({ name: 'focusenergy' });
+    const engine = new BattleEngine({ rng });
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(events.some((e) => e.type === 'crit' && e.data['slotId'] === 'slot-b1')).toBe(true);
+  });
+
+  it('crit event appears after damage-dealt event in the event list', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const damageIdx = events.findIndex((e) => e.type === 'damage-dealt' && e.data['targetSlotId'] === 'slot-b1');
+    const critIdx = events.findIndex((e) => e.type === 'crit' && e.data['slotId'] === 'slot-b1');
+    expect(damageIdx).toBeGreaterThanOrEqual(0);
+    expect(critIdx).toBeGreaterThan(damageIdx);
+  });
+});
+
 describe('Sleep prevents moving', () => {
   it('a sleeping pokemon cannot use its move', () => {
     const state = make1v1State();
