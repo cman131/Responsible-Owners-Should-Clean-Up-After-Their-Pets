@@ -1,5 +1,7 @@
 export interface StatusMoveResult {
   statusToApply?: string;
+  volatileToApply?: string;
+  volatileCounter?: number;
   statBoostDeltas?: Partial<Record<string, number>>;
   heals?: boolean;
   targetsSelf?: boolean;
@@ -17,6 +19,11 @@ export function executeStatusMove(moveId: string): StatusMoveResult {
     case 'calmmind':    return { statBoostDeltas: { spa: 1, spd: 1 }, targetsSelf: true };
     case 'bulkup':      return { statBoostDeltas: { atk: 1, def: 1 }, targetsSelf: true };
     case 'roost':       return { heals: true, targetsSelf: true };
+    case 'yawn':        return { volatileToApply: 'yawn', volatileCounter: 2, targetsSelf: false };
+    case 'confuseray':
+    case 'supersonic':
+    case 'sweetkiss':   return { volatileToApply: 'confusion', targetsSelf: false };
+    case 'leechseed':   return { volatileToApply: 'leech-seed', targetsSelf: false };
     default:            return {};
   }
 }
