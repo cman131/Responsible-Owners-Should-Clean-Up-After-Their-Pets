@@ -178,6 +178,21 @@ export function applySecondaries(ctx: SecondaryContext): TurnResolveEvent[] {
         }
         break;
       }
+      case 'selfdestruct': {
+        const taken = ctx.user.currentHp;
+        ctx.user.currentHp = 0;
+        ctx.user.fainted = true;
+        events.push({ type: 'damage-dealt', data: { source: 'selfdestruct', slotId: ctx.userSlotId, damage: taken, remainingHp: 0 } });
+        events.push({ type: 'faint', data: { slotId: ctx.userSlotId, instanceId: ctx.user.instanceId } });
+        if (sec.variant === 'memento') {
+          events.push(applyStatBoost(ctx.target, ctx.targetSlotId, { atk: -2, spa: -2 }));
+        }
+        break;
+      }
+      case 'recharge': {
+        ctx.user.volatileStatus.push({ name: 'recharge' });
+        break;
+      }
     }
   }
   return events;

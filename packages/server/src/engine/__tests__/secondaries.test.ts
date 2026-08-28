@@ -217,3 +217,38 @@ describe('applySecondaries — recoil-hp kind', () => {
     expect(ctx.user.currentHp).toBe(75);
   });
 });
+
+describe('applySecondaries — selfdestruct kind (normal)', () => {
+  it('faints the user and emits faint event', () => {
+    const ctx = makeCtx({
+      secondaries: [{ kind: 'selfdestruct', variant: 'normal' }],
+      user: makePokemon({ currentHp: 60, maxHp: 100 }),
+    });
+    const events = applySecondaries(ctx);
+    expect(ctx.user.currentHp).toBe(0);
+    expect(ctx.user.fainted).toBe(true);
+    expect(events.some(e => e.type === 'faint' && e.data['slotId'] === 'slot-a1')).toBe(true);
+  });
+});
+
+describe('applySecondaries — selfdestruct kind (memento)', () => {
+  it('faints user and drops target atk+spa by 2', () => {
+    const ctx = makeCtx({
+      secondaries: [{ kind: 'selfdestruct', variant: 'memento' }],
+    });
+    applySecondaries(ctx);
+    expect(ctx.user.fainted).toBe(true);
+    expect(ctx.target.statBoosts.atk).toBe(-2);
+    expect(ctx.target.statBoosts.spa).toBe(-2);
+  });
+});
+
+describe('applySecondaries — recharge kind', () => {
+  it('adds recharge volatile to user', () => {
+    const ctx = makeCtx({
+      secondaries: [{ kind: 'recharge' }],
+    });
+    applySecondaries(ctx);
+    expect(ctx.user.volatileStatus.some(v => v.name === 'recharge')).toBe(true);
+  });
+});
