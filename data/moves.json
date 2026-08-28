@@ -195,7 +195,8 @@
     "priority": 0,
     "target": "any",
     "makesContact": false,
-    "effectId": "airslash"
+    "effectId": "airslash",
+    "secondaries": [{"kind":"flinch","chance":30}]
   },
   {
     "id": "alloutpummeling",
@@ -378,7 +379,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "armthrust"
+    "effectId": "armthrust",
+    "secondaries": [{"kind":"multihit","hits":[2,5]}]
   },
   {
     "id": "aromatherapy",
@@ -795,7 +797,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "bite"
+    "effectId": "bite",
+    "secondaries": [{"kind":"flinch","chance":30}]
   },
   {
     "id": "bitterblade",
@@ -847,7 +850,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "blastburn"
+    "effectId": "blastburn",
+    "secondaries": [{"kind":"recharge"}]
   },
   {
     "id": "blazekick",
@@ -1112,7 +1116,8 @@
     "priority": 0,
     "target": "any",
     "makesContact": true,
-    "effectId": "bravebird"
+    "effectId": "bravebird",
+    "secondaries": [{"kind":"recoil","fraction":[1,3]}]
   },
   {
     "id": "breakingswipe",
@@ -1281,7 +1286,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "bulletseed"
+    "effectId": "bulletseed",
+    "secondaries": [{"kind":"multihit","hits":[2,5]}]
   },
   {
     "id": "burningbulwark",
@@ -1437,7 +1443,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "chargebeam"
+    "effectId": "chargebeam",
+    "secondaries": [{"kind":"stat","stat":"spa","stages":1,"chance":70,"target":"user"}]
   },
   {
     "id": "charm",
@@ -1606,7 +1613,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "closecombat"
+    "effectId": "closecombat",
+    "secondaries": [{"kind":"stat","stat":"def","stages":-1,"chance":100,"target":"user"},{"kind":"stat","stat":"spd","stages":-1,"chance":100,"target":"user"}]
   },
   {
     "id": "coaching",
@@ -1973,7 +1981,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "crunch"
+    "effectId": "crunch",
+    "secondaries": [{"kind":"stat","stat":"def","stages":-1,"chance":20,"target":"target"}]
   },
   {
     "id": "crushclaw",
@@ -2311,7 +2320,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "doubleedge"
+    "effectId": "doubleedge",
+    "secondaries": [{"kind":"recoil","fraction":[1,3]}]
   },
   {
     "id": "doublehit",
@@ -2324,7 +2334,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "doublehit"
+    "effectId": "doublehit",
+    "secondaries": [{"kind":"multihit","hits":2}]
   },
   {
     "id": "doubleironbash",
@@ -2402,7 +2413,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "dracometeor"
+    "effectId": "dracometeor",
+    "secondaries": [{"kind":"stat","stat":"spa","stages":-2,"chance":100,"target":"user"}]
   },
   {
     "id": "dragonascent",
@@ -2584,7 +2596,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "drainpunch"
+    "effectId": "drainpunch",
+    "secondaries": [{"kind":"drain","fraction":[1,2]}]
   },
   {
     "id": "dreameater",
@@ -2663,7 +2676,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "dualwingbeat"
+    "effectId": "dualwingbeat",
+    "secondaries": [{"kind":"multihit","hits":2}]
   },
   {
     "id": "dynamaxcannon",
@@ -2923,7 +2937,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "energyball"
+    "effectId": "energyball",
+    "secondaries": [{"kind":"stat","stat":"spd","stages":-1,"chance":10,"target":"target"}]
   },
   {
     "id": "entrainment",
@@ -3002,7 +3017,8 @@
     "priority": 0,
     "target": "allAdjacent",
     "makesContact": false,
-    "effectId": "explosion"
+    "effectId": "explosion",
+    "secondaries": [{"kind":"selfdestruct","variant":"normal"}]
   },
   {
     "id": "extrasensory",
@@ -3210,7 +3226,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "fierydance"
+    "effectId": "fierydance",
+    "secondaries": [{"kind":"stat","stat":"spa","stages":1,"chance":50,"target":"user"}]
   },
   {
     "id": "fierywrath",
@@ -3370,7 +3387,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "fissure"
+    "effectId": "fissure",
+    "secondaries": [{"kind":"ohko"}]
   },
   {
     "id": "flail",
@@ -3450,7 +3468,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "flareblitz"
+    "effectId": "flareblitz",
+    "secondaries": [{"kind":"recoil","fraction":[1,3]}]
   },
   {
     "id": "flash",
@@ -3775,7 +3794,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "frenzyplant"
+    "effectId": "frenzyplant",
+    "secondaries": [{"kind":"recharge"}]
   },
   {
     "id": "frostbreath",
@@ -3814,7 +3834,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "furyattack"
+    "effectId": "furyattack",
+    "secondaries": [{"kind":"multihit","hits":[2,5]}]
   },
   {
     "id": "furycutter",
@@ -3957,7 +3978,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "gigadrain"
+    "effectId": "gigadrain",
+    "secondaries": [{"kind":"drain","fraction":[1,2]}]
   },
   {
     "id": "gigaimpact",
@@ -3970,7 +3992,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "gigaimpact"
+    "effectId": "gigaimpact",
+    "secondaries": [{"kind":"recharge"}]
   },
   {
     "id": "gigatonhammer",
@@ -4672,7 +4695,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "guillotine"
+    "effectId": "guillotine",
+    "secondaries": [{"kind":"ohko"}]
   },
   {
     "id": "gunkshot",
@@ -4802,7 +4826,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "headbutt"
+    "effectId": "headbutt",
+    "secondaries": [{"kind":"flinch","chance":30}]
   },
   {
     "id": "headcharge",
@@ -5309,7 +5334,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "horndrill"
+    "effectId": "horndrill",
+    "secondaries": [{"kind":"ohko"}]
   },
   {
     "id": "hornleech",
@@ -5348,7 +5374,8 @@
     "priority": 0,
     "target": "any",
     "makesContact": false,
-    "effectId": "hurricane"
+    "effectId": "hurricane",
+    "secondaries": [{"kind":"confusion","chance":30,"target":"target"}]
   },
   {
     "id": "hydrocannon",
@@ -5361,7 +5388,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "hydrocannon"
+    "effectId": "hydrocannon",
+    "secondaries": [{"kind":"recharge"}]
   },
   {
     "id": "hydropump",
@@ -5413,7 +5441,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "hyperbeam"
+    "effectId": "hyperbeam",
+    "secondaries": [{"kind":"recharge"}]
   },
   {
     "id": "hyperdrill",
@@ -5781,7 +5810,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "ironhead"
+    "effectId": "ironhead",
+    "secondaries": [{"kind":"flinch","chance":30}]
   },
   {
     "id": "irontail",
@@ -5794,7 +5824,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "irontail"
+    "effectId": "irontail",
+    "secondaries": [{"kind":"stat","stat":"def","stages":-1,"chance":30,"target":"target"}]
   },
   {
     "id": "ivycudgel",
@@ -6085,7 +6116,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "leechlife"
+    "effectId": "leechlife",
+    "secondaries": [{"kind":"drain","fraction":[1,2]}]
   },
   {
     "id": "leechseed",
@@ -7190,7 +7222,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "moonblast"
+    "effectId": "moonblast",
+    "secondaries": [{"kind":"stat","stat":"spa","stages":-1,"chance":30,"target":"target"}]
   },
   {
     "id": "moongeistbeam",
@@ -7698,7 +7731,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "overheat"
+    "effectId": "overheat",
+    "secondaries": [{"kind":"stat","stat":"spa","stages":-2,"chance":100,"target":"user"}]
   },
   {
     "id": "painsplit",
@@ -7867,7 +7901,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "pinmissile"
+    "effectId": "pinmissile",
+    "secondaries": [{"kind":"multihit","hits":[2,5]}]
   },
   {
     "id": "plasmafists",
@@ -8184,7 +8219,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "poweruppunch"
+    "effectId": "poweruppunch",
+    "secondaries": [{"kind":"stat","stat":"atk","stages":1,"chance":100,"target":"user"}]
   },
   {
     "id": "powerwhip",
@@ -8262,7 +8298,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "psybeam"
+    "effectId": "psybeam",
+    "secondaries": [{"kind":"confusion","chance":10,"target":"target"}]
   },
   {
     "id": "psyblade",
@@ -8902,7 +8939,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "rockblast"
+    "effectId": "rockblast",
+    "secondaries": [{"kind":"multihit","hits":[2,5]}]
   },
   {
     "id": "rockclimb",
@@ -8941,7 +8979,8 @@
     "priority": 0,
     "target": "allAdjacentFoes",
     "makesContact": false,
-    "effectId": "rockslide"
+    "effectId": "rockslide",
+    "secondaries": [{"kind":"flinch","chance":30}]
   },
   {
     "id": "rocksmash",
@@ -8993,7 +9032,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "rockwrecker"
+    "effectId": "rockwrecker",
+    "secondaries": [{"kind":"recharge"}]
   },
   {
     "id": "roleplay",
@@ -9242,7 +9282,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "scaleshot"
+    "effectId": "scaleshot",
+    "secondaries": [{"kind":"multihit","hits":[2,5]}]
   },
   {
     "id": "scaryface",
@@ -9398,7 +9439,8 @@
     "priority": 0,
     "target": "allAdjacent",
     "makesContact": false,
-    "effectId": "selfdestruct"
+    "effectId": "selfdestruct",
+    "secondaries": [{"kind":"selfdestruct","variant":"normal"}]
   },
   {
     "id": "shadowball",
@@ -9411,7 +9453,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "shadowball"
+    "effectId": "shadowball",
+    "secondaries": [{"kind":"stat","stat":"spd","stages":-1,"chance":20,"target":"target"}]
   },
   {
     "id": "shadowbone",
@@ -9529,7 +9572,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "sheercold"
+    "effectId": "sheercold",
+    "secondaries": [{"kind":"ohko"}]
   },
   {
     "id": "shellsidearm",
@@ -9633,7 +9677,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "signalbeam"
+    "effectId": "signalbeam",
+    "secondaries": [{"kind":"confusion","chance":10,"target":"target"}]
   },
   {
     "id": "silktrap",
@@ -10095,7 +10140,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "solarbeam"
+    "effectId": "solarbeam",
+    "secondaries": [{"kind":"charge","chargeVolatile":"solarbeam-charge"}]
   },
   {
     "id": "solarblade",
@@ -11111,7 +11157,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "takedown"
+    "effectId": "takedown",
+    "secondaries": [{"kind":"recoil","fraction":[1,4]}]
   },
   {
     "id": "takeheart",
@@ -11976,7 +12023,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "volttackle"
+    "effectId": "volttackle",
+    "secondaries": [{"kind":"recoil","fraction":[1,3]}]
   },
   {
     "id": "wakeupslap",
@@ -12275,7 +12323,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "woodhammer"
+    "effectId": "woodhammer",
+    "secondaries": [{"kind":"recoil","fraction":[1,3]}]
   },
   {
     "id": "workup",
