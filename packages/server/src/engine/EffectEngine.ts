@@ -1,7 +1,7 @@
 import type {
   PartyMember, BattleState, TurnResolveEvent,
 } from '@poke-fighter/shared';
-import { FREEZE_THAW_CHANCE, PARALYSIS_FULL_PARALYSIS_CHANCE, CONFUSION_HURT_CHANCE } from './status.js';
+import { FREEZE_THAW_CHANCE, PARALYSIS_FULL_PARALYSIS_CHANCE, CONFUSION_HURT_CHANCE, getBurnDamage, getPoisonDamage, getToxicDamage } from './status.js';
 import { calcDamage, randomDamageFactor } from './damage.js';
 import { getEffectiveStat } from './stats.js';
 
@@ -97,11 +97,47 @@ export class EffectEngine {
   }
 
   runEndOfTurn(
-    _pokemon: PartyMember,
-    _slotId: string,
+    pokemon: PartyMember,
+    slotId: string,
     _state: BattleState,
     _allSlots: SlotContext[],
   ): EndOfTurnResult {
-    return { events: [] };
+    const events: TurnResolveEvent[] = [];
+
+    if (pokemon.status === 'brn') {
+      this.applyDamage(pokemon, slotId, getBurnDamage(pokemon.maxHp), 'status', events);
+      if (pokemon.fainted) return { events };
+    } else if (pokemon.status === 'psn') {
+      this.applyDamage(pokemon, slotId, getPoisonDamage(pokemon.maxHp), 'status', events);
+      if (pokemon.fainted) return { events };
+    } else if (pokemon.status === 'tox') {
+      let toxEntry = pokemon.volatileStatus.find(v => v.name === 'toxic');
+      if (!toxEntry) {
+        toxEntry = { name: 'toxic', counter: 0 };
+        pokemon.volatileStatus.push(toxEntry);
+      }
+      toxEntry.counter = (toxEntry.counter ?? 0) + 1;
+      this.applyDamage(pokemon, slotId, getToxicDamage(pokemon.maxHp, toxEntry.counter), 'status', events);
+      if (pokemon.fainted) return { events };
+    }
+
+    return { events };
+  }
+
+  private applyDamage(
+    pokemon: PartyMember,
+    slotId: string,
+    amount: number,
+    source: string,
+    events: TurnResolveEvent[],
+  ): void {
+    const actual = Math.min(amount, pokemon.currentHp);
+    pokemon.currentHp -= actual;
+    events.push({ type: 'damage-dealt', data: { source, slotId, damage: actual, remainingHp: pokemon.currentHp } });
+    if (pokemon.currentHp <= 0) {
+      pokemon.fainted = true;
+      pokemon.currentHp = 0;
+      events.push({ type: 'faint', data: { slotId, instanceId: pokemon.instanceId } });
+    }
   }
 }

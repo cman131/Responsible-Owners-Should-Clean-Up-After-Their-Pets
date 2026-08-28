@@ -172,3 +172,43 @@ describe('EffectEngine.runPreMove — confusion', () => {
     vi.restoreAllMocks();
   });
 });
+
+describe('EffectEngine.runEndOfTurn — status damage', () => {
+  it('burn deals 1/16 max HP and emits damage-dealt', () => {
+    const engine = new EffectEngine();
+    const pokemon = makePokemon({ status: 'brn', currentHp: 160, maxHp: 160 });
+    const result = engine.runEndOfTurn(pokemon, 'slot-a1', emptyState, emptySlots);
+    expect(pokemon.currentHp).toBe(150); // 160/16=10 damage
+    expect(result.events.some(e => e.type === 'damage-dealt')).toBe(true);
+    const evt = result.events.find(e => e.type === 'damage-dealt')!;
+    expect(evt.data['damage']).toBe(10);
+    expect(evt.data['source']).toBe('status');
+  });
+
+  it('poison deals 1/8 max HP', () => {
+    const engine = new EffectEngine();
+    const pokemon = makePokemon({ status: 'psn', currentHp: 160, maxHp: 160 });
+    engine.runEndOfTurn(pokemon, 'slot-a1', emptyState, emptySlots);
+    expect(pokemon.currentHp).toBe(140); // 160/8=20 damage
+  });
+
+  it('toxic damage scales with counter and counter increments each call', () => {
+    const engine = new EffectEngine();
+    const pokemon = makePokemon({ status: 'tox', currentHp: 160, maxHp: 160 });
+    engine.runEndOfTurn(pokemon, 'slot-a1', emptyState, emptySlots); // counter=1, dmg=10
+    expect(pokemon.currentHp).toBe(150);
+    engine.runEndOfTurn(pokemon, 'slot-a1', emptyState, emptySlots); // counter=2, dmg=20
+    expect(pokemon.currentHp).toBe(130);
+    engine.runEndOfTurn(pokemon, 'slot-a1', emptyState, emptySlots); // counter=3, dmg=30
+    expect(pokemon.currentHp).toBe(100);
+  });
+
+  it('burn faints the pokemon when HP reaches 0', () => {
+    const engine = new EffectEngine();
+    const pokemon = makePokemon({ status: 'brn', currentHp: 1, maxHp: 160 });
+    const result = engine.runEndOfTurn(pokemon, 'slot-a1', emptyState, emptySlots);
+    expect(pokemon.fainted).toBe(true);
+    expect(pokemon.currentHp).toBe(0);
+    expect(result.events.some(e => e.type === 'faint')).toBe(true);
+  });
+});
