@@ -3,6 +3,8 @@ import {
   accuracyStageMultiplier,
   evasionStageMultiplier,
   computeHitChance,
+  critProbability,
+  computeCritStage,
 } from '../accuracy.js';
 
 describe('accuracyStageMultiplier', () => {
@@ -69,5 +71,54 @@ describe('computeHitChance', () => {
 
   it('clamps to maximum 100', () => {
     expect(computeHitChance(100, 6, 0)).toBe(100);
+  });
+});
+
+describe('critProbability', () => {
+  it('stage 0 returns 1/24', () => {
+    expect(critProbability(0)).toBeCloseTo(1 / 24, 5);
+  });
+
+  it('stage 1 returns 1/8', () => {
+    expect(critProbability(1)).toBeCloseTo(1 / 8, 5);
+  });
+
+  it('stage 2 returns 1/2', () => {
+    expect(critProbability(2)).toBe(0.5);
+  });
+
+  it('stage 3 returns 1 (always crit)', () => {
+    expect(critProbability(3)).toBe(1);
+  });
+
+  it('stage 4+ returns 1', () => {
+    expect(critProbability(4)).toBe(1);
+    expect(critProbability(10)).toBe(1);
+  });
+});
+
+describe('computeCritStage', () => {
+  it('returns 0 with no critRatio and no volatiles', () => {
+    expect(computeCritStage(undefined, [])).toBe(0);
+  });
+
+  it('returns 1 with critRatio: 1 (high-crit move)', () => {
+    expect(computeCritStage(1, [])).toBe(1);
+  });
+
+  it('returns 2 with Focus Energy volatile on attacker', () => {
+    expect(computeCritStage(undefined, [{ name: 'focusenergy' }])).toBe(2);
+  });
+
+  it('returns 3 with critRatio: 1 and Focus Energy', () => {
+    expect(computeCritStage(1, [{ name: 'focusenergy' }])).toBe(3);
+  });
+
+  it('ignores unrelated volatiles', () => {
+    expect(computeCritStage(undefined, [{ name: 'confusion' }, { name: 'leech-seed' }])).toBe(0);
+  });
+
+  it('critRatio: 0 counts as normal (no stage bonus)', () => {
+    expect(computeCritStage(0, [])).toBe(0);
   });
 });

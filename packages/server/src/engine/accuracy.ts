@@ -22,3 +22,20 @@ export function computeHitChance(
     evasionStageMultiplier(defenderEvasionStage);
   return Math.min(100, Math.max(1, Math.floor(raw)));
 }
+
+export function critProbability(stage: number): number {
+  if (stage <= 0) return 1 / 24;
+  if (stage === 1) return 1 / 8;
+  if (stage === 2) return 1 / 2;
+  return 1;
+}
+
+export function computeCritStage(
+  moveCritRatio: number | undefined,
+  volatiles: Array<{ name: string }>,
+): number {
+  let stage = 0;
+  if ((moveCritRatio ?? 0) > 0) stage += 1;
+  if (volatiles.some((v) => v.name === 'focusenergy')) stage += 2;
+  return stage;
+}
