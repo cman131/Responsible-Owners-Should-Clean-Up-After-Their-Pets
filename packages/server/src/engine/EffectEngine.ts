@@ -1,6 +1,7 @@
 import type {
   PartyMember, BattleState, TurnResolveEvent,
 } from '@poke-fighter/shared';
+import { FREEZE_THAW_CHANCE } from './status.js';
 
 export interface SlotContext {
   member: PartyMember;
@@ -36,6 +37,16 @@ export class EffectEngine {
       }
       events.push({ type: 'move-blocked', data: { slotId, pokemonName: pokemon.nickname, reason: 'asleep' } });
       entry.counter = (entry.counter ?? 1) - 1;
+      return { blocked: true, events };
+    }
+
+    if (pokemon.status === 'frz') {
+      if (Math.random() < FREEZE_THAW_CHANCE) {
+        delete pokemon.status;
+        events.push({ type: 'status-cured', data: { slotId, status: 'frz' } });
+        return { blocked: false, events };
+      }
+      events.push({ type: 'move-blocked', data: { slotId, pokemonName: pokemon.nickname, reason: 'frozen' } });
       return { blocked: true, events };
     }
 
