@@ -1,7 +1,6 @@
-// packages/shared/src/types/secondary.ts
-import type { StatusCondition } from './battle.js';
+import type { StatusCondition, StatBoosts } from './battle.js';
 
-export type StatName = 'atk' | 'def' | 'spa' | 'spd' | 'spe' | 'accuracy' | 'evasion';
+export type StatName = keyof StatBoosts;
 
 export type Secondary =
   | { kind: 'status';      status: StatusCondition; chance: number; target: 'target' | 'user' }

@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
-const SecondarySchema = z.discriminatedUnion('kind', [
-  z.object({ kind: z.literal('status'), status: z.string(), chance: z.number(), target: z.enum(['target', 'user']) }),
-  z.object({ kind: z.literal('stat'), stat: z.string(), stages: z.number().int(), chance: z.number(), target: z.enum(['target', 'user']) }),
-  z.object({ kind: z.literal('flinch'), chance: z.number() }),
-  z.object({ kind: z.literal('confusion'), chance: z.number(), target: z.enum(['target', 'user']) }),
+export const SecondarySchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('status'), status: z.string(), chance: z.number().int().min(0).max(100), target: z.enum(['target', 'user']) }),
+  z.object({ kind: z.literal('stat'), stat: z.enum(['atk', 'def', 'spa', 'spd', 'spe', 'accuracy', 'evasion']), stages: z.number().int(), chance: z.number().int().min(0).max(100), target: z.enum(['target', 'user']) }),
+  z.object({ kind: z.literal('flinch'), chance: z.number().int().min(0).max(100) }),
+  z.object({ kind: z.literal('confusion'), chance: z.number().int().min(0).max(100), target: z.enum(['target', 'user']) }),
   z.object({ kind: z.literal('drain'), fraction: z.tuple([z.number(), z.number()]) }),
   z.object({ kind: z.literal('recoil'), fraction: z.tuple([z.number(), z.number()]) }),
   z.object({ kind: z.literal('recoil-hp'), fraction: z.tuple([z.number(), z.number()]) }),
