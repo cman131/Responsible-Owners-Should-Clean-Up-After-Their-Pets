@@ -100,7 +100,7 @@ export class EffectEngine {
     pokemon: PartyMember,
     slotId: string,
     _state: BattleState,
-    _allSlots: SlotContext[],
+    allSlots: SlotContext[],
   ): EndOfTurnResult {
     const events: TurnResolveEvent[] = [];
 
@@ -118,6 +118,28 @@ export class EffectEngine {
       }
       toxEntry.counter = (toxEntry.counter ?? 0) + 1;
       this.applyDamage(pokemon, slotId, getToxicDamage(pokemon.maxHp, toxEntry.counter), 'status', events);
+      if (pokemon.fainted) return { events };
+    }
+
+    const leechEntry = pokemon.volatileStatus.find(v => v.name === 'leech-seed');
+    if (leechEntry) {
+      const drain = Math.max(1, Math.floor(pokemon.maxHp / 8));
+      const actual = Math.min(drain, pokemon.currentHp);
+      pokemon.currentHp -= actual;
+      events.push({ type: 'damage-dealt', data: { source: 'leech-seed', slotId, damage: actual, remainingHp: pokemon.currentHp } });
+      if (pokemon.currentHp <= 0) {
+        pokemon.fainted = true;
+        pokemon.currentHp = 0;
+        events.push({ type: 'faint', data: { slotId, instanceId: pokemon.instanceId } });
+      }
+      const sourceCtx = allSlots.find(s => s.slotId === leechEntry.sourceSlotId);
+      if (sourceCtx && !sourceCtx.member.fainted) {
+        const heal = Math.min(actual, sourceCtx.member.maxHp - sourceCtx.member.currentHp);
+        if (heal > 0) {
+          sourceCtx.member.currentHp += heal;
+          events.push({ type: 'heal', data: { slotId: leechEntry.sourceSlotId, amount: heal, remainingHp: sourceCtx.member.currentHp } });
+        }
+      }
       if (pokemon.fainted) return { events };
     }
 

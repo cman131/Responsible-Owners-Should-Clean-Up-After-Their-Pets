@@ -212,3 +212,64 @@ describe('EffectEngine.runEndOfTurn — status damage', () => {
     expect(result.events.some(e => e.type === 'faint')).toBe(true);
   });
 });
+
+describe('EffectEngine.runEndOfTurn — leech seed', () => {
+  it('drains 1/8 maxHp from seeded pokemon and heals source', () => {
+    const engine = new EffectEngine();
+    const seeded = makePokemon({
+      instanceId: 'p-seeded',
+      currentHp: 100, maxHp: 160,
+      volatileStatus: [{ name: 'leech-seed', sourceSlotId: 'slot-b1' }],
+    });
+    const source = makePokemon({ instanceId: 'p-source', currentHp: 80, maxHp: 100 });
+    const allSlots: SlotContext[] = [
+      { member: seeded, slotId: 'slot-a1', teamIndex: 0 },
+      { member: source, slotId: 'slot-b1', teamIndex: 1 },
+    ];
+
+    const result = engine.runEndOfTurn(seeded, 'slot-a1', emptyState, allSlots);
+
+    expect(seeded.currentHp).toBe(80);   // 160/8=20 drained
+    expect(source.currentHp).toBe(100);  // healed 20, capped at 100
+    expect(result.events.some(e => e.type === 'damage-dealt' && e.data['source'] === 'leech-seed')).toBe(true);
+    expect(result.events.some(e => e.type === 'heal')).toBe(true);
+  });
+
+  it('does not heal source if source is fainted', () => {
+    const engine = new EffectEngine();
+    const seeded = makePokemon({
+      currentHp: 100, maxHp: 160,
+      volatileStatus: [{ name: 'leech-seed', sourceSlotId: 'slot-b1' }],
+    });
+    const source = makePokemon({ currentHp: 0, maxHp: 100, fainted: true });
+    const allSlots: SlotContext[] = [
+      { member: seeded, slotId: 'slot-a1', teamIndex: 0 },
+      { member: source, slotId: 'slot-b1', teamIndex: 1 },
+    ];
+
+    const result = engine.runEndOfTurn(seeded, 'slot-a1', emptyState, allSlots);
+
+    expect(seeded.currentHp).toBe(80); // still drained
+    expect(result.events.some(e => e.type === 'heal')).toBe(false);
+  });
+
+  it('faints the seeded pokemon if drain is lethal', () => {
+    const engine = new EffectEngine();
+    const seeded = makePokemon({
+      currentHp: 1, maxHp: 160,
+      volatileStatus: [{ name: 'leech-seed', sourceSlotId: 'slot-b1' }],
+    });
+    const source = makePokemon({ currentHp: 50, maxHp: 100 });
+    const allSlots: SlotContext[] = [
+      { member: seeded, slotId: 'slot-a1', teamIndex: 0 },
+      { member: source, slotId: 'slot-b1', teamIndex: 1 },
+    ];
+
+    const result = engine.runEndOfTurn(seeded, 'slot-a1', emptyState, allSlots);
+
+    expect(seeded.fainted).toBe(true);
+    expect(result.events.some(e => e.type === 'faint')).toBe(true);
+    // source still gets healed (drain happened, even if lethal)
+    expect(source.currentHp).toBe(51);
+  });
+});
