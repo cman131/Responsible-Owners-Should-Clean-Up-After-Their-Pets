@@ -187,7 +187,9 @@ export class BattleEngine {
       ? [action.targetSlotId]
       : this.getSpreadTargets(s, attackerSlotId, move.target);
 
-    if (!['self', 'allyTeam'].includes(move.target)) {
+    const secs = move.secondaries ?? [];
+    const isOhko = secs.some(sec => sec.kind === 'ohko');
+    if (!['self', 'allyTeam'].includes(move.target) && !isOhko) {
       let defenderEvasion = 0;
       if (targetSlotIds.length === 1) {
         const tSlot = this.findSlot(s, targetSlotIds[0]!);
@@ -202,7 +204,6 @@ export class BattleEngine {
     }
 
     // Charge-turn check
-    const secs = move.secondaries ?? [];
     const chargeSec = secs.find(sec => sec.kind === 'charge');
     if (chargeSec) {
       const isSun = s.field.weather?.type === 'sun';
@@ -255,12 +256,12 @@ export class BattleEngine {
           events.push({ type: 'miss', data: { attackerSlotId, moveId: move.id } });
           continue;
         }
-        const ohmoDmg = target.currentHp;
+        const ohkoDmg = target.currentHp;
         target.currentHp = 0;
         target.fainted = true;
         events.push({ type: 'damage-dealt', data: {
           attackerSlotId, targetSlotId, moveId: move.id,
-          damage: ohmoDmg, effectiveness: 1, remainingHp: 0,
+          damage: ohkoDmg, effectiveness: 1, remainingHp: 0,
         }});
         events.push({ type: 'faint', data: { slotId: targetSlotId, instanceId: target.instanceId } });
         continue;
