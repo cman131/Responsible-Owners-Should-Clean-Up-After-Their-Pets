@@ -156,13 +156,40 @@ export class BattleEngine {
 
     const moveSlot = attacker.moves[action.moveIndex];
     if (!moveSlot) return { newState: s, events };
-    const move = this.data.getMove(moveSlot.moveId);
+    let move = this.data.getMove(moveSlot.moveId);
     if (!move) return { newState: s, events };
 
     // Check if chosen move is disabled (block before decrement so same-turn disable preserves counter)
     const activeDisable = attacker.volatileStatus.find(v => v.name === 'disable');
     if (activeDisable && activeDisable.moveId === move.id) {
       events.push({ type: 'move-blocked', data: { slotId: attackerSlotId, reason: 'disabled', moveId: move.id } });
+      return { newState: s, events };
+    }
+
+    // Taunt: block status moves
+    const tauntEntry = attacker.volatileStatus.find(v => v.name === 'taunt');
+    if (tauntEntry && move.category === 'status') {
+      events.push({ type: 'move-blocked', data: { slotId: attackerSlotId, reason: 'taunted', moveId: move.id } });
+      return { newState: s, events };
+    }
+
+    // Encore: force the encored move
+    const encoreEntry = attacker.volatileStatus.find(v => v.name === 'encore');
+    if (encoreEntry && encoreEntry.moveId && move.id !== encoreEntry.moveId) {
+      const encoreSlot = attacker.moves.find(m => m.moveId === encoreEntry.moveId);
+      if (encoreSlot && encoreSlot.currentPp > 0) {
+        const encoreMove = this.data.getMove(encoreEntry.moveId);
+        if (encoreMove) move = encoreMove;
+      } else {
+        // PP ran out, Encore ends
+        attacker.volatileStatus = attacker.volatileStatus.filter(v => v.name !== 'encore');
+      }
+    }
+
+    // Torment: block repeating last move
+    const tormentActive = attacker.volatileStatus.some(v => v.name === 'torment');
+    if (tormentActive && attacker.lastMoveId === move.id) {
+      events.push({ type: 'move-blocked', data: { slotId: attackerSlotId, reason: 'torment', moveId: move.id } });
       return { newState: s, events };
     }
 

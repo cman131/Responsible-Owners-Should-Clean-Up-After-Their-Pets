@@ -159,6 +159,51 @@ export function disable(): MoveEffectHandler {
   };
 }
 
+export function taunt(): MoveEffectHandler {
+  return (ctx) => {
+    const events: TurnResolveEvent[] = [];
+    for (let i = 0; i < ctx.targets.length; i++) {
+      const target = ctx.targets[i]!;
+      if (target.volatileStatus.some(v => v.name === 'taunt')) continue;
+      if (target.volatileStatus.some(v => v.name === 'substitute')) continue;
+      // Set to 4 so that after the EoT decrement this turn, turnsRemaining is 3
+      target.volatileStatus.push({ name: 'taunt', turnsRemaining: 4 });
+      events.push({ type: 'volatile-applied', data: { targetSlotId: ctx.targetSlotIds[i]!, volatile: 'taunt' } });
+    }
+    return { events };
+  };
+}
+
+export function encore(): MoveEffectHandler {
+  return (ctx) => {
+    const events: TurnResolveEvent[] = [];
+    for (let i = 0; i < ctx.targets.length; i++) {
+      const target = ctx.targets[i]!;
+      if (!target.lastMoveId) {
+        events.push({ type: 'move-failed', data: { moveId: 'encore', reason: 'no-last-move' } });
+        continue;
+      }
+      if (target.volatileStatus.some(v => v.name === 'encore')) continue;
+      target.volatileStatus.push({ name: 'encore', moveId: target.lastMoveId, turnsRemaining: 3 });
+      events.push({ type: 'volatile-applied', data: { targetSlotId: ctx.targetSlotIds[i]!, volatile: 'encore', moveId: target.lastMoveId } });
+    }
+    return { events };
+  };
+}
+
+export function torment(): MoveEffectHandler {
+  return (ctx) => {
+    const events: TurnResolveEvent[] = [];
+    for (let i = 0; i < ctx.targets.length; i++) {
+      const target = ctx.targets[i]!;
+      if (target.volatileStatus.some(v => v.name === 'torment' || v.name === 'substitute')) continue;
+      target.volatileStatus.push({ name: 'torment' });
+      events.push({ type: 'volatile-applied', data: { targetSlotId: ctx.targetSlotIds[i]!, volatile: 'torment' } });
+    }
+    return { events };
+  };
+}
+
 export function endure(): MoveEffectHandler {
   return (ctx) => {
     const streakEntry = ctx.user.volatileStatus.find(v => v.name === 'protect-streak');

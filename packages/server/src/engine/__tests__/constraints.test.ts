@@ -17,6 +17,93 @@ describe('lastMoveId tracking', () => {
   });
 });
 
+describe('Taunt', () => {
+  it('applies taunt volatile with 3 turns remaining', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'taunt', currentPp: 20, maxPp: 20 };
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const defender = newState.teams[1]!.slots[0]!.party[0]!;
+    const tauntEntry = defender.volatileStatus.find(v => v.name === 'taunt');
+    expect(tauntEntry).toBeDefined();
+    expect(tauntEntry?.turnsRemaining).toBe(3);
+  });
+
+  it('blocks status moves while taunted', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.volatileStatus.push({ name: 'taunt', turnsRemaining: 2 });
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'calmmind', currentPp: 20, maxPp: 20 };
+
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    expect(events.some(e => e.type === 'move-blocked' && (e.data as any).reason === 'taunted')).toBe(true);
+  });
+
+  it('expires after turns remaining reaches 0 at EoT', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.volatileStatus.push({ name: 'taunt', turnsRemaining: 1 });
+
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    expect(newState.teams[0]!.slots[0]!.party[0]!.volatileStatus.some(v => v.name === 'taunt')).toBe(false);
+    expect(events.some(e => e.type === 'volatile-cured' && (e.data as any).volatile === 'taunt')).toBe(true);
+  });
+});
+
+describe('Encore', () => {
+  it('forces the encored move', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    // p1 has encore forcing 'airslash' (moveIndex 1), but p1 submits moveIndex 0 (flamethrower)
+    state.teams[0]!.slots[0]!.party[0]!.volatileStatus.push({ name: 'encore', moveId: 'airslash', turnsRemaining: 3 });
+
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    // Should use airslash, not flamethrower
+    const moveUsed = events.find(e => e.type === 'move-used');
+    expect((moveUsed?.data as any)?.moveId).toBe('airslash');
+  });
+
+  it('expires after 3 turns', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.volatileStatus.push({ name: 'encore', moveId: 'flamethrower', turnsRemaining: 1 });
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    expect(newState.teams[0]!.slots[0]!.party[0]!.volatileStatus.some(v => v.name === 'encore')).toBe(false);
+  });
+});
+
+describe('Torment', () => {
+  it('blocks using the same move consecutively', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.volatileStatus.push({ name: 'torment' });
+    state.teams[0]!.slots[0]!.party[0]!.lastMoveId = 'flamethrower';
+
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 }, // flamethrower again
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    expect(events.some(e => e.type === 'move-blocked' && (e.data as any).reason === 'torment')).toBe(true);
+  });
+});
+
 describe('Disable', () => {
   it('fails if target has no lastMoveId', () => {
     const engine = new BattleEngine({ rng: () => 0 });

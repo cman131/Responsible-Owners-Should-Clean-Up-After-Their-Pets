@@ -172,6 +172,26 @@ export class EffectEngine {
       if (pokemon.fainted) return { events };
     }
 
+    // Taunt decrement
+    const tauntEntry = pokemon.volatileStatus.find(v => v.name === 'taunt');
+    if (tauntEntry) {
+      tauntEntry.turnsRemaining = (tauntEntry.turnsRemaining ?? 1) - 1;
+      if ((tauntEntry.turnsRemaining ?? 0) <= 0) {
+        pokemon.volatileStatus = pokemon.volatileStatus.filter(v => v.name !== 'taunt');
+        events.push({ type: 'volatile-cured', data: { slotId, volatile: 'taunt' } });
+      }
+    }
+
+    // Encore decrement
+    const encoreEntry = pokemon.volatileStatus.find(v => v.name === 'encore');
+    if (encoreEntry) {
+      encoreEntry.turnsRemaining = (encoreEntry.turnsRemaining ?? 1) - 1;
+      if ((encoreEntry.turnsRemaining ?? 0) <= 0) {
+        pokemon.volatileStatus = pokemon.volatileStatus.filter(v => v.name !== 'encore');
+        events.push({ type: 'volatile-cured', data: { slotId, volatile: 'encore' } });
+      }
+    }
+
     const yawnEntry = pokemon.volatileStatus.find(v => v.name === 'yawn');
     if (yawnEntry) {
       yawnEntry.counter = (yawnEntry.counter ?? 1) - 1;
