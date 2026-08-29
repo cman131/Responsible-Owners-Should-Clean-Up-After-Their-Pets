@@ -602,7 +602,7 @@ export class BattleEngine {
         !SWITCH_CLEAR_PREFIXES.some(p => v.name.startsWith(p))
       );
       outgoing.statBoosts = { atk: 0, def: 0, spa: 0, spd: 0, spe: 0, accuracy: 0, evasion: 0 };
-      outgoing.lastMoveId = undefined;
+      delete outgoing.lastMoveId;
     }
 
     slot.activePokemonIndex = newIndex;
