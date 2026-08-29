@@ -223,6 +223,28 @@ export class EffectEngine {
       }
     }
 
+    // Magnet Rise decrement
+    const magnetEntry = pokemon.volatileStatus.find(v => v.name === 'magnet-rise');
+    if (magnetEntry) {
+      magnetEntry.turnsRemaining = (magnetEntry.turnsRemaining ?? 1) - 1;
+      if ((magnetEntry.turnsRemaining ?? 0) <= 0) {
+        pokemon.volatileStatus = pokemon.volatileStatus.filter(v => v.name !== 'magnet-rise');
+        events.push({ type: 'volatile-cured', data: { slotId, volatile: 'magnet-rise' } });
+      }
+    }
+
+    // Perish Song decrement
+    const perishEntry = pokemon.volatileStatus.find(v => v.name === 'perishsong');
+    if (perishEntry) {
+      if ((perishEntry.counter ?? 0) <= 0) {
+        pokemon.currentHp = 0;
+        pokemon.fainted = true;
+        events.push({ type: 'faint', data: { slotId, instanceId: pokemon.instanceId } });
+      } else {
+        perishEntry.counter = (perishEntry.counter ?? 1) - 1;
+      }
+    }
+
     return { events };
   }
 

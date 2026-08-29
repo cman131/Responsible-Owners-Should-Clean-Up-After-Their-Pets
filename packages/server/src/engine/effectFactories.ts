@@ -240,3 +240,27 @@ export function ingrain(): MoveEffectHandler {
     return { events: [{ type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'ingrain' } }] };
   };
 }
+
+export function magnetRise(): MoveEffectHandler {
+  return (ctx) => {
+    if (ctx.user.volatileStatus.some(v => v.name === 'magnet-rise')) return { events: [] };
+    ctx.user.volatileStatus.push({ name: 'magnet-rise', turnsRemaining: 5 });
+    return { events: [{ type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'magnet-rise' } }] };
+  };
+}
+
+export function perishSong(): MoveEffectHandler {
+  return (ctx) => {
+    const events: TurnResolveEvent[] = [];
+    for (const team of ctx.battle.teams) {
+      for (const slot of team.slots) {
+        const active = slot.party[slot.activePokemonIndex];
+        if (!active || active.fainted) continue;
+        if (active.volatileStatus.some(v => v.name === 'perishsong')) continue;
+        active.volatileStatus.push({ name: 'perishsong', counter: 3 });
+        events.push({ type: 'volatile-applied', data: { targetSlotId: slot.slotId, volatile: 'perishsong', counter: 3 } });
+      }
+    }
+    return { events };
+  };
+}

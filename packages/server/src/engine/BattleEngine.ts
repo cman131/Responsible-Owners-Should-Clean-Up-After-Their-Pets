@@ -359,6 +359,12 @@ export class BattleEngine {
         continue;
       }
 
+      // Magnet Rise: Ground immunity
+      if (move.type === 'Ground' && target.volatileStatus.some(v => v.name === 'magnet-rise')) {
+        events.push({ type: 'move-used', data: { note: 'no-effect', targetSlotId, attackerName: attacker.nickname, moveName: move.name } });
+        continue;
+      }
+
       // OHKO check — bypasses normal damage formula
       const ohkoSec = secs.find(sec => sec.kind === 'ohko');
       if (ohkoSec) {
