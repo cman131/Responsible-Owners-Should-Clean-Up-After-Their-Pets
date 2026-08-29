@@ -100,6 +100,27 @@ describe('protect factory', () => {
   });
 });
 
+describe('protect blocks status moves', () => {
+  it('blocks Toxic from applying through protect', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    const defender = state.teams[1]!.slots[0]!.party[0]!;
+    defender.volatileStatus.push({ name: 'protect', variant: 'protect' });
+
+    const attacker = state.teams[0]!.slots[0]!.party[0]!;
+    attacker.moves[0] = { moveId: 'toxic', currentPp: 10, maxPp: 10 };
+
+    const { events, newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    expect(events.some(e => e.type === 'move-blocked' && (e.data as any).reason === 'protect')).toBe(true);
+    const defenderAfter = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(defenderAfter.status).toBeUndefined();
+  });
+});
+
 describe('protect blocks damaging moves', () => {
   it('blocks an incoming physical move when protect is active', () => {
     const engine = new BattleEngine({ rng: () => 0 });

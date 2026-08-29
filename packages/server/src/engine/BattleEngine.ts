@@ -176,18 +176,41 @@ export class BattleEngine {
     events.push({ type: 'move-used', data: { attackerSlotId, attackerName: attacker.nickname, moveId: move.id, moveName: move.name } });
 
     if (move.category === 'status') {
-      const { targets, targetSlotIds } = this.resolveStatusTargets(s, attackerSlotId, action, move);
-      const targetTypes = targets.map(t => this.resolveEffectiveTypes(t));
+      const { targets: rawTargets, targetSlotIds: rawTargetSlotIds } = this.resolveStatusTargets(s, attackerSlotId, action, move);
+      const rawTargetTypes = rawTargets.map(t => this.resolveEffectiveTypes(t));
       const userTeamIndex = s.teams.findIndex(t => t.slots.some(sl => sl.slotId === attackerSlotId));
+
+      // Filter out Protect-guarded targets (only for opposing targets)
+      const filteredTargets: typeof rawTargets = [];
+      const filteredSlotIds: string[] = [];
+      const filteredTypes: PokemonType[][] = [];
+      for (let i = 0; i < rawTargets.length; i++) {
+        const tgt = rawTargets[i]!;
+        const tSlotId = rawTargetSlotIds[i]!;
+        const isOpponent = s.teams.some(
+          team => team !== s.teams[userTeamIndex] && team.slots.some(sl => sl.slotId === tSlotId)
+        );
+        const protectEntry = tgt.volatileStatus.find(v => v.name === 'protect');
+        if (isOpponent && protectEntry) {
+          events.push({ type: 'move-blocked', data: { attackerSlotId, targetSlotId: tSlotId, reason: 'protect', variant: protectEntry.variant } });
+        } else {
+          filteredTargets.push(tgt);
+          filteredSlotIds.push(tSlotId);
+          filteredTypes.push(rawTargetTypes[i]!);
+        }
+      }
+      if (filteredTargets.length === 0 && rawTargets.length > 0) {
+        return { newState: s, events };
+      }
 
       const ctx: MoveContext = {
         battle: s,
         user: attacker,
         userSlotId: attackerSlotId,
         userTeamIndex,
-        targets,
-        targetSlotIds,
-        targetTypes,
+        targets: filteredTargets,
+        targetSlotIds: filteredSlotIds,
+        targetTypes: filteredTypes,
         move,
         rng: this.rng,
       };
