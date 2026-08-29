@@ -14,6 +14,7 @@ function makeCtx(overrides: Partial<MoveContext> = {}): MoveContext {
     targetSlotIds: ['slot-b1'],
     targetTypes: [['Normal']],
     move: { id: 'test', effectId: 'test' } as Move,
+    rng: () => 0.5,
     ...overrides,
   };
 }

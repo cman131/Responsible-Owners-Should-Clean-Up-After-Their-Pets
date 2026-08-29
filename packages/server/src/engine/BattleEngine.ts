@@ -169,6 +169,7 @@ export class BattleEngine {
         targetSlotIds,
         targetTypes,
         move,
+        rng: this.rng,
       };
 
       const effectId = move.effectId ?? move.id;

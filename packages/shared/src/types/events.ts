@@ -97,7 +97,8 @@ export interface TurnResolveEvent {
     | 'terastallize'
     | 'faint'
     | 'miss'
-    | 'crit';
+    | 'crit'
+    | 'endure-survived';
   data: Record<string, unknown>;
 }
 

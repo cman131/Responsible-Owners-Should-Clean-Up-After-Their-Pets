@@ -38,6 +38,7 @@ export const MoveSchema = z.object({
   effect: z.string().optional(),
   effectChance: z.number().int().min(0).max(100).optional(),
   critRatio: z.number().int().min(0).optional(),
+  soundMove: z.boolean().optional(),
   secondaries: SecondarySchema.array().optional(),
 });
 

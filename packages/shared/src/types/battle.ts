@@ -10,7 +10,11 @@ export type TerrainType = 'electric' | 'grassy' | 'misty' | 'psychic';
 
 export interface VolatileStatusEntry {
   name: string;
-  counter?: number;
+  counter?: number;           // general-purpose countdown (yawn, perishsong, toxic)
+  turnsRemaining?: number;    // disable, taunt, encore, magnet-rise, embargo, heal-block
+  moveId?: string;            // disable: the disabled move; encore: the forced move
+  variant?: string;           // protect: which protect move was used
+  hp?: number;                // substitute: proxy HP pool
   sourceSlotId?: string;
 }
 
@@ -47,6 +51,7 @@ export interface PartyMember {
   statBoosts: StatBoosts;
   teraType?: PokemonType;
   hasTerastallized: boolean;
+  lastMoveId?: string;
   fainted: boolean;
   expTotal: number;
 }

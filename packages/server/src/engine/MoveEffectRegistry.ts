@@ -11,6 +11,7 @@ export interface MoveContext {
   targetSlotIds: string[];
   targetTypes: PokemonType[][];  // parallel to targets; pre-resolved by BattleEngine
   move: Move;
+  rng: () => number;
 }
 
 export interface MoveEffectOutput {

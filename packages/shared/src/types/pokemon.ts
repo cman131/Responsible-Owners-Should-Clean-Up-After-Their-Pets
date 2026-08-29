@@ -68,6 +68,7 @@ export interface Move {
   effect?: string;        // status id ('brn', 'par', 'psn', 'frz', 'slp') for secondary effects
   effectChance?: number;  // integer 0–100
   critRatio?: number;  // 1 = high crit ratio (+1 crit stage); absent/0 = normal
+  soundMove?: boolean;
   secondaries?: Secondary[];
 }
 
