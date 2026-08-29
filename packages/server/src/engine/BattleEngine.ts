@@ -506,6 +506,7 @@ export class BattleEngine {
       }
     }
 
+    attacker.lastMoveId = move.id;
     return { newState: s, events };
   }
 
