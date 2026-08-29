@@ -18,6 +18,20 @@ import { SWITCH_CLEAR_NAMES, SWITCH_CLEAR_PREFIXES } from './volatileClearRules.
 
 const ALWAYS_THAW_MOVES = new Set(['scald', 'steameruption', 'sparklingaria']);
 
+const PROTECT_FAMILY_IDS = new Set([
+  'protect', 'detect', 'kingsshield', 'spikyshield',
+  'banefulbunker', 'obstruct', 'silktrap', 'burningbulwark', 'endure',
+]);
+
+const CONTACT_PROTECT_VARIANTS: Record<string, { stat?: string; stages?: number; damage?: number; status?: string }> = {
+  kingsshield:    { stat: 'atk', stages: -2 },
+  spikyshield:    { damage: 8 },   // 1/8 max HP
+  obstruct:       { stat: 'def', stages: -2 },
+  silktrap:       { stat: 'spe', stages: -1 },
+  banefulbunker:  { status: 'psn' },
+  burningbulwark: { status: 'brn' },
+};
+
 type Action = MoveAction | SwitchAction;
 
 export interface TurnResult {
@@ -145,6 +159,11 @@ export class BattleEngine {
     const move = this.data.getMove(moveSlot.moveId);
     if (!move) return { newState: s, events };
 
+    // Clear protect streak if not using a protect-family move
+    if (!PROTECT_FAMILY_IDS.has(moveSlot.moveId)) {
+      attacker.volatileStatus = attacker.volatileStatus.filter(v => v.name !== 'protect-streak');
+    }
+
     // Handle Terastallize
     if (action.terastallize && !attacker.hasTerastallized && attacker.teraType) {
       attacker.hasTerastallized = true;
@@ -225,6 +244,38 @@ export class BattleEngine {
       if (!targetSlot) continue;
       const target = targetSlot.party[targetSlot.activePokemonIndex];
       if (!target || target.fainted) continue;
+
+      // Protect check
+      const protectEntry = target.volatileStatus.find(v => v.name === 'protect');
+      if (protectEntry) {
+        events.push({ type: 'move-blocked', data: { attackerSlotId, targetSlotId, reason: 'protect', variant: protectEntry.variant } });
+        // Variant contact effects
+        const variantEffects = CONTACT_PROTECT_VARIANTS[protectEntry.variant ?? ''];
+        if (variantEffects && move.makesContact) {
+          if (variantEffects.stat && variantEffects.stages !== undefined) {
+            events.push(applyStatBoost(attacker, attackerSlotId, { [variantEffects.stat]: variantEffects.stages } as Partial<Record<keyof StatBoosts, number>>));
+          }
+          if (variantEffects.damage) {
+            const recoil = Math.max(1, Math.floor(attacker.maxHp / variantEffects.damage));
+            const taken = Math.min(recoil, attacker.currentHp);
+            attacker.currentHp -= taken;
+            events.push({ type: 'damage-dealt', data: { source: 'protect-contact', slotId: attackerSlotId, damage: taken, remainingHp: attacker.currentHp } });
+            if (attacker.currentHp <= 0) {
+              attacker.fainted = true;
+              events.push({ type: 'faint', data: { slotId: attackerSlotId, instanceId: attacker.instanceId } });
+            }
+          }
+          if (variantEffects.status) {
+            const attackerSpecies = this.data.getSpecies(attacker.speciesId);
+            const attackerTypes = attacker.hasTerastallized && attacker.teraType
+              ? [attacker.teraType] as PokemonType[]
+              : (attackerSpecies?.types ?? ['Normal']) as PokemonType[];
+            const evt = applyStatus(attacker, attackerSlotId, variantEffects.status as StatusCondition, attackerTypes);
+            if (evt) events.push(evt);
+          }
+        }
+        continue;
+      }
 
       if (target.status === 'frz' && (move.type === 'Fire' || ALWAYS_THAW_MOVES.has(move.id))) {
         delete target.status;

@@ -99,3 +99,39 @@ describe('protect factory', () => {
     expect(ctx.user.volatileStatus.find(v => v.name === 'protect')?.variant).toBe('kingsshield');
   });
 });
+
+describe('protect blocks damaging moves', () => {
+  it('blocks an incoming physical move when protect is active', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    const defender = state.teams[1]!.slots[0]!.party[0]!;
+    defender.volatileStatus.push({ name: 'protect', variant: 'protect' });
+
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 }, // flamethrower
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    expect(events.some(e => e.type === 'move-blocked' && (e.data as any).reason === 'protect')).toBe(true);
+    expect(events.some(e => e.type === 'damage-dealt' && (e.data as any).targetSlotId === 'slot-b1')).toBe(false);
+  });
+
+  it('Spiky Shield deals 1/8 HP damage to contact-move attacker', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    const defender = state.teams[1]!.slots[0]!.party[0]!;
+    defender.volatileStatus.push({ name: 'protect', variant: 'spikyshield' });
+
+    const attacker = state.teams[0]!.slots[0]!.party[0]!;
+    attacker.moves[0] = { moveId: 'tackle', currentPp: 35, maxPp: 35 };
+
+    const { events, newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    expect(events.some(e => e.type === 'move-blocked')).toBe(true);
+    const attackerAfter = newState.teams[0]!.slots[0]!.party[0]!;
+    expect(attackerAfter.currentHp).toBeLessThan(100); // took recoil
+  });
+});
