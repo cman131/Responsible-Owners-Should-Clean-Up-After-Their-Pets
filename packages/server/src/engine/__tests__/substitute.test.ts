@@ -22,8 +22,11 @@ describe('substitute factory', () => {
     const engine = new BattleEngine({ rng: () => 0 });
     const state = make1v1State();
     const p1 = state.teams[0]!.slots[0]!.party[0]!;
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
     p1.currentHp = 100; p1.maxHp = 100;
     p1.moves[0] = { moveId: 'substitute', currentPp: 10, maxPp: 10 };
+    // p2 uses a non-damaging status move so the sub is not attacked this turn
+    p2.moves[0] = { moveId: 'substitute', currentPp: 10, maxPp: 10 };
 
     const { newState } = engine.resolveTurn(state, {
       'slot-a1': { type: 'move', moveIndex: 0 },
@@ -59,5 +62,42 @@ describe('applyStatus blocks through substitute', () => {
     p.volatileStatus.push({ name: 'substitute', hp: 25 });
     const result = applyStatus(p, 'slot', 'brn', ['Normal']);
     expect(result).toBeNull();
+  });
+});
+
+describe('substitute damage interception', () => {
+  it('absorbs damage to sub HP instead of real HP', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    const defender = state.teams[1]!.slots[0]!.party[0]!;
+    defender.volatileStatus.push({ name: 'substitute', hp: 50 });
+    defender.currentHp = 75; defender.maxHp = 100;
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 }, // flamethrower
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    const defAfter = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(defAfter.currentHp).toBe(75); // real HP unchanged
+    // sub HP reduced (exact amount depends on damage calc, but sub still active or broken)
+  });
+
+  it('sub breaks when sub HP reaches 0 and emits volatile-cured', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    const defender = state.teams[1]!.slots[0]!.party[0]!;
+    defender.volatileStatus.push({ name: 'substitute', hp: 1 }); // 1 HP sub
+    defender.currentHp = 75; defender.maxHp = 100;
+
+    const { events, newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    const defAfter = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(defAfter.currentHp).toBe(75);
+    expect(defAfter.volatileStatus.some(v => v.name === 'substitute')).toBe(false);
+    expect(events.some(e => e.type === 'volatile-cured' && (e.data as any).volatile === 'substitute')).toBe(true);
   });
 });

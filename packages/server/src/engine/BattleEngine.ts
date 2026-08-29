@@ -403,7 +403,17 @@ export class BattleEngine {
 
         const subEntry = target.volatileStatus.find(v => v.name === 'substitute');
         if (subEntry && subEntry.hp !== undefined) {
-          // substitute interception (Task 10)
+          const subDamage = Math.min(finalDamage, subEntry.hp);
+          subEntry.hp -= subDamage;
+          totalDamage += subDamage;
+          events.push({ type: 'damage-dealt', data: {
+            attackerSlotId, targetSlotId, moveId: move.id,
+            damage: subDamage, effectiveness, remainingHp: target.currentHp, note: 'substitute',
+          }});
+          if (subEntry.hp <= 0) {
+            target.volatileStatus = target.volatileStatus.filter(v => v.name !== 'substitute');
+            events.push({ type: 'volatile-cured', data: { slotId: targetSlotId, volatile: 'substitute' } });
+          }
         } else {
           const actualDamage = Math.min(finalDamage, target.currentHp);
           // Endure: cap damage so HP stays at 1
@@ -436,8 +446,9 @@ export class BattleEngine {
       }
 
       // Post-hit secondaries (applied after final hit, uses accumulated totalDamage)
+      const targetHasSub = target.volatileStatus.some(v => v.name === 'substitute');
       if (totalDamage > 0) {
-        if (!target.fainted) {
+        if (!target.fainted && !targetHasSub) {
           const secondaryEvent = evaluateSecondaryEffect(move, target, targetSlotId, defTypes);
           if (secondaryEvent) events.push(secondaryEvent);
           const volatileEvent = evaluateVolatileEffect(move.id, target, targetSlotId, attackerSlotId);
@@ -445,7 +456,8 @@ export class BattleEngine {
         }
 
         const postSecs = secs.filter(sec => sec.kind !== 'multihit' && sec.kind !== 'ohko' && sec.kind !== 'charge');
-        if (postSecs.length > 0 && !target.fainted) {
+        const isSoundMove = move.soundMove === true;
+        if (postSecs.length > 0 && !target.fainted && (!targetHasSub || isSoundMove)) {
           events.push(...applySecondaries({
             secondaries: postSecs,
             totalDamage,
