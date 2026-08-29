@@ -14,6 +14,7 @@ import { applyStatus, applyStatBoost, evaluateSecondaryEffect, evaluateVolatileE
 import type { SecondaryContext } from './effects.js';
 import { MoveEffectRegistry, MoveContext } from './MoveEffectRegistry.js';
 import { buildDefaultRegistry } from './registrations.js';
+import { SWITCH_CLEAR_NAMES, SWITCH_CLEAR_PREFIXES } from './volatileClearRules.js';
 
 const ALWAYS_THAW_MOVES = new Set(['scald', 'steameruption', 'sparklingaria']);
 
@@ -421,7 +422,19 @@ export class BattleEngine {
     const newIndex = slot.party.findIndex((p) => p.instanceId === targetInstanceId);
     if (newIndex === -1 || slot.party[newIndex]?.fainted) return { newState: s, events };
 
-    const previousMon = slot.party[slot.activePokemonIndex]?.instanceId;
+    const outgoing = slot.party[slot.activePokemonIndex];
+    const previousMon = outgoing?.instanceId;
+
+    // Clear switch-out volatiles and stat boosts before updating active index
+    if (outgoing) {
+      outgoing.volatileStatus = outgoing.volatileStatus.filter(v =>
+        !SWITCH_CLEAR_NAMES.has(v.name) &&
+        !SWITCH_CLEAR_PREFIXES.some(p => v.name.startsWith(p))
+      );
+      outgoing.statBoosts = { atk: 0, def: 0, spa: 0, spd: 0, spe: 0, accuracy: 0, evasion: 0 };
+      outgoing.lastMoveId = undefined;
+    }
+
     slot.activePokemonIndex = newIndex;
     events.push({ type: 'volatile-applied', data: { note: 'switch', slotId, from: previousMon, to: targetInstanceId } });
 
