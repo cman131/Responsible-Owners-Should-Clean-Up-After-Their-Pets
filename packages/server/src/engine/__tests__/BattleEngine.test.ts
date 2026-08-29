@@ -686,3 +686,95 @@ describe('Multi-hit moves', () => {
     expect(counts[5]! / 400).toBeCloseTo(1 / 8, 1);
   });
 });
+
+describe('Charge-turn moves', () => {
+  function makeSolarBeamState() {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'solarbeam', currentPp: 10, maxPp: 10 };
+    return state;
+  }
+
+  it('T1: applies charge volatile, deals no damage', () => {
+    const state = makeSolarBeamState();
+    const engine = new BattleEngine({ rng: () => 0 });
+    const { events, newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(events.some(e => e.type === 'damage-dealt' && e.data['attackerSlotId'] === 'slot-a1')).toBe(false);
+    const p1 = newState.teams[0]!.slots[0]!.party[0]!;
+    expect(p1.volatileStatus.some(v => v.name === 'solarbeam-charge')).toBe(true);
+  });
+
+  it('T2: removes charge volatile and deals damage', () => {
+    const state = makeSolarBeamState();
+    state.teams[0]!.slots[0]!.party[0]!.volatileStatus = [{ name: 'solarbeam-charge' }];
+    const engine = new BattleEngine({ rng: () => 0 });
+    const { events, newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(events.some(e => e.type === 'damage-dealt' && e.data['attackerSlotId'] === 'slot-a1')).toBe(true);
+    const p1 = newState.teams[0]!.slots[0]!.party[0]!;
+    expect(p1.volatileStatus.some(v => v.name === 'solarbeam-charge')).toBe(false);
+  });
+
+  it('T1 in sun: skips charge, deals damage immediately', () => {
+    const state = makeSolarBeamState();
+    state.field.weather = { type: 'sun', turnsRemaining: 5, fromAbility: false };
+    const engine = new BattleEngine({ rng: () => 0 });
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(events.some(e => e.type === 'damage-dealt' && e.data['attackerSlotId'] === 'slot-a1')).toBe(true);
+    const chargeVolatileApplied = events.some(e =>
+      e.type === 'volatile-applied' && e.data['volatile'] === 'solarbeam-charge'
+    );
+    expect(chargeVolatileApplied).toBe(false);
+  });
+});
+
+describe('OHKO moves', () => {
+  function makeOhkoState(attackerLevel: number, defenderLevel: number) {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.level = attackerLevel;
+    state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'guillotine', currentPp: 5, maxPp: 5 };
+    state.teams[1]!.slots[0]!.party[0]!.level = defenderLevel;
+    return state;
+  }
+
+  it('always misses when defender level > attacker level', () => {
+    const state = makeOhkoState(50, 60);
+    const engine = new BattleEngine({ rng: () => 0 });
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(events.some(e => e.type === 'miss')).toBe(true);
+    expect(events.some(e => e.type === 'faint' && e.data['slotId'] === 'slot-b1')).toBe(false);
+  });
+
+  it('faints defender when roll hits (level 50 vs 40)', () => {
+    const state = makeOhkoState(50, 40);
+    // accuracy = clamp(30 + 50 - 40, 1, 100) = 40; rng=0 → 0 < 40 → hits
+    const engine = new BattleEngine({ rng: () => 0 });
+    const { events, newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(events.some(e => e.type === 'faint' && e.data['slotId'] === 'slot-b1')).toBe(true);
+    expect(newState.teams[1]!.slots[0]!.party[0]!.currentHp).toBe(0);
+  });
+
+  it('misses when rng roll fails (level 50 vs 50, accuracy=30, rng=0.31)', () => {
+    const state = makeOhkoState(50, 50);
+    // accuracy = clamp(30 + 0, 1, 100) = 30; rng=0.31 → 31 >= 30 → miss
+    const engine = new BattleEngine({ rng: () => 0.31 });
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(events.some(e => e.type === 'miss')).toBe(true);
+  });
+});

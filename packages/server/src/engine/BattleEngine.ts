@@ -201,6 +201,22 @@ export class BattleEngine {
       }
     }
 
+    // Charge-turn check
+    const secs = move.secondaries ?? [];
+    const chargeSec = secs.find(sec => sec.kind === 'charge');
+    if (chargeSec) {
+      const isSun = s.field.weather?.type === 'sun';
+      const hasCharge = attacker.volatileStatus.some(v => v.name === chargeSec.chargeVolatile);
+      if (!hasCharge && !isSun) {
+        attacker.volatileStatus.push({ name: chargeSec.chargeVolatile });
+        events.push({ type: 'volatile-applied', data: { targetSlotId: attackerSlotId, volatile: chargeSec.chargeVolatile, note: 'charging' } });
+        return { newState: s, events };
+      }
+      if (hasCharge) {
+        attacker.volatileStatus = attacker.volatileStatus.filter(v => v.name !== chargeSec.chargeVolatile);
+      }
+    }
+
     for (const targetSlotId of targetSlotIds) {
       const targetSlot = this.findSlot(s, targetSlotId);
       if (!targetSlot) continue;
@@ -227,7 +243,29 @@ export class BattleEngine {
         continue;
       }
 
-      const secs = move.secondaries ?? [];
+      // OHKO check — bypasses normal damage formula
+      const ohkoSec = secs.find(sec => sec.kind === 'ohko');
+      if (ohkoSec) {
+        if (target.level > attacker.level) {
+          events.push({ type: 'miss', data: { attackerSlotId, moveId: move.id } });
+          continue;
+        }
+        const ohkoAcc = Math.max(1, Math.min(100, 30 + attacker.level - target.level));
+        if (this.rng() * 100 >= ohkoAcc) {
+          events.push({ type: 'miss', data: { attackerSlotId, moveId: move.id } });
+          continue;
+        }
+        const ohmoDmg = target.currentHp;
+        target.currentHp = 0;
+        target.fainted = true;
+        events.push({ type: 'damage-dealt', data: {
+          attackerSlotId, targetSlotId, moveId: move.id,
+          damage: ohmoDmg, effectiveness: 1, remainingHp: 0,
+        }});
+        events.push({ type: 'faint', data: { slotId: targetSlotId, instanceId: target.instanceId } });
+        continue;
+      }
+
       const multihitSec = secs.find(sec => sec.kind === 'multihit');
       const hitCount = multihitSec ? this.rollHitCount(multihitSec.hits) : 1;
 
