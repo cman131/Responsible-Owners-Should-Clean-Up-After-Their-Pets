@@ -272,3 +272,22 @@ export function destinyBond(): MoveEffectHandler {
     return { events: [{ type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'destiny-bond' } }] };
   };
 }
+
+export function roost(): MoveEffectHandler {
+  return (ctx) => {
+    if (ctx.user.volatileStatus.some(v => v.name === 'heal-block')) {
+      return { events: [{ type: 'move-failed', data: { moveId: 'roost', reason: 'heal-blocked' } }] };
+    }
+    const heal = Math.min(Math.floor(ctx.user.maxHp * 0.5), ctx.user.maxHp - ctx.user.currentHp);
+    if (heal <= 0) return { events: [] };
+    ctx.user.currentHp += heal;
+    ctx.user.volatileStatus = ctx.user.volatileStatus.filter(v => v.name !== 'roost');
+    ctx.user.volatileStatus.push({ name: 'roost' });
+    return {
+      events: [
+        { type: 'heal', data: { slotId: ctx.userSlotId, amount: heal, remainingHp: ctx.user.currentHp } },
+        { type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'roost' } },
+      ],
+    };
+  };
+}

@@ -60,3 +60,33 @@ describe('Destiny Bond', () => {
     expect(events.some(e => e.type === 'faint' && (e.data as any).slotId === 'slot-a1')).toBe(true);
   });
 });
+
+describe('Roost', () => {
+  it('heals 50% max HP', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    const p1 = state.teams[0]!.slots[0]!.party[0]!;
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    p1.currentHp = 40; p1.maxHp = 100;
+    p1.moves[0] = { moveId: 'roost', currentPp: 10, maxPp: 10 };
+    p2.moves[0] = { moveId: 'protect', currentPp: 10, maxPp: 10 };
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    expect(newState.teams[0]!.slots[0]!.party[0]!.currentHp).toBe(90);
+  });
+
+  it('roost volatile removed at EoT', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'roost', currentPp: 10, maxPp: 10 };
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    expect(newState.teams[0]!.slots[0]!.party[0]!.volatileStatus.some(v => v.name === 'roost')).toBe(false);
+  });
+});

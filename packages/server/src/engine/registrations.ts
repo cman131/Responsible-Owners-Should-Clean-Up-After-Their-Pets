@@ -4,7 +4,7 @@ import {
   applyStatusTarget, applyVolatileTarget, applyVolatileSelf, healPercent,
   setWeather, setTerrain, setSideCondition, trickRoom, gravity, custom,
   protect, endure, substitute, disable, taunt, encore, torment,
-  aquaRing, ingrain, magnetRise, perishSong, destinyBond,
+  aquaRing, ingrain, magnetRise, perishSong, destinyBond, roost,
 } from './effectFactories.js';
 
 export function buildDefaultRegistry(): MoveEffectRegistry {
@@ -80,7 +80,7 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
   r.register('torment',       torment());
 
   // ── Heals ──────────────────────────────────────────────────────────
-  r.register('roost',       healPercent(0.5));
+  r.register('roost',       roost());
   r.register('recover',     healPercent(0.5));
   r.register('softboiled',  healPercent(0.5));
   r.register('milkdrink',   healPercent(0.5));
