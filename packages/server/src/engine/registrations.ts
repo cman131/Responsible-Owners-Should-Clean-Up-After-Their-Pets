@@ -3,7 +3,7 @@ import {
   statModSelf, statModTarget, multiStatModSelf,
   applyStatusTarget, applyVolatileTarget, healPercent,
   setWeather, setTerrain, setSideCondition, trickRoom, gravity, custom,
-  protect, endure, substitute,
+  protect, endure, substitute, disable,
 } from './effectFactories.js';
 
 export function buildDefaultRegistry(): MoveEffectRegistry {
@@ -64,6 +64,7 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
   r.register('burningbulwark',protect('burningbulwark'));
   r.register('endure',        endure());
   r.register('substitute',    substitute());
+  r.register('disable',       disable());
 
   // ── Heals ──────────────────────────────────────────────────────────
   r.register('roost',       healPercent(0.5));

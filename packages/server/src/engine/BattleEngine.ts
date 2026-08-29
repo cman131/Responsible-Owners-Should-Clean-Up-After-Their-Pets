@@ -159,6 +159,23 @@ export class BattleEngine {
     const move = this.data.getMove(moveSlot.moveId);
     if (!move) return { newState: s, events };
 
+    // Check if chosen move is disabled (block before decrement so same-turn disable preserves counter)
+    const activeDisable = attacker.volatileStatus.find(v => v.name === 'disable');
+    if (activeDisable && activeDisable.moveId === move.id) {
+      events.push({ type: 'move-blocked', data: { slotId: attackerSlotId, reason: 'disabled', moveId: move.id } });
+      return { newState: s, events };
+    }
+
+    // Decrement Disable (only if move was not blocked by it above)
+    const disableDecEntry = attacker.volatileStatus.find(v => v.name === 'disable');
+    if (disableDecEntry) {
+      disableDecEntry.turnsRemaining = (disableDecEntry.turnsRemaining ?? 1) - 1;
+      if ((disableDecEntry.turnsRemaining ?? 0) <= 0) {
+        attacker.volatileStatus = attacker.volatileStatus.filter(v => v.name !== 'disable');
+        events.push({ type: 'volatile-cured', data: { slotId: attackerSlotId, volatile: 'disable' } });
+      }
+    }
+
     // Handle Terastallize
     if (action.terastallize && !attacker.hasTerastallized && attacker.teraType) {
       attacker.hasTerastallized = true;

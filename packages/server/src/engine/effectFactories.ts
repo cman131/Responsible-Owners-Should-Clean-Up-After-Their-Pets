@@ -145,6 +145,20 @@ export function protect(variant: string): MoveEffectHandler {
   };
 }
 
+export function disable(): MoveEffectHandler {
+  return (ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+    if (!target.lastMoveId) {
+      return { events: [{ type: 'move-failed', data: { moveId: 'disable', reason: 'no-last-move' } }] };
+    }
+    if (target.volatileStatus.some(v => v.name === 'disable')) return { events: [] };
+    target.volatileStatus.push({ name: 'disable', moveId: target.lastMoveId, turnsRemaining: 4 });
+    return { events: [{ type: 'volatile-applied', data: { targetSlotId, volatile: 'disable', moveId: target.lastMoveId } }] };
+  };
+}
+
 export function endure(): MoveEffectHandler {
   return (ctx) => {
     const streakEntry = ctx.user.volatileStatus.find(v => v.name === 'protect-streak');
