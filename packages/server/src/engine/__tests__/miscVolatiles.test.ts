@@ -81,7 +81,9 @@ describe('Roost', () => {
   it('roost volatile removed at EoT', () => {
     const engine = new BattleEngine({ rng: () => 0 });
     const state = make1v1State();
-    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'roost', currentPp: 10, maxPp: 10 };
+    const p1 = state.teams[0]!.slots[0]!.party[0]!;
+    p1.currentHp = 50; p1.maxHp = 100;
+    p1.moves[0] = { moveId: 'roost', currentPp: 10, maxPp: 10 };
 
     const { newState } = engine.resolveTurn(state, {
       'slot-a1': { type: 'move', moveIndex: 0 },
