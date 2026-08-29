@@ -203,6 +203,26 @@ export class EffectEngine {
       }
     }
 
+    // Aqua Ring heal
+    if (pokemon.volatileStatus.some(v => v.name === 'aqua-ring')) {
+      const heal = Math.max(1, Math.floor(pokemon.maxHp / 16));
+      const actual = Math.min(heal, pokemon.maxHp - pokemon.currentHp);
+      if (actual > 0) {
+        pokemon.currentHp += actual;
+        events.push({ type: 'heal', data: { slotId, amount: actual, remainingHp: pokemon.currentHp, source: 'aqua-ring' } });
+      }
+    }
+
+    // Ingrain heal
+    if (pokemon.volatileStatus.some(v => v.name === 'ingrain')) {
+      const heal = Math.max(1, Math.floor(pokemon.maxHp / 16));
+      const actual = Math.min(heal, pokemon.maxHp - pokemon.currentHp);
+      if (actual > 0) {
+        pokemon.currentHp += actual;
+        events.push({ type: 'heal', data: { slotId, amount: actual, remainingHp: pokemon.currentHp, source: 'ingrain' } });
+      }
+    }
+
     return { events };
   }
 

@@ -224,3 +224,19 @@ export function endure(): MoveEffectHandler {
     return { events: [{ type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'endure' } }] };
   };
 }
+
+export function aquaRing(): MoveEffectHandler {
+  return (ctx) => {
+    if (ctx.user.volatileStatus.some(v => v.name === 'aqua-ring')) return { events: [] };
+    ctx.user.volatileStatus.push({ name: 'aqua-ring' });
+    return { events: [{ type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'aqua-ring' } }] };
+  };
+}
+
+export function ingrain(): MoveEffectHandler {
+  return (ctx) => {
+    if (ctx.user.volatileStatus.some(v => v.name === 'ingrain')) return { events: [] };
+    ctx.user.volatileStatus.push({ name: 'ingrain' });
+    return { events: [{ type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'ingrain' } }] };
+  };
+}

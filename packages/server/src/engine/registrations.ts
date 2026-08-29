@@ -1,9 +1,10 @@
 import { MoveEffectRegistry } from './MoveEffectRegistry.js';
 import {
   statModSelf, statModTarget, multiStatModSelf,
-  applyStatusTarget, applyVolatileTarget, healPercent,
+  applyStatusTarget, applyVolatileTarget, applyVolatileSelf, healPercent,
   setWeather, setTerrain, setSideCondition, trickRoom, gravity, custom,
   protect, endure, substitute, disable, taunt, encore, torment,
+  aquaRing, ingrain,
 } from './effectFactories.js';
 
 export function buildDefaultRegistry(): MoveEffectRegistry {
@@ -26,6 +27,9 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
   r.register('sweetkiss',   applyVolatileTarget('confusion'));
   r.register('leechseed',   applyVolatileTarget('leech-seed'));
   r.register('yawn',        applyVolatileTarget('yawn', 2));
+  r.register('focusenergy', applyVolatileSelf('focusenergy'));
+  r.register('aquaring',    aquaRing());
+  r.register('ingrain',     ingrain());
 
   // ── Self stat boosts ───────────────────────────────────────────────
   r.register('swordsdance', statModSelf('atk', 2));
