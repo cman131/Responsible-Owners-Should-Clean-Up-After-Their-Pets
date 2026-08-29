@@ -159,11 +159,6 @@ export class BattleEngine {
     const move = this.data.getMove(moveSlot.moveId);
     if (!move) return { newState: s, events };
 
-    // Clear protect streak if not using a protect-family move
-    if (!PROTECT_FAMILY_IDS.has(moveSlot.moveId)) {
-      attacker.volatileStatus = attacker.volatileStatus.filter(v => v.name !== 'protect-streak');
-    }
-
     // Handle Terastallize
     if (action.terastallize && !attacker.hasTerastallized && attacker.teraType) {
       attacker.hasTerastallized = true;
@@ -406,23 +401,37 @@ export class BattleEngine {
         const itemDmgMod = itemHooks.onDamageModifier?.({ holder: attacker, state: s, moveType: move.type, basePower: move.basePower, target, isPhysical });
         if (itemDmgMod !== undefined) finalDamage = Math.floor(finalDamage * itemDmgMod);
 
-        const actualDamage = Math.min(finalDamage, target.currentHp);
-        target.currentHp -= actualDamage;
-        totalDamage += actualDamage;
+        const subEntry = target.volatileStatus.find(v => v.name === 'substitute');
+        if (subEntry && subEntry.hp !== undefined) {
+          // substitute interception (Task 10)
+        } else {
+          const actualDamage = Math.min(finalDamage, target.currentHp);
+          // Endure: cap damage so HP stays at 1
+          const endureEntry = target.volatileStatus.find(v => v.name === 'endure');
+          const cappedDamage = (endureEntry && target.currentHp - actualDamage <= 0)
+            ? target.currentHp - 1
+            : actualDamage;
+          target.currentHp -= cappedDamage;
+          totalDamage += cappedDamage;
 
-        events.push({ type: 'damage-dealt', data: {
-          attackerSlotId, targetSlotId, moveId: move.id,
-          damage: actualDamage, effectiveness, remainingHp: target.currentHp,
-        }});
+          events.push({ type: 'damage-dealt', data: {
+            attackerSlotId, targetSlotId, moveId: move.id,
+            damage: cappedDamage, effectiveness, remainingHp: target.currentHp,
+          }});
 
-        if (isCritical) {
-          events.push({ type: 'crit', data: { slotId: targetSlotId } });
-        }
+          if (endureEntry && cappedDamage < actualDamage) {
+            events.push({ type: 'endure-survived', data: { slotId: targetSlotId } });
+          }
 
-        if (target.currentHp <= 0) {
-          target.fainted = true;
-          target.currentHp = 0;
-          events.push({ type: 'faint', data: { slotId: targetSlotId, instanceId: target.instanceId } });
+          if (isCritical) {
+            events.push({ type: 'crit', data: { slotId: targetSlotId } });
+          }
+
+          if (target.currentHp <= 0) {
+            target.fainted = true;
+            target.currentHp = 0;
+            events.push({ type: 'faint', data: { slotId: targetSlotId, instanceId: target.instanceId } });
+          }
         }
       }
 

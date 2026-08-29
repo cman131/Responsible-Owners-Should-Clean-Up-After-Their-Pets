@@ -119,6 +119,9 @@ export class EffectEngine {
   ): EndOfTurnResult {
     const events: TurnResolveEvent[] = [];
 
+    // Remove protect at EoT (streak persists)
+    pokemon.volatileStatus = pokemon.volatileStatus.filter(v => v.name !== 'protect' && v.name !== 'roost');
+
     if (pokemon.status === 'brn') {
       this.applyDamage(pokemon, slotId, getBurnDamage(pokemon.maxHp), 'status', events);
       if (pokemon.fainted) return { events };

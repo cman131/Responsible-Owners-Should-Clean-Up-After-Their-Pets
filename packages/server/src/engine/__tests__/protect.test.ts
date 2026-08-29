@@ -156,3 +156,45 @@ describe('protect blocks damaging moves', () => {
     expect(attackerAfter.currentHp).toBeLessThan(100); // took recoil
   });
 });
+
+describe('protect end-of-turn removal', () => {
+  it('protect volatile is removed at end of turn', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    const p1 = state.teams[0]!.slots[0]!.party[0]!;
+    p1.volatileStatus.push({ name: 'protect', variant: 'protect' });
+    p1.volatileStatus.push({ name: 'protect-streak', counter: 1 });
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    const p1After = newState.teams[0]!.slots[0]!.party[0]!;
+    expect(p1After.volatileStatus.some(v => v.name === 'protect')).toBe(false);
+    // streak persists across turns
+    expect(p1After.volatileStatus.some(v => v.name === 'protect-streak')).toBe(true);
+  });
+});
+
+describe('endure', () => {
+  it('leaves user at 1 HP when lethal damage would faint it', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    const defender = state.teams[1]!.slots[0]!.party[0]!;
+    defender.volatileStatus.push({ name: 'endure' });
+    defender.currentHp = 1; // already at 1, incoming damage would KO
+
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'hyperbeam', currentPp: 5, maxPp: 5 };
+
+    const { events, newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    const defAfter = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(defAfter.currentHp).toBe(1);
+    expect(defAfter.fainted).toBe(false);
+    expect(events.some(e => e.type === 'endure-survived')).toBe(true);
+  });
+});
