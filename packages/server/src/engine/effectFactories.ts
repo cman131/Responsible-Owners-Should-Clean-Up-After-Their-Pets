@@ -104,3 +104,45 @@ export function gravity(): MoveEffectHandler {
 export function custom(fn: MoveEffectHandler): MoveEffectHandler {
   return fn;
 }
+
+export function protect(variant: string): MoveEffectHandler {
+  return (ctx) => {
+    const streakEntry = ctx.user.volatileStatus.find(v => v.name === 'protect-streak');
+    const n = streakEntry?.counter ?? 0;
+    const chance = n === 0 ? 1 : 1 / Math.pow(3, n);
+
+    if (ctx.rng() >= chance) {
+      ctx.user.volatileStatus = ctx.user.volatileStatus.filter(v => v.name !== 'protect-streak');
+      return { events: [{ type: 'move-failed', data: { moveId: variant, reason: 'protect-failed' } }] };
+    }
+
+    if (streakEntry) {
+      streakEntry.counter = n + 1;
+    } else {
+      ctx.user.volatileStatus.push({ name: 'protect-streak', counter: 1 });
+    }
+    ctx.user.volatileStatus.push({ name: 'protect', variant });
+    return { events: [{ type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'protect', variant } }] };
+  };
+}
+
+export function endure(): MoveEffectHandler {
+  return (ctx) => {
+    const streakEntry = ctx.user.volatileStatus.find(v => v.name === 'protect-streak');
+    const n = streakEntry?.counter ?? 0;
+    const chance = n === 0 ? 1 : 1 / Math.pow(3, n);
+
+    if (ctx.rng() >= chance) {
+      ctx.user.volatileStatus = ctx.user.volatileStatus.filter(v => v.name !== 'protect-streak');
+      return { events: [{ type: 'move-failed', data: { moveId: 'endure', reason: 'protect-failed' } }] };
+    }
+
+    if (streakEntry) {
+      streakEntry.counter = n + 1;
+    } else {
+      ctx.user.volatileStatus.push({ name: 'protect-streak', counter: 1 });
+    }
+    ctx.user.volatileStatus.push({ name: 'endure' });
+    return { events: [{ type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'endure' } }] };
+  };
+}
