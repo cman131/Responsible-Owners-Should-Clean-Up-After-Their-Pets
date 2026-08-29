@@ -703,12 +703,12 @@ describe('Charge-turn moves', () => {
     });
     expect(events.some(e => e.type === 'damage-dealt' && e.data['attackerSlotId'] === 'slot-a1')).toBe(false);
     const p1 = newState.teams[0]!.slots[0]!.party[0]!;
-    expect(p1.volatileStatus.some(v => v.name === 'solarbeam-charge')).toBe(true);
+    expect(p1.volatileStatus.some(v => v.name === 'charging-solarbeam')).toBe(true);
   });
 
   it('T2: removes charge volatile and deals damage', () => {
     const state = makeSolarBeamState();
-    state.teams[0]!.slots[0]!.party[0]!.volatileStatus = [{ name: 'solarbeam-charge' }];
+    state.teams[0]!.slots[0]!.party[0]!.volatileStatus = [{ name: 'charging-solarbeam' }];
     const engine = new BattleEngine({ rng: () => 0 });
     const { events, newState } = engine.resolveTurn(state, {
       'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },
@@ -716,7 +716,7 @@ describe('Charge-turn moves', () => {
     });
     expect(events.some(e => e.type === 'damage-dealt' && e.data['attackerSlotId'] === 'slot-a1')).toBe(true);
     const p1 = newState.teams[0]!.slots[0]!.party[0]!;
-    expect(p1.volatileStatus.some(v => v.name === 'solarbeam-charge')).toBe(false);
+    expect(p1.volatileStatus.some(v => v.name === 'charging-solarbeam')).toBe(false);
   });
 
   it('T1 in sun: skips charge, deals damage immediately', () => {
@@ -729,7 +729,7 @@ describe('Charge-turn moves', () => {
     });
     expect(events.some(e => e.type === 'damage-dealt' && e.data['attackerSlotId'] === 'slot-a1')).toBe(true);
     const chargeVolatileApplied = events.some(e =>
-      e.type === 'volatile-applied' && e.data['volatile'] === 'solarbeam-charge'
+      e.type === 'volatile-applied' && e.data['volatile'] === 'charging-solarbeam'
     );
     expect(chargeVolatileApplied).toBe(false);
   });

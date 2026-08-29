@@ -1064,6 +1064,7 @@
     "priority": 0,
     "target": "allAdjacent",
     "makesContact": false,
+    "soundMove": true,
     "effectId": "boomburst"
   },
   {
@@ -1234,6 +1235,7 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
+    "soundMove": true,
     "effectId": "bugbuzz"
   },
   {
@@ -1561,6 +1563,7 @@
     "priority": 0,
     "target": "allAdjacentFoes",
     "makesContact": false,
+    "soundMove": true,
     "effectId": "clangingscales"
   },
   {
@@ -2229,6 +2232,7 @@
     "priority": 0,
     "target": "allAdjacentFoes",
     "makesContact": false,
+    "soundMove": true,
     "effectId": "disarmingvoice"
   },
   {
@@ -2768,6 +2772,7 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
+    "soundMove": true,
     "effectId": "eeriespell"
   },
   {
@@ -5507,6 +5512,7 @@
     "priority": 0,
     "target": "allAdjacentFoes",
     "makesContact": false,
+    "soundMove": true,
     "effectId": "hypervoice"
   },
   {
@@ -10141,7 +10147,7 @@
     "target": "normal",
     "makesContact": false,
     "effectId": "solarbeam",
-    "secondaries": [{"kind":"charge","chargeVolatile":"solarbeam-charge"}]
+    "secondaries": [{"kind":"charge","chargeVolatile":"charging-solarbeam"}]
   },
   {
     "id": "solarblade",
