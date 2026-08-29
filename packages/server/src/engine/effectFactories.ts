@@ -264,3 +264,11 @@ export function perishSong(): MoveEffectHandler {
     return { events };
   };
 }
+
+export function destinyBond(): MoveEffectHandler {
+  return (ctx) => {
+    ctx.user.volatileStatus = ctx.user.volatileStatus.filter(v => v.name !== 'destiny-bond');
+    ctx.user.volatileStatus.push({ name: 'destiny-bond' });
+    return { events: [{ type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'destiny-bond' } }] };
+  };
+}

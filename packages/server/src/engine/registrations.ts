@@ -4,7 +4,7 @@ import {
   applyStatusTarget, applyVolatileTarget, applyVolatileSelf, healPercent,
   setWeather, setTerrain, setSideCondition, trickRoom, gravity, custom,
   protect, endure, substitute, disable, taunt, encore, torment,
-  aquaRing, ingrain, magnetRise, perishSong,
+  aquaRing, ingrain, magnetRise, perishSong, destinyBond,
 } from './effectFactories.js';
 
 export function buildDefaultRegistry(): MoveEffectRegistry {
@@ -32,6 +32,10 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
   r.register('ingrain',     ingrain());
   r.register('magnetrise',  magnetRise());
   r.register('perishsong',  perishSong());
+  r.register('foresight',   applyVolatileTarget('foresight'));
+  r.register('odorsleuth',  applyVolatileTarget('foresight'));
+  r.register('miracleeye',  applyVolatileTarget('miracle-eye'));
+  r.register('destinybond', destinyBond());
 
   // ── Self stat boosts ───────────────────────────────────────────────
   r.register('swordsdance', statModSelf('atk', 2));

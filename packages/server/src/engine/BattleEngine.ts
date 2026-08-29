@@ -353,7 +353,24 @@ export class BattleEngine {
         ? [target.teraType] as PokemonType[]
         : (targetSpecies?.types ?? ['Normal']) as PokemonType[];
 
-      const effectiveness = this.data.getCombinedEffectiveness(move.type, defTypes);
+      // Foresight/Odor Sleuth: Normal/Fighting hits Ghost
+      let effectiveDefTypes = defTypes;
+      if (target.volatileStatus.some(v => v.name === 'foresight')) {
+        if (move.type === 'Normal' || move.type === 'Fighting') {
+          effectiveDefTypes = effectiveDefTypes.filter(t => t !== 'Ghost');
+        }
+      }
+      // Miracle Eye: Psychic hits Dark
+      if (target.volatileStatus.some(v => v.name === 'miracle-eye') && move.type === 'Psychic') {
+        effectiveDefTypes = effectiveDefTypes.filter(t => t !== 'Dark');
+      }
+      // Roost: user loses Flying type for the rest of this turn
+      if (target.volatileStatus.some(v => v.name === 'roost')) {
+        effectiveDefTypes = effectiveDefTypes.filter(t => t !== 'Flying');
+        if (effectiveDefTypes.length === 0) effectiveDefTypes = ['Normal'];
+      }
+
+      const effectiveness = this.data.getCombinedEffectiveness(move.type, effectiveDefTypes);
       if (effectiveness === 0) {
         events.push({ type: 'move-used', data: { note: 'no-effect', targetSlotId, attackerName: attacker.nickname, moveName: move.name } });
         continue;
@@ -491,6 +508,13 @@ export class BattleEngine {
             target.fainted = true;
             target.currentHp = 0;
             events.push({ type: 'faint', data: { slotId: targetSlotId, instanceId: target.instanceId } });
+            // Destiny Bond: if the target had destiny-bond, the attacker also faints
+            const dbEntry = target.volatileStatus.find(v => v.name === 'destiny-bond');
+            if (dbEntry && !attacker.fainted) {
+              attacker.currentHp = 0;
+              attacker.fainted = true;
+              events.push({ type: 'faint', data: { slotId: attackerSlotId, instanceId: attacker.instanceId } });
+            }
           }
         }
       }
