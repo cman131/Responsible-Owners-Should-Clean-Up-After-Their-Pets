@@ -177,6 +177,23 @@ describe('protect end-of-turn removal', () => {
   });
 });
 
+describe('protect registrations', () => {
+  it('Protect move applies protect volatile', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'protect', currentPp: 10, maxPp: 10 };
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    const p1 = newState.teams[0]!.slots[0]!.party[0]!;
+    // protect is removed at EoT, so check streak remains
+    expect(p1.volatileStatus.some(v => v.name === 'protect-streak')).toBe(true);
+  });
+});
+
 describe('endure', () => {
   it('leaves user at 1 HP when lethal damage would faint it', () => {
     const engine = new BattleEngine({ rng: () => 0 });

@@ -3,6 +3,7 @@ import {
   statModSelf, statModTarget, multiStatModSelf,
   applyStatusTarget, applyVolatileTarget, healPercent,
   setWeather, setTerrain, setSideCondition, trickRoom, gravity, custom,
+  protect, endure,
 } from './effectFactories.js';
 
 export function buildDefaultRegistry(): MoveEffectRegistry {
@@ -51,6 +52,17 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
   r.register('faketears',  statModTarget('spd', -2));
   r.register('flash',      statModTarget('accuracy', -1));
   r.register('sandattack', statModTarget('accuracy', -1));
+
+  // ── Protect family ────────────────────────────────────────────────────
+  r.register('protect',       protect('protect'));
+  r.register('detect',        protect('detect'));
+  r.register('kingsshield',   protect('kingsshield'));
+  r.register('spikyshield',   protect('spikyshield'));
+  r.register('banefulbunker', protect('banefulbunker'));
+  r.register('obstruct',      protect('obstruct'));
+  r.register('silktrap',      protect('silktrap'));
+  r.register('burningbulwark',protect('burningbulwark'));
+  r.register('endure',        endure());
 
   // ── Heals ──────────────────────────────────────────────────────────
   r.register('roost',       healPercent(0.5));
