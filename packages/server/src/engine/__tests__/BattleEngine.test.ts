@@ -664,9 +664,9 @@ describe('Multi-hit moves', () => {
     expect(events.some(e => e.type === 'faint' && e.data['slotId'] === 'slot-b1')).toBe(true);
   });
 
-  it('hit count distribution over 400 trials is approximately 3/8, 3/8, 1/8, 1/8', () => {
+  it('hit count distribution over 1000 trials is approximately 3/8, 3/8, 1/8, 1/8', () => {
     const counts = { 2: 0, 3: 0, 4: 0, 5: 0 };
-    for (let trial = 0; trial < 400; trial++) {
+    for (let trial = 0; trial < 1000; trial++) {
       const state = make1v1State();
       state.teams[1]!.slots[0]!.party[0]!.currentHp = 9999;
       state.teams[1]!.slots[0]!.party[0]!.maxHp = 9999;
@@ -680,10 +680,10 @@ describe('Multi-hit moves', () => {
       const hits = events.filter(e => e.type === 'damage-dealt' && e.data['targetSlotId'] === 'slot-b1').length;
       counts[hits as 2|3|4|5] = (counts[hits as 2|3|4|5] ?? 0) + 1;
     }
-    expect(counts[2]! / 400).toBeCloseTo(3 / 8, 1);
-    expect(counts[3]! / 400).toBeCloseTo(3 / 8, 1);
-    expect(counts[4]! / 400).toBeCloseTo(1 / 8, 1);
-    expect(counts[5]! / 400).toBeCloseTo(1 / 8, 1);
+    expect(counts[2]! / 1000).toBeCloseTo(3 / 8, 1);
+    expect(counts[3]! / 1000).toBeCloseTo(3 / 8, 1);
+    expect(counts[4]! / 1000).toBeCloseTo(1 / 8, 1);
+    expect(counts[5]! / 1000).toBeCloseTo(1 / 8, 1);
   });
 });
 

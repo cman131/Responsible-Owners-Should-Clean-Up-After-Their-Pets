@@ -360,7 +360,7 @@ export class BattleEngine {
         }
 
         const postSecs = secs.filter(sec => sec.kind !== 'multihit' && sec.kind !== 'ohko' && sec.kind !== 'charge');
-        if (postSecs.length > 0) {
+        if (postSecs.length > 0 && !target.fainted) {
           events.push(...applySecondaries({
             secondaries: postSecs,
             totalDamage,
