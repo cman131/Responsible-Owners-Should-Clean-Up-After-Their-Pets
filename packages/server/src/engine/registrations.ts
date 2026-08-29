@@ -5,6 +5,7 @@ import {
   setWeather, setTerrain, setSideCondition, trickRoom, gravity, custom,
   protect, endure, substitute, disable, taunt, encore, torment,
   aquaRing, ingrain, magnetRise, perishSong, destinyBond, roost,
+  embargoFactory, healBlockFactory,
 } from './effectFactories.js';
 
 export function buildDefaultRegistry(): MoveEffectRegistry {
@@ -78,6 +79,8 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
   r.register('taunt',         taunt());
   r.register('encore',        encore());
   r.register('torment',       torment());
+  r.register('embargo',       embargoFactory());
+  r.register('healblock',     healBlockFactory());
 
   // ── Heals ──────────────────────────────────────────────────────────
   r.register('roost',       roost());

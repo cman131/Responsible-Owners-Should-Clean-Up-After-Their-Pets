@@ -61,6 +61,65 @@ describe('Destiny Bond', () => {
   });
 });
 
+describe('Embargo', () => {
+  it('applies embargo with 5 turns remaining', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'embargo', currentPp: 15, maxPp: 15 };
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.volatileStatus.find(v => v.name === 'embargo')?.turnsRemaining).toBe(5);
+  });
+
+  it('expires after 5 turns emitting volatile-cured', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.teams[1]!.slots[0]!.party[0]!.volatileStatus.push({ name: 'embargo', turnsRemaining: 1 });
+
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.volatileStatus.some(v => v.name === 'embargo')).toBe(false);
+    expect(events.some(e => e.type === 'volatile-cured' && (e.data as any).volatile === 'embargo')).toBe(true);
+  });
+});
+
+describe('Heal Block', () => {
+  it('applies heal-block with 5 turns remaining', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'healblock', currentPp: 15, maxPp: 15 };
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.volatileStatus.find(v => v.name === 'heal-block')?.turnsRemaining).toBe(5);
+  });
+
+  it('prevents Recover from healing when heal-block active', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    const p1 = state.teams[0]!.slots[0]!.party[0]!;
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    p1.currentHp = 50; p1.maxHp = 100;
+    p1.volatileStatus.push({ name: 'heal-block', turnsRemaining: 3 });
+    p1.moves[0] = { moveId: 'recover', currentPp: 10, maxPp: 10 };
+    p2.moves[0] = { moveId: 'protect', currentPp: 10, maxPp: 10 };
+
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    expect(events.some(e => e.type === 'move-failed' && (e.data as any).reason === 'heal-blocked')).toBe(true);
+    expect(newState.teams[0]!.slots[0]!.party[0]!.currentHp).toBe(50);
+  });
+});
+
 describe('Roost', () => {
   it('heals 50% max HP', () => {
     const engine = new BattleEngine({ rng: () => 0 });

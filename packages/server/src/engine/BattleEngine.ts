@@ -649,7 +649,8 @@ export class BattleEngine {
         events.push(...eotResult.events);
 
         const itemHooks = getItemHooks(active.heldItem);
-        if (itemHooks.onEndOfTurn) {
+        const hasEmbargo = active.volatileStatus.some(v => v.name === 'embargo');
+        if (itemHooks.onEndOfTurn && !hasEmbargo) {
           const { hpDelta } = itemHooks.onEndOfTurn({ holder: active, state: s });
           if (hpDelta > 0) {
             const heal = Math.min(hpDelta, active.maxHp - active.currentHp);

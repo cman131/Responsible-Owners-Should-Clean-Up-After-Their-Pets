@@ -245,6 +245,26 @@ export class EffectEngine {
       }
     }
 
+    // Embargo decrement
+    const embargoEntry = pokemon.volatileStatus.find(v => v.name === 'embargo');
+    if (embargoEntry) {
+      embargoEntry.turnsRemaining = (embargoEntry.turnsRemaining ?? 1) - 1;
+      if ((embargoEntry.turnsRemaining ?? 0) <= 0) {
+        pokemon.volatileStatus = pokemon.volatileStatus.filter(v => v.name !== 'embargo');
+        events.push({ type: 'volatile-cured', data: { slotId, volatile: 'embargo' } });
+      }
+    }
+
+    // Heal Block decrement
+    const healBlockEntry = pokemon.volatileStatus.find(v => v.name === 'heal-block');
+    if (healBlockEntry) {
+      healBlockEntry.turnsRemaining = (healBlockEntry.turnsRemaining ?? 1) - 1;
+      if ((healBlockEntry.turnsRemaining ?? 0) <= 0) {
+        pokemon.volatileStatus = pokemon.volatileStatus.filter(v => v.name !== 'heal-block');
+        events.push({ type: 'volatile-cured', data: { slotId, volatile: 'heal-block' } });
+      }
+    }
+
     return { events };
   }
 

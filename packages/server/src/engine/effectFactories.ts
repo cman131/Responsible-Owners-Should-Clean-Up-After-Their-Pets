@@ -55,6 +55,9 @@ export function applyVolatileSelf(volatile: string): MoveEffectHandler {
 
 export function healPercent(fraction: number): MoveEffectHandler {
   return (ctx) => {
+    if (ctx.user.volatileStatus.some(v => v.name === 'heal-block')) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'heal-blocked' } }] };
+    }
     const heal = Math.min(Math.floor(ctx.user.maxHp * fraction), ctx.user.maxHp - ctx.user.currentHp);
     if (heal <= 0) return { events: [] };
     ctx.user.currentHp += heal;
@@ -287,6 +290,34 @@ export function roost(): MoveEffectHandler {
       events.push({ type: 'heal', data: { slotId: ctx.userSlotId, amount: heal, remainingHp: ctx.user.currentHp } });
     }
     events.push({ type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'roost' } });
+    return { events };
+  };
+}
+
+export function embargoFactory(): MoveEffectHandler {
+  return (ctx) => {
+    const events: TurnResolveEvent[] = [];
+    for (let i = 0; i < ctx.targets.length; i++) {
+      const target = ctx.targets[i]!;
+      if (target.volatileStatus.some(v => v.name === 'embargo')) continue;
+      // Initialize to 6 so that after the EoT decrement this same turn, turnsRemaining is 5
+      target.volatileStatus.push({ name: 'embargo', turnsRemaining: 6 });
+      events.push({ type: 'volatile-applied', data: { targetSlotId: ctx.targetSlotIds[i]!, volatile: 'embargo' } });
+    }
+    return { events };
+  };
+}
+
+export function healBlockFactory(): MoveEffectHandler {
+  return (ctx) => {
+    const events: TurnResolveEvent[] = [];
+    for (let i = 0; i < ctx.targets.length; i++) {
+      const target = ctx.targets[i]!;
+      if (target.volatileStatus.some(v => v.name === 'heal-block')) continue;
+      // Initialize to 6 so that after the EoT decrement this same turn, turnsRemaining is 5
+      target.volatileStatus.push({ name: 'heal-block', turnsRemaining: 6 });
+      events.push({ type: 'volatile-applied', data: { targetSlotId: ctx.targetSlotIds[i]!, volatile: 'heal-block' } });
+    }
     return { events };
   };
 }
