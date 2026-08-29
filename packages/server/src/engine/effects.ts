@@ -8,7 +8,9 @@ export function applyStatus(
   slotId: string,
   status: StatusCondition,
   types: PokemonType[],
+  options?: { bypassSub?: boolean },
 ): TurnResolveEvent | null {
+  if (!options?.bypassSub && member.volatileStatus.some(v => v.name === 'substitute')) return null;
   if (!canApplyStatus({ status, types, currentStatus: member.status, ability: member.ability })) {
     return null;
   }
@@ -62,8 +64,10 @@ export function applyVolatile(
   attackerSlotId: string,
   volatile: string,
   explicitCounter?: number,
+  options?: { bypassSub?: boolean },
 ): TurnResolveEvent | null {
   if (target.volatileStatus.some(v => v.name === volatile)) return null;
+  if (!options?.bypassSub && target.volatileStatus.some(v => v.name === 'substitute')) return null;
 
   let counter: number | undefined;
   if (explicitCounter !== undefined) {

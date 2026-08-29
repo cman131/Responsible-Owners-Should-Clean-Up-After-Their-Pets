@@ -25,8 +25,9 @@ export function multiStatModSelf(boosts: Partial<Record<keyof StatBoosts, number
 export function applyStatusTarget(status: StatusCondition): MoveEffectHandler {
   return (ctx) => {
     const events: TurnResolveEvent[] = [];
+    const bypassSub = ctx.move.soundMove === true;
     for (let i = 0; i < ctx.targets.length; i++) {
-      const event = applyStatus(ctx.targets[i]!, ctx.targetSlotIds[i]!, status, ctx.targetTypes[i]!);
+      const event = applyStatus(ctx.targets[i]!, ctx.targetSlotIds[i]!, status, ctx.targetTypes[i]!, { bypassSub });
       if (event) events.push(event);
     }
     return { events };
@@ -36,8 +37,9 @@ export function applyStatusTarget(status: StatusCondition): MoveEffectHandler {
 export function applyVolatileTarget(volatile: string, counter?: number): MoveEffectHandler {
   return (ctx) => {
     const events: TurnResolveEvent[] = [];
+    const bypassSub = ctx.move.soundMove === true;
     for (let i = 0; i < ctx.targets.length; i++) {
-      const event = applyVolatile(ctx.targets[i]!, ctx.targetSlotIds[i]!, ctx.userSlotId, volatile, counter);
+      const event = applyVolatile(ctx.targets[i]!, ctx.targetSlotIds[i]!, ctx.userSlotId, volatile, counter, { bypassSub });
       if (event) events.push(event);
     }
     return { events };
@@ -103,6 +105,23 @@ export function gravity(): MoveEffectHandler {
 
 export function custom(fn: MoveEffectHandler): MoveEffectHandler {
   return fn;
+}
+
+export function substitute(): MoveEffectHandler {
+  return (ctx) => {
+    const cost = Math.floor(ctx.user.maxHp / 4);
+    if (ctx.user.currentHp <= cost) {
+      return { events: [{ type: 'move-failed', data: { moveId: 'substitute', reason: 'too-weak-for-sub' } }] };
+    }
+    ctx.user.currentHp -= cost;
+    ctx.user.volatileStatus.push({ name: 'substitute', hp: cost });
+    return {
+      events: [
+        { type: 'damage-dealt', data: { source: 'substitute', slotId: ctx.userSlotId, damage: cost, remainingHp: ctx.user.currentHp } },
+        { type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'substitute' } },
+      ],
+    };
+  };
 }
 
 export function protect(variant: string): MoveEffectHandler {
