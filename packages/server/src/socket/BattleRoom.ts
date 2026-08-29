@@ -130,11 +130,12 @@ export class BattleRoom {
     if (!slot || slot.isNpc || slot.isSpectator) return null;
     const active = slot.party[slot.activePokemonIndex];
     if (!active || active.fainted) return null;
+    const hasIngrain = active.volatileStatus.some(v => v.name === 'ingrain');
     return {
       slotId: slot.slotId,
-      validMoves: this.buildValidMoves(slotId, active.moves),
-      canSwitch: slot.party.some((p, i) => i !== slot.activePokemonIndex && !p.fainted),
-      switchTargets: slot.party
+      validMoves: this.buildValidMoves(slotId, active),
+      canSwitch: !hasIngrain && slot.party.some((p, i) => i !== slot.activePokemonIndex && !p.fainted),
+      switchTargets: hasIngrain ? [] : slot.party
         .filter((p, i) => i !== slot.activePokemonIndex && !p.fainted)
         .map((p) => p.instanceId),
       canTerastallize: !active.hasTerastallized && !!active.teraType,
@@ -304,16 +305,29 @@ export class BattleRoom {
     return undefined;
   }
 
-  private buildValidMoves(slotId: string, moves: PartyMember['moves']): ActionRequestPayload['validMoves'] {
-    return moves.map((m, i) => {
+  private buildValidMoves(slotId: string, active: PartyMember): ActionRequestPayload['validMoves'] {
+    const disableEntry = active.volatileStatus.find(v => v.name === 'disable');
+    const tauntActive = active.volatileStatus.some(v => v.name === 'taunt');
+    const encoreEntry = active.volatileStatus.find(v => v.name === 'encore');
+    const tormentActive = active.volatileStatus.some(v => v.name === 'torment');
+
+    return active.moves.map((m, i) => {
       const moveData = this.data.getMove(m.moveId);
       if (!moveData) console.warn(`[BattleRoom] Unknown moveId "${m.moveId}" — defaulting targetType to 'normal'`);
       const targetType = moveData?.target ?? 'normal';
+
+      let disabled = false;
+      if (m.currentPp === 0) disabled = true;
+      if (disableEntry?.moveId === m.moveId) disabled = true;
+      if (tauntActive && moveData?.category === 'status') disabled = true;
+      if (encoreEntry && encoreEntry.moveId && m.moveId !== encoreEntry.moveId) disabled = true;
+      if (tormentActive && active.lastMoveId === m.moveId) disabled = true;
+
       return {
         index: i as 0 | 1 | 2 | 3,
         moveId: m.moveId,
         pp: m.currentPp,
-        disabled: false,
+        disabled,
         targetType,
         legalTargets: getLegalTargets(this.state, slotId, targetType),
       };
@@ -344,7 +358,7 @@ export class BattleRoom {
           displayName: slot.displayName,
           request: {
             slotId: slot.slotId,
-            validMoves: this.buildValidMoves(slot.slotId, active.moves),
+            validMoves: this.buildValidMoves(slot.slotId, active),
             canSwitch: false,
             switchTargets: [],
             canTerastallize: !active.hasTerastallized && !!active.teraType,
@@ -362,13 +376,14 @@ export class BattleRoom {
         if (slot.isNpc || slot.isSpectator) continue;
         const active = slot.party[slot.activePokemonIndex];
         if (!active || active.fainted) continue;
+        const hasIngrain = active.volatileStatus.some(v => v.name === 'ingrain');
         result.push({
           slotId: slot.slotId,
           request: {
             slotId: slot.slotId,
-            validMoves: this.buildValidMoves(slot.slotId, active.moves),
-            canSwitch: slot.party.some((p, i) => i !== slot.activePokemonIndex && !p.fainted),
-            switchTargets: slot.party
+            validMoves: this.buildValidMoves(slot.slotId, active),
+            canSwitch: !hasIngrain && slot.party.some((p, i) => i !== slot.activePokemonIndex && !p.fainted),
+            switchTargets: hasIngrain ? [] : slot.party
               .filter((p, i) => i !== slot.activePokemonIndex && !p.fainted)
               .map((p) => p.instanceId),
             canTerastallize: !active.hasTerastallized && !!active.teraType,
