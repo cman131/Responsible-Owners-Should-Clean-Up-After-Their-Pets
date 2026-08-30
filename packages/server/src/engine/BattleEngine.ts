@@ -661,6 +661,32 @@ export class BattleEngine {
       }
     }
 
+    // Weather residual damage — sand chips non-Rock/Ground/Steel; snow chips non-Ice
+    const activeWeather = s.field.weather?.type;
+    if (activeWeather === 'sand' || activeWeather === 'snow') {
+      for (const team of s.teams) {
+        for (const slot of team.slots) {
+          const active = slot.party[slot.activePokemonIndex];
+          if (!active || active.fainted) continue;
+          const types = this.resolveEffectiveTypes(active);
+          const immune =
+            (activeWeather === 'sand' && types.some(t => ['Rock', 'Ground', 'Steel'].includes(t))) ||
+            (activeWeather === 'snow' && types.includes('Ice'));
+          if (!immune) {
+            const chip = Math.floor(active.maxHp / 16);
+            const actual = Math.min(chip, active.currentHp);
+            active.currentHp -= actual;
+            events.push({ type: 'damage-dealt', data: { source: 'weather', slotId: slot.slotId, damage: actual, remainingHp: active.currentHp } });
+            if (active.currentHp <= 0) {
+              active.fainted = true;
+              active.currentHp = 0;
+              events.push({ type: 'faint', data: { slotId: slot.slotId, instanceId: active.instanceId } });
+            }
+          }
+        }
+      }
+    }
+
     if (s.field.weather) {
       s.field.weather.turnsRemaining -= 1;
       if (s.field.weather.turnsRemaining <= 0) {

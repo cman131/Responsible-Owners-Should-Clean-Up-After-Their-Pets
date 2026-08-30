@@ -735,6 +735,72 @@ describe('Charge-turn moves', () => {
   });
 });
 
+describe('endOfTurn — weather residual', () => {
+  it('deals 1/16 maxHp chip to non-Rock/Ground/Steel Pokémon in sandstorm', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.field.weather = { type: 'sand', turnsRemaining: 3, fromAbility: false };
+    // p1 is Charizard (Fire/Flying) — not immune
+    // p2 is Charizard (Fire/Flying) — not immune
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const damageEvents = events.filter(e => e.type === 'damage-dealt' && e.data['source'] === 'weather');
+    expect(damageEvents.length).toBeGreaterThanOrEqual(1);
+    // chip = floor(100 / 16) = 6
+    expect(damageEvents[0]!.data['damage']).toBe(6);
+  });
+
+  it('does not chip Rock-type Pokémon in sandstorm', () => {
+    // speciesId 95 = Onix (Rock/Ground) — immune to sand chip.
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.field.weather = { type: 'sand', turnsRemaining: 3, fromAbility: false };
+    state.teams[1]!.slots[0]!.party[0] = makePokemon({ speciesId: 95, speciesName: 'onix' });
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const p2WeatherDmg = events.filter(e =>
+      e.type === 'damage-dealt' &&
+      e.data['source'] === 'weather' &&
+      e.data['slotId'] === 'slot-b1'
+    );
+    expect(p2WeatherDmg).toHaveLength(0);
+  });
+
+  it('deals 1/16 maxHp chip to non-Ice Pokémon in snow', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.field.weather = { type: 'snow', turnsRemaining: 3, fromAbility: false };
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const damageEvents = events.filter(e => e.type === 'damage-dealt' && e.data['source'] === 'weather');
+    expect(damageEvents.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('does not chip Ice-type Pokémon in snow', () => {
+    // speciesId 144 = Articuno (Ice/Flying) — immune to snow chip.
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.field.weather = { type: 'snow', turnsRemaining: 3, fromAbility: false };
+    state.teams[1]!.slots[0]!.party[0] = makePokemon({ speciesId: 144, speciesName: 'articuno' });
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const p2WeatherDmg = events.filter(e =>
+      e.type === 'damage-dealt' &&
+      e.data['source'] === 'weather' &&
+      e.data['slotId'] === 'slot-b1'
+    );
+    expect(p2WeatherDmg).toHaveLength(0);
+  });
+});
+
 describe('OHKO moves', () => {
   function makeOhkoState(attackerLevel: number, defenderLevel: number) {
     const state = make1v1State();
