@@ -15,6 +15,7 @@ import type { SecondaryContext } from './effects.js';
 import { MoveEffectRegistry, MoveContext } from './MoveEffectRegistry.js';
 import { buildDefaultRegistry } from './registrations.js';
 import { SWITCH_CLEAR_NAMES, SWITCH_CLEAR_PREFIXES } from './volatileClearRules.js';
+import { isGrounded } from './fieldState.js';
 
 const ALWAYS_THAW_MOVES = new Set(['scald', 'steameruption', 'sparklingaria']);
 
@@ -681,6 +682,26 @@ export class BattleEngine {
               active.fainted = true;
               active.currentHp = 0;
               events.push({ type: 'faint', data: { slotId: slot.slotId, instanceId: active.instanceId } });
+            }
+          }
+        }
+      }
+    }
+
+    // Grassy Terrain EoT heal — 1/16 maxHp for every grounded Pokémon
+    if (s.field.terrain?.type === 'grassy') {
+      const gravityActive = s.field.gravity > 0;
+      for (const team of s.teams) {
+        for (const slot of team.slots) {
+          const active = slot.party[slot.activePokemonIndex];
+          if (!active || active.fainted) continue;
+          const types = this.resolveEffectiveTypes(active);
+          if (isGrounded(active, types, gravityActive)) {
+            const heal = Math.floor(active.maxHp / 16);
+            const actual = Math.min(heal, active.maxHp - active.currentHp);
+            if (actual > 0) {
+              active.currentHp += actual;
+              events.push({ type: 'heal', data: { slotId: slot.slotId, amount: actual, remainingHp: active.currentHp, reason: 'grassy-terrain' } });
             }
           }
         }

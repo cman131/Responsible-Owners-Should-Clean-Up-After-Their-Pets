@@ -844,3 +844,40 @@ describe('OHKO moves', () => {
     expect(events.some(e => e.type === 'miss')).toBe(true);
   });
 });
+
+describe('endOfTurn — Grassy Terrain', () => {
+  it('heals grounded Pokémon by 1/16 maxHp each turn', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.field.terrain = { type: 'grassy', turnsRemaining: 5 };
+    // Use Blastoise (speciesId 9, Water type) for p1 — grounded
+    state.teams[0]!.slots[0]!.party[0]!.speciesId = 9;
+    state.teams[0]!.slots[0]!.party[0]!.speciesName = 'blastoise';
+    // Damage p1 so there's HP to heal (maxHp=100, heal = floor(100/16) = 6)
+    state.teams[0]!.slots[0]!.party[0]!.currentHp = 84; // 16 missing
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const healEvents = events.filter(e => e.type === 'heal' && e.data['reason'] === 'grassy-terrain');
+    expect(healEvents.length).toBeGreaterThanOrEqual(1);
+    // heal = floor(100 / 16) = 6
+    expect(healEvents[0]!.data['amount']).toBe(6);
+  });
+
+  it('does not heal a Flying-type (not grounded)', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.field.terrain = { type: 'grassy', turnsRemaining: 5 };
+    // p1 is already Charizard (speciesId 6, Fire/Flying) — not grounded
+    state.teams[0]!.slots[0]!.party[0]!.currentHp = 80;
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const grassyHealP1 = events.filter(e =>
+      e.type === 'heal' && e.data['reason'] === 'grassy-terrain' && e.data['slotId'] === 'slot-a1'
+    );
+    expect(grassyHealP1).toHaveLength(0);
+  });
+});
