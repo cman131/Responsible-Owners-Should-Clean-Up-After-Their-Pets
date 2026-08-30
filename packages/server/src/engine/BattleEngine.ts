@@ -332,7 +332,7 @@ export class BattleEngine {
             const attackerTypes = attacker.hasTerastallized && attacker.teraType
               ? [attacker.teraType] as PokemonType[]
               : (attackerSpecies?.types ?? ['Normal']) as PokemonType[];
-            const evt = applyStatus(attacker, attackerSlotId, variantEffects.status as StatusCondition, attackerTypes);
+            const evt = applyStatus(attacker, attackerSlotId, variantEffects.status as StatusCondition, attackerTypes, undefined, s.field);
             if (evt) events.push(evt);
           }
         }
@@ -523,7 +523,7 @@ export class BattleEngine {
       const targetHasSub = target.volatileStatus.some(v => v.name === 'substitute');
       if (totalDamage > 0) {
         if (!target.fainted && !targetHasSub) {
-          const secondaryEvent = evaluateSecondaryEffect(move, target, targetSlotId, defTypes);
+          const secondaryEvent = evaluateSecondaryEffect(move, target, targetSlotId, defTypes, s.field);
           if (secondaryEvent) events.push(secondaryEvent);
           const volatileEvent = evaluateVolatileEffect(move.id, target, targetSlotId, attackerSlotId);
           if (volatileEvent) events.push(volatileEvent);
@@ -559,7 +559,7 @@ export class BattleEngine {
           const attackerTypes = attacker.hasTerastallized && attacker.teraType
             ? [attacker.teraType] as PokemonType[]
             : (attackerSpecies?.types ?? ['Normal']) as PokemonType[];
-          const event = applyStatus(attacker, attackerSlotId, afterHitResult.statusToApply as StatusCondition, attackerTypes);
+          const event = applyStatus(attacker, attackerSlotId, afterHitResult.statusToApply as StatusCondition, attackerTypes, undefined, s.field);
           if (event) events.push(event);
         }
       }

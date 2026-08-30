@@ -114,7 +114,7 @@ export class EffectEngine {
   runEndOfTurn(
     pokemon: PartyMember,
     slotId: string,
-    _state: BattleState,
+    state: BattleState,
     allSlots: SlotContext[],
   ): EndOfTurnResult {
     const events: TurnResolveEvent[] = [];
@@ -198,7 +198,7 @@ export class EffectEngine {
       if ((yawnEntry.counter ?? 0) <= 0) {
         pokemon.volatileStatus = pokemon.volatileStatus.filter(v => v.name !== 'yawn');
         // IMMUNITIES.slp = [] so passing [] as types is correct — no type is immune to sleep
-        const evt = applyStatus(pokemon, slotId, 'slp', []);
+        const evt = applyStatus(pokemon, slotId, 'slp', [], undefined, state.field);
         if (evt) events.push(evt);
       }
     }

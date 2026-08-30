@@ -27,7 +27,7 @@ export function applyStatusTarget(status: StatusCondition): MoveEffectHandler {
     const events: TurnResolveEvent[] = [];
     const bypassSub = ctx.move.soundMove === true;
     for (let i = 0; i < ctx.targets.length; i++) {
-      const event = applyStatus(ctx.targets[i]!, ctx.targetSlotIds[i]!, status, ctx.targetTypes[i]!, { bypassSub });
+      const event = applyStatus(ctx.targets[i]!, ctx.targetSlotIds[i]!, status, ctx.targetTypes[i]!, { bypassSub }, ctx.battle?.field);
       if (event) events.push(event);
     }
     return { events };

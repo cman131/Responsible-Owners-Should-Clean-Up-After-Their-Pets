@@ -1,7 +1,8 @@
 import type {
-  PartyMember, StatBoosts, StatusCondition, PokemonType, TurnResolveEvent, Move, BattleState, Secondary,
+  PartyMember, StatBoosts, StatusCondition, PokemonType, TurnResolveEvent, Move, BattleState, Secondary, FieldState,
 } from '@poke-fighter/shared';
 import { canApplyStatus } from './status.js';
+import { isGrounded } from './fieldState.js';
 
 export function applyStatus(
   member: PartyMember,
@@ -9,10 +10,17 @@ export function applyStatus(
   status: StatusCondition,
   types: PokemonType[],
   options?: { bypassSub?: boolean },
+  field?: FieldState,
 ): TurnResolveEvent | null {
   if (!options?.bypassSub && member.volatileStatus.some(v => v.name === 'substitute')) return null;
   if (!canApplyStatus({ status, types, currentStatus: member.status, ability: member.ability })) {
     return null;
+  }
+  // Terrain immunity checks (only when field state is provided)
+  if (field) {
+    const gravityActive = field.gravity > 0;
+    if (field.terrain?.type === 'misty' && isGrounded(member, types, gravityActive)) return null;
+    if (status === 'slp' && field.terrain?.type === 'electric' && isGrounded(member, types, gravityActive)) return null;
   }
   member.status = status;
   if (status === 'slp') {
@@ -49,11 +57,12 @@ export function evaluateSecondaryEffect(
   target: PartyMember,
   targetSlotId: string,
   targetTypes: PokemonType[],
+  field?: FieldState,
 ): TurnResolveEvent | null {
   if (!move.effect || move.effectChance === undefined) return null;
   if (Math.random() * 100 >= move.effectChance) return null;
   if (STATUS_CONDITIONS.has(move.effect)) {
-    return applyStatus(target, targetSlotId, move.effect as StatusCondition, targetTypes);
+    return applyStatus(target, targetSlotId, move.effect as StatusCondition, targetTypes, undefined, field);
   }
   return null;
 }
@@ -120,7 +129,7 @@ export function applySecondaries(ctx: SecondaryContext): TurnResolveEvent[] {
         const member = sec.target === 'user' ? ctx.user : ctx.target;
         const slotId = sec.target === 'user' ? ctx.userSlotId : ctx.targetSlotId;
         const types = sec.target === 'user' ? ([] as PokemonType[]) : ctx.targetTypes;
-        const evt = applyStatus(member, slotId, sec.status as StatusCondition, types);
+        const evt = applyStatus(member, slotId, sec.status as StatusCondition, types, undefined, ctx.battle.field);
         if (evt) events.push(evt);
         break;
       }
