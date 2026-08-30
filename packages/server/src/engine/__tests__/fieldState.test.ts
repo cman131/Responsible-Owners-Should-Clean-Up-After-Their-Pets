@@ -59,8 +59,9 @@ describe('lookup maps', () => {
     expect(WEATHER_ACCURACY['blizzard']?.['snow']).toBe(true);
   });
 
-  it('WEATHER_ACCURACY: hurricane always hits in rain', () => {
+  it('WEATHER_ACCURACY: hurricane always hits in rain, 50% in sun', () => {
     expect(WEATHER_ACCURACY['hurricane']?.['rain']).toBe(true);
+    expect(WEATHER_ACCURACY['hurricane']?.['sun']).toBe(50);
   });
 
   it('SOLAR_MOVES contains solarbeam and solarblade', () => {
