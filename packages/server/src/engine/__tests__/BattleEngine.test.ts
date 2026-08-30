@@ -963,6 +963,41 @@ describe('buildActionOrder — Trick Room', () => {
   });
 });
 
+describe('executeMove — weather and gravity accuracy', () => {
+  it('Thunder always hits in rain (never misses across 100 trials)', () => {
+    let misses = 0;
+    for (let i = 0; i < 100; i++) {
+      const engine = new BattleEngine({ rng: () => Math.random() });
+      const state = make1v1State();
+      state.field.weather = { type: 'rain', turnsRemaining: 5, fromAbility: false };
+      state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'thunder', currentPp: 10, maxPp: 10 };
+      const { events } = engine.resolveTurn(state, {
+        'slot-a1': { type: 'move', moveIndex: 0 },
+        'slot-b1': { type: 'move', moveIndex: 0 },
+      });
+      if (events.some(e => e.type === 'miss' && e.data['moveId'] === 'thunder')) misses++;
+    }
+    expect(misses).toBe(0);
+  });
+
+  it('Gravity boosts accuracy — thunder at 50% in sun becomes 83% under gravity (fixed rng=0.5 lands)', () => {
+    // Thunder in sun has 50% accuracy. With gravity: floor(50 * 5/3) = 83%.
+    // rng=0.5 → rng * 100 = 50 < 83 → hits (no miss event).
+    // Without gravity: rng*100=50 >= 50 → misses.
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.field.gravity = 5;
+    state.field.weather = { type: 'sun', turnsRemaining: 5, fromAbility: false };
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'thunder', currentPp: 10, maxPp: 10 };
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    // With gravity boost: 83% — rng=0.5 means 50 < 83 → hits (no miss event)
+    expect(events.some(e => e.type === 'miss' && e.data['moveId'] === 'thunder')).toBe(false);
+  });
+});
+
 describe('executeMove — Gravity move blocking', () => {
   it('emits move-failed with reason gravity when an airborne move is used under Gravity', () => {
     const engine = new BattleEngine({ rng: () => 0.5 });

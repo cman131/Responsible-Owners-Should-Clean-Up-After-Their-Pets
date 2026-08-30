@@ -15,7 +15,7 @@ import type { SecondaryContext } from './effects.js';
 import { MoveEffectRegistry, MoveContext } from './MoveEffectRegistry.js';
 import { buildDefaultRegistry } from './registrations.js';
 import { SWITCH_CLEAR_NAMES, SWITCH_CLEAR_PREFIXES } from './volatileClearRules.js';
-import { isGrounded, GRAVITY_BLOCKED_MOVES } from './fieldState.js';
+import { isGrounded, GRAVITY_BLOCKED_MOVES, WEATHER_ACCURACY } from './fieldState.js';
 
 const ALWAYS_THAW_MOVES = new Set(['scald', 'steameruption', 'sparklingaria']);
 
@@ -291,7 +291,17 @@ export class BattleEngine {
         const tMon = tSlot && tSlot.party[tSlot.activePokemonIndex];
         defenderEvasion = tMon?.statBoosts.evasion ?? 0;
       }
-      const hitChance = computeHitChance(move.accuracy, attacker.statBoosts.accuracy, defenderEvasion);
+      let hitChance: number | 'always' = computeHitChance(move.accuracy, attacker.statBoosts.accuracy, defenderEvasion);
+      // Weather accuracy override (Thunder in rain, Blizzard in snow, Hurricane in rain)
+      if (s.field.weather) {
+        const weatherOverride = WEATHER_ACCURACY[move.id]?.[s.field.weather.type];
+        if (weatherOverride === true) hitChance = 'always';
+        else if (typeof weatherOverride === 'number') hitChance = weatherOverride;
+      }
+      // Gravity boosts all move accuracy by 5/3
+      if (s.field.gravity > 0 && hitChance !== 'always') {
+        hitChance = Math.min(100, Math.floor((hitChance as number) * 5 / 3));
+      }
       if (hitChance !== 'always' && this.rng() * 100 >= hitChance) {
         events.push({ type: 'miss', data: { attackerSlotId, moveId: move.id } });
         return { newState: s, events };
