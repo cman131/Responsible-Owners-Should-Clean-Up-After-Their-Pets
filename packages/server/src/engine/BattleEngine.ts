@@ -708,11 +708,31 @@ export class BattleEngine {
       }
     }
 
+    // Field counter decrements + expiry events
     if (s.field.weather) {
       s.field.weather.turnsRemaining -= 1;
       if (s.field.weather.turnsRemaining <= 0) {
-        events.push({ type: 'weather-change', data: { weather: null } });
+        events.push({ type: 'weather-ended', data: { weather: s.field.weather.type } });
         delete s.field.weather;
+      }
+    }
+    if (s.field.terrain) {
+      s.field.terrain.turnsRemaining -= 1;
+      if (s.field.terrain.turnsRemaining <= 0) {
+        events.push({ type: 'terrain-ended', data: { terrain: s.field.terrain.type } });
+        delete s.field.terrain;
+      }
+    }
+    if (s.field.trickroom > 0) {
+      s.field.trickroom -= 1;
+      if (s.field.trickroom === 0) {
+        events.push({ type: 'trickroom-ended', data: {} });
+      }
+    }
+    if (s.field.gravity > 0) {
+      s.field.gravity -= 1;
+      if (s.field.gravity === 0) {
+        events.push({ type: 'gravity-ended', data: {} });
       }
     }
 

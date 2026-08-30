@@ -445,8 +445,8 @@ describe('Previously-unimplemented status moves', () => {
       'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
     });
     expect(newState.field.terrain?.type).toBe('electric');
-    // Terrain is set to 5 turns; end-of-turn does not yet decrement terrain, so 5 remains
-    expect(newState.field.terrain?.turnsRemaining).toBe(5);
+    // Terrain is set to 5 turns then decremented by 1 at end-of-turn, so 4 remains
+    expect(newState.field.terrain?.turnsRemaining).toBe(4);
   });
 
   it('Reflect sets reflect on user team side for 5 turns', () => {
@@ -496,8 +496,8 @@ describe('Previously-unimplemented status moves', () => {
       'slot-a1': { type: 'move', moveIndex: 1 },
       'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
     });
-    // Trick room is set to 5 turns; end-of-turn does not yet decrement trickroom, so 5 remains
-    expect(newState.field.trickroom).toBe(5);
+    // Trick room is set to 5 turns then decremented by 1 at end-of-turn, so 4 remains
+    expect(newState.field.trickroom).toBe(4);
     expect(events.some(e => e.type === 'trickroom-started')).toBe(true);
   });
 
@@ -879,5 +879,55 @@ describe('endOfTurn — Grassy Terrain', () => {
       e.type === 'heal' && e.data['reason'] === 'grassy-terrain' && e.data['slotId'] === 'slot-a1'
     );
     expect(grassyHealP1).toHaveLength(0);
+  });
+});
+
+describe('endOfTurn — field counter decrements', () => {
+  it('emits weather-ended and clears field.weather when turnsRemaining reaches 0', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.field.weather = { type: 'rain', turnsRemaining: 1, fromAbility: false };
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    expect(events.some(e => e.type === 'weather-ended' && e.data['weather'] === 'rain')).toBe(true);
+    expect(newState.field.weather).toBeUndefined();
+  });
+
+  it('emits terrain-ended and clears field.terrain when turnsRemaining reaches 0', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.field.terrain = { type: 'electric', turnsRemaining: 1 };
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    expect(events.some(e => e.type === 'terrain-ended' && e.data['terrain'] === 'electric')).toBe(true);
+    expect(newState.field.terrain).toBeUndefined();
+  });
+
+  it('emits trickroom-ended when trickroom counter reaches 0', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.field.trickroom = 1;
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    expect(events.some(e => e.type === 'trickroom-ended')).toBe(true);
+    expect(newState.field.trickroom).toBe(0);
+  });
+
+  it('emits gravity-ended when gravity counter reaches 0', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.field.gravity = 1;
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    expect(events.some(e => e.type === 'gravity-ended')).toBe(true);
+    expect(newState.field.gravity).toBe(0);
   });
 });
