@@ -331,14 +331,10 @@ export class BattleEngine {
 
       // Psychic Terrain: priority moves fail against grounded targets
       if (s.field.terrain?.type === 'psychic' && move.priority > 0) {
-        const tSlotForGrounding = this.findSlot(s, targetSlotId);
-        const tMonForGrounding = tSlotForGrounding?.party[tSlotForGrounding.activePokemonIndex];
-        if (tMonForGrounding) {
-          const tTypesForGrounding = this.resolveEffectiveTypes(tMonForGrounding);
-          if (isGrounded(tMonForGrounding, tTypesForGrounding, s.field.gravity > 0)) {
-            events.push({ type: 'move-failed', data: { moveId: move.id, reason: 'psychic-terrain', targetSlotId } });
-            continue;
-          }
+        const tTypesForGrounding = this.resolveEffectiveTypes(target);
+        if (isGrounded(target, tTypesForGrounding, s.field.gravity > 0)) {
+          events.push({ type: 'move-failed', data: { moveId: move.id, reason: 'psychic-terrain', targetSlotId } });
+          continue;
         }
       }
 

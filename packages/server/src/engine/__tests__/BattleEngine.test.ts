@@ -1016,6 +1016,7 @@ describe('executeMove — Psychic Terrain priority block', () => {
 
     const failedEvt = events.find(e => e.type === 'move-failed' && e.data['reason'] === 'psychic-terrain');
     expect(failedEvt).toBeDefined();
+    expect(failedEvt!.data['targetSlotId']).toBe('slot-b1');
   });
 
   it('does not block a normal-priority move under Psychic Terrain', () => {
