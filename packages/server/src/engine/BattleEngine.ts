@@ -15,7 +15,7 @@ import type { SecondaryContext } from './effects.js';
 import { MoveEffectRegistry, MoveContext } from './MoveEffectRegistry.js';
 import { buildDefaultRegistry } from './registrations.js';
 import { SWITCH_CLEAR_NAMES, SWITCH_CLEAR_PREFIXES } from './volatileClearRules.js';
-import { isGrounded, GRAVITY_BLOCKED_MOVES, WEATHER_ACCURACY } from './fieldState.js';
+import { isGrounded, GRAVITY_BLOCKED_MOVES, WEATHER_ACCURACY, SOLAR_MOVES, WEATHER_BALL_TYPE, GRASSY_TERRAIN_HALVED } from './fieldState.js';
 
 const ALWAYS_THAW_MOVES = new Set(['scald', 'steameruption', 'sparklingaria']);
 
@@ -323,6 +323,20 @@ export class BattleEngine {
       }
     }
 
+    // Move type and base power overrides (computed once, apply to all targets)
+    let effectiveBasePower = move.basePower;
+    let effectiveMoveType = move.type;
+
+    // Solar Beam / Solar Blade: half power in any non-sun weather
+    if (SOLAR_MOVES.has(move.id) && s.field.weather && s.field.weather.type !== 'sun') {
+      effectiveBasePower = Math.floor(effectiveBasePower / 2);
+    }
+    // Weather Ball: double power + type change in active weather
+    if (move.id === 'weatherball' && s.field.weather) {
+      effectiveBasePower = 80;
+      effectiveMoveType = WEATHER_BALL_TYPE[s.field.weather.type] ?? move.type;
+    }
+
     for (const targetSlotId of targetSlotIds) {
       const targetSlot = this.findSlot(s, targetSlotId);
       if (!targetSlot) continue;
@@ -370,7 +384,7 @@ export class BattleEngine {
         continue;
       }
 
-      if (target.status === 'frz' && (move.type === 'Fire' || ALWAYS_THAW_MOVES.has(move.id))) {
+      if (target.status === 'frz' && (effectiveMoveType === 'Fire' || ALWAYS_THAW_MOVES.has(move.id))) {
         delete target.status;
         events.push({
           type: 'status-cured',
@@ -387,12 +401,12 @@ export class BattleEngine {
       // Foresight/Odor Sleuth: Normal/Fighting hits Ghost
       let effectiveDefTypes = defTypes;
       if (target.volatileStatus.some(v => v.name === 'foresight')) {
-        if (move.type === 'Normal' || move.type === 'Fighting') {
+        if (effectiveMoveType === 'Normal' || effectiveMoveType === 'Fighting') {
           effectiveDefTypes = effectiveDefTypes.filter(t => t !== 'Ghost');
         }
       }
       // Miracle Eye: Psychic hits Dark
-      if (target.volatileStatus.some(v => v.name === 'miracle-eye') && move.type === 'Psychic') {
+      if (target.volatileStatus.some(v => v.name === 'miracle-eye') && effectiveMoveType === 'Psychic') {
         effectiveDefTypes = effectiveDefTypes.filter(t => t !== 'Dark');
       }
       // Roost: user loses Flying type for the rest of this turn
@@ -401,14 +415,14 @@ export class BattleEngine {
         if (effectiveDefTypes.length === 0) effectiveDefTypes = ['Normal'];
       }
 
-      const effectiveness = this.data.getCombinedEffectiveness(move.type, effectiveDefTypes);
+      const effectiveness = this.data.getCombinedEffectiveness(effectiveMoveType, effectiveDefTypes);
       if (effectiveness === 0) {
         events.push({ type: 'move-used', data: { note: 'no-effect', targetSlotId, attackerName: attacker.nickname, moveName: move.name } });
         continue;
       }
 
       // Magnet Rise: Ground immunity
-      if (move.type === 'Ground' && target.volatileStatus.some(v => v.name === 'magnet-rise')) {
+      if (effectiveMoveType === 'Ground' && target.volatileStatus.some(v => v.name === 'magnet-rise')) {
         events.push({ type: 'move-used', data: { note: 'no-effect', targetSlotId, attackerName: attacker.nickname, moveName: move.name } });
         continue;
       }
@@ -450,7 +464,7 @@ export class BattleEngine {
         const attackerTypes = attacker.hasTerastallized && attacker.teraType
           ? [attacker.teraType] as PokemonType[]
           : (attackerSpecies?.types ?? ['Normal']) as PokemonType[];
-        const stab = attackerTypes.includes(move.type);
+        const stab = attackerTypes.includes(effectiveMoveType);
 
         const rawAtkStat = isPhysical ? attacker.stats.atk : attacker.stats.spa;
         const boostKey = isPhysical ? 'atk' as const : 'spa' as const;
@@ -466,7 +480,7 @@ export class BattleEngine {
         const abilityHooks = getAbilityHooks(attacker.ability);
         if (abilityHooks.onAttackerModifier) {
           atkStat = Math.floor(atkStat * abilityHooks.onAttackerModifier({
-            user: attacker, state: s, moveType: move.type, basePower: move.basePower, target,
+            user: attacker, state: s, moveType: effectiveMoveType, basePower: effectiveBasePower, target,
           }));
         }
         const defStat = getEffectiveStat(rawDefStat, defBoost, defBoostKey);
@@ -474,7 +488,7 @@ export class BattleEngine {
         let otherModifiers = isSpread ? 0.75 : 1;
         if (itemHooks.onAttackerModifier) {
           otherModifiers *= itemHooks.onAttackerModifier({
-            holder: attacker, state: s, moveType: move.type, basePower: move.basePower, target, isPhysical,
+            holder: attacker, state: s, moveType: effectiveMoveType, basePower: effectiveBasePower, target, isPhysical,
           });
         }
 
@@ -482,21 +496,21 @@ export class BattleEngine {
           level: attacker.level,
           attackStat: atkStat,
           defenseStat: defStat,
-          basePower: move.basePower,
+          basePower: effectiveBasePower,
           typeEffectiveness: effectiveness,
           stab,
           isBurned: isPhysical && attacker.status === 'brn',
           randomFactor: randomDamageFactor(),
           isCritical,
-          moveType: move.type,
+          moveType: effectiveMoveType,
           ...(s.field.weather ? { weather: s.field.weather.type } : {}),
           otherModifiers,
         });
 
         let finalDamage = damage;
-        const abilityDmgMod = abilityHooks.onDamageModifier?.({ user: attacker, state: s, moveType: move.type, basePower: move.basePower, target });
+        const abilityDmgMod = abilityHooks.onDamageModifier?.({ user: attacker, state: s, moveType: effectiveMoveType, basePower: effectiveBasePower, target });
         if (abilityDmgMod !== undefined) finalDamage = Math.floor(finalDamage * abilityDmgMod);
-        const itemDmgMod = itemHooks.onDamageModifier?.({ holder: attacker, state: s, moveType: move.type, basePower: move.basePower, target, isPhysical });
+        const itemDmgMod = itemHooks.onDamageModifier?.({ holder: attacker, state: s, moveType: effectiveMoveType, basePower: effectiveBasePower, target, isPhysical });
         if (itemDmgMod !== undefined) finalDamage = Math.floor(finalDamage * itemDmgMod);
 
         const subEntry = target.volatileStatus.find(v => v.name === 'substitute');
@@ -582,7 +596,7 @@ export class BattleEngine {
       const defenderAbilityHooks = getAbilityHooks(target.ability);
       if (defenderAbilityHooks.onAfterHit && totalDamage > 0 && !target.fainted) {
         const afterHitResult = defenderAbilityHooks.onAfterHit({
-          user: target, state: s, moveType: move.type, basePower: move.basePower,
+          user: target, state: s, moveType: effectiveMoveType, basePower: effectiveBasePower,
           target: attacker, isPhysical: move.category === 'physical',
         });
         if (afterHitResult?.statusToApply) {

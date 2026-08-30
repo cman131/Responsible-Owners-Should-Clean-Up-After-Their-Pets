@@ -1066,3 +1066,59 @@ describe('executeMove — Gravity move blocking', () => {
     expect(events.some(e => e.type === 'move-failed' && e.data['reason'] === 'gravity')).toBe(false);
   });
 });
+
+describe('executeMove — Solar Beam / Weather Ball', () => {
+  it('Solar Beam deals less damage in rain (half base power)', () => {
+    const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0.9);
+
+    const mkState = () => {
+      const s = make1v1State();
+      s.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'solarbeam', currentPp: 10, maxPp: 10 };
+      // Pre-apply charge volatile so it fires this turn
+      s.teams[0]!.slots[0]!.party[0]!.volatileStatus.push({ name: 'charging-solarbeam' });
+      return s;
+    };
+
+    const clear = mkState();
+    const rain = mkState();
+    rain.field.weather = { type: 'rain', turnsRemaining: 5, fromAbility: false };
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { events: clearEvents } = engine.resolveTurn(clear, { 'slot-a1': { type: 'move', moveIndex: 0 }, 'slot-b1': { type: 'move', moveIndex: 0 } });
+    const { events: rainEvents }  = engine.resolveTurn(rain,  { 'slot-a1': { type: 'move', moveIndex: 0 }, 'slot-b1': { type: 'move', moveIndex: 0 } });
+
+    mockRandom.mockRestore();
+
+    const clearDmg = clearEvents.find(e => e.type === 'damage-dealt' && e.data['attackerSlotId'] === 'slot-a1')?.data['damage'] as number;
+    const rainDmg  = rainEvents.find(e => e.type === 'damage-dealt' && e.data['attackerSlotId'] === 'slot-a1')?.data['damage'] as number;
+
+    expect(clearDmg).toBeGreaterThan(0);
+    expect(rainDmg).toBeGreaterThan(0);
+    // Half base power → roughly half damage (rain also gives 1.5× water moves but no boost to Grass moves)
+    expect(clearDmg).toBeGreaterThan(rainDmg);
+  });
+
+  it('Weather Ball doubles power and changes type in sun', () => {
+    const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0.9);
+
+    const clearState = make1v1State();
+    clearState.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'weatherball', currentPp: 10, maxPp: 10 };
+
+    const sunState = make1v1State();
+    sunState.field.weather = { type: 'sun', turnsRemaining: 5, fromAbility: false };
+    sunState.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'weatherball', currentPp: 10, maxPp: 10 };
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { events: clearEvts } = engine.resolveTurn(clearState, { 'slot-a1': { type: 'move', moveIndex: 0 }, 'slot-b1': { type: 'move', moveIndex: 0 } });
+    const { events: sunEvts }   = engine.resolveTurn(sunState,   { 'slot-a1': { type: 'move', moveIndex: 0 }, 'slot-b1': { type: 'move', moveIndex: 0 } });
+
+    mockRandom.mockRestore();
+
+    const clearDmg = clearEvts.find(e => e.type === 'damage-dealt' && e.data['attackerSlotId'] === 'slot-a1')?.data['damage'] as number;
+    const sunDmg   = sunEvts.find(e => e.type === 'damage-dealt' && e.data['attackerSlotId'] === 'slot-a1')?.data['damage'] as number;
+
+    // Sun: 80bp Fire ×1.5 sun = effectively 120bp-equivalent (plus Fire effectiveness vs target).
+    // Clear: 50bp Normal. Sun should deal significantly more damage.
+    expect(sunDmg).toBeGreaterThan(clearDmg);
+  });
+});
