@@ -931,3 +931,34 @@ describe('endOfTurn — field counter decrements', () => {
     expect(newState.field.gravity).toBe(0);
   });
 });
+
+describe('buildActionOrder — Trick Room', () => {
+  it('slower Pokémon moves first when Trick Room is active', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State(); // p1 spe=100 (slot-a1), p2 spe=80 (slot-b1)
+    state.field.trickroom = 3;
+
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    const moveUsedEvents = events.filter(e => e.type === 'move-used');
+    // p2 (spe=80, slower) should move first under Trick Room
+    expect(moveUsedEvents[0]!.data['attackerSlotId']).toBe('slot-b1');
+  });
+
+  it('faster Pokémon moves first when Trick Room is NOT active', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State(); // p1 spe=100, p2 spe=80
+    state.field.trickroom = 0;
+
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    const moveUsedEvents = events.filter(e => e.type === 'move-used');
+    expect(moveUsedEvents[0]!.data['attackerSlotId']).toBe('slot-a1');
+  });
+});

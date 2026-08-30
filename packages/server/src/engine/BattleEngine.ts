@@ -117,8 +117,13 @@ export class BattleEngine {
       return { slotId, priority, spe: effectiveSpe };
     });
 
+    const trickRoomActive = state.field.trickroom > 0;
     return entries
-      .sort((a, b) => b.priority - a.priority || b.spe - a.spe || Math.random() - 0.5)
+      .sort((a, b) =>
+        b.priority - a.priority ||
+        (trickRoomActive ? a.spe - b.spe : b.spe - a.spe) ||
+        Math.random() - 0.5,
+      )
       .map((e) => e.slotId);
   }
 
