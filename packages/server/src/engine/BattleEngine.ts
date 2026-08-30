@@ -492,6 +492,19 @@ export class BattleEngine {
           });
         }
 
+        // Terrain power modifiers
+        const terrain = s.field.terrain?.type;
+        if (terrain) {
+          const gravityActive = s.field.gravity > 0;
+          const atkGrounded = isGrounded(attacker, attackerTypes, gravityActive);
+          const defGrounded = isGrounded(target, effectiveDefTypes, gravityActive);
+          if (terrain === 'electric' && effectiveMoveType === 'Electric' && atkGrounded) otherModifiers *= 1.5;
+          if (terrain === 'grassy'   && effectiveMoveType === 'Grass'    && atkGrounded) otherModifiers *= 1.5;
+          if (terrain === 'grassy'   && GRASSY_TERRAIN_HALVED.has(move.id))              otherModifiers *= 0.5;
+          if (terrain === 'misty'    && effectiveMoveType === 'Dragon'   && defGrounded) otherModifiers *= 0.5;
+          if (terrain === 'psychic'  && effectiveMoveType === 'Psychic'  && atkGrounded) otherModifiers *= 1.5;
+        }
+
         const { damage } = calcDamage({
           level: attacker.level,
           attackStat: atkStat,

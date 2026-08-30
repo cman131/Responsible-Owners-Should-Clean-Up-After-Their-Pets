@@ -1122,3 +1122,82 @@ describe('executeMove — Solar Beam / Weather Ball', () => {
     expect(sunDmg).toBeGreaterThan(clearDmg);
   });
 });
+
+describe('executeMove — terrain power modifiers', () => {
+  it('Electric move by grounded attacker deals 1.5× damage in Electric Terrain', () => {
+    const mkState = (withTerrain: boolean) => {
+      const s = make1v1State();
+      // Give p1 a grounded Pokémon (Blastoise, Water type)
+      s.teams[0]!.slots[0]!.party[0]!.speciesId = 9;
+      s.teams[0]!.slots[0]!.party[0]!.speciesName = 'blastoise';
+      s.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'thunderbolt', currentPp: 15, maxPp: 15 };
+      // Give p2 enough HP so damage isn't capped by currentHp
+      s.teams[1]!.slots[0]!.party[0]!.maxHp = 300;
+      s.teams[1]!.slots[0]!.party[0]!.currentHp = 300;
+      if (withTerrain) s.field.terrain = { type: 'electric', turnsRemaining: 5 };
+      return s;
+    };
+
+    const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0.9);
+    const engine = new BattleEngine({ rng: () => 0.85 });
+    const { events: plainEvts }    = engine.resolveTurn(mkState(false), { 'slot-a1': { type: 'move', moveIndex: 0 }, 'slot-b1': { type: 'move', moveIndex: 0 } });
+    const { events: electricEvts } = engine.resolveTurn(mkState(true),  { 'slot-a1': { type: 'move', moveIndex: 0 }, 'slot-b1': { type: 'move', moveIndex: 0 } });
+    mockRandom.mockRestore();
+
+    const plainDmg    = plainEvts.find(e => e.type === 'damage-dealt' && e.data['attackerSlotId'] === 'slot-a1')?.data['damage'] as number;
+    const electricDmg = electricEvts.find(e => e.type === 'damage-dealt' && e.data['attackerSlotId'] === 'slot-a1')?.data['damage'] as number;
+
+    expect(electricDmg).toBeGreaterThan(plainDmg);
+    expect(Math.abs(electricDmg / plainDmg - 1.5)).toBeLessThan(0.05);
+  });
+
+  it('Earthquake deals half power in Grassy Terrain', () => {
+    const mkState = (withTerrain: boolean) => {
+      const s = make1v1State();
+      s.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'earthquake', currentPp: 10, maxPp: 10 };
+      // Replace p2 with Blastoise (Water, grounded) — not immune to Ground moves
+      s.teams[1]!.slots[0]!.party[0]!.speciesId = 9;
+      s.teams[1]!.slots[0]!.party[0]!.speciesName = 'blastoise';
+      if (withTerrain) s.field.terrain = { type: 'grassy', turnsRemaining: 5 };
+      return s;
+    };
+
+    const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0.9);
+    const engine = new BattleEngine({ rng: () => 0.85 });
+    const { events: plainEvts }  = engine.resolveTurn(mkState(false), { 'slot-a1': { type: 'move', moveIndex: 0 }, 'slot-b1': { type: 'move', moveIndex: 0 } });
+    const { events: grassyEvts } = engine.resolveTurn(mkState(true),  { 'slot-a1': { type: 'move', moveIndex: 0 }, 'slot-b1': { type: 'move', moveIndex: 0 } });
+    mockRandom.mockRestore();
+
+    const plainDmg  = plainEvts.find(e => e.type === 'damage-dealt' && e.data['attackerSlotId'] === 'slot-a1')?.data['damage'] as number;
+    const grassyDmg = grassyEvts.find(e => e.type === 'damage-dealt' && e.data['attackerSlotId'] === 'slot-a1')?.data['damage'] as number;
+
+    expect(grassyDmg).toBeLessThan(plainDmg);
+    expect(Math.abs(plainDmg / grassyDmg - 2)).toBeLessThan(0.1);
+  });
+
+  it('Dragon move is halved against a grounded defender in Misty Terrain', () => {
+    const mkState = (withTerrain: boolean) => {
+      const s = make1v1State();
+      s.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'dragonpulse', currentPp: 10, maxPp: 10 };
+      // p2 is Charizard (Fire/Flying) — NOT grounded.
+      // For Misty Terrain to halve Dragon, the defender must be grounded.
+      // Replace p2 with Blastoise (Water, grounded)
+      s.teams[1]!.slots[0]!.party[0]!.speciesId = 9;
+      s.teams[1]!.slots[0]!.party[0]!.speciesName = 'blastoise';
+      if (withTerrain) s.field.terrain = { type: 'misty', turnsRemaining: 5 };
+      return s;
+    };
+
+    const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0.9);
+    const engine = new BattleEngine({ rng: () => 0.85 });
+    const { events: plainEvts } = engine.resolveTurn(mkState(false), { 'slot-a1': { type: 'move', moveIndex: 0 }, 'slot-b1': { type: 'move', moveIndex: 0 } });
+    const { events: mistyEvts } = engine.resolveTurn(mkState(true),  { 'slot-a1': { type: 'move', moveIndex: 0 }, 'slot-b1': { type: 'move', moveIndex: 0 } });
+    mockRandom.mockRestore();
+
+    const plainDmg = plainEvts.find(e => e.type === 'damage-dealt' && e.data['attackerSlotId'] === 'slot-a1')?.data['damage'] as number;
+    const mistyDmg = mistyEvts.find(e => e.type === 'damage-dealt' && e.data['attackerSlotId'] === 'slot-a1')?.data['damage'] as number;
+
+    expect(mistyDmg).toBeLessThan(plainDmg);
+    expect(Math.abs(plainDmg / mistyDmg - 2)).toBeLessThan(0.1);
+  });
+});
