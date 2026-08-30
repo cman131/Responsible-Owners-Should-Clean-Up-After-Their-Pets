@@ -204,8 +204,9 @@ describe('setWeather', () => {
     expect(state.field.weather?.type).toBe('rain');
     expect(state.field.weather?.turnsRemaining).toBe(5);
     expect(state.field.weather?.fromAbility).toBe(false);
-    expect(events[0]!.type).toBe('weather-change');
+    expect(events[0]!.type).toBe('weather-started');
     expect(events[0]!.data['weather']).toBe('rain');
+    expect(events[0]!.data['turnsRemaining']).toBe(5);
   });
 });
 
@@ -216,7 +217,7 @@ describe('setTerrain', () => {
     const { events } = setTerrain('electric')(ctx);
     expect(state.field.terrain?.type).toBe('electric');
     expect(state.field.terrain?.turnsRemaining).toBe(5);
-    expect(events[0]!.type).toBe('terrain-change');
+    expect(events[0]!.type).toBe('terrain-started');
   });
 });
 

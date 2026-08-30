@@ -68,14 +68,14 @@ export function healPercent(fraction: number): MoveEffectHandler {
 export function setWeather(type: WeatherType, turns: number): MoveEffectHandler {
   return (ctx) => {
     ctx.battle.field.weather = { type, turnsRemaining: turns, fromAbility: false };
-    return { events: [{ type: 'weather-change', data: { weather: type } }] };
+    return { events: [{ type: 'weather-started', data: { weather: type, turnsRemaining: turns } }] };
   };
 }
 
 export function setTerrain(type: TerrainType): MoveEffectHandler {
   return (ctx) => {
     ctx.battle.field.terrain = { type, turnsRemaining: 5 };
-    return { events: [{ type: 'terrain-change', data: { terrain: type } }] };
+    return { events: [{ type: 'terrain-started', data: { terrain: type } }] };
   };
 }
 
