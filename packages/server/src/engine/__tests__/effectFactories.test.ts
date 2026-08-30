@@ -242,39 +242,40 @@ describe('setSideCondition', () => {
 });
 
 describe('trickRoom', () => {
-  it('activates trick room for 5 turns when not active', () => {
-    const state = make1v1State(); // trickroom: 0
+  it('activates trick room for 5 turns and emits trickroom-started', () => {
+    const state = make1v1State();
     const ctx = makeCtx({ battle: state });
     const { events } = trickRoom()(ctx);
     expect(state.field.trickroom).toBe(5);
-    expect(events[0]!.type).toBe('field-effect-set');
-    expect(events[0]!.data['effect']).toBe('trickroom');
-    expect(events[0]!.data['turnsRemaining']).toBe(5);
+    expect(events[0]!.type).toBe('trickroom-started');
   });
 
-  it('deactivates trick room when already active', () => {
+  it('deactivates trick room when already active and emits trickroom-ended', () => {
     const state = make1v1State();
     state.field.trickroom = 3;
     const ctx = makeCtx({ battle: state });
-    trickRoom()(ctx);
+    const { events } = trickRoom()(ctx);
     expect(state.field.trickroom).toBe(0);
+    expect(events[0]!.type).toBe('trickroom-ended');
   });
 });
 
 describe('gravity', () => {
-  it('activates gravity for 5 turns', () => {
+  it('activates gravity for 5 turns and emits gravity-started', () => {
     const state = make1v1State();
     const ctx = makeCtx({ battle: state });
-    gravity()(ctx);
+    const { events } = gravity()(ctx);
     expect(state.field.gravity).toBe(5);
+    expect(events[0]!.type).toBe('gravity-started');
   });
 
-  it('deactivates gravity when already active', () => {
+  it('deactivates gravity when already active and emits gravity-ended', () => {
     const state = make1v1State();
     state.field.gravity = 2;
     const ctx = makeCtx({ battle: state });
-    gravity()(ctx);
+    const { events } = gravity()(ctx);
     expect(state.field.gravity).toBe(0);
+    expect(events[0]!.type).toBe('gravity-ended');
   });
 });
 

@@ -498,7 +498,7 @@ describe('Previously-unimplemented status moves', () => {
     });
     // Trick room is set to 5 turns; end-of-turn does not yet decrement trickroom, so 5 remains
     expect(newState.field.trickroom).toBe(5);
-    expect(events.some(e => e.type === 'field-effect-set')).toBe(true);
+    expect(events.some(e => e.type === 'trickroom-started')).toBe(true);
   });
 
   it('emits move-failed with reason unimplemented for an unknown status move', () => {

@@ -94,15 +94,23 @@ export function setSideCondition(
 
 export function trickRoom(): MoveEffectHandler {
   return (ctx) => {
-    ctx.battle.field.trickroom = ctx.battle.field.trickroom > 0 ? 0 : 5;
-    return { events: [{ type: 'field-effect-set', data: { effect: 'trickroom', turnsRemaining: ctx.battle.field.trickroom } }] };
+    if (ctx.battle.field.trickroom > 0) {
+      ctx.battle.field.trickroom = 0;
+      return { events: [{ type: 'trickroom-ended', data: {} }] };
+    }
+    ctx.battle.field.trickroom = 5;
+    return { events: [{ type: 'trickroom-started', data: {} }] };
   };
 }
 
 export function gravity(): MoveEffectHandler {
   return (ctx) => {
-    ctx.battle.field.gravity = ctx.battle.field.gravity > 0 ? 0 : 5;
-    return { events: [{ type: 'field-effect-set', data: { effect: 'gravity', turnsRemaining: ctx.battle.field.gravity } }] };
+    if (ctx.battle.field.gravity > 0) {
+      ctx.battle.field.gravity = 0;
+      return { events: [{ type: 'gravity-ended', data: {} }] };
+    }
+    ctx.battle.field.gravity = 5;
+    return { events: [{ type: 'gravity-started', data: {} }] };
   };
 }
 
