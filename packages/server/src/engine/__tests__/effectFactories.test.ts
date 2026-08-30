@@ -197,7 +197,7 @@ describe('healPercent', () => {
 });
 
 describe('setWeather', () => {
-  it('sets the weather and returns a weather-change event', () => {
+  it('sets the weather and returns a weather-started event with turnsRemaining', () => {
     const state = make1v1State();
     const ctx = makeCtx({ battle: state });
     const { events } = setWeather('rain', 5)(ctx);
