@@ -998,6 +998,41 @@ describe('executeMove — weather and gravity accuracy', () => {
   });
 });
 
+describe('executeMove — Psychic Terrain priority block', () => {
+  it('blocks a priority move targeting a grounded Pokémon under Psychic Terrain', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.field.terrain = { type: 'psychic', turnsRemaining: 5 };
+    // Give p1 a priority move — quickattack has priority: 1
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'quickattack', currentPp: 30, maxPp: 30 };
+    // Make p2 a grounded Pokémon (Blastoise, Water type — not Flying)
+    state.teams[1]!.slots[0]!.party[0]!.speciesId = 9;
+    state.teams[1]!.slots[0]!.party[0]!.speciesName = 'blastoise';
+
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    const failedEvt = events.find(e => e.type === 'move-failed' && e.data['reason'] === 'psychic-terrain');
+    expect(failedEvt).toBeDefined();
+  });
+
+  it('does not block a normal-priority move under Psychic Terrain', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.field.terrain = { type: 'psychic', turnsRemaining: 5 };
+    // default move (flamethrower) has priority 0
+
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    expect(events.some(e => e.type === 'move-failed' && e.data['reason'] === 'psychic-terrain')).toBe(false);
+  });
+});
+
 describe('executeMove — Gravity move blocking', () => {
   it('emits move-failed with reason gravity when an airborne move is used under Gravity', () => {
     const engine = new BattleEngine({ rng: () => 0.5 });
