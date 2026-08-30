@@ -88,10 +88,15 @@ export interface TurnResolveEvent {
     | 'status-applied'
     | 'status-cured'
     | 'stat-change'
-    | 'weather-change'
-    | 'terrain-change'
+    | 'weather-started'
+    | 'weather-ended'
+    | 'terrain-started'
+    | 'terrain-ended'
     | 'side-condition-set'   // Reflect, Light Screen, Stealth Rock, Spikes, etc.
-    | 'field-effect-set'     // Trick Room, Gravity
+    | 'trickroom-started'
+    | 'trickroom-ended'
+    | 'gravity-started'
+    | 'gravity-ended'
     | 'volatile-applied'
     | 'volatile-cured'
     | 'terastallize'
