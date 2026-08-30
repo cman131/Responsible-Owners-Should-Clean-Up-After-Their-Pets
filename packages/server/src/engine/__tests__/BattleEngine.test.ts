@@ -962,3 +962,36 @@ describe('buildActionOrder — Trick Room', () => {
     expect(moveUsedEvents[0]!.data['attackerSlotId']).toBe('slot-a1');
   });
 });
+
+describe('executeMove — Gravity move blocking', () => {
+  it('emits move-failed with reason gravity when an airborne move is used under Gravity', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.field.gravity = 5;
+    // Override p1's first move to 'fly'
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'fly', currentPp: 15, maxPp: 15 };
+
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    const failedEvt = events.find(e => e.type === 'move-failed' && e.data['reason'] === 'gravity');
+    expect(failedEvt).toBeDefined();
+    expect(failedEvt!.data['moveId']).toBe('fly');
+  });
+
+  it('allows moves not in the blocked list under Gravity', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.field.gravity = 5;
+    // p1's default move (moveIndex 0) is flamethrower — not gravity-blocked
+
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    expect(events.some(e => e.type === 'move-failed' && e.data['reason'] === 'gravity')).toBe(false);
+  });
+});

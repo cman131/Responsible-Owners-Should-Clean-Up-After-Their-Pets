@@ -15,7 +15,7 @@ import type { SecondaryContext } from './effects.js';
 import { MoveEffectRegistry, MoveContext } from './MoveEffectRegistry.js';
 import { buildDefaultRegistry } from './registrations.js';
 import { SWITCH_CLEAR_NAMES, SWITCH_CLEAR_PREFIXES } from './volatileClearRules.js';
-import { isGrounded } from './fieldState.js';
+import { isGrounded, GRAVITY_BLOCKED_MOVES } from './fieldState.js';
 
 const ALWAYS_THAW_MOVES = new Set(['scald', 'steameruption', 'sparklingaria']);
 
@@ -219,6 +219,12 @@ export class BattleEngine {
     moveSlot.currentPp = Math.max(0, moveSlot.currentPp - 1);
 
     events.push({ type: 'move-used', data: { attackerSlotId, attackerName: attacker.nickname, moveId: move.id, moveName: move.name } });
+
+    // Gravity blocks airborne moves
+    if (s.field.gravity > 0 && GRAVITY_BLOCKED_MOVES.has(move.id)) {
+      events.push({ type: 'move-failed', data: { moveId: move.id, reason: 'gravity' } });
+      return { newState: s, events };
+    }
 
     if (move.category === 'status') {
       const { targets: rawTargets, targetSlotIds: rawTargetSlotIds } = this.resolveStatusTargets(s, attackerSlotId, action, move);
