@@ -45,7 +45,7 @@ describe('turn:resolve', () => {
       socketListeners['turn:resolve']?.({
         turnNumber: 2,
         events: [
-          { type: 'volatile-applied', data: { note: 'switch', slotId: 's1' } },
+          { type: 'volatile-applied', data: { something: 'else' } },  // still returns '', filtered
           { type: 'heal', data: { slotId: 's2' } },
         ],
         state: { turnNumber: 2, phase: 'action', teams: [], field: {} },
@@ -56,6 +56,22 @@ describe('turn:resolve', () => {
     expect(log).toHaveLength(2);
     expect(log[0]).toEqual({ type: 'round-start', text: '-------Round 1-------' });
     expect(log[1]).toEqual({ type: 'normal', text: 's2 restored HP.' });
+  });
+
+  it('pokemon-switched event appears in turn log', () => {
+    const { result } = renderHook(() => useBattle(), { wrapper });
+    act(() => {
+      socketListeners['turn:resolve']?.({
+        turnNumber: 2,
+        events: [
+          { type: 'pokemon-switched', data: { slotId: 's1', outInstanceId: 'out-1', inInstanceId: 'in-1', reason: 'voluntary' } },
+        ],
+        state: { turnNumber: 2, phase: 'action', teams: [], field: {} },
+      });
+    });
+    const log = result.current.turnLog;
+    expect(log).toHaveLength(2);  // round-start + pokemon-switched text
+    expect(log[1]).toEqual({ type: 'normal', text: "s1's Pokémon was switched out!" });
   });
 });
 

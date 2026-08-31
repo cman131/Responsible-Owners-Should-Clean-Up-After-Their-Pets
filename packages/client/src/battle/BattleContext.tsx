@@ -115,6 +115,7 @@ function eventToText(event: TurnResolveEvent): string {
     case 'heal': return `${String(event.data['slotId'])} restored HP.`;
     case 'status-applied': return `${String(event.data['target'])} was ${String(event.data['status'])}!`;
     case 'terastallize': return `${String(event.data['slotId'])} Terastallized into ${String(event.data['teraType'])} type!`;
+    case 'pokemon-switched': return `${String(event.data['slotId'])}'s Pokémon was switched out!`;
     default: return '';
   }
 }
