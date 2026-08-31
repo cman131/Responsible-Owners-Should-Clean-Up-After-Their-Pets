@@ -783,12 +783,14 @@ export class BattleEngine {
     }
 
     // Handle Trace — set tracedAbilityId and re-invoke onSwitchIn once (skip if traced is also Trace)
-    if (result.traceAbilityId && result.traceAbilityId !== 'trace') {
+    if (result.traceAbilityId) {
       incoming.tracedAbilityId = result.traceAbilityId;
-      const tracedHooks = getAbilityHooks(result.traceAbilityId);
-      const tracedResult = tracedHooks.onSwitchIn?.({ user: incoming, state: s, slotId });
-      if (tracedResult) {
-        this.applySwitchInResult(s, slotId, incoming, tracedResult, events);
+      if (result.traceAbilityId !== 'trace') {
+        const tracedHooks = getAbilityHooks(result.traceAbilityId);
+        const tracedResult = tracedHooks.onSwitchIn?.({ user: incoming, state: s, slotId });
+        if (tracedResult) {
+          this.applySwitchInResult(s, slotId, incoming, tracedResult, events);
+        }
       }
     }
 

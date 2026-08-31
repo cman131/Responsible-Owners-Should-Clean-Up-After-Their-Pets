@@ -97,6 +97,21 @@ const ABILITY_HOOKS: Record<string, AbilityHooks> = {
     onSpeedModifier: ({ state }) =>
       state.field.weather?.type === 'sun' ? 2 : 1,
   },
+  trace: {
+    onSwitchIn: ({ state, slotId }) => {
+      const myTeamIdx = state.teams.findIndex(t => t.slots.some(sl => sl.slotId === slotId));
+      const foeTeamIdx = myTeamIdx === 0 ? 1 : 0;
+      const foeTeam = state.teams[foeTeamIdx];
+      if (!foeTeam) return null;
+      const foeSlot = foeTeam.slots[0];
+      if (!foeSlot) return null;
+      const foe = foeSlot.party[foeSlot.activePokemonIndex];
+      if (!foe || foe.fainted) return null;
+
+      const abilityToCopy = effectiveAbilityId(foe);
+      return { traceAbilityId: abilityToCopy };
+    },
+  },
   download: {
     onSwitchIn: ({ state, slotId }) => {
       const myTeamIdx = state.teams.findIndex(t => t.slots.some(sl => sl.slotId === slotId));

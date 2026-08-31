@@ -220,3 +220,48 @@ describe('onSwitchIn — Download', () => {
     expect(incoming.statBoosts.atk).toBe(0);
   });
 });
+
+describe('onSwitchIn — Trace', () => {
+  it('copies foe ability and fires the traced onSwitchIn (Intimidate)', () => {
+    const state = makeStateWithBench();
+    // Incoming Pokémon (p1-bench) has Trace
+    state.teams[0]!.slots[0]!.party[1]!.ability = 'trace';
+    // Foe has Intimidate
+    state.teams[1]!.slots[0]!.party[0]!.ability = 'intimidate';
+
+    const engine = new BattleEngine();
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'switch', targetInstanceId: 'p1-bench' } as SwitchAction,
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    // Traced Intimidate should lower foe's Atk
+    const foe = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(foe.statBoosts.atk).toBe(-1);
+
+    // The incoming Pokémon should have tracedAbilityId set
+    const incoming = newState.teams[0]!.slots[0]!.party[1]!;
+    expect(incoming.tracedAbilityId).toBe('intimidate');
+
+    expect(events.some(e => e.type === 'stat-change')).toBe(true);
+  });
+
+  it('does not infinite-loop when Trace copies another Trace', () => {
+    const state = makeStateWithBench();
+    state.teams[0]!.slots[0]!.party[1]!.ability = 'trace';
+    state.teams[1]!.slots[0]!.party[0]!.ability = 'trace';
+
+    const engine = new BattleEngine();
+    // Should complete without stack overflow
+    expect(() => engine.resolveTurn(state, {
+      'slot-a1': { type: 'switch', targetInstanceId: 'p1-bench' } as SwitchAction,
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    })).not.toThrow();
+
+    const incoming = engine.resolveTurn(state, {
+      'slot-a1': { type: 'switch', targetInstanceId: 'p1-bench' } as SwitchAction,
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    }).newState.teams[0]!.slots[0]!.party[1]!;
+    expect(incoming.tracedAbilityId).toBe('trace');
+  });
+});
