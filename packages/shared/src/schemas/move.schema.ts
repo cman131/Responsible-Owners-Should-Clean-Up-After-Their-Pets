@@ -13,6 +13,8 @@ export const SecondarySchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('selfdestruct'), variant: z.enum(['normal', 'memento', 'healingwish']) }),
   z.object({ kind: z.literal('charge'), chargeVolatile: z.string() }),
   z.object({ kind: z.literal('recharge') }),
+  z.object({ kind: z.literal('clear-hazards-self') }),
+  z.object({ kind: z.literal('break-screens'), screensOnly: z.boolean() }),
 ]);
 
 export const MoveSchema = z.object({
