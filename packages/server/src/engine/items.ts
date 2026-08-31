@@ -59,6 +59,12 @@ const ITEM_HOOKS: Record<string, ItemHooks> = {
   eviolite: {
     onAttackerModifier: () => 1,
   },
+  'rocky-helmet': {
+    onAfterHit: ({ makesContact, holder, totalDamage }) =>
+      makesContact && totalDamage > 0
+        ? { directDamageToAttacker: Math.floor(holder.maxHp / 6) }
+        : null,
+  },
 };
 
 export function getItemHooks(itemId: string | undefined): ItemHooks {

@@ -741,6 +741,45 @@ export class BattleEngine {
         }
       }
 
+      // Post-hit item triggers (Rocky Helmet, Air Balloon pop, Weakness Policy)
+      if (totalDamage > 0 && !attacker.fainted) {
+        // Rocky Helmet
+        const helmetResult = getItemHooks(target.heldItem).onAfterHit?.({
+          holder: target,
+          state: s,
+          moveType: effectiveMoveType,
+          basePower: effectiveBasePower,
+          target: attacker,
+          isPhysical,
+          makesContact: move.makesContact === true,
+          totalDamage,
+        });
+        if (helmetResult?.directDamageToAttacker) {
+          const dmg = Math.min(helmetResult.directDamageToAttacker, attacker.currentHp);
+          attacker.currentHp -= dmg;
+          events.push({ type: 'damage-dealt', data: { source: 'rocky-helmet', slotId: attackerSlotId, damage: dmg, remainingHp: attacker.currentHp } });
+          if (attacker.currentHp <= 0) {
+            attacker.fainted = true;
+            attacker.currentHp = 0;
+            events.push({ type: 'faint', data: { slotId: attackerSlotId, instanceId: attacker.instanceId } });
+          }
+        }
+      }
+
+      // Air Balloon pop (any damaging hit bursts the balloon)
+      if (totalDamage > 0 && target.heldItem === 'air-balloon') {
+        delete target.heldItem;
+        events.push({ type: 'item-consumed', data: { slotId: targetSlotId, item: 'air-balloon', reason: 'popped' } });
+      }
+
+      // Weakness Policy
+      if (effectiveness > 1 && totalDamage > 0 && !target.fainted && target.heldItem === 'weakness-policy') {
+        const policyItem = target.heldItem;
+        delete target.heldItem;
+        events.push(applyStatBoost(target, targetSlotId, { atk: 2, spa: 2 }));
+        events.push({ type: 'item-consumed', data: { slotId: targetSlotId, item: policyItem, reason: 'triggered' } });
+      }
+
       // Life Orb recoil etc.
       if (totalDamage > 0 && itemHooks.onAfterDamageTaken) {
         const { hpDelta } = itemHooks.onAfterDamageTaken({ holder: attacker, state: s, damageTaken: totalDamage });
