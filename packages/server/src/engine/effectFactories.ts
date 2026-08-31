@@ -95,8 +95,11 @@ export function setSideCondition(
     if (options?.failIfActive && currentValue) {
       return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'already-active' } }] };
     }
-    if (options?.weatherRequired && !options.weatherRequired.includes(ctx.battle.field.weather?.type as WeatherType)) {
-      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'no-hail' } }] };
+    if (options?.weatherRequired) {
+      const weatherType = ctx.battle.field.weather?.type;
+      if (!weatherType || !options.weatherRequired.includes(weatherType)) {
+        return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'no-hail' } }] };
+      }
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

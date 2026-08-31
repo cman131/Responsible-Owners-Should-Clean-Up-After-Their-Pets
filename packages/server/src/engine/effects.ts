@@ -206,6 +206,9 @@ export function applySecondaries(ctx: SecondaryContext): TurnResolveEvent[] {
         ctx.user.volatileStatus.push({ name: 'recharge' });
         break;
       }
+      // NOTE: Intentionally inlines clearHazards() from sideConditions.ts to avoid
+      // a circular dependency (sideConditions.ts → effects.ts). If a new hazard is
+      // added to SideConditions, update BOTH clearHazards() AND this block.
       case 'clear-hazards-self': {
         if (ctx.totalDamage <= 0) break;
         const userTeamIndex = ctx.battle.teams.findIndex(t =>
@@ -231,6 +234,8 @@ export function applySecondaries(ctx: SecondaryContext): TurnResolveEvent[] {
         events.push(applyStatBoost(ctx.user, ctx.userSlotId, { spe: 1 }));
         break;
       }
+      // NOTE: Intentionally inlines clearScreens() subset from sideConditions.ts —
+      // same circular-dependency reason as clear-hazards-self above.
       case 'break-screens': {
         if (ctx.totalDamage <= 0) break;
         const targetTeamIndex = ctx.battle.teams.findIndex(t =>

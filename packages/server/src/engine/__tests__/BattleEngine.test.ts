@@ -1247,6 +1247,7 @@ describe('Defog', () => {
   it('lowers target evasion, clears hazards from both sides, and clears screens from target side', () => {
     const state = make1v1State();
     state.field.sideConditions[0]!.stealthRock = true;       // user's side
+    state.field.sideConditions[0]!.reflect = 3;              // user has Reflect too
     state.field.sideConditions[1]!.stealthRock = true;       // foe's side
     state.field.sideConditions[1]!.reflect = 3;              // foe's screen
     state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'defog', currentPp: 15, maxPp: 15 };
@@ -1258,6 +1259,7 @@ describe('Defog', () => {
     expect(newState.field.sideConditions[0]!.stealthRock).toBe(false);
     expect(newState.field.sideConditions[1]!.stealthRock).toBe(false);
     expect(newState.field.sideConditions[1]!.reflect).toBe(0);
+    expect(newState.field.sideConditions[0]!.reflect).toBeGreaterThan(0); // user screens NOT cleared
     expect(events.some(e => e.type === 'hazard-cleared')).toBe(true);
     expect(events.some(e => e.type === 'screen-broken')).toBe(true);
   });
@@ -1391,6 +1393,45 @@ describe('entry hazards — switch-in', () => {
 
     const spikesDmg = events.find(e => e.type === 'hazard-damage' && e.data['hazard'] === 'spikes');
     expect(spikesDmg!.data['damage']).toBe(25);
+  });
+});
+
+describe('Rapid Spin — end-to-end', () => {
+  it('clears Stealth Rock from user side and grants +1 Spe after successful hit', () => {
+    const state = make1v1State();
+    state.field.sideConditions[0]!.stealthRock = true;
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'rapidspin', currentPp: 40, maxPp: 40 };
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    expect(newState.field.sideConditions[0]!.stealthRock).toBe(false);
+    expect(events.some(e => e.type === 'hazard-cleared' && e.data['hazard'] === 'stealthRock')).toBe(true);
+    expect(newState.teams[0]!.slots[0]!.party[0]!.statBoosts.spe).toBe(1);
+  });
+});
+
+describe('Brick Break — end-to-end', () => {
+  it('removes Reflect and Light Screen from target side (not Aurora Veil)', () => {
+    const state = make1v1State();
+    state.field.sideConditions[1]!.reflect = 3;
+    state.field.sideConditions[1]!.lightScreen = 3;
+    state.field.sideConditions[1]!.auroraVeil = 3;
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'brickbreak', currentPp: 15, maxPp: 15 };
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    expect(newState.field.sideConditions[1]!.reflect).toBe(0);
+    expect(newState.field.sideConditions[1]!.lightScreen).toBe(0);
+    expect(newState.field.sideConditions[1]!.auroraVeil).toBeGreaterThan(0); // Brick Break doesn't clear Aurora Veil
+    expect(events.filter(e => e.type === 'screen-broken')).toHaveLength(2);
   });
 });
 
