@@ -614,9 +614,20 @@ export class BattleEngine {
           const actualDamage = Math.min(finalDamage, target.currentHp);
           // Endure: cap damage so HP stays at 1
           const endureEntry = target.volatileStatus.find(v => v.name === 'endure');
-          const cappedDamage = (endureEntry && target.currentHp - actualDamage <= 0)
+          let cappedDamage = (endureEntry && target.currentHp - actualDamage <= 0)
             ? target.currentHp - 1
             : actualDamage;
+          // Focus Sash: survive OHKO at 1 HP if currently at full HP
+          if (
+            target.heldItem === 'focus-sash' &&
+            target.currentHp === target.maxHp &&
+            target.currentHp - cappedDamage <= 0
+          ) {
+            cappedDamage = target.currentHp - 1;
+            delete target.heldItem;
+            events.push({ type: 'focus-sash', data: { slotId: targetSlotId } });
+            events.push({ type: 'item-consumed', data: { slotId: targetSlotId, item: 'focus-sash', reason: 'triggered' } });
+          }
           target.currentHp -= cappedDamage;
           totalDamage += cappedDamage;
 
