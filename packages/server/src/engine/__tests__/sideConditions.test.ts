@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import type { SideConditions, TurnResolveEvent } from '@poke-fighter/shared';
-import { decrementScreens, getScreenMultiplier, clearHazards, clearScreens } from '../sideConditions.js';
+import { decrementScreens, getScreenMultiplier, clearHazards, clearScreens, applyEntryHazards } from '../sideConditions.js';
+import { DataLoader } from '../../data/loader.js';
+import { makePokemon } from './fixtures.js';
 
 function makeSide(overrides: Partial<SideConditions> = {}): SideConditions {
   return {
@@ -143,5 +145,151 @@ describe('clearScreens', () => {
     const events = clearScreens(side, 0);
     expect(events).toHaveLength(1);
     expect(events[0]!.data['screen']).toBe('reflect');
+  });
+});
+
+const data = new DataLoader();
+
+describe('applyEntryHazards — Stealth Rock', () => {
+  it('deals neutral Rock damage (1x) to Normal-type, 100 HP → 12 damage', () => {
+    const pkmn = makePokemon({ maxHp: 100, currentHp: 100 });
+    const side = makeSide({ stealthRock: true });
+    const events = applyEntryHazards(pkmn, 'slot-a', side, 0, ['Normal'], true, data);
+    const dmg = events.find(e => e.type === 'hazard-damage');
+    expect(dmg).toBeDefined();
+    expect(dmg!.data['damage']).toBe(12);
+    expect(dmg!.data['hazard']).toBe('stealthRock');
+    expect(pkmn.currentHp).toBe(88);
+  });
+
+  it('deals 4x Rock damage to Fire/Flying type — 50% of max HP', () => {
+    const pkmn = makePokemon({ maxHp: 100, currentHp: 100 });
+    const side = makeSide({ stealthRock: true });
+    const events = applyEntryHazards(pkmn, 'slot-a', side, 0, ['Fire', 'Flying'], true, data);
+    const dmg = events.find(e => e.type === 'hazard-damage');
+    expect(dmg!.data['damage']).toBe(50);
+    expect(pkmn.currentHp).toBe(50);
+  });
+
+  it('emits faint and stops when SR damage knocks out the Pokémon', () => {
+    const pkmn = makePokemon({ maxHp: 100, currentHp: 10 });
+    const side = makeSide({ stealthRock: true, spikes: 3 });
+    const events = applyEntryHazards(pkmn, 'slot-a', side, 0, ['Fire', 'Flying'], true, data);
+    expect(pkmn.fainted).toBe(true);
+    expect(events.some(e => e.type === 'faint')).toBe(true);
+    expect(events.some(e => e.type === 'hazard-damage' && e.data['hazard'] === 'spikes')).toBe(false);
+  });
+
+  it('hits Flying-type Pokémon (SR ignores grounded check)', () => {
+    const pkmn = makePokemon({ maxHp: 100, currentHp: 100 });
+    const side = makeSide({ stealthRock: true });
+    const events = applyEntryHazards(pkmn, 'slot-a', side, 0, ['Flying'], false, data);
+    expect(events.some(e => e.type === 'hazard-damage')).toBe(true);
+  });
+});
+
+describe('applyEntryHazards — Spikes', () => {
+  it('layer 1 deals 1/8 max HP to grounded Pokémon (100 HP → 12 damage)', () => {
+    const pkmn = makePokemon({ maxHp: 100, currentHp: 100 });
+    const side = makeSide({ spikes: 1 });
+    const events = applyEntryHazards(pkmn, 'slot-a', side, 0, ['Normal'], true, data);
+    const dmg = events.find(e => e.type === 'hazard-damage' && e.data['hazard'] === 'spikes');
+    expect(dmg!.data['damage']).toBe(12);
+  });
+
+  it('layer 2 deals 1/6 max HP (100 HP → 16 damage)', () => {
+    const pkmn = makePokemon({ maxHp: 100, currentHp: 100 });
+    const side = makeSide({ spikes: 2 });
+    const events = applyEntryHazards(pkmn, 'slot-a', side, 0, ['Normal'], true, data);
+    const dmg = events.find(e => e.type === 'hazard-damage' && e.data['hazard'] === 'spikes');
+    expect(dmg!.data['damage']).toBe(16);
+  });
+
+  it('layer 3 deals 1/4 max HP (100 HP → 25 damage)', () => {
+    const pkmn = makePokemon({ maxHp: 100, currentHp: 100 });
+    const side = makeSide({ spikes: 3 });
+    const events = applyEntryHazards(pkmn, 'slot-a', side, 0, ['Normal'], true, data);
+    const dmg = events.find(e => e.type === 'hazard-damage' && e.data['hazard'] === 'spikes');
+    expect(dmg!.data['damage']).toBe(25);
+  });
+
+  it('does not apply Spikes to non-grounded Pokémon', () => {
+    const pkmn = makePokemon({ maxHp: 100, currentHp: 100 });
+    const side = makeSide({ spikes: 3 });
+    const events = applyEntryHazards(pkmn, 'slot-a', side, 0, ['Flying'], false, data);
+    expect(events.some(e => e.data['hazard'] === 'spikes')).toBe(false);
+    expect(pkmn.currentHp).toBe(100);
+  });
+});
+
+describe('applyEntryHazards — Toxic Spikes', () => {
+  it('layer 1 applies psn to grounded non-Poison type', () => {
+    const pkmn = makePokemon({ maxHp: 100, currentHp: 100 });
+    const side = makeSide({ toxicSpikes: 1 });
+    applyEntryHazards(pkmn, 'slot-a', side, 0, ['Normal'], true, data);
+    expect(pkmn.status).toBe('psn');
+  });
+
+  it('layer 2 applies tox to grounded non-Poison type', () => {
+    const pkmn = makePokemon({ maxHp: 100, currentHp: 100 });
+    const side = makeSide({ toxicSpikes: 2 });
+    applyEntryHazards(pkmn, 'slot-a', side, 0, ['Normal'], true, data);
+    expect(pkmn.status).toBe('tox');
+  });
+
+  it('grounded Poison-type absorbs all layers, no status applied', () => {
+    const pkmn = makePokemon({ maxHp: 100, currentHp: 100 });
+    const side = makeSide({ toxicSpikes: 2 });
+    const events = applyEntryHazards(pkmn, 'slot-a', side, 0, ['Poison'], true, data);
+    expect(side.toxicSpikes).toBe(0);
+    expect(pkmn.status).toBeUndefined();
+    expect(events.some(e => e.type === 'hazard-cleared' && e.data['hazard'] === 'toxicSpikes')).toBe(true);
+  });
+
+  it('Steel-type is immune to Toxic Spikes poisoning', () => {
+    const pkmn = makePokemon({ maxHp: 100, currentHp: 100 });
+    const side = makeSide({ toxicSpikes: 2 });
+    applyEntryHazards(pkmn, 'slot-a', side, 0, ['Steel'], true, data);
+    expect(pkmn.status).toBeUndefined();
+  });
+
+  it('does not apply Toxic Spikes to non-grounded Pokémon', () => {
+    const pkmn = makePokemon({ maxHp: 100, currentHp: 100 });
+    const side = makeSide({ toxicSpikes: 2 });
+    applyEntryHazards(pkmn, 'slot-a', side, 0, ['Normal'], false, data);
+    expect(pkmn.status).toBeUndefined();
+  });
+});
+
+describe('applyEntryHazards — Sticky Web', () => {
+  it('drops Spe by 1 for a grounded Pokémon', () => {
+    const pkmn = makePokemon({ maxHp: 100, currentHp: 100 });
+    const side = makeSide({ stickyWeb: true });
+    const events = applyEntryHazards(pkmn, 'slot-a', side, 0, ['Normal'], true, data);
+    expect(pkmn.statBoosts.spe).toBe(-1);
+    expect(events.some(e => e.type === 'stat-change')).toBe(true);
+  });
+
+  it('does not apply Sticky Web to non-grounded Pokémon', () => {
+    const pkmn = makePokemon({ maxHp: 100, currentHp: 100 });
+    const side = makeSide({ stickyWeb: true });
+    applyEntryHazards(pkmn, 'slot-a', side, 0, ['Flying'], false, data);
+    expect(pkmn.statBoosts.spe).toBe(0);
+  });
+});
+
+describe('applyEntryHazards — ordering', () => {
+  it('applies SR → Spikes → Toxic Spikes → Sticky Web in order', () => {
+    const pkmn = makePokemon({ maxHp: 200, currentHp: 200 });
+    const side = makeSide({ stealthRock: true, spikes: 1, toxicSpikes: 1, stickyWeb: true });
+    const events = applyEntryHazards(pkmn, 'slot-a', side, 0, ['Normal'], true, data);
+    const types = events.map(e => e.type);
+    const srIdx = types.indexOf('hazard-damage');
+    const spkIdx = types.indexOf('hazard-damage', srIdx + 1);
+    const psnIdx = types.indexOf('status-applied');
+    const speIdx = types.indexOf('stat-change');
+    expect(srIdx).toBeLessThan(spkIdx);
+    expect(spkIdx).toBeLessThan(psnIdx);
+    expect(psnIdx).toBeLessThan(speIdx);
   });
 });
