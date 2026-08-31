@@ -14,4 +14,6 @@ export type Secondary =
   | { kind: 'ohko' }
   | { kind: 'selfdestruct'; variant: 'normal' | 'memento' | 'healingwish' }
   | { kind: 'charge';      chargeVolatile: string }
-  | { kind: 'recharge' };
+  | { kind: 'recharge' }
+  | { kind: 'clear-hazards-self' }
+  | { kind: 'break-screens'; screensOnly: boolean };

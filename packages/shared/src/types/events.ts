@@ -103,7 +103,12 @@ export interface TurnResolveEvent {
     | 'faint'
     | 'miss'
     | 'crit'
-    | 'endure-survived';
+    | 'endure-survived'
+    | 'screen-ended'
+    | 'screen-broken'
+    | 'hazard-damage'
+    | 'hazard-cleared'
+    | 'court-change';
   data: Record<string, unknown>;
 }
 
