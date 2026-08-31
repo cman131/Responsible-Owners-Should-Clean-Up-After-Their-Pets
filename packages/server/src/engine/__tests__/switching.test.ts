@@ -110,3 +110,33 @@ describe('onSwitchOut ability hooks', () => {
     expect(events.some(e => e.type === 'status-cured')).toBe(false);
   });
 });
+
+describe('onSwitchOut — ability-applied volatile removal', () => {
+  it('Slow Start volatile is removed on switch-out', () => {
+    const state = makeStateWithBench();
+    const mon = state.teams[0]!.slots[0]!.party[0]!;
+    mon.ability = 'slow-start';
+    mon.volatileStatus = [{ name: 'slow-start', turnsRemaining: 3 }];
+    const engine = new BattleEngine();
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'switch', targetInstanceId: 'p1-bench' } as SwitchAction,
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const outgoing = newState.teams[0]!.slots[0]!.party[0]!;
+    expect(outgoing.volatileStatus.some(v => v.name === 'slow-start')).toBe(false);
+  });
+
+  it('Truant volatile is removed on switch-out', () => {
+    const state = makeStateWithBench();
+    const mon = state.teams[0]!.slots[0]!.party[0]!;
+    mon.ability = 'truant';
+    mon.volatileStatus = [{ name: 'truant' }];
+    const engine = new BattleEngine();
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'switch', targetInstanceId: 'p1-bench' } as SwitchAction,
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const outgoing = newState.teams[0]!.slots[0]!.party[0]!;
+    expect(outgoing.volatileStatus.some(v => v.name === 'truant')).toBe(false);
+  });
+});

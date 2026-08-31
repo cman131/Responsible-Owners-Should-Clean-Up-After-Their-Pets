@@ -665,7 +665,7 @@ export class BattleEngine {
     const outgoing = slot.party[slot.activePokemonIndex];
     const previousMon = outgoing?.instanceId;
 
-    // Fire onSwitchOut before clearing state
+    // Fire onSwitchOut, remove ability-applied volatiles, then clear generic switch-out state
     if (outgoing) {
       const outHooks = getAbilityHooks(effectiveAbilityId(outgoing));
       const switchOutResult = outHooks.onSwitchOut?.({ battle: s, slotId, pokemon: outgoing });
@@ -678,10 +678,12 @@ export class BattleEngine {
         }
         events.push(...switchOutResult.events);
       }
-    }
-
-    // Clear switch-out volatiles and stat boosts before updating active index
-    if (outgoing) {
+      // Remove ability-applied volatiles not in SWITCH_CLEAR_NAMES (slow-start, truant reset on switch)
+      const ABILITY_VOLATILE_CLEAR = new Set(['slow-start', 'truant']);
+      outgoing.volatileStatus = outgoing.volatileStatus.filter(
+        v => !ABILITY_VOLATILE_CLEAR.has(v.name)
+      );
+      // Clear generic switch-out state
       outgoing.volatileStatus = outgoing.volatileStatus.filter(v =>
         !SWITCH_CLEAR_NAMES.has(v.name) &&
         !SWITCH_CLEAR_PREFIXES.some(p => v.name.startsWith(p))
