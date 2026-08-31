@@ -108,7 +108,8 @@ export interface TurnResolveEvent {
     | 'screen-broken'
     | 'hazard-damage'
     | 'hazard-cleared'
-    | 'court-change';
+    | 'court-change'
+    | 'pokemon-switched';
   data: Record<string, unknown>;
 }
 

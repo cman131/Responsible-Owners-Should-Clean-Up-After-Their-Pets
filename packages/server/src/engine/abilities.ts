@@ -1,4 +1,4 @@
-import type { PartyMember, BattleState, PokemonType, StatBoosts } from '@poke-fighter/shared';
+import type { PartyMember, BattleState, PokemonType, StatBoosts, TurnResolveEvent } from '@poke-fighter/shared';
 
 export interface AbilityContext {
   user: PartyMember;
@@ -11,11 +11,37 @@ export interface AttackContext extends AbilityContext {
   target: PartyMember;
 }
 
+export interface SwitchInContext {
+  user: PartyMember;
+  state: BattleState;
+  slotId: string;
+}
+
+export interface SwitchInResult {
+  statBoostDeltas?: Partial<StatBoosts>;      // applied to all active foes (Intimidate)
+  selfBoostDeltas?: Partial<StatBoosts>;      // applied to switching-in Pokémon (Download)
+  traceAbilityId?: string;                   // sets tracedAbilityId on incoming Pokémon (Trace)
+  clearScreens?: boolean;                    // removes Reflect/Light Screen/Aurora Veil from both sides (Screen Cleaner)
+}
+
+export interface SwitchContext {
+  battle: BattleState;
+  slotId: string;
+  pokemon: PartyMember;
+}
+
+export interface SwitchOutResult {
+  hpDelta?: number;        // positive = heal amount (Regenerator)
+  clearStatus?: boolean;   // true = clear status condition (Natural Cure)
+  events: TurnResolveEvent[];
+}
+
 export interface AbilityHooks {
   onAttackerModifier?: (ctx: AttackContext) => number;
   onDefenderModifier?: (ctx: AttackContext) => number;
   onDamageModifier?: (ctx: AttackContext) => number;
-  onSwitchIn?: (ctx: AbilityContext) => { statBoostDeltas?: Partial<StatBoosts> } | null;
+  onSwitchIn?: (ctx: SwitchInContext) => SwitchInResult | null;
+  onSwitchOut?: (ctx: SwitchContext) => SwitchOutResult | null;
   onAfterHit?: (ctx: AttackContext & { isPhysical: boolean }) => { statusToApply?: string } | null;
   onStatusImmunity?: (ctx: AbilityContext & { status: string }) => boolean;
   onWeatherImmunity?: (ctx: AbilityContext & { weather: string }) => boolean;
@@ -74,4 +100,8 @@ const ABILITY_HOOKS: Record<string, AbilityHooks> = {
 
 export function getAbilityHooks(abilityId: string): AbilityHooks {
   return ABILITY_HOOKS[abilityId.toLowerCase().replace(/\s/g, '-')] ?? {};
+}
+
+export function effectiveAbilityId(pokemon: PartyMember): string {
+  return pokemon.tracedAbilityId ?? pokemon.ability;
 }
