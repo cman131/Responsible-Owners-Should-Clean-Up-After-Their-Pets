@@ -21,7 +21,6 @@
 - Tests in `abilities.test.ts` and `items.test.ts`
 
 ### Deferred
-- Primordial weather: implemented (all seven weather summoners are in scope)
 - Wandering Spirit, Perish Body (complex multi-slot state)
 - Defeatist, Slow Start, Truant (passive turn-by-turn penalty abilities)
 - Neutralizing Gas (global field effect requiring different architecture)
@@ -85,8 +84,8 @@ interface AfterHitResult {
   disableMoveId?: string;               // paired with volatileToApply='disable'
 }
 
-// onAfterHit ctx: add makesContact
-onAfterHit?: (ctx: AttackContext & { isPhysical: boolean; makesContact: boolean }) => AfterHitResult | null;
+// onAfterHit ctx: add makesContact and rng (rng is not on BattleState; must be passed explicitly)
+onAfterHit?: (ctx: AttackContext & { isPhysical: boolean; makesContact: boolean; rng: () => number }) => AfterHitResult | null;
 
 // SwitchInResult: add weather setter
 setWeather?: { type: WeatherType; turnsRemaining: number; permanent?: boolean };
@@ -245,12 +244,14 @@ if (!target.fainted && getItemHooks(target.heldItem).onAfterDamageTaken) {
 Remove the five hardcoded ability checks. Replace with:
 
 ```typescript
-if (getAbilityHooks(ability).onStatusImmunity?.({ user: target, state: field, status })) return false;
+if (getAbilityHooks(ability).onStatusImmunity?.({ user: target, state: battle, status })) return false;
 ```
 
-`canApplyStatus` signature remains `({ status, types, currentStatus, ability }: CanApplyInput): boolean`. The `status-blocked` event is emitted at the `applyStatus` call site in `BattleEngine` (not inside `canApplyStatus`), by comparing the return value before/after the hook call.
+`state` here is the full `BattleState` (passed in via the expanded `CanApplyInput`), not the `FieldState`.
 
-Practically: `applyStatus` in `effects.ts` already returns an event or `null`. When `canApplyStatus` returns `false` due to the ability hook, the caller emits `{ type: 'status-blocked', data: { slotId, status, reason: 'ability' } }`.
+`canApplyStatus` signature changes: `ability: string` is replaced by `ability: string; battle: BattleState` so the hook can inspect `field.weather` (e.g. Leaf Guard). The `status-blocked` event is emitted at the `applyStatus` call site in `BattleEngine` (not inside `canApplyStatus`), by checking whether `canApplyStatus` would have returned `true` without the ability hook but returns `false` with it.
+
+Practically: `applyStatus` in `effects.ts` already returns an event or `null`. When `canApplyStatus` returns `false` due to the ability hook, `BattleEngine` emits `{ type: 'status-blocked', data: { slotId, status, reason: 'ability' } }` before continuing.
 
 ### `performSwitch` — Choice lock clear
 
@@ -424,21 +425,21 @@ Volatile-based immunities (Own Tempo, Inner Focus, Oblivious) are handled in `ap
 
 ```typescript
 'static': {
-  onAfterHit: ({ makesContact, state }) =>
-    makesContact && state.rng() < 0.3 ? { statusToApply: 'par' } : null,
+  onAfterHit: ({ makesContact, rng }) =>
+    makesContact && rng() < 0.3 ? { statusToApply: 'par' } : null,
 },
 'flame-body': {
-  onAfterHit: ({ makesContact, state }) =>
-    makesContact && state.rng() < 0.3 ? { statusToApply: 'brn' } : null,
+  onAfterHit: ({ makesContact, rng }) =>
+    makesContact && rng() < 0.3 ? { statusToApply: 'brn' } : null,
 },
 'poison-point': {
-  onAfterHit: ({ makesContact, state }) =>
-    makesContact && state.rng() < 0.3 ? { statusToApply: 'psn' } : null,
+  onAfterHit: ({ makesContact, rng }) =>
+    makesContact && rng() < 0.3 ? { statusToApply: 'psn' } : null,
 },
 'effect-spore': {
-  onAfterHit: ({ makesContact, state }) => {
+  onAfterHit: ({ makesContact, rng }) => {
     if (!makesContact) return null;
-    const r = state.rng();
+    const r = rng();
     if (r >= 0.3) return null;
     if (r < 0.1) return { statusToApply: 'par' };
     if (r < 0.2) return { statusToApply: 'psn' };
@@ -446,6 +447,7 @@ Volatile-based immunities (Own Tempo, Inner Focus, Oblivious) are handled in `ap
   },
 },
 'rough-skin': {
+  // In ctx: `target` is the attacker (the mon that made contact), `user` is the holder (defender)
   onAfterHit: ({ makesContact, target }) =>
     makesContact ? { directDamage: Math.floor(target.maxHp / 8) } : null,
 },
@@ -456,18 +458,18 @@ Volatile-based immunities (Own Tempo, Inner Focus, Oblivious) are handled in `ap
 },
 'tangling-hair': { /* same as gooey */ },
 'mummy': {
-  onAfterHit: ({ makesContact, user }) =>
+  onAfterHit: ({ makesContact }) =>
     makesContact ? { abilityOverride: 'mummy' } : null,
 },
 'cursed-body': {
-  onAfterHit: ({ makesContact, move, state }) =>
-    makesContact && state.rng() < 0.3
+  onAfterHit: ({ makesContact, move, rng }) =>
+    makesContact && rng() < 0.3
       ? { volatileToApply: 'disable', disableMoveId: move.id }
       : null,
 },
 ```
 
-Note: `rng` needs to be accessible in `onAfterHit` ctx. The ctx currently takes `state: BattleState`. Since `rng` is a method on `BattleEngine`, not on `BattleState`, it should be passed directly in the ctx, or the hook returns a probability and the engine rolls. The cleaner pattern: pass `rng: () => number` in the ctx (same approach as `applySecondaries`).
+`rng` is passed explicitly in the ctx — it is not available on `BattleState` and must come from `BattleEngine.rng` at the call site, matching how `applySecondaries` already handles this.
 
 ### `onSwitchIn` weather entries
 
@@ -507,7 +509,7 @@ In `executeMove`, before calling `applySecondaries`: if Sheer Force is active, a
 
 ---
 
-## Phase 3 — Item Implementations
+## Phase 4 — Item Implementations
 
 ```typescript
 'assault-vest': {
@@ -561,7 +563,7 @@ In `executeMove`, before calling `applySecondaries`: if Sheer Force is active, a
 
 ---
 
-## Phase 4 — Test Strategy
+## Phase 5 — Test Strategy
 
 ### `packages/server/src/engine/__tests__/abilities.test.ts` (new file)
 
