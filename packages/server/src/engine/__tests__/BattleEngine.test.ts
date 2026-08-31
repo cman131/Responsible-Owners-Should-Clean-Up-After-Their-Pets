@@ -1201,3 +1201,91 @@ describe('executeMove — terrain power modifiers', () => {
     expect(Math.abs(plainDmg / mistyDmg - 2)).toBeLessThan(0.1);
   });
 });
+
+describe('screens — re-cast guard', () => {
+  it('Reflect fails (move-failed) when Reflect is already active', () => {
+    const state = make1v1State();
+    state.field.sideConditions[0]!.reflect = 3;
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'reflect', currentPp: 20, maxPp: 20 };
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    expect(events.some(e => e.type === 'move-failed' && e.data['reason'] === 'already-active')).toBe(true);
+  });
+
+  it('Aurora Veil fails when weather is not snow', () => {
+    const state = make1v1State(); // no weather
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'auroraveil', currentPp: 20, maxPp: 20 };
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    expect(events.some(e => e.type === 'move-failed' && e.data['reason'] === 'no-hail')).toBe(true);
+  });
+
+  it('Aurora Veil succeeds in snow weather', () => {
+    const state = make1v1State();
+    state.field.weather = { type: 'snow', turnsRemaining: 5, fromAbility: false };
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'auroraveil', currentPp: 20, maxPp: 20 };
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    expect(events.some(e => e.type === 'side-condition-set')).toBe(true);
+    expect(newState.field.sideConditions[0]!.auroraVeil).toBe(5);
+  });
+});
+
+describe('Defog', () => {
+  it('lowers target evasion, clears hazards from both sides, and clears screens from target side', () => {
+    const state = make1v1State();
+    state.field.sideConditions[0]!.stealthRock = true;       // user's side
+    state.field.sideConditions[1]!.stealthRock = true;       // foe's side
+    state.field.sideConditions[1]!.reflect = 3;              // foe's screen
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'defog', currentPp: 15, maxPp: 15 };
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    expect(newState.field.sideConditions[0]!.stealthRock).toBe(false);
+    expect(newState.field.sideConditions[1]!.stealthRock).toBe(false);
+    expect(newState.field.sideConditions[1]!.reflect).toBe(0);
+    expect(events.some(e => e.type === 'hazard-cleared')).toBe(true);
+    expect(events.some(e => e.type === 'screen-broken')).toBe(true);
+  });
+
+  it('removes active terrain and emits terrain-ended', () => {
+    const state = make1v1State();
+    state.field.terrain = { type: 'electric', turnsRemaining: 3 };
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'defog', currentPp: 15, maxPp: 15 };
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    expect(newState.field.terrain).toBeUndefined();
+    expect(events.some(e => e.type === 'terrain-ended')).toBe(true);
+  });
+});
+
+describe('Court Change', () => {
+  it('swaps both sides sideConditions wholesale', () => {
+    const state = make1v1State();
+    state.field.sideConditions[0]!.reflect = 4;
+    state.field.sideConditions[1]!.stealthRock = true;
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'courtchange', currentPp: 10, maxPp: 10 };
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    expect(newState.field.sideConditions[0]!.stealthRock).toBe(true);  // swapped
+    expect(newState.field.sideConditions[1]!.reflect).toBe(4);          // swapped
+    expect(events.some(e => e.type === 'court-change')).toBe(true);
+  });
+});

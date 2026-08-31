@@ -7,6 +7,9 @@ import {
   aquaRing, ingrain, magnetRise, perishSong, destinyBond, roost,
   embargoFactory, healBlockFactory,
 } from './effectFactories.js';
+import { clearHazards, clearScreens } from './sideConditions.js';
+import { applyStatBoost } from './effects.js';
+import type { TurnResolveEvent } from '@poke-fighter/shared';
 
 export function buildDefaultRegistry(): MoveEffectRegistry {
   const r = new MoveEffectRegistry();
@@ -104,11 +107,11 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
   r.register('psychicterrain',  setTerrain('psychic'));
 
   // ── Side conditions ────────────────────────────────────────────────
-  r.register('reflect',     setSideCondition('reflect',     5,    'ally'));
-  r.register('lightscreen', setSideCondition('lightScreen', 5,    'ally'));
-  r.register('auroraveil',  setSideCondition('auroraVeil',  5,    'ally'));
-  r.register('stealthrock', setSideCondition('stealthRock', true, 'foe'));
-  r.register('stickyweb',   setSideCondition('stickyWeb',   true, 'foe'));
+  r.register('reflect',     setSideCondition('reflect',     5,    'ally', { failIfActive: true }));
+  r.register('lightscreen', setSideCondition('lightScreen', 5,    'ally', { failIfActive: true }));
+  r.register('auroraveil',  setSideCondition('auroraVeil',  5,    'ally', { failIfActive: true, weatherRequired: ['snow'] }));
+  r.register('stealthrock', setSideCondition('stealthRock', true, 'foe', { failIfActive: true }));
+  r.register('stickyweb',   setSideCondition('stickyWeb',   true, 'foe', { failIfActive: true }));
 
   r.register('spikes', custom((ctx) => {
     const foeIdx = (1 - ctx.userTeamIndex) as 0 | 1;
@@ -129,6 +132,41 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
   // ── Field toggles ──────────────────────────────────────────────────
   r.register('trickroom', trickRoom());
   r.register('gravity',   gravity());
+
+  // ── Defog ──────────────────────────────────────────────────────────
+  r.register('defog', custom((ctx) => {
+    const events: TurnResolveEvent[] = [];
+    const userIdx = ctx.userTeamIndex as 0 | 1;
+    const foeIdx = (1 - ctx.userTeamIndex) as 0 | 1;
+
+    // −1 evasion on target
+    for (let i = 0; i < ctx.targets.length; i++) {
+      events.push(applyStatBoost(ctx.targets[i]!, ctx.targetSlotIds[i]!, { evasion: -1 }));
+    }
+
+    // Clear hazards from both sides
+    events.push(...clearHazards(ctx.battle.field.sideConditions[userIdx]!, userIdx));
+    events.push(...clearHazards(ctx.battle.field.sideConditions[foeIdx]!, foeIdx));
+
+    // Clear screens from target's (foe's) side only
+    events.push(...clearScreens(ctx.battle.field.sideConditions[foeIdx]!, foeIdx));
+
+    // Clear active terrain
+    if (ctx.battle.field.terrain) {
+      const terrainType = ctx.battle.field.terrain.type;
+      delete ctx.battle.field.terrain;
+      events.push({ type: 'terrain-ended', data: { terrain: terrainType } });
+    }
+
+    return { events };
+  }));
+
+  // ── Court Change ───────────────────────────────────────────────────
+  r.register('courtchange', custom((ctx) => {
+    const [side0, side1] = ctx.battle.field.sideConditions;
+    ctx.battle.field.sideConditions = [side1!, side0!];
+    return { events: [{ type: 'court-change', data: {} }] };
+  }));
 
   return r;
 }
