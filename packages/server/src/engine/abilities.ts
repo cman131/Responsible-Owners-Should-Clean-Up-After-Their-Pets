@@ -92,8 +92,16 @@ const ABILITY_HOOKS: Record<string, AbilityHooks> = {
     onSwitchIn: () => ({ statBoostDeltas: { atk: -1 } }),
   },
   'thick-fat': {
-    onDamageModifier: ({ moveType }) =>
+    onDefenderModifier: ({ moveType }) =>
       moveType === 'Fire' || moveType === 'Ice' ? 0.5 : 1,
+  },
+  multiscale: {
+    onDefenderModifier: ({ defender }) =>
+      defender.currentHp === defender.maxHp ? 0.5 : 1,
+  },
+  'shadow-shield': {
+    onDefenderModifier: ({ defender }) =>
+      defender.currentHp === defender.maxHp ? 0.5 : 1,
   },
   limber: {
     onStatusImmunity: ({ status }) => status === 'par',

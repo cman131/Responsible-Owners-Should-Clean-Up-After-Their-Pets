@@ -51,6 +51,71 @@ describe('onStatusImmunity — canApplyStatus routing', () => {
   });
 });
 
+describe('onDefenderModifier — Multiscale', () => {
+  it('halves damage at full HP', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    // Use tackle (physical Normal move, BP 40) so Charizard's Fire/Flying typing doesn't affect it
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'tackle', currentPp: 35, maxPp: 35 };
+    state.teams[1]!.slots[0]!.party[0]!.ability = 'multiscale';
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      // P2 uses will-o-wisp targeting P1 — no HP change for P2
+      'slot-b1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-a1' },
+    });
+    // Tackle BP40 neutral = 17; halved by Multiscale = 8; target HP: 100 - 8 = 92
+    expect(newState.teams[1]!.slots[0]!.party[0]!.currentHp).toBe(92);
+  });
+
+  it('does not reduce damage when HP is below max', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'tackle', currentPp: 35, maxPp: 35 };
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    p2.ability = 'multiscale';
+    p2.currentHp = 99; // not at full HP
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      // P2 uses will-o-wisp targeting P1 — no HP change for P2
+      'slot-b1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-a1' },
+    });
+    // 17 damage (no halving): 99 - 17 = 82
+    expect(newState.teams[1]!.slots[0]!.party[0]!.currentHp).toBe(82);
+  });
+});
+
+describe('onDefenderModifier — Thick Fat', () => {
+  it('reduces Fire damage by half on defender', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    // Default move at index 0 is flamethrower (Fire special)
+    // P2 (Charizard, Fire/Flying) with Thick Fat should take half fire damage
+    const engineWithTF = new BattleEngine({ rng: () => 0.5 });
+    state.teams[1]!.slots[0]!.party[0]!.ability = 'thick-fat';
+    const { newState: withTF } = engineWithTF.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      // P2 uses will-o-wisp targeting P1 — no HP change for P2
+      'slot-b1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-a1' },
+    });
+
+    const state2 = make1v1State();
+    const engineNoTF = new BattleEngine({ rng: () => 0.5 });
+    state2.teams[1]!.slots[0]!.party[0]!.ability = 'blaze'; // no modifier
+    const { newState: noTF } = engineNoTF.resolveTurn(state2, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      // P2 uses will-o-wisp targeting P1 — no HP change for P2
+      'slot-b1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-a1' },
+    });
+
+    const dmgWithTF = 100 - withTF.teams[1]!.slots[0]!.party[0]!.currentHp;
+    const dmgNoTF = 100 - noTF.teams[1]!.slots[0]!.party[0]!.currentHp;
+    // With Thick Fat, damage is halved
+    expect(dmgWithTF).toBe(Math.floor(dmgNoTF * 0.5));
+  });
+});
+
 describe('onMoveImmunity — Levitate', () => {
   it('blocks Ground move and emits ability-triggered', () => {
     const state = make1v1State();

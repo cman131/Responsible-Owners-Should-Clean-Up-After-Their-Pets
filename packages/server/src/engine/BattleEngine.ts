@@ -551,6 +551,31 @@ export class BattleEngine {
           isCritical,
         );
 
+        // Ability-based defender modifier (Multiscale, Thick Fat, etc.)
+        const defAbilityMod = getAbilityHooks(effectiveAbilityId(target)).onDefenderModifier?.({
+          defender: target,
+          attacker,
+          state: s,
+          move,
+          moveType: effectiveMoveType,
+          basePower: effectiveBasePower,
+          isPhysical,
+          makesContact: move.makesContact === true,
+          effectiveness,
+        });
+        if (defAbilityMod !== undefined) otherModifiers *= defAbilityMod;
+
+        // Item-based defender modifier
+        const defItemMod = getItemHooks(target.heldItem).onDefenderModifier?.({
+          holder: target,
+          state: s,
+          moveType: effectiveMoveType,
+          basePower: effectiveBasePower,
+          target: attacker,
+          isPhysical,
+        });
+        if (defItemMod !== undefined) otherModifiers *= defItemMod;
+
         const { damage } = calcDamage({
           level: attacker.level,
           attackStat: atkStat,
