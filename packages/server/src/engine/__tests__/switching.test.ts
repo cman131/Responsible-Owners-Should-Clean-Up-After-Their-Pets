@@ -140,3 +140,31 @@ describe('onSwitchOut — ability-applied volatile removal', () => {
     expect(outgoing.volatileStatus.some(v => v.name === 'truant')).toBe(false);
   });
 });
+
+describe('pokemon-switched event (FR-14)', () => {
+  it('voluntary switch emits pokemon-switched event with reason: voluntary', () => {
+    const state = makeStateWithBench();
+    const engine = new BattleEngine();
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'switch', targetInstanceId: 'p1-bench' } as SwitchAction,
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const switchEvent = events.find(e => e.type === 'pokemon-switched');
+    expect(switchEvent).toBeDefined();
+    expect(switchEvent!.data['reason']).toBe('voluntary');
+    expect(switchEvent!.data['inInstanceId']).toBe('p1-bench');
+  });
+
+  it('does not emit volatile-applied with note:switch', () => {
+    const state = makeStateWithBench();
+    const engine = new BattleEngine();
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'switch', targetInstanceId: 'p1-bench' } as SwitchAction,
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const oldEvent = events.find(
+      e => e.type === 'volatile-applied' && e.data['note'] === 'switch'
+    );
+    expect(oldEvent).toBeUndefined();
+  });
+});

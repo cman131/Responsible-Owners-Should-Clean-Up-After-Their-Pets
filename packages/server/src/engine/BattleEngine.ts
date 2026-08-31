@@ -656,7 +656,25 @@ export class BattleEngine {
     return { newState: s, events };
   }
 
+  public processForceSwitch(
+    state: BattleState,
+    slotId: string,
+    targetInstanceId: string,
+    reason: 'forced' | 'phased',
+  ): TurnResult {
+    return this.performSwitch(state, slotId, targetInstanceId, reason);
+  }
+
   private executeSwitch(state: BattleState, slotId: string, targetInstanceId: string): TurnResult {
+    return this.performSwitch(state, slotId, targetInstanceId, 'voluntary');
+  }
+
+  private performSwitch(
+    state: BattleState,
+    slotId: string,
+    targetInstanceId: string,
+    reason: 'voluntary' | 'forced' | 'phased',
+  ): TurnResult {
     const events: TurnResolveEvent[] = [];
     const s = structuredClone(state);
     const slot = this.findSlot(s, slotId);
@@ -665,9 +683,9 @@ export class BattleEngine {
     if (newIndex === -1 || slot.party[newIndex]?.fainted) return { newState: s, events };
 
     const outgoing = slot.party[slot.activePokemonIndex];
-    const previousMon = outgoing?.instanceId;
+    const outInstanceId = outgoing?.instanceId;
 
-    // Fire onSwitchOut, remove ability-applied volatiles, then clear generic switch-out state
+    // 1. onSwitchOut before clearing state
     if (outgoing) {
       const outHooks = getAbilityHooks(effectiveAbilityId(outgoing));
       const switchOutResult = outHooks.onSwitchOut?.({ battle: s, slotId, pokemon: outgoing });
@@ -680,12 +698,11 @@ export class BattleEngine {
         }
         events.push(...switchOutResult.events);
       }
-      // Remove ability-applied volatiles not in SWITCH_CLEAR_NAMES (slow-start, truant reset on switch)
+      outgoing.volatileStatus = outgoing.volatileStatus.filter(v => !ABILITY_VOLATILE_CLEAR.has(v.name));
+    }
 
-      outgoing.volatileStatus = outgoing.volatileStatus.filter(
-        v => !ABILITY_VOLATILE_CLEAR.has(v.name)
-      );
-      // Clear generic switch-out state
+    // 2. Switch-out cleanup
+    if (outgoing) {
       outgoing.volatileStatus = outgoing.volatileStatus.filter(v =>
         !SWITCH_CLEAR_NAMES.has(v.name) &&
         !SWITCH_CLEAR_PREFIXES.some(p => v.name.startsWith(p))
@@ -695,35 +712,11 @@ export class BattleEngine {
       delete outgoing.tracedAbilityId;
     }
 
+    // 3. Update active slot
     slot.activePokemonIndex = newIndex;
-    events.push({ type: 'volatile-applied', data: { note: 'switch', slotId, from: previousMon, to: targetInstanceId } });
-
-    // Apply incoming ability's switch-in effect (e.g. Intimidate drops opponent attack)
     const incoming = slot.party[slot.activePokemonIndex];
-    if (incoming) {
-      const incomingAbilityHooks = getAbilityHooks(incoming.ability);
-      const switchInResult = incomingAbilityHooks.onSwitchIn?.({ user: incoming, state: s, slotId });
-      if (switchInResult?.statBoostDeltas) {
-        const incomingTeamIndex = s.teams.findIndex(t => t.slots.some(sl => sl.slotId === slotId));
-        const foeTeamIndex = incomingTeamIndex === 0 ? 1 : 0;
-        const foeTeam = s.teams[foeTeamIndex];
-        if (foeTeam) {
-          for (const foeSlot of foeTeam.slots) {
-            const foePokemon = foeSlot.party[foeSlot.activePokemonIndex];
-            if (foePokemon && !foePokemon.fainted) {
-              const event = applyStatBoost(
-                foePokemon,
-                foeSlot.slotId,
-                switchInResult.statBoostDeltas as Partial<Record<keyof StatBoosts, number>>,
-              );
-              events.push(event);
-            }
-          }
-        }
-      }
-    }
 
-    // Entry hazards — applied after switch-in ability hook
+    // 4. Entry hazards — before onSwitchIn (FR-6)
     if (incoming) {
       const incomingTeamIndex = s.teams.findIndex(t =>
         t.slots.some(sl => sl.slotId === slotId)
@@ -734,7 +727,88 @@ export class BattleEngine {
       events.push(...applyEntryHazards(incoming, slotId, incomingSide, incomingTeamIndex, incomingTypes, grounded, this.data));
     }
 
+    // 5. onSwitchIn ability hook
+    if (incoming) {
+      const incomingAbilityHooks = getAbilityHooks(incoming.ability);
+      const switchInResult = incomingAbilityHooks.onSwitchIn?.({ user: incoming, state: s, slotId });
+      if (switchInResult) {
+        this.applySwitchInResult(s, slotId, incoming, switchInResult, events);
+      }
+    }
+
+    // 6. Emit pokemon-switched event
+    events.push({
+      type: 'pokemon-switched',
+      data: { slotId, outInstanceId, inInstanceId: targetInstanceId, reason },
+    });
+
     return { newState: s, events };
+  }
+
+  private applySwitchInResult(
+    s: BattleState,
+    slotId: string,
+    incoming: PartyMember,
+    result: SwitchInResult,
+    events: TurnResolveEvent[],
+  ): void {
+    // Apply foe stat deltas (Intimidate)
+    if (result.statBoostDeltas) {
+      const incomingTeamIndex = s.teams.findIndex(t => t.slots.some(sl => sl.slotId === slotId));
+      const foeTeamIndex = incomingTeamIndex === 0 ? 1 : 0;
+      const foeTeam = s.teams[foeTeamIndex];
+      if (foeTeam) {
+        for (const foeSlot of foeTeam.slots) {
+          const foePokemon = foeSlot.party[foeSlot.activePokemonIndex];
+          if (foePokemon && !foePokemon.fainted) {
+            const event = applyStatBoost(
+              foePokemon,
+              foeSlot.slotId,
+              result.statBoostDeltas as Partial<Record<keyof StatBoosts, number>>,
+            );
+            events.push(event);
+          }
+        }
+      }
+    }
+
+    // Apply self stat deltas (Download)
+    if (result.selfBoostDeltas) {
+      const event = applyStatBoost(
+        incoming,
+        slotId,
+        result.selfBoostDeltas as Partial<Record<keyof StatBoosts, number>>,
+      );
+      events.push(event);
+    }
+
+    // Handle Trace — set tracedAbilityId and re-invoke onSwitchIn once (skip if traced is also Trace)
+    if (result.traceAbilityId && result.traceAbilityId !== 'trace') {
+      incoming.tracedAbilityId = result.traceAbilityId;
+      const tracedHooks = getAbilityHooks(result.traceAbilityId);
+      const tracedResult = tracedHooks.onSwitchIn?.({ user: incoming, state: s, slotId });
+      if (tracedResult) {
+        this.applySwitchInResult(s, slotId, incoming, tracedResult, events);
+      }
+    }
+
+    // Handle Screen Cleaner — remove all screens from both sides
+    if (result.clearScreens) {
+      for (const side of s.field.sideConditions) {
+        if (side.reflect > 0) {
+          side.reflect = 0;
+          events.push({ type: 'screen-broken', data: { screen: 'reflect' } });
+        }
+        if (side.lightScreen > 0) {
+          side.lightScreen = 0;
+          events.push({ type: 'screen-broken', data: { screen: 'light-screen' } });
+        }
+        if (side.auroraVeil > 0) {
+          side.auroraVeil = 0;
+          events.push({ type: 'screen-broken', data: { screen: 'aurora-veil' } });
+        }
+      }
+    }
   }
 
   private endOfTurn(state: BattleState): TurnResult {
