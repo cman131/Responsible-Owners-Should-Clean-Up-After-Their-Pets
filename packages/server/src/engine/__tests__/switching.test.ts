@@ -168,3 +168,55 @@ describe('pokemon-switched event (FR-14)', () => {
     expect(oldEvent).toBeUndefined();
   });
 });
+
+describe('onSwitchIn — Download', () => {
+  function makeDownloadState(foeDefStat: number, foeSpdStat: number) {
+    const state = makeStateWithBench();
+    // Incoming Pokémon (p1-bench) has Download
+    state.teams[0]!.slots[0]!.party[1]!.ability = 'download';
+    // Foe has specific def/spd stats, no boosts
+    state.teams[1]!.slots[0]!.party[0]!.stats.def = foeDefStat;
+    state.teams[1]!.slots[0]!.party[0]!.stats.spd = foeSpdStat;
+    state.teams[1]!.slots[0]!.party[0]!.statBoosts = { atk: 0, def: 0, spa: 0, spd: 0, spe: 0, accuracy: 0, evasion: 0 };
+    return state;
+  }
+
+  it('gives +1 Atk when foe effective Def < effective SpD', () => {
+    // foe Def=80, SpD=120 → Def < SpD → Download gives +Atk
+    const state = makeDownloadState(80, 120);
+    const engine = new BattleEngine();
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'switch', targetInstanceId: 'p1-bench' } as SwitchAction,
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const incoming = newState.teams[0]!.slots[0]!.party[1]!;
+    expect(incoming.statBoosts.atk).toBe(1);
+    expect(incoming.statBoosts.spa).toBe(0);
+    expect(events.some(e => e.type === 'stat-change')).toBe(true);
+  });
+
+  it('gives +1 SpA when foe effective SpD <= effective Def', () => {
+    // foe Def=120, SpD=80 → SpD < Def → Download gives +SpA
+    const state = makeDownloadState(120, 80);
+    const engine = new BattleEngine();
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'switch', targetInstanceId: 'p1-bench' } as SwitchAction,
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const incoming = newState.teams[0]!.slots[0]!.party[1]!;
+    expect(incoming.statBoosts.spa).toBe(1);
+    expect(incoming.statBoosts.atk).toBe(0);
+  });
+
+  it('gives +1 SpA on tie (Def === SpD)', () => {
+    const state = makeDownloadState(100, 100);
+    const engine = new BattleEngine();
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'switch', targetInstanceId: 'p1-bench' } as SwitchAction,
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const incoming = newState.teams[0]!.slots[0]!.party[1]!;
+    expect(incoming.statBoosts.spa).toBe(1);
+    expect(incoming.statBoosts.atk).toBe(0);
+  });
+});

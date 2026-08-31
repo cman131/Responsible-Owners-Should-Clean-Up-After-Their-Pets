@@ -1,4 +1,5 @@
 import type { PartyMember, BattleState, PokemonType, StatBoosts, TurnResolveEvent } from '@poke-fighter/shared';
+import { getEffectiveStat } from './stats.js';
 
 export interface AbilityContext {
   user: PartyMember;
@@ -95,6 +96,28 @@ const ABILITY_HOOKS: Record<string, AbilityHooks> = {
   chlorophyll: {
     onSpeedModifier: ({ state }) =>
       state.field.weather?.type === 'sun' ? 2 : 1,
+  },
+  download: {
+    onSwitchIn: ({ state, slotId }) => {
+      const myTeamIdx = state.teams.findIndex(t => t.slots.some(sl => sl.slotId === slotId));
+      const foeTeamIdx = myTeamIdx === 0 ? 1 : 0;
+      const foeTeam = state.teams[foeTeamIdx];
+      if (!foeTeam) return null;
+      const foeSlot = foeTeam.slots[0];
+      if (!foeSlot) return null;
+      const foe = foeSlot.party[foeSlot.activePokemonIndex];
+      if (!foe || foe.fainted) return null;
+
+      const effectiveDef = getEffectiveStat(foe.stats.def, foe.statBoosts.def, 'def');
+      const effectiveSpd = getEffectiveStat(foe.stats.spd, foe.statBoosts.spd, 'spd');
+
+      // Def < SpD → boost Atk; tie or SpD ≤ Def → boost SpA (Gen 5+ ruling)
+      if (effectiveDef < effectiveSpd) {
+        return { selfBoostDeltas: { atk: 1 } };
+      } else {
+        return { selfBoostDeltas: { spa: 1 } };
+      }
+    },
   },
   regenerator: {
     onSwitchOut: ({ pokemon }) => {
