@@ -349,4 +349,14 @@ describe('applySecondaries — break-screens', () => {
     const events = applySecondaries(ctx);
     expect(events.filter(e => e.type === 'screen-broken')).toHaveLength(0);
   });
+
+  it('does not fire when totalDamage is 0', () => {
+    const ctx = makeSecCtx({
+      secondaries: [{ kind: 'break-screens', screensOnly: false }],
+      totalDamage: 0,
+    });
+    ctx.battle.field.sideConditions[1]!.reflect = 3;
+    applySecondaries(ctx);
+    expect(ctx.battle.field.sideConditions[1]!.reflect).toBe(3); // unchanged
+  });
 });

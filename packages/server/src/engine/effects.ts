@@ -232,6 +232,7 @@ export function applySecondaries(ctx: SecondaryContext): TurnResolveEvent[] {
         break;
       }
       case 'break-screens': {
+        if (ctx.totalDamage <= 0) break;
         const targetTeamIndex = ctx.battle.teams.findIndex(t =>
           t.slots.some(sl => sl.slotId === ctx.targetSlotId)
         ) as 0 | 1;
