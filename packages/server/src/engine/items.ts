@@ -1,4 +1,4 @@
-import type { PartyMember, BattleState, PokemonType } from '@poke-fighter/shared';
+import type { PartyMember, BattleState, PokemonType, StatBoosts } from '@poke-fighter/shared';
 
 export interface ItemContext {
   holder: PartyMember;
@@ -14,10 +14,23 @@ export interface ItemAttackContext extends ItemContext {
 
 export interface ItemHooks {
   onAttackerModifier?: (ctx: ItemAttackContext) => number;
+  onDefenderModifier?: (ctx: ItemAttackContext) => number;
   onDamageModifier?: (ctx: ItemAttackContext) => number;
   onEndOfTurn?: (ctx: ItemContext) => { hpDelta: number };
-  onAfterDamageTaken?: (ctx: ItemContext & { damageTaken: number }) => { hpDelta: number };
+  onAfterDamageTaken?: (ctx: ItemContext & { damageTaken: number; effectiveness?: number }) => {
+    hpDelta: number;
+    statBoostDeltas?: Partial<StatBoosts>;
+    consume?: boolean;
+  };
+  onAfterHit?: (ctx: ItemAttackContext & { makesContact: boolean; totalDamage: number }) => {
+    directDamageToAttacker?: number;
+    consume?: boolean;
+  } | null;
+  onStatusApplied?: (ctx: ItemContext & { status: string }) => { cureStatus: boolean; consume?: boolean } | null;
   onSpeedModifier?: (ctx: ItemContext) => number;
+  critStageBonus?: number;
+  screenExtension?: number;
+  drainMultiplier?: number;
 }
 
 const ITEM_HOOKS: Record<string, ItemHooks> = {

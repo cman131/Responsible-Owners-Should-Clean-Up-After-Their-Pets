@@ -33,9 +33,11 @@ export function critProbability(stage: number): number {
 export function computeCritStage(
   moveCritRatio: number | undefined,
   volatiles: Array<{ name: string }>,
+  itemCritBonus: number = 0,
 ): number {
   let stage = 0;
   if ((moveCritRatio ?? 0) > 0) stage += 1;
   if (volatiles.some((v) => v.name === 'focusenergy')) stage += 2;
+  stage += itemCritBonus;
   return stage;
 }

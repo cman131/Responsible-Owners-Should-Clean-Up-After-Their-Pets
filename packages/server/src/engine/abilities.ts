@@ -1,4 +1,4 @@
-import type { PartyMember, BattleState, PokemonType, StatBoosts, TurnResolveEvent } from '@poke-fighter/shared';
+import type { PartyMember, BattleState, PokemonType, StatBoosts, TurnResolveEvent, Move, WeatherType } from '@poke-fighter/shared';
 import { getEffectiveStat } from './stats.js';
 
 export interface AbilityContext {
@@ -23,6 +23,7 @@ export interface SwitchInResult {
   selfBoostDeltas?: Partial<StatBoosts>;      // applied to switching-in Pokémon (Download)
   traceAbilityId?: string;                   // sets tracedAbilityId on incoming Pokémon (Trace)
   clearScreens?: boolean;                    // removes Reflect/Light Screen/Aurora Veil from both sides (Screen Cleaner)
+  setWeather?: { type: WeatherType; turnsRemaining: number; permanent?: boolean };
 }
 
 export interface SwitchContext {
@@ -37,16 +38,53 @@ export interface SwitchOutResult {
   events: TurnResolveEvent[];
 }
 
+export interface DefenderModifierCtx {
+  defender: PartyMember;
+  attacker: PartyMember;
+  state: BattleState;
+  move: Move;
+  moveType: PokemonType;
+  basePower: number;
+  isPhysical: boolean;
+  makesContact: boolean;
+  effectiveness: number;
+}
+
+export interface MoveImmunityCtx {
+  move: Move;
+  defender: PartyMember;
+  state: BattleState;
+}
+
+export interface MoveImmunityResult {
+  immune: true;
+  hpHealFraction?: number;
+  statBoostDeltas?: Partial<StatBoosts>;
+  chargeFlashFire?: boolean;
+}
+
+export interface AfterHitResult {
+  statusToApply?: string;
+  statBoostDeltas?: Partial<StatBoosts>;
+  abilityOverride?: string;
+  directDamage?: number;
+  volatileToApply?: string;
+  disableMoveId?: string;
+}
+
 export interface AbilityHooks {
   onAttackerModifier?: (ctx: AttackContext) => number;
-  onDefenderModifier?: (ctx: AttackContext) => number;
+  onDefenderModifier?: (ctx: DefenderModifierCtx) => number;
   onDamageModifier?: (ctx: AttackContext) => number;
   onSwitchIn?: (ctx: SwitchInContext) => SwitchInResult | null;
   onSwitchOut?: (ctx: SwitchContext) => SwitchOutResult | null;
-  onAfterHit?: (ctx: AttackContext & { isPhysical: boolean }) => { statusToApply?: string } | null;
-  onStatusImmunity?: (ctx: AbilityContext & { status: string }) => boolean;
+  onAfterHit?: (ctx: AttackContext & { isPhysical: boolean; makesContact: boolean; rng: () => number }) => AfterHitResult | null;
+  onStatusImmunity?: (ctx: { status: string; state?: BattleState }) => boolean;
+  onMoveImmunity?: (ctx: MoveImmunityCtx) => MoveImmunityResult | null;
   onWeatherImmunity?: (ctx: AbilityContext & { weather: string }) => boolean;
   onSpeedModifier?: (ctx: AbilityContext) => number;
+  doublesSecondaryChance?: true;
+  removesSecondaries?: true;
 }
 
 const ABILITY_HOOKS: Record<string, AbilityHooks> = {

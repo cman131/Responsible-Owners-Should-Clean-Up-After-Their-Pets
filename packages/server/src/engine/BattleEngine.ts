@@ -625,6 +625,7 @@ export class BattleEngine {
         const afterHitResult = defenderAbilityHooks.onAfterHit({
           user: target, state: s, moveType: effectiveMoveType, basePower: effectiveBasePower,
           target: attacker, isPhysical: move.category === 'physical',
+          makesContact: move.makesContact ?? false, rng: this.rng,
         });
         if (afterHitResult?.statusToApply) {
           const attackerSpecies = this.data.getSpecies(attacker.speciesId);

@@ -4,7 +4,7 @@ export type BattlePhase = 'setup' | 'action' | 'resolution' | 'switch' | 'ended'
 
 export type StatusCondition = 'brn' | 'par' | 'slp' | 'frz' | 'psn' | 'tox' | 'fnt';
 
-export type WeatherType = 'sun' | 'rain' | 'sand' | 'snow';
+export type WeatherType = 'sun' | 'rain' | 'sand' | 'snow' | 'heavy-rain' | 'harsh-sun' | 'strong-winds';
 
 export type TerrainType = 'electric' | 'grassy' | 'misty' | 'psychic';
 
@@ -53,6 +53,8 @@ export interface PartyMember {
   hasTerastallized: boolean;
   lastMoveId?: string;
   tracedAbilityId?: string;
+  lockedMoveId?: string;
+  isEvioliteEligible?: boolean;
   fainted: boolean;
   expTotal: number;
 }
@@ -82,7 +84,7 @@ export interface SideConditions {
 }
 
 export interface FieldState {
-  weather?: { type: WeatherType; turnsRemaining: number; fromAbility: boolean };
+  weather?: { type: WeatherType; turnsRemaining: number; fromAbility: boolean; permanent?: boolean };
   terrain?: { type: TerrainType; turnsRemaining: number };
   trickroom: number;  // turns remaining
   gravity: number;    // turns remaining

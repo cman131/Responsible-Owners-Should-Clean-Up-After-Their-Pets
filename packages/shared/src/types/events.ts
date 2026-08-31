@@ -109,7 +109,11 @@ export interface TurnResolveEvent {
     | 'hazard-damage'
     | 'hazard-cleared'
     | 'court-change'
-    | 'pokemon-switched';
+    | 'pokemon-switched'
+    | 'focus-sash'
+    | 'item-consumed'
+    | 'status-blocked'
+    | 'ability-triggered';
   data: Record<string, unknown>;
 }
 
