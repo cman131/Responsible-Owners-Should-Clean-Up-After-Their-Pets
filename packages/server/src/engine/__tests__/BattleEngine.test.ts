@@ -456,7 +456,8 @@ describe('Previously-unimplemented status moves', () => {
       'slot-a1': { type: 'move', moveIndex: 1 },
       'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
     });
-    expect(newState.field.sideConditions[0]!.reflect).toBe(5);
+    // Reflect is set to 5 turns then decremented by 1 at end-of-turn, so 4 remains
+    expect(newState.field.sideConditions[0]!.reflect).toBe(4);
   });
 
   it('Light Screen sets lightScreen on user team side for 5 turns', () => {
@@ -466,7 +467,8 @@ describe('Previously-unimplemented status moves', () => {
       'slot-a1': { type: 'move', moveIndex: 1 },
       'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
     });
-    expect(newState.field.sideConditions[0]!.lightScreen).toBe(5);
+    // Light Screen is set to 5 turns then decremented by 1 at end-of-turn, so 4 remains
+    expect(newState.field.sideConditions[0]!.lightScreen).toBe(4);
   });
 
   it('Stealth Rock sets stealthRock on foe team side', () => {
@@ -1236,7 +1238,8 @@ describe('screens — re-cast guard', () => {
       'slot-b1': { type: 'move', moveIndex: 0 },
     });
     expect(events.some(e => e.type === 'side-condition-set')).toBe(true);
-    expect(newState.field.sideConditions[0]!.auroraVeil).toBe(5);
+    // Aurora Veil is set to 5 turns then decremented by 1 at end-of-turn, so 4 remains
+    expect(newState.field.sideConditions[0]!.auroraVeil).toBe(4);
   });
 });
 
@@ -1285,7 +1288,124 @@ describe('Court Change', () => {
       'slot-b1': { type: 'move', moveIndex: 0 },
     });
     expect(newState.field.sideConditions[0]!.stealthRock).toBe(true);  // swapped
-    expect(newState.field.sideConditions[1]!.reflect).toBe(4);          // swapped
+    expect(newState.field.sideConditions[1]!.reflect).toBe(3);          // swapped, then decremented by 1 at end-of-turn
     expect(events.some(e => e.type === 'court-change')).toBe(true);
+  });
+});
+
+describe('screens — damage halving', () => {
+  it('Reflect halves physical damage dealt to the defending side', () => {
+    // Mock Math.random to make randomDamageFactor deterministic (0.9 → factor = 1.0)
+    const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0.9);
+    // rng sequence: 0 (accuracy hit), 1 (no crit) alternating for each attack
+    const makeRng = () => { let c = 0; return () => (c++ % 2 === 0 ? 0 : 1); };
+
+    const withReflect = make1v1State();
+    withReflect.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'tackle', currentPp: 35, maxPp: 35 };
+    withReflect.field.sideConditions[1]!.reflect = 5;
+
+    const withoutReflect = make1v1State();
+    withoutReflect.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'tackle', currentPp: 35, maxPp: 35 };
+
+    const engineWith = new BattleEngine({ rng: makeRng() });
+    const { newState: afterReflect } = engineWith.resolveTurn(withReflect, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    const engineWithout = new BattleEngine({ rng: makeRng() });
+    const { newState: afterNoReflect } = engineWithout.resolveTurn(withoutReflect, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    mockRandom.mockRestore();
+
+    const p2HpWithReflect = afterReflect.teams[1]!.slots[0]!.party[0]!.currentHp;
+    const p2HpNoReflect = afterNoReflect.teams[1]!.slots[0]!.party[0]!.currentHp;
+    expect(p2HpWithReflect).toBeGreaterThan(p2HpNoReflect);
+  });
+
+  it('critical hit bypasses Reflect (deals full damage)', () => {
+    // Mock Math.random to make randomDamageFactor deterministic (0.9 → factor = 1.0)
+    const mockRandom = vi.spyOn(Math, 'random').mockReturnValue(0.9);
+
+    const engine = new BattleEngine({ rng: () => 0 }); // rng=0 → always crit
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'tackle', currentPp: 35, maxPp: 35 };
+    state.field.sideConditions[1]!.reflect = 5;
+
+    const engineNoCrit = new BattleEngine({ rng: () => 1 }); // rng=1 → never crit
+    const stateNoCrit = make1v1State();
+    stateNoCrit.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'tackle', currentPp: 35, maxPp: 35 };
+    stateNoCrit.field.sideConditions[1]!.reflect = 5;
+
+    const { newState: afterCrit } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const { newState: afterNoCrit } = engineNoCrit.resolveTurn(stateNoCrit, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    mockRandom.mockRestore();
+
+    const p2HpCrit = afterCrit.teams[1]!.slots[0]!.party[0]!.currentHp;
+    const p2HpNoCrit = afterNoCrit.teams[1]!.slots[0]!.party[0]!.currentHp;
+    // Crit ignores Reflect → more damage → less HP remaining
+    expect(p2HpCrit).toBeLessThan(p2HpNoCrit);
+  });
+});
+
+describe('entry hazards — switch-in', () => {
+  it('Stealth Rock damages the incoming Pokémon on switch-in', () => {
+    const state = make1v1State();
+    const bench = makePokemon({ instanceId: 'p1-bench', maxHp: 100, currentHp: 100 });
+    state.teams[0]!.slots[0]!.party.push(bench);
+    state.field.sideConditions[0]!.stealthRock = true;
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'switch', targetInstanceId: 'p1-bench' },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    expect(events.some(e => e.type === 'hazard-damage' && e.data['hazard'] === 'stealthRock')).toBe(true);
+    const benchAfter = newState.teams[0]!.slots[0]!.party.find(p => p.instanceId === 'p1-bench');
+    expect(benchAfter!.currentHp).toBeLessThan(100);
+  });
+
+  it('Spikes (3 layers) deals 25 damage to a 100 HP grounded switch-in', () => {
+    const state = make1v1State();
+    // Use Blastoise (speciesId 9, Water type) — grounded, so Spikes apply
+    const bench = makePokemon({ instanceId: 'p1-bench', speciesId: 9, speciesName: 'blastoise', maxHp: 100, currentHp: 100 });
+    state.teams[0]!.slots[0]!.party.push(bench);
+    state.field.sideConditions[0]!.spikes = 3;
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'switch', targetInstanceId: 'p1-bench' },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    const spikesDmg = events.find(e => e.type === 'hazard-damage' && e.data['hazard'] === 'spikes');
+    expect(spikesDmg!.data['damage']).toBe(25);
+  });
+});
+
+describe('screens — turn counter + expiry', () => {
+  it('Reflect counter decrements each turn and emits screen-ended at 0', () => {
+    const state = make1v1State();
+    state.field.sideConditions[0]!.reflect = 1;
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    expect(newState.field.sideConditions[0]!.reflect).toBe(0);
+    expect(events.some(e => e.type === 'screen-ended' && e.data['screen'] === 'reflect')).toBe(true);
   });
 });

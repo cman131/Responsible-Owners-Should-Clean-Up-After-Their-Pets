@@ -16,6 +16,7 @@ import { MoveEffectRegistry, MoveContext } from './MoveEffectRegistry.js';
 import { buildDefaultRegistry } from './registrations.js';
 import { SWITCH_CLEAR_NAMES, SWITCH_CLEAR_PREFIXES } from './volatileClearRules.js';
 import { isGrounded, GRAVITY_BLOCKED_MOVES, WEATHER_ACCURACY, SOLAR_MOVES, WEATHER_BALL_TYPE, GRASSY_TERRAIN_HALVED } from './fieldState.js';
+import { getScreenMultiplier, applyEntryHazards, decrementScreens } from './sideConditions.js';
 
 const ALWAYS_THAW_MOVES = new Set(['scald', 'steameruption', 'sparklingaria']);
 
@@ -505,6 +506,16 @@ export class BattleEngine {
           if (terrain === 'psychic'  && effectiveMoveType === 'Psychic'  && atkGrounded) otherModifiers *= 1.5;
         }
 
+        // Screen damage halving — crits bypass screens
+        const defenderTeamIndex = s.teams.findIndex(t =>
+          t.slots.some(sl => sl.slotId === targetSlotId)
+        ) as 0 | 1;
+        otherModifiers *= getScreenMultiplier(
+          s.field.sideConditions[defenderTeamIndex]!,
+          move.category as 'physical' | 'special',
+          isCritical,
+        );
+
         const { damage } = calcDamage({
           level: attacker.level,
           attackStat: atkStat,
@@ -691,6 +702,17 @@ export class BattleEngine {
       }
     }
 
+    // Entry hazards — applied after switch-in ability hook
+    if (incoming) {
+      const incomingTeamIndex = s.teams.findIndex(t =>
+        t.slots.some(sl => sl.slotId === slotId)
+      ) as 0 | 1;
+      const incomingSide = s.field.sideConditions[incomingTeamIndex]!;
+      const incomingTypes = this.resolveEffectiveTypes(incoming);
+      const grounded = isGrounded(incoming, incomingTypes, s.field.gravity > 0);
+      events.push(...applyEntryHazards(incoming, slotId, incomingSide, incomingTeamIndex, incomingTypes, grounded, this.data));
+    }
+
     return { newState: s, events };
   }
 
@@ -791,6 +813,11 @@ export class BattleEngine {
       if (s.field.gravity === 0) {
         events.push({ type: 'gravity-ended', data: {} });
       }
+    }
+
+    // Screen turn counter decrements
+    for (let i = 0; i < 2; i++) {
+      decrementScreens(s.field.sideConditions[i]!, i as 0 | 1, events);
     }
 
     return { newState: s, events };
