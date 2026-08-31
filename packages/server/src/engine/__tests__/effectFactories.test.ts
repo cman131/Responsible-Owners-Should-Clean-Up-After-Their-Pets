@@ -239,6 +239,49 @@ describe('setSideCondition', () => {
     expect(state.field.sideConditions[1]!.stealthRock).toBe(true);
     expect(events[0]!.data['side']).toBe(1);
   });
+
+  it('failIfActive: emits move-failed with reason already-active when reflect is already set', () => {
+    const state = make1v1State();
+    state.field.sideConditions[0]!.reflect = 3; // already active
+    const ctx = makeCtx({ battle: state, userTeamIndex: 0 });
+    const { events } = setSideCondition('reflect', 5, 'ally', { failIfActive: true })(ctx);
+    expect(events[0]!.type).toBe('move-failed');
+    expect(events[0]!.data['reason']).toBe('already-active');
+    expect(state.field.sideConditions[0]!.reflect).toBe(3); // unchanged
+  });
+
+  it('failIfActive: succeeds (sets field) when condition is not yet active', () => {
+    const state = make1v1State();
+    const ctx = makeCtx({ battle: state, userTeamIndex: 0 });
+    const { events } = setSideCondition('reflect', 5, 'ally', { failIfActive: true })(ctx);
+    expect(events[0]!.type).toBe('side-condition-set');
+    expect(state.field.sideConditions[0]!.reflect).toBe(5);
+  });
+
+  it('weatherRequired: emits move-failed with reason no-hail when no weather is active', () => {
+    const state = make1v1State(); // no weather
+    const ctx = makeCtx({ battle: state, userTeamIndex: 0 });
+    const { events } = setSideCondition('auroraVeil', 5, 'ally', { failIfActive: true, weatherRequired: ['snow'] })(ctx);
+    expect(events[0]!.type).toBe('move-failed');
+    expect(events[0]!.data['reason']).toBe('no-hail');
+  });
+
+  it('weatherRequired: emits move-failed when weather is sun, not snow', () => {
+    const state = make1v1State();
+    state.field.weather = { type: 'sun', turnsRemaining: 5, fromAbility: false };
+    const ctx = makeCtx({ battle: state, userTeamIndex: 0 });
+    const { events } = setSideCondition('auroraVeil', 5, 'ally', { weatherRequired: ['snow'] })(ctx);
+    expect(events[0]!.type).toBe('move-failed');
+  });
+
+  it('weatherRequired: succeeds when weather matches', () => {
+    const state = make1v1State();
+    state.field.weather = { type: 'snow', turnsRemaining: 5, fromAbility: false };
+    const ctx = makeCtx({ battle: state, userTeamIndex: 0 });
+    const { events } = setSideCondition('auroraVeil', 5, 'ally', { weatherRequired: ['snow'] })(ctx);
+    expect(events[0]!.type).toBe('side-condition-set');
+    expect(state.field.sideConditions[0]!.auroraVeil).toBe(5);
+  });
 });
 
 describe('trickRoom', () => {

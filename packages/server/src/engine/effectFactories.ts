@@ -83,9 +83,22 @@ export function setSideCondition(
   key: keyof SideConditions,
   value: number | boolean,
   side: 'ally' | 'foe',
+  options?: {
+    failIfActive?: boolean;
+    weatherRequired?: WeatherType[];
+  },
 ): MoveEffectHandler {
   return (ctx) => {
     const sideIdx = (side === 'ally' ? ctx.userTeamIndex : 1 - ctx.userTeamIndex) as 0 | 1;
+    const currentValue = (ctx.battle.field.sideConditions[sideIdx] as Record<string, unknown>)[key as string];
+
+    if (options?.failIfActive && currentValue) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'already-active' } }] };
+    }
+    if (options?.weatherRequired && !options.weatherRequired.includes(ctx.battle.field.weather?.type as WeatherType)) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'no-hail' } }] };
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (ctx.battle.field.sideConditions[sideIdx] as any)[key] = value;
     return { events: [{ type: 'side-condition-set', data: { side: sideIdx, condition: key, value } }] };
