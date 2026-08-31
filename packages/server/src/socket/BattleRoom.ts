@@ -28,10 +28,15 @@ export class BattleRoom {
   private onNpcActionRequiredCb: NpcActionRequiredCallback | null = null;
   private onPlayerActionRequiredCb: PlayerActionRequiredCallback | null = null;
   private readonly data = new DataLoader();
-  private awaitingForcedSwitches = new Set<string>();
+  private awaitingForcedSwitches = new Map<string, 'forced' | 'phased'>();
 
   constructor({ initialState }: BattleRoomOptions) {
     this.state = structuredClone(initialState);
+    // Pre-populate forced switches if the initial state already has fainted active mons
+    const initialSwitchSlots = this.getPendingSwitchSlots(this.state);
+    if (initialSwitchSlots.length > 0) {
+      this.awaitingForcedSwitches = new Map(initialSwitchSlots.map((sl) => [sl.slotId, 'forced' as const]));
+    }
     // Defer NPC request emission so SocketServer can wire up onNpcActionRequired first
     setTimeout(() => {
       const npcRequests = this.buildNpcRequests();
@@ -75,29 +80,20 @@ export class BattleRoom {
       if (action.type !== 'switch') {
         return { ok: false, reason: 'Must submit a switch action' };
       }
+      const reason = this.awaitingForcedSwitches.get(slotId)!;
+      const result = this.engine.processForceSwitch(
+        this.state,
+        slotId,
+        (action as SwitchAction).targetInstanceId,
+        reason,
+      );
+      if (!result.events.some(e => e.type === 'pokemon-switched')) {
+        return { ok: false, reason: 'Invalid switch target' };
+      }
       this.awaitingForcedSwitches.delete(slotId);
-      const s = structuredClone(this.state);
-      let switched = false;
-      for (const team of s.teams) {
-        const slot = team.slots.find((sl) => sl.slotId === slotId);
-        if (!slot) continue;
-        const newIndex = slot.party.findIndex((p) => p.instanceId === (action as SwitchAction).targetInstanceId);
-        if (newIndex === -1 || slot.party[newIndex]?.fainted) {
-          this.awaitingForcedSwitches.add(slotId);
-          return { ok: false, reason: 'Invalid switch target' };
-        }
-        slot.activePokemonIndex = newIndex;
-        switched = true;
-        break;
-      }
-      if (!switched) {
-        this.awaitingForcedSwitches.add(slotId);
-        return { ok: false, reason: 'Slot not found' };
-      }
-      this.state = s;
-      const switchEvent: TurnResolveEvent = { type: 'volatile-applied', data: { note: 'switch', slotId } };
+      this.state = result.newState;
       try {
-        this.onTurnResolvedCb?.([switchEvent], this.state);
+        this.onTurnResolvedCb?.(result.events, this.state);
       } catch (err) {
         console.error('[BattleRoom] onTurnResolvedCb (forced switch) threw:', err);
       }
@@ -171,7 +167,7 @@ export class BattleRoom {
 
     const switchSlots = this.getPendingSwitchSlots(s);
     if (switchSlots.length > 0) {
-      this.awaitingForcedSwitches = new Set(switchSlots.map((sl) => sl.slotId));
+      this.awaitingForcedSwitches = new Map(switchSlots.map((sl) => [sl.slotId, 'forced' as const]));
       try {
         this.onSwitchRequestCb?.(switchSlots);
       } catch (err) {
@@ -411,7 +407,7 @@ export class BattleRoom {
 
     const switchSlots = this.getPendingSwitchSlots(newState);
     if (switchSlots.length > 0) {
-      this.awaitingForcedSwitches = new Set(switchSlots.map((s) => s.slotId));
+      this.awaitingForcedSwitches = new Map(switchSlots.map((s) => [s.slotId, 'forced' as const]));
       try {
         this.onSwitchRequestCb?.(switchSlots);
       } catch (err) {

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BattleRoom } from '../BattleRoom.js';
-import { make1v1State } from '../../engine/__tests__/fixtures.js';
+import { make1v1State, makePokemon } from '../../engine/__tests__/fixtures.js';
 import type { MoveAction } from '@poke-fighter/shared';
 
 describe('BattleRoom', () => {
@@ -131,5 +131,47 @@ describe('onPlayerActionRequired', () => {
     await new Promise<void>((r) => setTimeout(r, 0));
     const requests: Array<{ slotId: string }> = cb.mock.calls[0]![0];
     expect(requests.every((r) => r.slotId !== 'slot-b1')).toBe(true);
+  });
+});
+
+describe('forced switch correctness', () => {
+  function makeStateWithBench() {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.isNpc = false;
+    const bench = makePokemon({ instanceId: 'p1-bench' });
+    state.teams[0]!.slots[0]!.party.push(bench);
+    return state;
+  }
+
+  it('forced switch applies Stealth Rock to incoming Pokémon', () => {
+    const state = makeStateWithBench();
+    state.field.sideConditions[0]!.stealthRock = true;
+    state.teams[0]!.slots[0]!.party[0]!.fainted = true;
+    state.teams[0]!.slots[0]!.party[0]!.currentHp = 0;
+
+    const room = new BattleRoom({ initialState: state });
+    const events: import('@poke-fighter/shared').TurnResolveEvent[] = [];
+    room.onTurnResolved((evts) => events.push(...evts));
+
+    const result = room.submitAction('slot-a1', { type: 'switch', targetInstanceId: 'p1-bench' });
+    expect(result.ok).toBe(true);
+
+    const bench = room.getState().teams[0]!.slots[0]!.party[1]!;
+    expect(bench.currentHp).toBeLessThan(bench.maxHp);
+    expect(events.some(e => e.type === 'hazard-damage')).toBe(true);
+  });
+
+  it('forced switch emits pokemon-switched event', () => {
+    const state = makeStateWithBench();
+    state.teams[0]!.slots[0]!.party[0]!.fainted = true;
+    state.teams[0]!.slots[0]!.party[0]!.currentHp = 0;
+
+    const room = new BattleRoom({ initialState: state });
+    const events: import('@poke-fighter/shared').TurnResolveEvent[] = [];
+    room.onTurnResolved((evts) => events.push(...evts));
+
+    room.submitAction('slot-a1', { type: 'switch', targetInstanceId: 'p1-bench' });
+
+    expect(events.some(e => e.type === 'pokemon-switched' && e.data['reason'] === 'forced')).toBe(true);
   });
 });
