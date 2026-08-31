@@ -8,7 +8,7 @@ export const SWITCH_CLEAR_NAMES = new Set([
   'foresight', 'miracle-eye',
   'destiny-bond', 'endure',
   'substitute',
-  'toxic', 'sleep',
+  'sleep',
 ]);
 
 export const SWITCH_CLEAR_PREFIXES = ['charging-'];
