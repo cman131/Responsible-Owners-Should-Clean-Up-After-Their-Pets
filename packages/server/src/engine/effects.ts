@@ -206,6 +206,50 @@ export function applySecondaries(ctx: SecondaryContext): TurnResolveEvent[] {
         ctx.user.volatileStatus.push({ name: 'recharge' });
         break;
       }
+      case 'clear-hazards-self': {
+        if (ctx.totalDamage <= 0) break;
+        const userTeamIndex = ctx.battle.teams.findIndex(t =>
+          t.slots.some(sl => sl.slotId === ctx.userSlotId)
+        ) as 0 | 1;
+        const s = ctx.battle.field.sideConditions[userTeamIndex]!;
+        if (s.stealthRock) {
+          s.stealthRock = false;
+          events.push({ type: 'hazard-cleared', data: { hazard: 'stealthRock', side: userTeamIndex } });
+        }
+        if (s.spikes > 0) {
+          s.spikes = 0;
+          events.push({ type: 'hazard-cleared', data: { hazard: 'spikes', side: userTeamIndex } });
+        }
+        if (s.toxicSpikes > 0) {
+          s.toxicSpikes = 0;
+          events.push({ type: 'hazard-cleared', data: { hazard: 'toxicSpikes', side: userTeamIndex } });
+        }
+        if (s.stickyWeb) {
+          s.stickyWeb = false;
+          events.push({ type: 'hazard-cleared', data: { hazard: 'stickyWeb', side: userTeamIndex } });
+        }
+        events.push(applyStatBoost(ctx.user, ctx.userSlotId, { spe: 1 }));
+        break;
+      }
+      case 'break-screens': {
+        const targetTeamIndex = ctx.battle.teams.findIndex(t =>
+          t.slots.some(sl => sl.slotId === ctx.targetSlotId)
+        ) as 0 | 1;
+        const ts = ctx.battle.field.sideConditions[targetTeamIndex]!;
+        if (ts.reflect > 0) {
+          ts.reflect = 0;
+          events.push({ type: 'screen-broken', data: { screen: 'reflect', side: targetTeamIndex } });
+        }
+        if (ts.lightScreen > 0) {
+          ts.lightScreen = 0;
+          events.push({ type: 'screen-broken', data: { screen: 'lightScreen', side: targetTeamIndex } });
+        }
+        if (!sec.screensOnly && ts.auroraVeil > 0) {
+          ts.auroraVeil = 0;
+          events.push({ type: 'screen-broken', data: { screen: 'auroraVeil', side: targetTeamIndex } });
+        }
+        break;
+      }
     }
   }
   return events;

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { applySecondaries } from '../effects.js';
 import type { SecondaryContext } from '../effects.js';
-import { makePokemon } from './fixtures.js';
+import { makePokemon, make1v1State } from './fixtures.js';
 import type { BattleState, PokemonType } from '@poke-fighter/shared';
 
 const emptyBattle = { field: {} } as unknown as BattleState;
@@ -250,5 +250,103 @@ describe('applySecondaries — recharge kind', () => {
     });
     applySecondaries(ctx);
     expect(ctx.user.volatileStatus.some(v => v.name === 'recharge')).toBe(true);
+  });
+});
+
+function makeSecCtx(overrides: Partial<SecondaryContext> = {}): SecondaryContext {
+  const state = make1v1State();
+  return {
+    secondaries: [],
+    totalDamage: 50,
+    user: state.teams[0]!.slots[0]!.party[0]!,
+    userSlotId: 'slot-a1',
+    target: state.teams[1]!.slots[0]!.party[0]!,
+    targetSlotId: 'slot-b1',
+    targetTypes: ['Normal'],
+    battle: state,
+    rng: () => 0,
+    movedSlotIds: new Set(),
+    ...overrides,
+  };
+}
+
+describe('applySecondaries — clear-hazards-self', () => {
+  it('clears Stealth Rock from the user side and emits hazard-cleared', () => {
+    const ctx = makeSecCtx({
+      secondaries: [{ kind: 'clear-hazards-self' }],
+    });
+    ctx.battle.field.sideConditions[0]!.stealthRock = true;
+    const events = applySecondaries(ctx);
+    expect(ctx.battle.field.sideConditions[0]!.stealthRock).toBe(false);
+    expect(events.some(e => e.type === 'hazard-cleared')).toBe(true);
+  });
+
+  it('clears all hazard types and emits an event for each', () => {
+    const ctx = makeSecCtx({
+      secondaries: [{ kind: 'clear-hazards-self' }],
+    });
+    const side = ctx.battle.field.sideConditions[0]!;
+    side.stealthRock = true;
+    side.spikes = 3;
+    side.toxicSpikes = 2;
+    side.stickyWeb = true;
+    const events = applySecondaries(ctx);
+    expect(side.stealthRock).toBe(false);
+    expect(side.spikes).toBe(0);
+    expect(side.toxicSpikes).toBe(0);
+    expect(side.stickyWeb).toBe(false);
+    expect(events.filter(e => e.type === 'hazard-cleared')).toHaveLength(4);
+  });
+
+  it('grants +1 Spe to the user', () => {
+    const ctx = makeSecCtx({ secondaries: [{ kind: 'clear-hazards-self' }] });
+    applySecondaries(ctx);
+    expect(ctx.user.statBoosts.spe).toBe(1);
+  });
+
+  it('does not fire when totalDamage is 0', () => {
+    const ctx = makeSecCtx({
+      secondaries: [{ kind: 'clear-hazards-self' }],
+      totalDamage: 0,
+    });
+    ctx.battle.field.sideConditions[0]!.stealthRock = true;
+    applySecondaries(ctx);
+    expect(ctx.battle.field.sideConditions[0]!.stealthRock).toBe(true); // unchanged
+  });
+});
+
+describe('applySecondaries — break-screens', () => {
+  it('removes Reflect and Light Screen from the target side (screensOnly: true)', () => {
+    const ctx = makeSecCtx({
+      secondaries: [{ kind: 'break-screens', screensOnly: true }],
+    });
+    ctx.battle.field.sideConditions[1]!.reflect = 3;
+    ctx.battle.field.sideConditions[1]!.lightScreen = 2;
+    ctx.battle.field.sideConditions[1]!.auroraVeil = 4;
+    const events = applySecondaries(ctx);
+    expect(ctx.battle.field.sideConditions[1]!.reflect).toBe(0);
+    expect(ctx.battle.field.sideConditions[1]!.lightScreen).toBe(0);
+    expect(ctx.battle.field.sideConditions[1]!.auroraVeil).toBe(4); // not cleared by screensOnly
+    expect(events.filter(e => e.type === 'screen-broken')).toHaveLength(2);
+  });
+
+  it('removes all three screens from the target side (screensOnly: false)', () => {
+    const ctx = makeSecCtx({
+      secondaries: [{ kind: 'break-screens', screensOnly: false }],
+    });
+    ctx.battle.field.sideConditions[1]!.reflect = 3;
+    ctx.battle.field.sideConditions[1]!.lightScreen = 2;
+    ctx.battle.field.sideConditions[1]!.auroraVeil = 4;
+    const events = applySecondaries(ctx);
+    expect(ctx.battle.field.sideConditions[1]!.auroraVeil).toBe(0);
+    expect(events.filter(e => e.type === 'screen-broken')).toHaveLength(3);
+  });
+
+  it('emits no events when no screens are active', () => {
+    const ctx = makeSecCtx({
+      secondaries: [{ kind: 'break-screens', screensOnly: false }],
+    });
+    const events = applySecondaries(ctx);
+    expect(events.filter(e => e.type === 'screen-broken')).toHaveLength(0);
   });
 });
