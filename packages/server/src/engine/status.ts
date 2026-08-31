@@ -1,4 +1,5 @@
-import type { StatusCondition, PokemonType } from '@poke-fighter/shared';
+import type { StatusCondition, PokemonType, BattleState } from '@poke-fighter/shared';
+import { getAbilityHooks } from './abilities.js';
 
 export const PARALYSIS_SPEED_MOD = 0.5;
 export const PARALYSIS_FULL_PARALYSIS_CHANCE = 0.25;
@@ -10,6 +11,7 @@ interface CanApplyInput {
   types: PokemonType[];
   currentStatus: StatusCondition | undefined;
   ability: string;
+  battle?: BattleState;
 }
 
 const IMMUNITIES: Record<StatusCondition, PokemonType[]> = {
@@ -22,16 +24,11 @@ const IMMUNITIES: Record<StatusCondition, PokemonType[]> = {
   fnt: [],
 };
 
-export function canApplyStatus({ status, types, currentStatus, ability }: CanApplyInput): boolean {
-  if (currentStatus) return false;  // already has a status
+export function canApplyStatus({ status, types, currentStatus, ability, battle }: CanApplyInput): boolean {
+  if (currentStatus) return false;
   const immune = IMMUNITIES[status] ?? [];
   if (types.some((t) => immune.includes(t))) return false;
-  // Ability-based immunities (subset — full list handled in abilities.ts)
-  if (ability === 'limber' && status === 'par') return false;
-  if (ability === 'immunity' && (status === 'psn' || status === 'tox')) return false;
-  if (ability === 'magmaarmor' && status === 'frz') return false;
-  if (ability === 'waterveil' && status === 'brn') return false;
-  if (ability === 'insomnia' && status === 'slp') return false;
+  if (getAbilityHooks(ability).onStatusImmunity?.({ status, ...(battle !== undefined ? { state: battle } : {}) })) return false;
   return true;
 }
 
@@ -46,4 +43,3 @@ export function getPoisonDamage(maxHp: number): number {
 export function getToxicDamage(maxHp: number, toxicCounter: number): number {
   return Math.max(1, Math.floor(maxHp * toxicCounter / 16));
 }
-

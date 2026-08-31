@@ -198,7 +198,7 @@ export class EffectEngine {
       if ((yawnEntry.counter ?? 0) <= 0) {
         pokemon.volatileStatus = pokemon.volatileStatus.filter(v => v.name !== 'yawn');
         // IMMUNITIES.slp = [] so passing [] as types is correct — no type is immune to sleep
-        const evt = applyStatus(pokemon, slotId, 'slp', [], undefined, state.field);
+        const evt = applyStatus(pokemon, slotId, 'slp', [], undefined, state);
         if (evt) events.push(evt);
       }
     }

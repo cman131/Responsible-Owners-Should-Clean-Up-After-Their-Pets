@@ -91,21 +91,36 @@ const ABILITY_HOOKS: Record<string, AbilityHooks> = {
   intimidate: {
     onSwitchIn: () => ({ statBoostDeltas: { atk: -1 } }),
   },
-  levitate: {
-    onStatusImmunity: ({ status }) => status === 'Ground',
-  },
   'thick-fat': {
     onDamageModifier: ({ moveType }) =>
       moveType === 'Fire' || moveType === 'Ice' ? 0.5 : 1,
   },
-  'flash-fire': {
-    onStatusImmunity: ({ status }) => status === 'Fire',
+  limber: {
+    onStatusImmunity: ({ status }) => status === 'par',
   },
-  'water-absorb': {
-    onStatusImmunity: ({ status }) => status === 'Water',
+  immunity: {
+    onStatusImmunity: ({ status }) => status === 'psn' || status === 'tox',
   },
-  'volt-absorb': {
-    onStatusImmunity: ({ status }) => status === 'Electric',
+  'magma-armor': {
+    onStatusImmunity: ({ status }) => status === 'frz',
+  },
+  'water-veil': {
+    onStatusImmunity: ({ status }) => status === 'brn',
+  },
+  insomnia: {
+    onStatusImmunity: ({ status }) => status === 'slp',
+  },
+  'vital-spirit': {
+    onStatusImmunity: ({ status }) => status === 'slp',
+  },
+  'sweet-veil': {
+    onStatusImmunity: ({ status }) => status === 'slp',
+  },
+  comatose: {
+    onStatusImmunity: () => true,
+  },
+  'leaf-guard': {
+    onStatusImmunity: ({ state }) => state?.field.weather?.type === 'sun',
   },
   blaze: {
     onAttackerModifier: ({ user, moveType }) =>

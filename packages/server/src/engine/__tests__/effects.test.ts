@@ -40,40 +40,40 @@ describe('applyStatus', () => {
 
   it('returns null when Misty Terrain is active and target is grounded (any status)', () => {
     const mon = makePokemon({ ability: '' });
-    const field = { terrain: { type: 'misty' as const, turnsRemaining: 5 }, trickroom: 0, gravity: 0, sideConditions: [null, null] as any };
-    const event = applyStatus(mon, 'slot-a1', 'par', ['Normal'], undefined, field);
+    const battle = { field: { terrain: { type: 'misty' as const, turnsRemaining: 5 }, trickroom: 0, gravity: 0, sideConditions: [null, null] as any } } as any;
+    const event = applyStatus(mon, 'slot-a1', 'par', ['Normal'], undefined, battle);
     expect(event).toBeNull();
     expect(mon.status).toBeUndefined();
   });
 
   it('returns null when Electric Terrain is active and grounded target would fall asleep', () => {
     const mon = makePokemon({ ability: '' });
-    const field = { terrain: { type: 'electric' as const, turnsRemaining: 5 }, trickroom: 0, gravity: 0, sideConditions: [null, null] as any };
-    const event = applyStatus(mon, 'slot-a1', 'slp', ['Normal'], undefined, field);
+    const battle = { field: { terrain: { type: 'electric' as const, turnsRemaining: 5 }, trickroom: 0, gravity: 0, sideConditions: [null, null] as any } } as any;
+    const event = applyStatus(mon, 'slot-a1', 'slp', ['Normal'], undefined, battle);
     expect(event).toBeNull();
     expect(mon.status).toBeUndefined();
   });
 
   it('allows burn under Electric Terrain (only sleep is blocked)', () => {
     const mon = makePokemon({ ability: '' });
-    const field = { terrain: { type: 'electric' as const, turnsRemaining: 5 }, trickroom: 0, gravity: 0, sideConditions: [null, null] as any };
-    const event = applyStatus(mon, 'slot-a1', 'brn', ['Normal'], undefined, field);
+    const battle = { field: { terrain: { type: 'electric' as const, turnsRemaining: 5 }, trickroom: 0, gravity: 0, sideConditions: [null, null] as any } } as any;
+    const event = applyStatus(mon, 'slot-a1', 'brn', ['Normal'], undefined, battle);
     expect(event).not.toBeNull();
     expect(mon.status).toBe('brn');
   });
 
   it('allows sleep on a Flying-type under Misty Terrain (not grounded)', () => {
     const mon = makePokemon({ ability: '' });
-    const field = { terrain: { type: 'misty' as const, turnsRemaining: 5 }, trickroom: 0, gravity: 0, sideConditions: [null, null] as any };
-    const event = applyStatus(mon, 'slot-a1', 'slp', ['Flying'], undefined, field);
+    const battle = { field: { terrain: { type: 'misty' as const, turnsRemaining: 5 }, trickroom: 0, gravity: 0, sideConditions: [null, null] as any } } as any;
+    const event = applyStatus(mon, 'slot-a1', 'slp', ['Flying'], undefined, battle);
     expect(event).not.toBeNull();
     expect(mon.status).toBe('slp');
   });
 
   it('blocks status on Flying-type when gravity is active under Misty Terrain', () => {
     const mon = makePokemon({ ability: '' });
-    const field = { terrain: { type: 'misty' as const, turnsRemaining: 5 }, trickroom: 0, gravity: 5, sideConditions: [null, null] as any };
-    const event = applyStatus(mon, 'slot-a1', 'brn', ['Flying'], undefined, field);
+    const battle = { field: { terrain: { type: 'misty' as const, turnsRemaining: 5 }, trickroom: 0, gravity: 5, sideConditions: [null, null] as any } } as any;
+    const event = applyStatus(mon, 'slot-a1', 'brn', ['Flying'], undefined, battle);
     expect(event).toBeNull();
   });
 });
