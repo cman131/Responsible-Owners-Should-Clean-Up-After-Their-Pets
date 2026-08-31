@@ -721,6 +721,12 @@ export class BattleEngine {
               events.push({ type: 'volatile-applied', data: { targetSlotId: attackerSlotId, volatile: afterHitResult.volatileToApply } });
             }
           }
+          if (afterHitResult.disableMoveId && !attacker.fainted) {
+            if (!attacker.volatileStatus.some(v => v.name === 'disable')) {
+              attacker.volatileStatus.push({ name: 'disable', moveId: afterHitResult.disableMoveId });
+              events.push({ type: 'volatile-applied', data: { targetSlotId: attackerSlotId, volatile: 'disable', moveId: afterHitResult.disableMoveId } });
+            }
+          }
         }
       }
 
