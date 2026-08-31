@@ -81,7 +81,7 @@ export function applyEntryHazards(
   // 1. Stealth Rock — hits everyone, including Flying types
   if (side.stealthRock) {
     const effectiveness = data.getCombinedEffectiveness('Rock', effectiveTypes);
-    const damage = Math.floor(incoming.maxHp * 0.125 * effectiveness);
+    const damage = Math.floor(incoming.maxHp * 0.125 /* 1/8 base */ * effectiveness);
     if (damage > 0) {
       const actual = Math.min(damage, incoming.currentHp);
       incoming.currentHp -= actual;
@@ -127,7 +127,9 @@ export function applyEntryHazards(
 
   // 4. Sticky Web — grounded only
   if (side.stickyWeb && grounded) {
-    events.push(applyStatBoost(incoming, slotId, { spe: -1 }));
+    if (incoming.statBoosts.spe > -6) {
+      events.push(applyStatBoost(incoming, slotId, { spe: -1 }));
+    }
   }
 
   return events;
