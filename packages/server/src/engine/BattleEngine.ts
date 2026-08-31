@@ -431,6 +431,38 @@ export class BattleEngine {
         continue;
       }
 
+      // Ability-based move immunity (Levitate, Volt Absorb, etc.)
+      const abilityImmunityResult = getAbilityHooks(effectiveAbilityId(target))
+        .onMoveImmunity?.({ move, defender: target, state: s });
+      if (abilityImmunityResult) {
+        if (abilityImmunityResult.hpHealFraction) {
+          const healAmt = Math.min(
+            Math.floor(target.maxHp * abilityImmunityResult.hpHealFraction),
+            target.maxHp - target.currentHp,
+          );
+          if (healAmt > 0) {
+            target.currentHp += healAmt;
+            events.push({ type: 'heal', data: { slotId: targetSlotId, amount: healAmt, remainingHp: target.currentHp } });
+          }
+        }
+        if (abilityImmunityResult.statBoostDeltas) {
+          events.push(applyStatBoost(target, targetSlotId, abilityImmunityResult.statBoostDeltas as Partial<Record<keyof StatBoosts, number>>));
+        }
+        if (abilityImmunityResult.chargeFlashFire) {
+          if (!target.volatileStatus.some(v => v.name === 'flash-fire-charged')) {
+            target.volatileStatus.push({ name: 'flash-fire-charged' });
+          }
+        }
+        events.push({ type: 'ability-triggered', data: { slotId: targetSlotId, ability: effectiveAbilityId(target), effect: 'immune' } });
+        continue;
+      }
+
+      // Air Balloon Ground immunity (item-based, inline)
+      if (target.heldItem === 'air-balloon' && effectiveMoveType === 'Ground') {
+        events.push({ type: 'move-used', data: { note: 'no-effect', targetSlotId, attackerName: attacker.nickname, moveName: move.name } });
+        continue;
+      }
+
       // OHKO check — bypasses normal damage formula
       const ohkoSec = secs.find(sec => sec.kind === 'ohko');
       if (ohkoSec) {
@@ -475,7 +507,7 @@ export class BattleEngine {
         const rawDefStat = isPhysical ? target.stats.def : target.stats.spd;
         const defBoostKey = isPhysical ? 'def' as const : 'spd' as const;
 
-        const critStage = computeCritStage(move.critRatio, attacker.volatileStatus);
+        const critStage = computeCritStage(move.critRatio, attacker.volatileStatus, getItemHooks(attacker.heldItem).critStageBonus ?? 0);
         const isCritical = this.rng() < critProbability(critStage);
         const atkBoost = isCritical ? Math.max(0, attacker.statBoosts[boostKey]) : attacker.statBoosts[boostKey];
         const defBoost = isCritical ? Math.min(0, target.statBoosts[defBoostKey]) : target.statBoosts[defBoostKey];

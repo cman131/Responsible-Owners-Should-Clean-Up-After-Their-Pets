@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { canApplyStatus } from '../status.js';
+import { BattleEngine } from '../BattleEngine.js';
+import { make1v1State } from './fixtures.js';
 
 afterEach(() => { vi.restoreAllMocks(); });
 
@@ -46,5 +48,35 @@ describe('onStatusImmunity — canApplyStatus routing', () => {
   it('old hardcoded limber entry is gone (no regression)', () => {
     // After refactor, limber still blocks par — routed through hook
     expect(canApplyStatus({ status: 'par', types: ['Electric'], currentStatus: undefined, ability: 'limber' })).toBe(false);
+  });
+});
+
+describe('onMoveImmunity — Levitate', () => {
+  it('blocks Ground move and emits ability-triggered', () => {
+    const state = make1v1State();
+    // P1 uses Earthquake; P2 is Bulbasaur (Grass/Poison) so Ground isn't already 0x by type
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'earthquake', currentPp: 10, maxPp: 10 };
+    state.teams[1]!.slots[0]!.party[0]!.speciesId = 1; // bulbasaur: Grass/Poison, not immune to Ground by type
+    state.teams[1]!.slots[0]!.party[0]!.ability = 'levitate';
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(events.some(e => e.type === 'ability-triggered')).toBe(true);
+    expect(newState.teams[1]!.slots[0]!.party[0]!.currentHp).toBe(100);
+  });
+
+  it('does not block non-Ground move', () => {
+    const state = make1v1State();
+    // P2 is Bulbasaur (Grass/Poison) with Levitate; P1 uses Flamethrower (Fire), not Ground
+    state.teams[1]!.slots[0]!.party[0]!.speciesId = 1; // bulbasaur: takes Fire damage normally
+    state.teams[1]!.slots[0]!.party[0]!.ability = 'levitate';
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.currentHp).toBeLessThan(100);
   });
 });

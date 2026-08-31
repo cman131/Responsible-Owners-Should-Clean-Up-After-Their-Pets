@@ -150,6 +150,9 @@ const ABILITY_HOOKS: Record<string, AbilityHooks> = {
     onSpeedModifier: ({ state }) =>
       state.field.weather?.type === 'sun' ? 2 : 1,
   },
+  levitate: {
+    onMoveImmunity: ({ move }) => move.type === 'Ground' ? { immune: true } : null,
+  },
   'screen-cleaner': {
     onSwitchIn: () => ({ clearScreens: true }),
   },
