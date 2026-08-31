@@ -96,6 +96,28 @@ const ABILITY_HOOKS: Record<string, AbilityHooks> = {
     onSpeedModifier: ({ state }) =>
       state.field.weather?.type === 'sun' ? 2 : 1,
   },
+  regenerator: {
+    onSwitchOut: ({ pokemon }) => {
+      const heal = Math.min(
+        Math.floor(pokemon.maxHp / 3),
+        pokemon.maxHp - pokemon.currentHp,
+      );
+      if (heal <= 0) return null;
+      return {
+        hpDelta: heal,
+        events: [{ type: 'heal', data: { reason: 'regenerator', amount: heal } }],
+      };
+    },
+  },
+  'natural-cure': {
+    onSwitchOut: ({ pokemon }) => {
+      if (!pokemon.status) return null;
+      return {
+        clearStatus: true,
+        events: [{ type: 'status-cured', data: { status: pokemon.status, reason: 'natural-cure' } }],
+      };
+    },
+  },
 };
 
 export function getAbilityHooks(abilityId: string): AbilityHooks {

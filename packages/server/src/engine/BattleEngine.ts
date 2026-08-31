@@ -8,7 +8,8 @@ import { getEffectiveStat } from './stats.js';
 import { computeHitChance, computeCritStage, critProbability } from './accuracy.js';
 import { PARALYSIS_SPEED_MOD } from './status.js';
 import { EffectEngine, SlotContext } from './EffectEngine.js';
-import { getAbilityHooks } from './abilities.js';
+import { getAbilityHooks, effectiveAbilityId } from './abilities.js';
+import type { SwitchInResult } from './abilities.js';
 import { getItemHooks } from './items.js';
 import { applyStatus, applyStatBoost, evaluateSecondaryEffect, evaluateVolatileEffect, applySecondaries } from './effects.js';
 import type { SecondaryContext } from './effects.js';
@@ -664,6 +665,21 @@ export class BattleEngine {
     const outgoing = slot.party[slot.activePokemonIndex];
     const previousMon = outgoing?.instanceId;
 
+    // Fire onSwitchOut before clearing state
+    if (outgoing) {
+      const outHooks = getAbilityHooks(effectiveAbilityId(outgoing));
+      const switchOutResult = outHooks.onSwitchOut?.({ battle: s, slotId, pokemon: outgoing });
+      if (switchOutResult) {
+        if (switchOutResult.hpDelta) {
+          outgoing.currentHp = Math.min(outgoing.maxHp, outgoing.currentHp + switchOutResult.hpDelta);
+        }
+        if (switchOutResult.clearStatus) {
+          delete outgoing.status;
+        }
+        events.push(...switchOutResult.events);
+      }
+    }
+
     // Clear switch-out volatiles and stat boosts before updating active index
     if (outgoing) {
       outgoing.volatileStatus = outgoing.volatileStatus.filter(v =>
@@ -681,7 +697,7 @@ export class BattleEngine {
     const incoming = slot.party[slot.activePokemonIndex];
     if (incoming) {
       const incomingAbilityHooks = getAbilityHooks(incoming.ability);
-      const switchInResult = incomingAbilityHooks.onSwitchIn?.({ user: incoming, state: s });
+      const switchInResult = incomingAbilityHooks.onSwitchIn?.({ user: incoming, state: s, slotId });
       if (switchInResult?.statBoostDeltas) {
         const incomingTeamIndex = s.teams.findIndex(t => t.slots.some(sl => sl.slotId === slotId));
         const foeTeamIndex = incomingTeamIndex === 0 ? 1 : 0;

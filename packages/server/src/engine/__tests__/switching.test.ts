@@ -51,3 +51,62 @@ describe('switch-out cleanup', () => {
     expect(toxEntry!.counter).toBe(3);
   });
 });
+
+describe('onSwitchOut ability hooks', () => {
+  it('Regenerator heals 1/3 max HP on switch-out', () => {
+    const state = makeStateWithBench();
+    const mon = state.teams[0]!.slots[0]!.party[0]!;
+    mon.ability = 'regenerator';
+    mon.currentHp = 40;
+    mon.maxHp = 100;
+    const engine = new BattleEngine();
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'switch', targetInstanceId: 'p1-bench' } as SwitchAction,
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const outgoing = newState.teams[0]!.slots[0]!.party[0]!;
+    expect(outgoing.currentHp).toBe(73); // 40 + floor(100/3) = 40 + 33
+    expect(events.some(e => e.type === 'heal' && e.data['reason'] === 'regenerator')).toBe(true);
+  });
+
+  it('Regenerator does not overheal past max HP', () => {
+    const state = makeStateWithBench();
+    const mon = state.teams[0]!.slots[0]!.party[0]!;
+    mon.ability = 'regenerator';
+    mon.currentHp = 95;
+    mon.maxHp = 100;
+    const engine = new BattleEngine();
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'switch', targetInstanceId: 'p1-bench' } as SwitchAction,
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const outgoing = newState.teams[0]!.slots[0]!.party[0]!;
+    expect(outgoing.currentHp).toBe(100);
+  });
+
+  it('Natural Cure clears status on switch-out', () => {
+    const state = makeStateWithBench();
+    const mon = state.teams[0]!.slots[0]!.party[0]!;
+    mon.ability = 'natural-cure';
+    mon.status = 'brn';
+    const engine = new BattleEngine();
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'switch', targetInstanceId: 'p1-bench' } as SwitchAction,
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const outgoing = newState.teams[0]!.slots[0]!.party[0]!;
+    expect(outgoing.status).toBeUndefined();
+    expect(events.some(e => e.type === 'status-cured' && e.data['reason'] === 'natural-cure')).toBe(true);
+  });
+
+  it('Natural Cure does nothing if Pokémon has no status', () => {
+    const state = makeStateWithBench();
+    state.teams[0]!.slots[0]!.party[0]!.ability = 'natural-cure';
+    const engine = new BattleEngine();
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'switch', targetInstanceId: 'p1-bench' } as SwitchAction,
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(events.some(e => e.type === 'status-cured')).toBe(false);
+  });
+});
