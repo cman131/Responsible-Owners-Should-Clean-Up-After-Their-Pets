@@ -796,20 +796,20 @@ export class BattleEngine {
 
     // Handle Screen Cleaner — remove all screens from both sides
     if (result.clearScreens) {
-      for (const side of s.field.sideConditions) {
+      s.field.sideConditions.forEach((side, sideIdx) => {
         if (side.reflect > 0) {
           side.reflect = 0;
-          events.push({ type: 'screen-broken', data: { screen: 'reflect' } });
+          events.push({ type: 'screen-broken', data: { screen: 'reflect', side: sideIdx } });
         }
         if (side.lightScreen > 0) {
           side.lightScreen = 0;
-          events.push({ type: 'screen-broken', data: { screen: 'light-screen' } });
+          events.push({ type: 'screen-broken', data: { screen: 'lightScreen', side: sideIdx } });
         }
         if (side.auroraVeil > 0) {
           side.auroraVeil = 0;
-          events.push({ type: 'screen-broken', data: { screen: 'aurora-veil' } });
+          events.push({ type: 'screen-broken', data: { screen: 'auroraVeil', side: sideIdx } });
         }
-      }
+      });
     }
   }
 
