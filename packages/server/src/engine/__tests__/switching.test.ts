@@ -265,3 +265,55 @@ describe('onSwitchIn — Trace', () => {
     expect(incoming.tracedAbilityId).toBe('trace');
   });
 });
+
+describe('onSwitchIn — Screen Cleaner', () => {
+  it('removes Reflect from both sides on switch-in', () => {
+    const state = makeStateWithBench();
+    state.teams[0]!.slots[0]!.party[1]!.ability = 'screen-cleaner';
+    state.field.sideConditions[0]!.reflect = 5;
+    state.field.sideConditions[1]!.reflect = 5;
+
+    const engine = new BattleEngine();
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'switch', targetInstanceId: 'p1-bench' } as SwitchAction,
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    expect(newState.field.sideConditions[0]!.reflect).toBe(0);
+    expect(newState.field.sideConditions[1]!.reflect).toBe(0);
+    const brokenEvents = events.filter(e => e.type === 'screen-broken' && e.data['screen'] === 'reflect');
+    expect(brokenEvents).toHaveLength(2);
+  });
+
+  it('removes Light Screen and Aurora Veil from both sides', () => {
+    const state = makeStateWithBench();
+    state.teams[0]!.slots[0]!.party[1]!.ability = 'screen-cleaner';
+    state.field.sideConditions[0]!.lightScreen = 5;
+    state.field.sideConditions[1]!.auroraVeil = 3;
+
+    const engine = new BattleEngine();
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'switch', targetInstanceId: 'p1-bench' } as SwitchAction,
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    expect(newState.field.sideConditions[0]!.lightScreen).toBe(0);
+    expect(newState.field.sideConditions[1]!.auroraVeil).toBe(0);
+  });
+
+  it('does not emit screen-broken events for screens that were not active', () => {
+    const state = makeStateWithBench();
+    state.teams[0]!.slots[0]!.party[1]!.ability = 'screen-cleaner';
+    // Only side 0 has Reflect active
+    state.field.sideConditions[0]!.reflect = 5;
+
+    const engine = new BattleEngine();
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'switch', targetInstanceId: 'p1-bench' } as SwitchAction,
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    const brokenReflect = events.filter(e => e.type === 'screen-broken' && e.data['screen'] === 'reflect');
+    expect(brokenReflect).toHaveLength(1); // only the active one
+  });
+});

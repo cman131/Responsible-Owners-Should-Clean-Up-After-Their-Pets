@@ -97,6 +97,9 @@ const ABILITY_HOOKS: Record<string, AbilityHooks> = {
     onSpeedModifier: ({ state }) =>
       state.field.weather?.type === 'sun' ? 2 : 1,
   },
+  'screen-cleaner': {
+    onSwitchIn: () => ({ clearScreens: true }),
+  },
   trace: {
     onSwitchIn: ({ state, slotId }) => {
       const myTeamIdx = state.teams.findIndex(t => t.slots.some(sl => sl.slotId === slotId));
