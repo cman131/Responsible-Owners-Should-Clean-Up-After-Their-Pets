@@ -21,6 +21,8 @@ import { getScreenMultiplier, applyEntryHazards, decrementScreens } from './side
 
 const ALWAYS_THAW_MOVES = new Set(['scald', 'steameruption', 'sparklingaria']);
 
+const ABILITY_VOLATILE_CLEAR = new Set(['slow-start', 'truant']);
+
 const PROTECT_FAMILY_IDS = new Set([
   'protect', 'detect', 'kingsshield', 'spikyshield',
   'banefulbunker', 'obstruct', 'silktrap', 'burningbulwark', 'endure',
@@ -679,7 +681,7 @@ export class BattleEngine {
         events.push(...switchOutResult.events);
       }
       // Remove ability-applied volatiles not in SWITCH_CLEAR_NAMES (slow-start, truant reset on switch)
-      const ABILITY_VOLATILE_CLEAR = new Set(['slow-start', 'truant']);
+
       outgoing.volatileStatus = outgoing.volatileStatus.filter(
         v => !ABILITY_VOLATILE_CLEAR.has(v.name)
       );
