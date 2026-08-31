@@ -145,3 +145,33 @@ describe('onMoveImmunity — Levitate', () => {
     expect(newState.teams[1]!.slots[0]!.party[0]!.currentHp).toBeLessThan(100);
   });
 });
+
+describe('onAfterHit — Rough Skin / Iron Barbs', () => {
+  it('deals floor(maxHp/8) to contact attacker', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'bodyslam', currentPp: 15, maxPp: 15 };
+    state.teams[1]!.slots[0]!.party[0]!.ability = 'rough-skin';
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    // Attacker (p1) takes floor(100/8) = 12 from Rough Skin
+    expect(newState.teams[0]!.slots[0]!.party[0]!.currentHp).toBe(88);
+  });
+
+  it('does not trigger on non-contact move', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    // index 0 is flamethrower (special, makesContact: false)
+    state.teams[1]!.slots[0]!.party[0]!.ability = 'rough-skin';
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    // P1 HP unchanged (no Rough Skin damage from non-contact move)
+    expect(newState.teams[0]!.slots[0]!.party[0]!.currentHp).toBe(100);
+  });
+});

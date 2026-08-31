@@ -223,6 +223,14 @@ const ABILITY_HOOKS: Record<string, AbilityHooks> = {
       };
     },
   },
+  'rough-skin': {
+    onAfterHit: ({ makesContact, user: target }) =>
+      makesContact ? { directDamage: Math.floor(target.maxHp / 8) } : null,
+  },
+  'iron-barbs': {
+    onAfterHit: ({ makesContact, user: target }) =>
+      makesContact ? { directDamage: Math.floor(target.maxHp / 8) } : null,
+  },
 };
 
 export function getAbilityHooks(abilityId: string): AbilityHooks {

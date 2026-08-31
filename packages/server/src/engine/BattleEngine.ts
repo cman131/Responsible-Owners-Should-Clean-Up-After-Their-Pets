@@ -676,21 +676,51 @@ export class BattleEngine {
         }
       }
 
-      // Defender's ability triggers (e.g. Static, Flame Body)
-      const defenderAbilityHooks = getAbilityHooks(target.ability);
-      if (defenderAbilityHooks.onAfterHit && totalDamage > 0 && !target.fainted) {
-        const afterHitResult = defenderAbilityHooks.onAfterHit({
-          user: target, state: s, moveType: effectiveMoveType, basePower: effectiveBasePower,
-          target: attacker, isPhysical: move.category === 'physical',
-          makesContact: move.makesContact ?? false, rng: this.rng,
-        });
-        if (afterHitResult?.statusToApply) {
-          const attackerSpecies = this.data.getSpecies(attacker.speciesId);
-          const attackerTypes = attacker.hasTerastallized && attacker.teraType
-            ? [attacker.teraType] as PokemonType[]
-            : (attackerSpecies?.types ?? ['Normal']) as PokemonType[];
-          const event = applyStatus(attacker, attackerSlotId, afterHitResult.statusToApply as StatusCondition, attackerTypes, undefined, s);
-          if (event) events.push(event);
+      // Defender's ability triggers (e.g. Static, Flame Body, Rough Skin, Iron Barbs)
+      if (totalDamage > 0 && !target.fainted) {
+        const afterHitCtx = {
+          user: target,
+          state: s,
+          moveType: effectiveMoveType,
+          basePower: effectiveBasePower,
+          target: attacker,
+          isPhysical: move.category === 'physical',
+          makesContact: move.makesContact === true,
+          rng: this.rng,
+        };
+        const afterHitResult = getAbilityHooks(effectiveAbilityId(target)).onAfterHit?.(afterHitCtx);
+        if (afterHitResult) {
+          if (afterHitResult.statusToApply && !attacker.fainted) {
+            const attackerSpecies = this.data.getSpecies(attacker.speciesId);
+            const attackerTypes = attacker.hasTerastallized && attacker.teraType
+              ? [attacker.teraType] as PokemonType[]
+              : (attackerSpecies?.types ?? ['Normal']) as PokemonType[];
+            const evt = applyStatus(attacker, attackerSlotId, afterHitResult.statusToApply as StatusCondition, attackerTypes, undefined, s);
+            if (evt) events.push(evt);
+          }
+          if (afterHitResult.statBoostDeltas && !attacker.fainted) {
+            events.push(applyStatBoost(attacker, attackerSlotId, afterHitResult.statBoostDeltas as Partial<Record<keyof StatBoosts, number>>));
+          }
+          if (afterHitResult.abilityOverride && !attacker.fainted) {
+            attacker.ability = afterHitResult.abilityOverride;
+            events.push({ type: 'ability-triggered', data: { slotId: attackerSlotId, ability: afterHitResult.abilityOverride, effect: 'mummy' } });
+          }
+          if (afterHitResult.directDamage !== undefined && !attacker.fainted) {
+            const dmg = Math.min(afterHitResult.directDamage, attacker.currentHp);
+            attacker.currentHp -= dmg;
+            events.push({ type: 'damage-dealt', data: { source: 'ability-contact', slotId: attackerSlotId, damage: dmg, remainingHp: attacker.currentHp } });
+            if (attacker.currentHp <= 0) {
+              attacker.fainted = true;
+              attacker.currentHp = 0;
+              events.push({ type: 'faint', data: { slotId: attackerSlotId, instanceId: attacker.instanceId } });
+            }
+          }
+          if (afterHitResult.volatileToApply && !attacker.fainted) {
+            if (!attacker.volatileStatus.some(v => v.name === afterHitResult.volatileToApply)) {
+              attacker.volatileStatus.push({ name: afterHitResult.volatileToApply! });
+              events.push({ type: 'volatile-applied', data: { targetSlotId: attackerSlotId, volatile: afterHitResult.volatileToApply } });
+            }
+          }
         }
       }
 
