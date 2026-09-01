@@ -426,3 +426,55 @@ describe('Weather summoners — Drizzle', () => {
     expect(events.some(e => e.type === 'weather-ended')).toBe(true);
   });
 });
+
+describe('Weather summoners — primordial weather', () => {
+  it('Primordial Sea sets permanent heavy-rain', () => {
+    const state = make1v1State();
+    const bench = makePokemon({ instanceId: 'p1-bench', ability: 'primordial-sea' });
+    state.teams[0]!.slots[0]!.party.push(bench);
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'switch', targetInstanceId: 'p1-bench' } as any,
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    expect(newState.field.weather?.type).toBe('heavy-rain');
+    expect(newState.field.weather?.permanent).toBe(true);
+  });
+
+  it('Drought cannot overwrite Primordial Sea', () => {
+    const state = make1v1State();
+    state.field.weather = { type: 'heavy-rain', turnsRemaining: 999, fromAbility: true, permanent: true };
+    const bench = makePokemon({ instanceId: 'p2-bench', ability: 'drought' });
+    state.teams[1]!.slots[0]!.party.push(bench);
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 2 },
+      'slot-b1': { type: 'switch', targetInstanceId: 'p2-bench' } as any,
+    });
+    expect(newState.field.weather?.type).toBe('heavy-rain');
+  });
+
+  it('Drought sets 5-turn sun', () => {
+    const state = make1v1State();
+    const bench = makePokemon({ instanceId: 'p1-bench', ability: 'drought' });
+    state.teams[0]!.slots[0]!.party.push(bench);
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'switch', targetInstanceId: 'p1-bench' } as any,
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    expect(newState.field.weather?.type).toBe('sun');
+    expect(newState.field.weather?.turnsRemaining).toBe(4); // set to 5, decremented by 1 at end of turn
+  });
+
+  it('permanent weather is not decremented', () => {
+    const state = make1v1State();
+    state.field.weather = { type: 'heavy-rain', turnsRemaining: 999, fromAbility: true, permanent: true };
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 2 },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    expect(newState.field.weather?.turnsRemaining).toBe(999); // not decremented
+  });
+});

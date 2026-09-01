@@ -307,6 +307,36 @@ const ABILITY_HOOKS: Record<string, AbilityHooks> = {
       },
     }),
   },
+  drought: {
+    onSwitchIn: ({ user }) => ({
+      setWeather: { type: 'sun' as WeatherType, turnsRemaining: user.heldItem === 'heat-rock' ? 8 : 5 },
+    }),
+  },
+  'sand-stream': {
+    onSwitchIn: ({ user }) => ({
+      setWeather: { type: 'sand' as WeatherType, turnsRemaining: user.heldItem === 'smooth-rock' ? 8 : 5 },
+    }),
+  },
+  'snow-warning': {
+    onSwitchIn: ({ user }) => ({
+      setWeather: { type: 'snow' as WeatherType, turnsRemaining: user.heldItem === 'icy-rock' ? 8 : 5 },
+    }),
+  },
+  'primordial-sea': {
+    onSwitchIn: () => ({
+      setWeather: { type: 'heavy-rain' as WeatherType, turnsRemaining: 999, permanent: true },
+    }),
+  },
+  'desolate-land': {
+    onSwitchIn: () => ({
+      setWeather: { type: 'harsh-sun' as WeatherType, turnsRemaining: 999, permanent: true },
+    }),
+  },
+  'delta-stream': {
+    onSwitchIn: () => ({
+      setWeather: { type: 'strong-winds' as WeatherType, turnsRemaining: 999, permanent: true },
+    }),
+  },
   'gorilla-tactics': {
     // Gorilla Tactics boosts Attack by 1.5× (physical only; holders are always physical attackers)
     onAttackerModifier: () => 1.5,
