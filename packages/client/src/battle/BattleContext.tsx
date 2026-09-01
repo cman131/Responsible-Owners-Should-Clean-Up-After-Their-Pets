@@ -40,12 +40,14 @@ export function eventsToPlaybackEntries(events: TurnResolveEvent[]): PlaybackEnt
         entries.push({ text: `${String(event.data['slotId'])}'s Pokémon fainted!`, delay: 600 });
         break;
       case 'heal':
+        // heal events don't carry a delta value, so the HP bar won't animate upward during playback
         entries.push({ text: `${String(event.data['slotId'])} restored HP.`, delay: 600 });
         break;
       case 'status-applied':
         entries.push({ text: `${String(event.data['pokemonName'])} was ${String(event.data['status'])}!`, delay: 600 });
         break;
       case 'status-cured': {
+        // only 'slp' produces a visible message; other status cures are silent for now
         const text = event.data['status'] === 'slp'
           ? `${String(event.data['pokemonName'] ?? event.data['slotId'])} woke up!`
           : '';
