@@ -90,6 +90,42 @@ describe('eventsToPlaybackEntries', () => {
     expect(entries).toHaveLength(0);
   });
 
+  it('converts heal to a 600ms entry', () => {
+    const events: TurnResolveEvent[] = [
+      { type: 'heal', data: { slotId: 'a1' } },
+    ];
+    const entries = eventsToPlaybackEntries(events);
+    expect(entries).toHaveLength(1);
+    expect(entries[0]).toEqual({ text: 'a1 restored HP.', delay: 600 });
+  });
+
+  it('converts status-applied to a 600ms entry', () => {
+    const events: TurnResolveEvent[] = [
+      { type: 'status-applied', data: { slotId: 'a1', pokemonName: 'Pikachu', status: 'brn' } },
+    ];
+    const entries = eventsToPlaybackEntries(events);
+    expect(entries).toHaveLength(1);
+    expect(entries[0]).toEqual({ text: 'Pikachu was brn!', delay: 600 });
+  });
+
+  it('converts terastallize to a 600ms entry', () => {
+    const events: TurnResolveEvent[] = [
+      { type: 'terastallize', data: { slotId: 'b1', teraType: 'Fire' } },
+    ];
+    const entries = eventsToPlaybackEntries(events);
+    expect(entries).toHaveLength(1);
+    expect(entries[0]).toEqual({ text: 'b1 Terastallized into Fire type!', delay: 600 });
+  });
+
+  it('converts pokemon-switched to a 600ms entry', () => {
+    const events: TurnResolveEvent[] = [
+      { type: 'pokemon-switched', data: { slotId: 'a1' } },
+    ];
+    const entries = eventsToPlaybackEntries(events);
+    expect(entries).toHaveLength(1);
+    expect(entries[0]).toEqual({ text: "a1's Pokémon was switched out!", delay: 600 });
+  });
+
   it('omits unknown event types', () => {
     const events: TurnResolveEvent[] = [{ type: 'unknown-type' as any, data: {} }];
     const entries = eventsToPlaybackEntries(events);
