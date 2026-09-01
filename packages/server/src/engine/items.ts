@@ -65,6 +65,45 @@ const ITEM_HOOKS: Record<string, ItemHooks> = {
         ? { directDamageToAttacker: Math.floor(holder.maxHp / 6) }
         : null,
   },
+  'sitrus-berry': {
+    onAfterDamageTaken: ({ holder, damageTaken }) =>
+      holder.currentHp <= holder.maxHp / 2 && damageTaken > 0
+        ? { hpDelta: Math.floor(holder.maxHp / 4), consume: true }
+        : { hpDelta: 0 },
+  },
+  'lum-berry': {
+    onStatusApplied: () => ({ cureStatus: true, consume: true }),
+  },
+  'salac-berry': {
+    onAfterDamageTaken: ({ holder }) =>
+      holder.currentHp <= holder.maxHp / 4
+        ? { hpDelta: 0, statBoostDeltas: { spe: 1 }, consume: true }
+        : { hpDelta: 0 },
+  },
+  'petaya-berry': {
+    onAfterDamageTaken: ({ holder }) =>
+      holder.currentHp <= holder.maxHp / 4
+        ? { hpDelta: 0, statBoostDeltas: { spa: 1 }, consume: true }
+        : { hpDelta: 0 },
+  },
+  'liechi-berry': {
+    onAfterDamageTaken: ({ holder }) =>
+      holder.currentHp <= holder.maxHp / 4
+        ? { hpDelta: 0, statBoostDeltas: { atk: 1 }, consume: true }
+        : { hpDelta: 0 },
+  },
+  'ganlon-berry': {
+    onAfterDamageTaken: ({ holder }) =>
+      holder.currentHp <= holder.maxHp / 4
+        ? { hpDelta: 0, statBoostDeltas: { def: 1 }, consume: true }
+        : { hpDelta: 0 },
+  },
+  'apicot-berry': {
+    onAfterDamageTaken: ({ holder }) =>
+      holder.currentHp <= holder.maxHp / 4
+        ? { hpDelta: 0, statBoostDeltas: { spd: 1 }, consume: true }
+        : { hpDelta: 0 },
+  },
 };
 
 export function getItemHooks(itemId: string | undefined): ItemHooks {

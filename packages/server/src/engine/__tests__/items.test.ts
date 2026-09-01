@@ -139,3 +139,81 @@ describe('Weakness Policy', () => {
     expect(newState.teams[1]!.slots[0]!.party[0]!.statBoosts.atk).toBe(0);
   });
 });
+
+describe('Sitrus Berry', () => {
+  it('heals floor(maxHp/4) when HP drops to ≤50%', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'tackle', currentPp: 35, maxPp: 35 };
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    p2.currentHp = 51; // after 17 dmg → 34 ≤ 50 → triggers
+    p2.heldItem = 'sitrus-berry';
+    p2.moves[2] = { moveId: 'splash', currentPp: 40, maxPp: 40 }; // avoid roost self-heal
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    const p2After = newState.teams[1]!.slots[0]!.party[0]!;
+    // 51 - 17 = 34, then +25 (floor(100/4)) = 59
+    expect(p2After.currentHp).toBe(59);
+    expect(p2After.heldItem).toBeUndefined();
+  });
+
+  it('does not trigger when HP stays above 50%', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'tackle', currentPp: 35, maxPp: 35 };
+    state.teams[1]!.slots[0]!.party[0]!.heldItem = 'sitrus-berry';
+    state.teams[1]!.slots[0]!.party[0]!.moves[2] = { moveId: 'splash', currentPp: 40, maxPp: 40 }; // avoid roost self-heal
+    // p2 at 100 HP, takes 17 → 83 > 50 → no trigger
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    const p2After = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2After.currentHp).toBe(83);
+    expect(p2After.heldItem).toBe('sitrus-berry');
+  });
+});
+
+describe('Lum Berry', () => {
+  it('cures status immediately on application', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'willowisp', currentPp: 15, maxPp: 15 };
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    p2.heldItem = 'lum-berry';
+    p2.speciesId = 1; // bulbasaur: Grass/Poison — not immune to burn
+    p2.ability = 'overgrow';
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    const p2After = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2After.status).toBeUndefined();
+    expect(p2After.heldItem).toBeUndefined();
+    expect(events.some(e => e.type === 'item-consumed' && (e.data as any).item === 'lum-berry')).toBe(true);
+  });
+});
+
+describe('Salac Berry', () => {
+  it('+1 Spe when HP drops to ≤25%', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'tackle', currentPp: 35, maxPp: 35 };
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    p2.currentHp = 26; // 26-17=9 ≤ 25 → triggers
+    p2.heldItem = 'salac-berry';
+    p2.moves[2] = { moveId: 'splash', currentPp: 40, maxPp: 40 }; // avoid roost self-heal
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    const p2After = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2After.statBoosts.spe).toBe(1);
+    expect(p2After.heldItem).toBeUndefined();
+  });
+});

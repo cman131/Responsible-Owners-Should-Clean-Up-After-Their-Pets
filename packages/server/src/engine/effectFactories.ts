@@ -1,6 +1,7 @@
 import type { StatusCondition, WeatherType, TerrainType, StatBoosts, SideConditions, TurnResolveEvent } from '@poke-fighter/shared';
 import { applyStatus, applyStatBoost, applyVolatile } from './effects.js';
 import type { MoveEffectHandler } from './MoveEffectRegistry.js';
+import { getItemHooks } from './items.js';
 
 export function statModSelf(stat: keyof StatBoosts, stages: number): MoveEffectHandler {
   return (ctx) => ({
@@ -27,8 +28,30 @@ export function applyStatusTarget(status: StatusCondition): MoveEffectHandler {
     const events: TurnResolveEvent[] = [];
     const bypassSub = ctx.move.soundMove === true;
     for (let i = 0; i < ctx.targets.length; i++) {
-      const event = applyStatus(ctx.targets[i]!, ctx.targetSlotIds[i]!, status, ctx.targetTypes[i]!, { bypassSub }, ctx.battle);
-      if (event) events.push(event);
+      const target = ctx.targets[i]!;
+      const targetSlotId = ctx.targetSlotIds[i]!;
+      const event = applyStatus(target, targetSlotId, status, ctx.targetTypes[i]!, { bypassSub }, ctx.battle);
+      if (event) {
+        events.push(event);
+        // Lum Berry: cure status immediately on application
+        if (target.status) {
+          const lumResult = getItemHooks(target.heldItem).onStatusApplied?.({
+            holder: target,
+            state: ctx.battle,
+            status: target.status,
+          });
+          if (lumResult?.cureStatus) {
+            const curedStatus = target.status;
+            delete target.status;
+            events.push({ type: 'status-cured', data: { slotId: targetSlotId, status: curedStatus, reason: 'lum-berry' } });
+            if (lumResult.consume && target.heldItem) {
+              const itemName = target.heldItem;
+              delete target.heldItem;
+              events.push({ type: 'item-consumed', data: { slotId: targetSlotId, item: itemName, reason: 'triggered' } });
+            }
+          }
+        }
+      }
     }
     return { events };
   };

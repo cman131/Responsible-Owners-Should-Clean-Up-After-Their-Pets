@@ -780,6 +780,34 @@ export class BattleEngine {
         events.push({ type: 'item-consumed', data: { slotId: targetSlotId, item: policyItem, reason: 'triggered' } });
       }
 
+      // Defender berry triggers after taking damage (Sitrus Berry, Salac Berry, etc.)
+      if (totalDamage > 0 && !target.fainted) {
+        const berryHooks = getItemHooks(target.heldItem);
+        if (berryHooks.onAfterDamageTaken) {
+          const berryResult = berryHooks.onAfterDamageTaken({
+            holder: target,
+            state: s,
+            damageTaken: totalDamage,
+            effectiveness,
+          });
+          if (berryResult.hpDelta > 0) {
+            const heal = Math.min(berryResult.hpDelta, target.maxHp - target.currentHp);
+            if (heal > 0) {
+              target.currentHp += heal;
+              events.push({ type: 'heal', data: { slotId: targetSlotId, amount: heal, remainingHp: target.currentHp } });
+            }
+          }
+          if (berryResult.statBoostDeltas) {
+            events.push(applyStatBoost(target, targetSlotId, berryResult.statBoostDeltas as Partial<Record<keyof StatBoosts, number>>));
+          }
+          if (berryResult.consume) {
+            const itemName = target.heldItem!;
+            delete target.heldItem;
+            events.push({ type: 'item-consumed', data: { slotId: targetSlotId, item: itemName, reason: 'triggered' } });
+          }
+        }
+      }
+
       // Life Orb recoil etc.
       if (totalDamage > 0 && itemHooks.onAfterDamageTaken) {
         const { hpDelta } = itemHooks.onAfterDamageTaken({ holder: attacker, state: s, damageTaken: totalDamage });
