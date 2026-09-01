@@ -125,9 +125,11 @@ export function setSideCondition(
       }
     }
 
+    const ext = getItemHooks(ctx.user.heldItem).screenExtension ?? 0;
+    const adjustedValue = typeof value === 'number' && value > 1 ? value + ext : value;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (ctx.battle.field.sideConditions[sideIdx] as any)[key] = value;
-    return { events: [{ type: 'side-condition-set', data: { side: sideIdx, condition: key, value } }] };
+    (ctx.battle.field.sideConditions[sideIdx] as any)[key] = adjustedValue;
+    return { events: [{ type: 'side-condition-set', data: { side: sideIdx, condition: key, value: adjustedValue } }] };
   };
 }
 

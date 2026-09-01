@@ -247,3 +247,107 @@ describe('Assault Vest', () => {
     expect(dmgAV).toBe(Math.floor(dmgNoAV * 2/3));
   });
 });
+
+describe('Scope Lens — crit stage +1', () => {
+  it('crits with rng=0.1 (stage 1 = 1/8 chance, 0.1 < 0.125)', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'scope-lens';
+    const engine = new BattleEngine({ rng: () => 0.1 });
+    const { events: withSL } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    expect(withSL.some(e => e.type === 'crit')).toBe(true);
+  });
+
+  it('does not crit without Scope Lens at rng=0.1 (stage 0 = 1/24 chance, 0.1 > 0.042)', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    const engine = new BattleEngine({ rng: () => 0.1 });
+    const { events: noSL } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    expect(noSL.some(e => e.type === 'crit')).toBe(false);
+  });
+});
+
+describe('Eviolite', () => {
+  it('reduces physical damage on eligible species (isEvioliteEligible=true)', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'tackle', currentPp: 35, maxPp: 35 };
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    p2.heldItem = 'eviolite';
+    p2.isEvioliteEligible = true;
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    // Tackle 17 damage, Eviolite reduces by 2/3: floor(17*2/3) = 11 → HP = 89
+    expect(newState.teams[1]!.slots[0]!.party[0]!.currentHp).toBe(89);
+  });
+
+  it('does not reduce damage on ineligible species', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'tackle', currentPp: 35, maxPp: 35 };
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    p2.heldItem = 'eviolite';
+    p2.isEvioliteEligible = false;
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.currentHp).toBe(83); // 17 damage, no reduction
+  });
+});
+
+describe('Light Clay — screen extension', () => {
+  it('sets Reflect to 8 turns instead of 5', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[2] = { moveId: 'reflect', currentPp: 20, maxPp: 20 };
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'light-clay';
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 2 },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    expect(newState.field.sideConditions[0]!.reflect).toBe(7);
+  });
+});
+
+describe('Big Root — drain boost', () => {
+  it('heals more than baseline from drain move', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    // Giga Drain: Grass Special BP75, drains 50% of damage dealt
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'gigadrain', currentPp: 10, maxPp: 10 };
+    state.teams[0]!.slots[0]!.party[0]!.currentHp = 50; // room to heal
+    const engine = new BattleEngine({ rng: () => 0.5 });
+
+    // Without Big Root
+    const { newState: noBR } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    const healNoBR = noBR.teams[0]!.slots[0]!.party[0]!.currentHp - 50;
+
+    // With Big Root
+    const state2 = make1v1State();
+    state2.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'gigadrain', currentPp: 10, maxPp: 10 };
+    state2.teams[0]!.slots[0]!.party[0]!.currentHp = 50;
+    state2.teams[0]!.slots[0]!.party[0]!.heldItem = 'big-root';
+    const { newState: withBR } = engine.resolveTurn(state2, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    const healWithBR = withBR.teams[0]!.slots[0]!.party[0]!.currentHp - 50;
+
+    expect(healWithBR).toBeGreaterThan(healNoBR);
+    expect(healWithBR).toBe(Math.floor(healNoBR * 2));
+  });
+});

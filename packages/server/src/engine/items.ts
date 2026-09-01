@@ -60,7 +60,19 @@ const ITEM_HOOKS: Record<string, ItemHooks> = {
     },
   },
   eviolite: {
-    onAttackerModifier: () => 1,
+    onDefenderModifier: ({ holder }) => holder.isEvioliteEligible ? (2 / 3) : 1,
+  },
+  'scope-lens': {
+    critStageBonus: 1,
+  },
+  'razor-claw': {
+    critStageBonus: 1,
+  },
+  'light-clay': {
+    screenExtension: 3,
+  },
+  'big-root': {
+    drainMultiplier: 2,
   },
   'rocky-helmet': {
     onAfterHit: ({ makesContact, holder, totalDamage }) =>

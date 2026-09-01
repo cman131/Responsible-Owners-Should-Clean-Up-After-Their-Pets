@@ -4,6 +4,7 @@ import type {
 import { canApplyStatus } from './status.js';
 import { isGrounded } from './fieldState.js';
 import { getAbilityHooks } from './abilities.js';
+import { getItemHooks } from './items.js';
 
 export function applyStatus(
   member: PartyMember,
@@ -175,7 +176,9 @@ export function applySecondaries(ctx: SecondaryContext): TurnResolveEvent[] {
       }
       case 'drain': {
         if (ctx.totalDamage <= 0) break;
-        const heal = Math.floor(ctx.totalDamage * sec.fraction[0] / sec.fraction[1]);
+        const baseHeal = Math.floor(ctx.totalDamage * sec.fraction[0] / sec.fraction[1]);
+        const drainMult = getItemHooks(ctx.user.heldItem).drainMultiplier ?? 1;
+        const heal = drainMult > 1 ? Math.floor(baseHeal * drainMult) : baseHeal;
         const actual = Math.min(heal, ctx.user.maxHp - ctx.user.currentHp);
         if (actual <= 0) break;
         ctx.user.currentHp += actual;
