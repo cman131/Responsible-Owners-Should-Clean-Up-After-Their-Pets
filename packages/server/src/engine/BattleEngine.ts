@@ -431,10 +431,16 @@ export class BattleEngine {
         if (effectiveDefTypes.length === 0) effectiveDefTypes = ['Normal'];
       }
 
-      const effectiveness = this.data.getCombinedEffectiveness(effectiveMoveType, effectiveDefTypes);
+      let effectiveness = this.data.getCombinedEffectiveness(effectiveMoveType, effectiveDefTypes);
       if (effectiveness === 0) {
         events.push({ type: 'move-used', data: { note: 'no-effect', targetSlotId, attackerName: attacker.nickname, moveName: move.name } });
         continue;
+      }
+
+      // Strong Winds: super-effective moves against Flying-type targets are reduced
+      if (s.field.weather?.type === 'strong-winds' && defTypes.includes('Flying')) {
+        if (effectiveness >= 4) effectiveness /= 2;
+        else if (effectiveness > 1) effectiveness = 1;
       }
 
       // Magnet Rise: Ground immunity

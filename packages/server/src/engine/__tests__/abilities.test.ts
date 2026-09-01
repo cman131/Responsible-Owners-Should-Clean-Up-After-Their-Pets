@@ -715,3 +715,57 @@ describe('Extreme weather — move nullification', () => {
     expect(events.some(e => e.type === 'move-failed')).toBe(false);
   });
 });
+
+describe('Strong Winds (Delta Stream) — type effectiveness clamp', () => {
+  // Default fixture: both Pokémon are Charizard (speciesId=6, Fire/Flying).
+  // Thunderbolt (Electric) is 2× vs Flying, 1× vs Fire → combined 2×.
+  // Under strong-winds, 2× against a Flying target → clamped to 1×.
+
+  it('Electric 2× vs Flying becomes 1× under strong-winds', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'thunderbolt', currentPp: 15, maxPp: 15 };
+    state.field.weather = { type: 'strong-winds', turnsRemaining: 999, fromAbility: true, permanent: true };
+    const engine = new BattleEngine({ rng: () => 0.5 });
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    // 38 damage (1× effective) → 100 - 38 = 62
+    expect(newState.teams[1]!.slots[0]!.party[0]!.currentHp).toBe(62);
+  });
+
+  it('Electric is 2× vs Flying without strong-winds (control)', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'thunderbolt', currentPp: 15, maxPp: 15 };
+    const engine = new BattleEngine({ rng: () => 0.5 });
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    // 76 damage (2× effective) → 100 - 76 = 24
+    expect(newState.teams[1]!.slots[0]!.party[0]!.currentHp).toBe(24);
+  });
+
+  it('Weakness Policy does NOT trigger under strong-winds (clamped to 1×)', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'thunderbolt', currentPp: 15, maxPp: 15 };
+    state.teams[1]!.slots[0]!.party[0]!.heldItem = 'weakness-policy';
+    state.field.weather = { type: 'strong-winds', turnsRemaining: 999, fromAbility: true, permanent: true };
+    const engine = new BattleEngine({ rng: () => 0.5 });
+
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    // No item-consumed event for weakness-policy (not super-effective after clamp)
+    expect(events.some(e => e.type === 'item-consumed' && (e.data as any).item === 'weakness-policy')).toBe(false);
+  });
+});
