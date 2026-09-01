@@ -109,3 +109,32 @@ describe('battle:history', () => {
     expect(result.current.turnLog).toEqual([]);
   });
 });
+
+describe('crit event', () => {
+  it('produces a "A critical hit!" log entry', () => {
+    const { result } = renderHook(() => useBattle(), { wrapper });
+    act(() => {
+      socketListeners['turn:resolve']?.({
+        turnNumber: 2,
+        events: [{ type: 'crit', data: { slotId: 's1' } }],
+        state: { turnNumber: 2, phase: 'action', teams: [], field: {} },
+      });
+    });
+    const log = result.current.turnLog;
+    expect(log).toHaveLength(2); // round-start + crit
+    expect(log[1]).toEqual({ type: 'normal', text: 'A critical hit!' });
+  });
+
+  it('crit message also appears via battle:history', () => {
+    const { result } = renderHook(() => useBattle(), { wrapper });
+    act(() => {
+      socketListeners['battle:history']?.({
+        turns: [
+          { turnNumber: 1, events: [{ type: 'crit', data: { slotId: 's1' } }] },
+        ],
+      });
+    });
+    const log = result.current.turnLog;
+    expect(log[1]).toEqual({ type: 'normal', text: 'A critical hit!' });
+  });
+});

@@ -51,7 +51,10 @@ export function BattleProvider({ mySlotId, initialState, children }: Props) {
       setState(s);
       const roundEntry: LogEntry = { type: 'round-start', text: `-------Round ${turnNumber - 1}-------` };
       const eventEntries: LogEntry[] = events
-        .map((e) => eventToText(e))
+        .flatMap((e) => {
+          const result = eventToText(e);
+          return Array.isArray(result) ? result : [result];
+        })
         .filter(Boolean)
         .map((text) => ({ type: 'normal' as const, text }));
       setTurnLog((prev) => [...prev, roundEntry, ...eventEntries].slice(-50));
@@ -62,8 +65,11 @@ export function BattleProvider({ mySlotId, initialState, children }: Props) {
       for (const turn of turns) {
         entries.push({ type: 'round-start', text: `-------Round ${turn.turnNumber - 1}-------` });
         for (const event of turn.events) {
-          const text = eventToText(event);
-          if (text) entries.push({ type: 'normal', text });
+          const result = eventToText(event);
+          const texts = Array.isArray(result) ? result : [result];
+          for (const text of texts) {
+            if (text) entries.push({ type: 'normal', text });
+          }
         }
       }
       setTurnLog(entries);
@@ -107,15 +113,20 @@ export function BattleProvider({ mySlotId, initialState, children }: Props) {
   );
 }
 
-function eventToText(event: TurnResolveEvent): string {
+function eventToText(event: TurnResolveEvent): string | string[] {
   switch (event.type) {
     case 'move-used': return `${String(event.data['attackerName'])} used ${String(event.data['moveName'])}!`;
     case 'damage-dealt': return `Dealt ${String(event.data['damage'])} damage to ${String(event.data['targetSlotId'])}.`;
     case 'faint': return `${String(event.data['slotId'])}'s Pokémon fainted!`;
     case 'heal': return `${String(event.data['slotId'])} restored HP.`;
-    case 'status-applied': return `${String(event.data['target'])} was ${String(event.data['status'])}!`;
+    case 'status-applied': return `${String(event.data['pokemonName'])} was ${String(event.data['status'])}!`;
+    case 'status-cured': {
+      if (event.data['status'] === 'slp') return `${String(event.data['pokemonName'] ?? event.data['slotId'])} woke up!`;
+      return '';
+    }
     case 'terastallize': return `${String(event.data['slotId'])} Terastallized into ${String(event.data['teraType'])} type!`;
     case 'pokemon-switched': return `${String(event.data['slotId'])}'s Pokémon was switched out!`;
+    case 'crit': return 'A critical hit!';
     default: return '';
   }
 }
