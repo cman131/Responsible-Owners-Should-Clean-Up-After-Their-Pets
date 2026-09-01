@@ -161,6 +161,30 @@ const ABILITY_HOOKS: Record<string, AbilityHooks> = {
   levitate: {
     onMoveImmunity: ({ move }) => move.type === 'Ground' ? { immune: true } : null,
   },
+  'volt-absorb': {
+    onMoveImmunity: ({ move }) =>
+      move.type === 'Electric' ? { immune: true, hpHealFraction: 0.25 } : null,
+  },
+  'water-absorb': {
+    onMoveImmunity: ({ move }) =>
+      move.type === 'Water' ? { immune: true, hpHealFraction: 0.25 } : null,
+  },
+  'motor-drive': {
+    onMoveImmunity: ({ move }) =>
+      move.type === 'Electric' ? { immune: true, statBoostDeltas: { spe: 1 } } : null,
+  },
+  'sap-sipper': {
+    onMoveImmunity: ({ move }) =>
+      move.type === 'Grass' ? { immune: true, statBoostDeltas: { atk: 1 } } : null,
+  },
+  'storm-drain': {
+    onMoveImmunity: ({ move }) =>
+      move.type === 'Water' ? { immune: true, statBoostDeltas: { spa: 1 } } : null,
+  },
+  'lightning-rod': {
+    onMoveImmunity: ({ move }) =>
+      move.type === 'Electric' ? { immune: true, statBoostDeltas: { spa: 1 } } : null,
+  },
   'screen-cleaner': {
     onSwitchIn: () => ({ clearScreens: true }),
   },
@@ -273,6 +297,8 @@ const ABILITY_HOOKS: Record<string, AbilityHooks> = {
     onDefenderModifier: ({ moveType }) => moveType === 'Fire' ? 0.5 : 1,
   },
   'dry-skin': {
+    onMoveImmunity: ({ move }) =>
+      move.type === 'Water' ? { immune: true, hpHealFraction: 0.25 } : null,
     onDefenderModifier: ({ moveType }) => moveType === 'Fire' ? 1.25 : 1,
   },
   'water-bubble': {

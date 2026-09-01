@@ -244,6 +244,55 @@ describe('onDefenderModifier — Fur Coat', () => {
   });
 });
 
+describe('onMoveImmunity — Volt Absorb', () => {
+  it('blocks Electric move and heals 25% maxHp', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'thunderbolt', currentPp: 15, maxPp: 15 };
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    p2.ability = 'volt-absorb';
+    p2.currentHp = 60;
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-a1' }, // will-o-wisp, not roost
+    });
+    const p2After = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2After.currentHp).toBe(85); // 60 + floor(100*0.25)
+    expect(events.some(e => e.type === 'ability-triggered')).toBe(true);
+    expect(events.some(e => e.type === 'heal')).toBe(true);
+  });
+});
+
+describe('onMoveImmunity — Motor Drive', () => {
+  it('blocks Electric move and grants +1 Spe', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'thunderbolt', currentPp: 15, maxPp: 15 };
+    state.teams[1]!.slots[0]!.party[0]!.ability = 'motor-drive';
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.currentHp).toBe(100);
+    expect(newState.teams[1]!.slots[0]!.party[0]!.statBoosts.spe).toBe(1);
+  });
+});
+
+describe('onMoveImmunity — Sap Sipper', () => {
+  it('blocks Grass move and grants +1 Atk', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'energyball', currentPp: 10, maxPp: 10 };
+    state.teams[1]!.slots[0]!.party[0]!.ability = 'sap-sipper';
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.currentHp).toBe(100);
+    expect(newState.teams[1]!.slots[0]!.party[0]!.statBoosts.atk).toBe(1);
+  });
+});
+
 describe('Weather summoners — Drizzle', () => {
   it('sets rain on switch-in', () => {
     const state = make1v1State();
