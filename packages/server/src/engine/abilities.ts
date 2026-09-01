@@ -239,6 +239,10 @@ const ABILITY_HOOKS: Record<string, AbilityHooks> = {
       },
     }),
   },
+  'gorilla-tactics': {
+    // Gorilla Tactics boosts Attack by 1.5× (physical only; holders are always physical attackers)
+    onAttackerModifier: () => 1.5,
+  },
 };
 
 export function getAbilityHooks(abilityId: string): AbilityHooks {

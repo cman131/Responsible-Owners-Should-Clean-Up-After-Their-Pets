@@ -34,6 +34,9 @@ export interface ItemHooks {
 }
 
 const ITEM_HOOKS: Record<string, ItemHooks> = {
+  'assault-vest': {
+    onDefenderModifier: ({ isPhysical }) => !isPhysical ? (2 / 3) : 1,
+  },
   'choice-band': {
     onAttackerModifier: ({ isPhysical }) => isPhysical ? 1.5 : 1,
   },

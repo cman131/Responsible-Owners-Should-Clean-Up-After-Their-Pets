@@ -217,3 +217,33 @@ describe('Salac Berry', () => {
     expect(p2After.heldItem).toBeUndefined();
   });
 });
+
+describe('Assault Vest', () => {
+  it('reduces special damage by 1/3', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    // Use surf (special Water move) against Charizard (Fire/Flying) — 2x effective
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'surf', currentPp: 15, maxPp: 15 };
+    state.teams[1]!.slots[0]!.party[0]!.heldItem = 'assault-vest';
+    state.teams[1]!.slots[0]!.party[0]!.moves[2] = { moveId: 'splash', currentPp: 40, maxPp: 40 };
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState: withAV } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+
+    const state2 = make1v1State();
+    state2.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'surf', currentPp: 15, maxPp: 15 };
+    state2.teams[1]!.slots[0]!.party[0]!.moves[2] = { moveId: 'splash', currentPp: 40, maxPp: 40 };
+    const { newState: noAV } = engine.resolveTurn(state2, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+
+    const dmgAV = 100 - withAV.teams[1]!.slots[0]!.party[0]!.currentHp;
+    const dmgNoAV = 100 - noAV.teams[1]!.slots[0]!.party[0]!.currentHp;
+    // AV reduces special damage by factor of 2/3
+    expect(dmgAV).toBeLessThan(dmgNoAV);
+    expect(dmgAV).toBe(Math.floor(dmgNoAV * 2/3));
+  });
+});

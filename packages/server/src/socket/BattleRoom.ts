@@ -3,6 +3,7 @@ import { BattleEngine } from '../engine/index.js';
 import { getLegalTargets } from '../engine/targeting.js';
 import { calcExpYield, distributeExp, checkLevelUps, type ExpAward, type LevelUpResult } from '../engine/exp.js';
 import { DataLoader } from '../data/loader.js';
+import { effectiveAbilityId } from '../engine/abilities.js';
 
 type Action = MoveAction | SwitchAction;
 
@@ -104,6 +105,29 @@ export class BattleRoom {
     const slot = this.findSlot(slotId);
     if (!slot) return { ok: false, reason: 'Unknown slot' };
     if (slot.isSpectator) return { ok: false, reason: 'Spectators cannot submit actions' };
+
+    // Choice lockup enforcement
+    if (action.type === 'move') {
+      const active = slot.party[slot.activePokemonIndex];
+      if (active) {
+        const CHOICE_ITEMS = ['choice-band', 'choice-specs', 'choice-scarf'];
+        const isChoiceLocked =
+          CHOICE_ITEMS.includes(active.heldItem ?? '') ||
+          effectiveAbilityId(active) === 'gorilla-tactics';
+
+        if (isChoiceLocked && active.lockedMoveId) {
+          const moveSlot = active.moves[action.moveIndex];
+          if (moveSlot && moveSlot.moveId !== active.lockedMoveId) {
+            return { ok: false, reason: 'choice-locked' };
+          }
+        }
+        // First move with choice item — set the lock
+        if (isChoiceLocked && !active.lockedMoveId) {
+          const moveSlot = active.moves[action.moveIndex];
+          if (moveSlot) active.lockedMoveId = moveSlot.moveId;
+        }
+      }
+    }
 
     this.pendingActions.set(slotId, action);
 
@@ -318,6 +342,10 @@ export class BattleRoom {
       if (tauntActive && moveData?.category === 'status') disabled = true;
       if (encoreEntry && encoreEntry.moveId && m.moveId !== encoreEntry.moveId) disabled = true;
       if (tormentActive && active.lastMoveId === m.moveId) disabled = true;
+      // Disable non-locked moves when choice-locked
+      if (active.lockedMoveId && m.moveId !== active.lockedMoveId) disabled = true;
+      // Disable status moves with Assault Vest
+      if (active.heldItem === 'assault-vest' && moveData?.category === 'status') disabled = true;
 
       return {
         index: i as 0 | 1 | 2 | 3,
