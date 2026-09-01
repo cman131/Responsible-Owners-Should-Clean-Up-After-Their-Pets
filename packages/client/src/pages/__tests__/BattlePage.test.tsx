@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, act } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 
 vi.mock('../../socket.js', () => ({ getSocket: vi.fn(), connectAsPlayer: vi.fn() }));
@@ -66,6 +66,10 @@ function renderBattlePage(battleState: BattleState) {
 }
 
 describe('BattlePage', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('renders the BattleScene component', () => {
     renderBattlePage(makeState());
     expect(screen.getByTestId('battle-scene')).toBeTruthy();

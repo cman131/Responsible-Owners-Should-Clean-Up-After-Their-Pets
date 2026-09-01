@@ -223,6 +223,10 @@ export function BattleProvider({ mySlotId, initialState, children }: Props) {
     socket.on('battle:end', ({ winningTeamId }) => {
       setTurnLog((prev) => [...prev, { type: 'normal', text: `Battle over! Winner: ${winningTeamId}` }]);
       setActionRequest(null);
+      setEventQueue([]);
+      setPendingState(null);
+      setPendingActionRequest(null);
+      setPendingSwitchRequest(null);
     });
 
     return () => {
