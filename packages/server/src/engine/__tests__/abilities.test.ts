@@ -586,3 +586,80 @@ describe('Inner Focus — flinch immunity', () => {
     expect(newState.teams[1]!.slots[0]!.party[0]!.volatileStatus.some(v => v.name === 'flinch')).toBe(false);
   });
 });
+
+describe('Solar Beam — harsh-sun interactions', () => {
+  it('Solar Beam fires immediately in harsh-sun (no charge turn)', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'solarbeam', currentPp: 10, maxPp: 10 };
+    state.field.weather = { type: 'harsh-sun', turnsRemaining: 999, fromAbility: true, permanent: true };
+    const engine = new BattleEngine({ rng: () => 0.5 });
+
+    const { events, newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    // Move fires immediately — damage event is present
+    expect(events.some(e => e.type === 'damage-dealt')).toBe(true);
+    // No charging volatile left on the attacker
+    const p1 = newState.teams[0]!.slots[0]!.party[0]!;
+    expect(p1.volatileStatus.some(v => v.name === 'charging-solarbeam')).toBe(false);
+  });
+
+  it('Solar Beam power is NOT halved in harsh-sun (same damage as no weather)', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const engine = new BattleEngine({ rng: () => 0.5 });
+
+    const noWeather = make1v1State();
+    noWeather.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'solarbeam', currentPp: 10, maxPp: 10 };
+    // Pre-charge so it fires immediately in no-weather
+    noWeather.teams[0]!.slots[0]!.party[0]!.volatileStatus.push({ name: 'charging-solarbeam' });
+    const { newState: ns1 } = engine.resolveTurn(noWeather, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const harshSun = make1v1State();
+    harshSun.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'solarbeam', currentPp: 10, maxPp: 10 };
+    harshSun.field.weather = { type: 'harsh-sun', turnsRemaining: 999, fromAbility: true, permanent: true };
+    const { newState: ns2 } = engine.resolveTurn(harshSun, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    // Same HP remaining means same damage → same base power (not halved in harsh-sun)
+    expect(ns2.teams[1]!.slots[0]!.party[0]!.currentHp)
+      .toBe(ns1.teams[1]!.slots[0]!.party[0]!.currentHp);
+  });
+
+  it('Solar Beam power IS halved in heavy-rain', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const engine = new BattleEngine({ rng: () => 0.5 });
+
+    // Fire immediately from pre-charged state in no weather (full 120 BP)
+    const noWeather = make1v1State();
+    noWeather.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'solarbeam', currentPp: 10, maxPp: 10 };
+    noWeather.teams[0]!.slots[0]!.party[0]!.volatileStatus.push({ name: 'charging-solarbeam' });
+    const { newState: ns1 } = engine.resolveTurn(noWeather, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    // Fire immediately from pre-charged state in heavy-rain (halved 60 BP)
+    const heavyRain = make1v1State();
+    heavyRain.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'solarbeam', currentPp: 10, maxPp: 10 };
+    heavyRain.teams[0]!.slots[0]!.party[0]!.volatileStatus.push({ name: 'charging-solarbeam' });
+    heavyRain.field.weather = { type: 'heavy-rain', turnsRemaining: 999, fromAbility: true, permanent: true };
+    const { newState: ns2 } = engine.resolveTurn(heavyRain, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    // Heavy-rain version deals less damage (halved BP)
+    expect(ns2.teams[1]!.slots[0]!.party[0]!.currentHp)
+      .toBeGreaterThan(ns1.teams[1]!.slots[0]!.party[0]!.currentHp);
+  });
+});

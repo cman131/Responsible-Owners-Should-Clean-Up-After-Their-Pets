@@ -315,7 +315,7 @@ export class BattleEngine {
     // Charge-turn check
     const chargeSec = secs.find(sec => sec.kind === 'charge');
     if (chargeSec) {
-      const isSun = s.field.weather?.type === 'sun';
+      const isSun = s.field.weather?.type === 'sun' || s.field.weather?.type === 'harsh-sun';
       const hasCharge = attacker.volatileStatus.some(v => v.name === chargeSec.chargeVolatile);
       if (!hasCharge && !isSun) {
         attacker.volatileStatus.push({ name: chargeSec.chargeVolatile });
@@ -332,7 +332,7 @@ export class BattleEngine {
     let effectiveMoveType = move.type;
 
     // Solar Beam / Solar Blade: half power in any non-sun weather
-    if (SOLAR_MOVES.has(move.id) && s.field.weather && s.field.weather.type !== 'sun') {
+    if (SOLAR_MOVES.has(move.id) && s.field.weather && !['sun', 'harsh-sun'].includes(s.field.weather.type)) {
       effectiveBasePower = Math.floor(effectiveBasePower / 2);
     }
     // Weather Ball: double power + type change in active weather
