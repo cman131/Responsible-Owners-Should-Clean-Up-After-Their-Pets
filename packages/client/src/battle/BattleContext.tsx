@@ -6,6 +6,65 @@ import type {
 
 export type LogEntry = { type: 'normal' | 'round-start'; text: string };
 
+export type PlaybackEntry = {
+  text?: string;
+  hpDelta?: { slotId: string; delta: number };
+  delay: number;
+};
+
+export function eventsToPlaybackEntries(events: TurnResolveEvent[]): PlaybackEntry[] {
+  const entries: PlaybackEntry[] = [];
+  for (const event of events) {
+    switch (event.type) {
+      case 'move-used':
+        entries.push({
+          text: `${String(event.data['attackerName'])} used ${String(event.data['moveName'])}!`,
+          delay: 600,
+        });
+        break;
+      case 'damage-dealt': {
+        const target = String(event.data['targetSlotId'] ?? event.data['slotId']);
+        const damage = Number(event.data['damage']);
+        const hpDelta = { slotId: target, delta: damage };
+        const dmgText = `Dealt ${damage} damage to ${target}.`;
+        const eff = event.data['moveId'] ? (event.data['effectiveness'] as number) : 1;
+        entries.push({ text: dmgText, hpDelta, delay: 600 });
+        if (eff > 1) entries.push({ text: "It's super effective!", delay: 300 });
+        else if (eff < 1) entries.push({ text: "It's not very effective...", delay: 300 });
+        break;
+      }
+      case 'crit':
+        entries.push({ text: 'A critical hit!', delay: 300 });
+        break;
+      case 'faint':
+        entries.push({ text: `${String(event.data['slotId'])}'s Pokémon fainted!`, delay: 600 });
+        break;
+      case 'heal':
+        entries.push({ text: `${String(event.data['slotId'])} restored HP.`, delay: 600 });
+        break;
+      case 'status-applied':
+        entries.push({ text: `${String(event.data['pokemonName'])} was ${String(event.data['status'])}!`, delay: 600 });
+        break;
+      case 'status-cured': {
+        const text = event.data['status'] === 'slp'
+          ? `${String(event.data['pokemonName'] ?? event.data['slotId'])} woke up!`
+          : '';
+        if (text) entries.push({ text, delay: 600 });
+        break;
+      }
+      case 'terastallize':
+        entries.push({ text: `${String(event.data['slotId'])} Terastallized into ${String(event.data['teraType'])} type!`, delay: 600 });
+        break;
+      case 'pokemon-switched':
+        entries.push({ text: `${String(event.data['slotId'])}'s Pokémon was switched out!`, delay: 600 });
+        break;
+      default:
+        break;
+    }
+  }
+  return entries;
+}
+
 interface BattleContextValue {
   state: BattleState | null;
   mySlotId: string;
