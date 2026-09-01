@@ -117,7 +117,8 @@ function eventToText(event: TurnResolveEvent): string | string[] {
   switch (event.type) {
     case 'move-used': return `${String(event.data['attackerName'])} used ${String(event.data['moveName'])}!`;
     case 'damage-dealt': {
-      const dmgLine = `Dealt ${String(event.data['damage'])} damage to ${String(event.data['targetSlotId'])}.`;
+      const target = event.data['targetSlotId'] ?? event.data['slotId'];
+      const dmgLine = `Dealt ${String(event.data['damage'])} damage to ${String(target)}.`;
       if (!event.data['moveId']) return dmgLine;
       const eff = event.data['effectiveness'] as number;
       if (eff > 1) return [dmgLine, "It's super effective!"];

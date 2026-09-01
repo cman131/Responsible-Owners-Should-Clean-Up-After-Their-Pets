@@ -212,6 +212,7 @@ describe('damage-dealt effectiveness lines', () => {
     const log = result.current.turnLog;
     // passive damage uses slotId not targetSlotId; only round-start + one damage line
     expect(log).toHaveLength(2);
+    expect(log[1]).toEqual({ type: 'normal', text: 'Dealt 40 damage to s2.' });
   });
 
   it('effectiveness lines also appear via battle:history', () => {
@@ -225,5 +226,24 @@ describe('damage-dealt effectiveness lines', () => {
     });
     const log = result.current.turnLog;
     expect(log[2]).toEqual({ type: 'normal', text: "It's super effective!" });
+  });
+
+  it('produces the full sequence: damage, effectiveness, then crit on a super-effective crit', () => {
+    const { result } = renderHook(() => useBattle(), { wrapper });
+    act(() => {
+      socketListeners['turn:resolve']?.({
+        turnNumber: 2,
+        events: [
+          fireDamageEvent(2),
+          { type: 'crit', data: { slotId: 's2' } },
+        ],
+        state: { turnNumber: 2, phase: 'action', teams: [], field: {} },
+      });
+    });
+    const log = result.current.turnLog;
+    expect(log).toHaveLength(4); // round-start + damage + effectiveness + crit
+    expect(log[1]).toEqual({ type: 'normal', text: 'Dealt 40 damage to s2.' });
+    expect(log[2]).toEqual({ type: 'normal', text: "It's super effective!" });
+    expect(log[3]).toEqual({ type: 'normal', text: 'A critical hit!' });
   });
 });
