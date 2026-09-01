@@ -96,3 +96,25 @@ describe('calcDamage — weather modifier', () => {
     expect(calcDamage(input).damage).toBe(37);
   });
 });
+
+describe('calcDamage — extreme weather modifiers', () => {
+  it('Fire move in harsh-sun deals 1.5× damage vs no weather', () => {
+    const base: DamageInput = {
+      level: 50, attackStat: 100, defenseStat: 100, basePower: 80,
+      typeEffectiveness: 1, stab: false, isBurned: false, randomFactor: 1.0,
+      moveType: 'Fire',
+    };
+    const harshSun: DamageInput = { ...base, weather: 'harsh-sun' };
+    expect(calcDamage(harshSun).damage).toBe(Math.floor(calcDamage(base).damage * 1.5));
+  });
+
+  it('Water move in heavy-rain deals 1.5× damage vs no weather', () => {
+    const base: DamageInput = {
+      level: 50, attackStat: 100, defenseStat: 100, basePower: 80,
+      typeEffectiveness: 1, stab: false, isBurned: false, randomFactor: 1.0,
+      moveType: 'Water',
+    };
+    const heavyRain: DamageInput = { ...base, weather: 'heavy-rain' };
+    expect(calcDamage(heavyRain).damage).toBe(Math.floor(calcDamage(base).damage * 1.5));
+  });
+});

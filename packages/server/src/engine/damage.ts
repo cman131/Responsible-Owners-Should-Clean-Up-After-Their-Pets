@@ -39,10 +39,12 @@ export function calcDamage(input: DamageInput): DamageResult {
   if (isBurned) dmg = Math.floor(dmg / 2);
 
   if (weather && moveType) {
-    if (weather === 'sun'  && moveType === 'Fire')  dmg = Math.floor(dmg * 1.5);
-    if (weather === 'sun'  && moveType === 'Water') dmg = Math.floor(dmg * 0.5);
-    if (weather === 'rain' && moveType === 'Water') dmg = Math.floor(dmg * 1.5);
-    if (weather === 'rain' && moveType === 'Fire')  dmg = Math.floor(dmg * 0.5);
+    if (weather === 'sun'       && moveType === 'Fire')  dmg = Math.floor(dmg * 1.5);
+    if (weather === 'sun'       && moveType === 'Water') dmg = Math.floor(dmg * 0.5);
+    if (weather === 'rain'      && moveType === 'Water') dmg = Math.floor(dmg * 1.5);
+    if (weather === 'rain'      && moveType === 'Fire')  dmg = Math.floor(dmg * 0.5);
+    if (weather === 'harsh-sun' && moveType === 'Fire')  dmg = Math.floor(dmg * 1.5);
+    if (weather === 'heavy-rain'&& moveType === 'Water') dmg = Math.floor(dmg * 1.5);
   }
 
   dmg = Math.floor(dmg * otherModifiers);
