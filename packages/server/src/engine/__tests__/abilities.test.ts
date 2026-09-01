@@ -176,6 +176,74 @@ describe('onAfterHit — Rough Skin / Iron Barbs', () => {
   });
 });
 
+describe('onDefenderModifier — Filter / Solid Rock', () => {
+  it('reduces super-effective damage by 0.75', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'surf', currentPp: 15, maxPp: 15 };
+    // P2 is Charizard (Fire/Flying), Surf is 2× — Filter gives ×0.75
+    const engineFilter = new BattleEngine({ rng: () => 0.5 });
+    state.teams[1]!.slots[0]!.party[0]!.ability = 'filter';
+    const { newState: withFilter } = engineFilter.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      // P2 uses will-o-wisp targeting P1 — no HP change for P2
+      'slot-b1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-a1' },
+    });
+
+    const state2 = make1v1State();
+    state2.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'surf', currentPp: 15, maxPp: 15 };
+    const engineNo = new BattleEngine({ rng: () => 0.5 });
+    state2.teams[1]!.slots[0]!.party[0]!.ability = 'blaze';
+    const { newState: noFilter } = engineNo.resolveTurn(state2, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      // P2 uses will-o-wisp targeting P1 — no HP change for P2
+      'slot-b1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-a1' },
+    });
+
+    const dmgFilter = 100 - withFilter.teams[1]!.slots[0]!.party[0]!.currentHp;
+    const dmgNoFilter = 100 - noFilter.teams[1]!.slots[0]!.party[0]!.currentHp;
+    expect(dmgFilter).toBe(Math.floor(dmgNoFilter * 0.75));
+  });
+});
+
+describe('onDefenderModifier — Fur Coat', () => {
+  it('halves physical damage', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'tackle', currentPp: 35, maxPp: 35 };
+    state.teams[1]!.slots[0]!.party[0]!.ability = 'fur-coat';
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      // P2 uses will-o-wisp targeting P1 — non-healing move so P2 HP stays reduced
+      'slot-b1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-a1' },
+    });
+    // Tackle 17 halved = floor(17*0.5) = 8; HP: 100-8=92
+    expect(newState.teams[1]!.slots[0]!.party[0]!.currentHp).toBe(92);
+  });
+
+  it('does not affect special damage', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    // Default move[0] is flamethrower (special)
+    state.teams[1]!.slots[0]!.party[0]!.ability = 'fur-coat';
+    const engineFC = new BattleEngine({ rng: () => 0.5 });
+    const { newState: withFC } = engineFC.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+
+    const state2 = make1v1State();
+    state2.teams[1]!.slots[0]!.party[0]!.ability = 'blaze';
+    const engineNo = new BattleEngine({ rng: () => 0.5 });
+    const { newState: noFC } = engineNo.resolveTurn(state2, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    expect(withFC.teams[1]!.slots[0]!.party[0]!.currentHp).toBe(noFC.teams[1]!.slots[0]!.party[0]!.currentHp);
+  });
+});
+
 describe('Weather summoners — Drizzle', () => {
   it('sets rain on switch-in', () => {
     const state = make1v1State();

@@ -243,6 +243,43 @@ const ABILITY_HOOKS: Record<string, AbilityHooks> = {
     // Gorilla Tactics boosts Attack by 1.5× (physical only; holders are always physical attackers)
     onAttackerModifier: () => 1.5,
   },
+  filter: {
+    onDefenderModifier: ({ effectiveness }) => effectiveness > 1 ? 0.75 : 1,
+  },
+  'solid-rock': {
+    onDefenderModifier: ({ effectiveness }) => effectiveness > 1 ? 0.75 : 1,
+  },
+  'prism-armor': {
+    onDefenderModifier: ({ effectiveness }) => effectiveness > 1 ? 0.75 : 1,
+  },
+  fluffy: {
+    onDefenderModifier: ({ makesContact, moveType }) => {
+      let mod = 1;
+      if (makesContact) mod *= 0.5;
+      if (moveType === 'Fire') mod *= 2;
+      return mod;
+    },
+  },
+  'fur-coat': {
+    onDefenderModifier: ({ isPhysical }) => isPhysical ? 0.5 : 1,
+  },
+  'ice-scales': {
+    onDefenderModifier: ({ isPhysical }) => !isPhysical ? 0.5 : 1,
+  },
+  'punk-rock': {
+    onDefenderModifier: ({ move }) => (move as any).soundMove ? 0.5 : 1,
+  },
+  heatproof: {
+    onDefenderModifier: ({ moveType }) => moveType === 'Fire' ? 0.5 : 1,
+  },
+  'dry-skin': {
+    onDefenderModifier: ({ moveType }) => moveType === 'Fire' ? 1.25 : 1,
+  },
+  'water-bubble': {
+    onDefenderModifier: ({ moveType }) => moveType === 'Fire' ? 0.5 : 1,
+    onAttackerModifier: ({ moveType }) => moveType === 'Water' ? 2 : 1,
+    onStatusImmunity: ({ status }) => status === 'brn',
+  },
 };
 
 export function getAbilityHooks(abilityId: string): AbilityHooks {
