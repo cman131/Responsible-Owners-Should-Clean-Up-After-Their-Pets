@@ -87,4 +87,28 @@ describe('lookup maps', () => {
     expect(GRASSY_TERRAIN_HALVED.has('magnitude')).toBe(true);
     expect(GRASSY_TERRAIN_HALVED.has('bulldoze')).toBe(true);
   });
+
+  it('WEATHER_ACCURACY: thunder always hits in heavy-rain', () => {
+    expect(WEATHER_ACCURACY['thunder']?.['heavy-rain']).toBe(true);
+  });
+
+  it('WEATHER_ACCURACY: thunder is 50% in harsh-sun', () => {
+    expect(WEATHER_ACCURACY['thunder']?.['harsh-sun']).toBe(50);
+  });
+
+  it('WEATHER_ACCURACY: hurricane always hits in heavy-rain', () => {
+    expect(WEATHER_ACCURACY['hurricane']?.['heavy-rain']).toBe(true);
+  });
+
+  it('WEATHER_ACCURACY: hurricane is 50% in harsh-sun', () => {
+    expect(WEATHER_ACCURACY['hurricane']?.['harsh-sun']).toBe(50);
+  });
+
+  it('WEATHER_BALL_TYPE maps harsh-sun to Fire', () => {
+    expect(WEATHER_BALL_TYPE['harsh-sun']).toBe('Fire');
+  });
+
+  it('WEATHER_BALL_TYPE maps heavy-rain to Water', () => {
+    expect(WEATHER_BALL_TYPE['heavy-rain']).toBe('Water');
+  });
 });

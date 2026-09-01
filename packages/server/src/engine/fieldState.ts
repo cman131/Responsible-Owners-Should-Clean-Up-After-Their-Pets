@@ -13,15 +13,16 @@ export function isGrounded(
 }
 
 export const WEATHER_ACCURACY: Partial<Record<string, Partial<Record<WeatherType, number | true>>>> = {
-  thunder:   { rain: true, sun: 50 },
+  thunder:   { rain: true, 'heavy-rain': true, sun: 50, 'harsh-sun': 50 },
   blizzard:  { snow: true },
-  hurricane: { rain: true, sun: 50 },
+  hurricane: { rain: true, 'heavy-rain': true, sun: 50, 'harsh-sun': 50 },
 };
 
 export const SOLAR_MOVES = new Set(['solarbeam', 'solarblade']);
 
 export const WEATHER_BALL_TYPE: Partial<Record<WeatherType, PokemonType>> = {
   sun: 'Fire', rain: 'Water', sand: 'Rock', snow: 'Ice',
+  'harsh-sun': 'Fire', 'heavy-rain': 'Water',
 };
 
 export const GRAVITY_BLOCKED_MOVES = new Set([
