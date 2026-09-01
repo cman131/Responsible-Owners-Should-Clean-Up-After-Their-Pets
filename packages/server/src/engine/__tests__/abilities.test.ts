@@ -427,6 +427,38 @@ describe('Weather summoners — Drizzle', () => {
   });
 });
 
+describe('Mold Breaker — ability suppression', () => {
+  it('bypasses Levitate', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'earthquake', currentPp: 10, maxPp: 10 };
+    state.teams[0]!.slots[0]!.party[0]!.ability = 'mold-breaker';
+    state.teams[1]!.slots[0]!.party[0]!.ability = 'levitate';
+    state.teams[1]!.slots[0]!.party[0]!.speciesId = 1; // Bulbasaur (not Flying), Ground-type immunity only from Levitate
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    // Earthquake hits despite Levitate because of Mold Breaker
+    expect(newState.teams[1]!.slots[0]!.party[0]!.currentHp).toBeLessThan(100);
+  });
+
+  it('bypasses Multiscale', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'tackle', currentPp: 35, maxPp: 35 };
+    state.teams[0]!.slots[0]!.party[0]!.ability = 'mold-breaker';
+    state.teams[1]!.slots[0]!.party[0]!.ability = 'multiscale';
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    // 17 damage (Multiscale bypassed), not 8
+    expect(newState.teams[1]!.slots[0]!.party[0]!.currentHp).toBe(83);
+  });
+});
+
 describe('Weather summoners — primordial weather', () => {
   it('Primordial Sea sets permanent heavy-rain', () => {
     const state = make1v1State();

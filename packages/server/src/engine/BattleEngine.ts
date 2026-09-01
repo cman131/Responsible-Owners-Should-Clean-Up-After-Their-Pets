@@ -431,30 +431,36 @@ export class BattleEngine {
         continue;
       }
 
+      // Mold Breaker / Turboblaze / Teravolt: suppress defender ability hooks
+      const ignoresAbilities = ['mold-breaker', 'turboblaze', 'teravolt']
+        .includes(effectiveAbilityId(attacker));
+
       // Ability-based move immunity (Levitate, Volt Absorb, etc.)
-      const abilityImmunityResult = getAbilityHooks(effectiveAbilityId(target))
-        .onMoveImmunity?.({ move, defender: target, state: s });
-      if (abilityImmunityResult) {
-        if (abilityImmunityResult.hpHealFraction) {
-          const healAmt = Math.min(
-            Math.floor(target.maxHp * abilityImmunityResult.hpHealFraction),
-            target.maxHp - target.currentHp,
-          );
-          if (healAmt > 0) {
-            target.currentHp += healAmt;
-            events.push({ type: 'heal', data: { slotId: targetSlotId, amount: healAmt, remainingHp: target.currentHp } });
+      if (!ignoresAbilities) {
+        const abilityImmunityResult = getAbilityHooks(effectiveAbilityId(target))
+          .onMoveImmunity?.({ move, defender: target, state: s });
+        if (abilityImmunityResult) {
+          if (abilityImmunityResult.hpHealFraction) {
+            const healAmt = Math.min(
+              Math.floor(target.maxHp * abilityImmunityResult.hpHealFraction),
+              target.maxHp - target.currentHp,
+            );
+            if (healAmt > 0) {
+              target.currentHp += healAmt;
+              events.push({ type: 'heal', data: { slotId: targetSlotId, amount: healAmt, remainingHp: target.currentHp } });
+            }
           }
-        }
-        if (abilityImmunityResult.statBoostDeltas) {
-          events.push(applyStatBoost(target, targetSlotId, abilityImmunityResult.statBoostDeltas as Partial<Record<keyof StatBoosts, number>>));
-        }
-        if (abilityImmunityResult.chargeFlashFire) {
-          if (!target.volatileStatus.some(v => v.name === 'flash-fire-charged')) {
-            target.volatileStatus.push({ name: 'flash-fire-charged' });
+          if (abilityImmunityResult.statBoostDeltas) {
+            events.push(applyStatBoost(target, targetSlotId, abilityImmunityResult.statBoostDeltas as Partial<Record<keyof StatBoosts, number>>));
           }
+          if (abilityImmunityResult.chargeFlashFire) {
+            if (!target.volatileStatus.some(v => v.name === 'flash-fire-charged')) {
+              target.volatileStatus.push({ name: 'flash-fire-charged' });
+            }
+          }
+          events.push({ type: 'ability-triggered', data: { slotId: targetSlotId, ability: effectiveAbilityId(target), effect: 'immune' } });
+          continue;
         }
-        events.push({ type: 'ability-triggered', data: { slotId: targetSlotId, ability: effectiveAbilityId(target), effect: 'immune' } });
-        continue;
       }
 
       // Air Balloon Ground immunity (item-based, inline)
@@ -552,18 +558,20 @@ export class BattleEngine {
         );
 
         // Ability-based defender modifier (Multiscale, Thick Fat, etc.)
-        const defAbilityMod = getAbilityHooks(effectiveAbilityId(target)).onDefenderModifier?.({
-          defender: target,
-          attacker,
-          state: s,
-          move,
-          moveType: effectiveMoveType,
-          basePower: effectiveBasePower,
-          isPhysical,
-          makesContact: move.makesContact === true,
-          effectiveness,
-        });
-        if (defAbilityMod !== undefined) otherModifiers *= defAbilityMod;
+        if (!ignoresAbilities) {
+          const defAbilityMod = getAbilityHooks(effectiveAbilityId(target)).onDefenderModifier?.({
+            defender: target,
+            attacker,
+            state: s,
+            move,
+            moveType: effectiveMoveType,
+            basePower: effectiveBasePower,
+            isPhysical,
+            makesContact: move.makesContact === true,
+            effectiveness,
+          });
+          if (defAbilityMod !== undefined) otherModifiers *= defAbilityMod;
+        }
 
         // Item-based defender modifier
         const defItemMod = getItemHooks(target.heldItem).onDefenderModifier?.({

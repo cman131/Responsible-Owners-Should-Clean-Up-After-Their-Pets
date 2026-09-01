@@ -380,6 +380,9 @@ const ABILITY_HOOKS: Record<string, AbilityHooks> = {
     onAttackerModifier: ({ moveType }) => moveType === 'Water' ? 2 : 1,
     onStatusImmunity: ({ status }) => status === 'brn',
   },
+  'mold-breaker': {},
+  turboblaze: {},
+  teravolt: {},
 };
 
 export function getAbilityHooks(abilityId: string): AbilityHooks {
