@@ -554,3 +554,35 @@ describe('Sheer Force — removes secondaries and boosts power', () => {
     expect(newState.teams[1]!.slots[0]!.party[0]!.status).toBeUndefined();
   });
 });
+
+describe('Own Tempo — confusion immunity', () => {
+  it('prevents confusion secondary from landing', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    // psybeam: Psychic, Special, 10% confusion secondary
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'psybeam', currentPp: 20, maxPp: 20 };
+    state.teams[1]!.slots[0]!.party[0]!.ability = 'own-tempo';
+    const engine = new BattleEngine({ rng: () => 0 }); // rng=0 → secondary fires without Own Tempo
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.volatileStatus.some(v => v.name === 'confusion')).toBe(false);
+  });
+});
+
+describe('Inner Focus — flinch immunity', () => {
+  it('prevents flinch from landing', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    // airslash: Flying, Special, 30% flinch secondary
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'airslash', currentPp: 15, maxPp: 15 };
+    state.teams[1]!.slots[0]!.party[0]!.ability = 'inner-focus';
+    const engine = new BattleEngine({ rng: () => 0 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.volatileStatus.some(v => v.name === 'flinch')).toBe(false);
+  });
+});

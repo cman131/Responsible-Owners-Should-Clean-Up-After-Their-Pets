@@ -156,6 +156,8 @@ export function applySecondaries(ctx: SecondaryContext): TurnResolveEvent[] {
       case 'flinch': {
         if (ctx.rng() * 100 >= effectiveChance) break;
         if (!ctx.movedSlotIds.has(ctx.targetSlotId) && !ctx.target.fainted) {
+          // Inner Focus blocks flinch
+          if (ctx.target.ability === 'inner-focus') break;
           ctx.target.volatileStatus.push({ name: 'flinch' });
           events.push({ type: 'volatile-applied', data: { targetSlotId: ctx.targetSlotId, volatile: 'flinch' } });
         }
@@ -165,6 +167,8 @@ export function applySecondaries(ctx: SecondaryContext): TurnResolveEvent[] {
         if (ctx.rng() * 100 >= effectiveChance) break;
         const member = sec.target === 'user' ? ctx.user : ctx.target;
         const mSlotId = sec.target === 'user' ? ctx.userSlotId : ctx.targetSlotId;
+        // Own Tempo and Oblivious block confusion
+        if (member.ability === 'own-tempo' || member.ability === 'oblivious') break;
         const evt = applyVolatile(member, mSlotId, ctx.userSlotId, 'confusion');
         if (evt) events.push(evt);
         break;

@@ -389,6 +389,9 @@ const ABILITY_HOOKS: Record<string, AbilityHooks> = {
   'sheer-force': {
     removesSecondaries: true,
   },
+  'own-tempo': {},
+  'inner-focus': {},
+  oblivious: {},
 };
 
 export function getAbilityHooks(abilityId: string): AbilityHooks {
