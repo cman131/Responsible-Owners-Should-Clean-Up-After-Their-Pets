@@ -116,7 +116,14 @@ export function BattleProvider({ mySlotId, initialState, children }: Props) {
 function eventToText(event: TurnResolveEvent): string | string[] {
   switch (event.type) {
     case 'move-used': return `${String(event.data['attackerName'])} used ${String(event.data['moveName'])}!`;
-    case 'damage-dealt': return `Dealt ${String(event.data['damage'])} damage to ${String(event.data['targetSlotId'])}.`;
+    case 'damage-dealt': {
+      const dmgLine = `Dealt ${String(event.data['damage'])} damage to ${String(event.data['targetSlotId'])}.`;
+      if (!event.data['moveId']) return dmgLine;
+      const eff = event.data['effectiveness'] as number;
+      if (eff > 1) return [dmgLine, "It's super effective!"];
+      if (eff < 1) return [dmgLine, "It's not very effective..."];
+      return dmgLine;
+    }
     case 'faint': return `${String(event.data['slotId'])}'s Pokémon fainted!`;
     case 'heal': return `${String(event.data['slotId'])} restored HP.`;
     case 'status-applied': return `${String(event.data['pokemonName'])} was ${String(event.data['status'])}!`;

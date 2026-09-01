@@ -138,3 +138,92 @@ describe('crit event', () => {
     expect(log[1]).toEqual({ type: 'normal', text: 'A critical hit!' });
   });
 });
+
+describe('damage-dealt effectiveness lines', () => {
+  function fireDamageEvent(effectiveness: number, hasMove = true) {
+    const data: Record<string, unknown> = {
+      damage: 40,
+      targetSlotId: 's2',
+      effectiveness,
+      remainingHp: 60,
+    };
+    if (hasMove) {
+      data['moveId'] = 'thunderbolt';
+      data['attackerSlotId'] = 's1';
+    } else {
+      data['source'] = 'brn';
+      data['slotId'] = 's2';
+    }
+    return { type: 'damage-dealt' as const, data };
+  }
+
+  it('appends "It\'s super effective!" as a separate log entry when effectiveness > 1', () => {
+    const { result } = renderHook(() => useBattle(), { wrapper });
+    act(() => {
+      socketListeners['turn:resolve']?.({
+        turnNumber: 2,
+        events: [fireDamageEvent(2)],
+        state: { turnNumber: 2, phase: 'action', teams: [], field: {} },
+      });
+    });
+    const log = result.current.turnLog;
+    expect(log).toHaveLength(3); // round-start + damage + effectiveness
+    expect(log[1]).toEqual({ type: 'normal', text: 'Dealt 40 damage to s2.' });
+    expect(log[2]).toEqual({ type: 'normal', text: "It's super effective!" });
+  });
+
+  it('appends "It\'s not very effective..." as a separate log entry when effectiveness < 1', () => {
+    const { result } = renderHook(() => useBattle(), { wrapper });
+    act(() => {
+      socketListeners['turn:resolve']?.({
+        turnNumber: 2,
+        events: [fireDamageEvent(0.5)],
+        state: { turnNumber: 2, phase: 'action', teams: [], field: {} },
+      });
+    });
+    const log = result.current.turnLog;
+    expect(log).toHaveLength(3); // round-start + damage + effectiveness
+    expect(log[2]).toEqual({ type: 'normal', text: "It's not very effective..." });
+  });
+
+  it('does not add an effectiveness line when effectiveness === 1', () => {
+    const { result } = renderHook(() => useBattle(), { wrapper });
+    act(() => {
+      socketListeners['turn:resolve']?.({
+        turnNumber: 2,
+        events: [fireDamageEvent(1)],
+        state: { turnNumber: 2, phase: 'action', teams: [], field: {} },
+      });
+    });
+    const log = result.current.turnLog;
+    expect(log).toHaveLength(2); // round-start + damage only
+    expect(log[1]).toEqual({ type: 'normal', text: 'Dealt 40 damage to s2.' });
+  });
+
+  it('does not add an effectiveness line for passive damage (no moveId)', () => {
+    const { result } = renderHook(() => useBattle(), { wrapper });
+    act(() => {
+      socketListeners['turn:resolve']?.({
+        turnNumber: 2,
+        events: [fireDamageEvent(2, false)],
+        state: { turnNumber: 2, phase: 'action', teams: [], field: {} },
+      });
+    });
+    const log = result.current.turnLog;
+    // passive damage uses slotId not targetSlotId; only round-start + one damage line
+    expect(log).toHaveLength(2);
+  });
+
+  it('effectiveness lines also appear via battle:history', () => {
+    const { result } = renderHook(() => useBattle(), { wrapper });
+    act(() => {
+      socketListeners['battle:history']?.({
+        turns: [
+          { turnNumber: 1, events: [fireDamageEvent(4)] },
+        ],
+      });
+    });
+    const log = result.current.turnLog;
+    expect(log[2]).toEqual({ type: 'normal', text: "It's super effective!" });
+  });
+});
