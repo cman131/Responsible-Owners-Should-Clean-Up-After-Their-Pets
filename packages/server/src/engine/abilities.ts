@@ -383,6 +383,12 @@ const ABILITY_HOOKS: Record<string, AbilityHooks> = {
   'mold-breaker': {},
   turboblaze: {},
   teravolt: {},
+  'serene-grace': {
+    doublesSecondaryChance: true,
+  },
+  'sheer-force': {
+    removesSecondaries: true,
+  },
 };
 
 export function getAbilityHooks(abilityId: string): AbilityHooks {

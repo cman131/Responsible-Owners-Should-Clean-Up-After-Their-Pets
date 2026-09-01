@@ -510,3 +510,47 @@ describe('Weather summoners — primordial weather', () => {
     expect(newState.field.weather?.turnsRemaining).toBe(999); // not decremented
   });
 });
+
+describe('Serene Grace — doubles secondary chance', () => {
+  it('Body Slam 30% par fires at rng=0.5 with Serene Grace (60% chance)', () => {
+    // Without Serene Grace: rng()*100=50 >= 30 → no par
+    // With Serene Grace: rng()*100=50 < 60 → par applies
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'bodyslam', currentPp: 15, maxPp: 15 };
+    state.teams[0]!.slots[0]!.party[0]!.ability = 'serene-grace';
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.status).toBe('par');
+  });
+
+  it('Body Slam 30% par does not fire at rng=0.5 without Serene Grace', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'bodyslam', currentPp: 15, maxPp: 15 };
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.status).toBeUndefined();
+  });
+});
+
+describe('Sheer Force — removes secondaries and boosts power', () => {
+  it('no secondary effect fires', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'bodyslam', currentPp: 15, maxPp: 15 };
+    state.teams[0]!.slots[0]!.party[0]!.ability = 'sheer-force';
+    const engine = new BattleEngine({ rng: () => 0 }); // rng=0 → secondary would normally fire
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.status).toBeUndefined();
+  });
+});

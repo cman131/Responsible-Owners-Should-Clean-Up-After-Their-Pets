@@ -3,6 +3,7 @@ import type {
 } from '@poke-fighter/shared';
 import { canApplyStatus } from './status.js';
 import { isGrounded } from './fieldState.js';
+import { getAbilityHooks } from './abilities.js';
 
 export function applyStatus(
   member: PartyMember,
@@ -59,9 +60,14 @@ export function evaluateSecondaryEffect(
   targetSlotId: string,
   targetTypes: PokemonType[],
   battle?: BattleState,
+  userAbility?: string,
 ): TurnResolveEvent | null {
   if (!move.effect || move.effectChance === undefined) return null;
-  if (Math.random() * 100 >= move.effectChance) return null;
+  if (userAbility && getAbilityHooks(userAbility).removesSecondaries) return null;
+  const effectiveChance = userAbility && getAbilityHooks(userAbility).doublesSecondaryChance
+    ? move.effectChance * 2
+    : move.effectChance;
+  if (Math.random() * 100 >= effectiveChance) return null;
   if (STATUS_CONDITIONS.has(move.effect)) {
     return applyStatus(target, targetSlotId, move.effect as StatusCondition, targetTypes, undefined, battle);
   }
@@ -113,6 +119,7 @@ export interface SecondaryContext {
   totalDamage: number;
   user: PartyMember;
   userSlotId: string;
+  userAbility: string;
   target: PartyMember;
   targetSlotId: string;
   targetTypes: PokemonType[];
@@ -123,10 +130,15 @@ export interface SecondaryContext {
 
 export function applySecondaries(ctx: SecondaryContext): TurnResolveEvent[] {
   const events: TurnResolveEvent[] = [];
+  const abilityHooks = getAbilityHooks(ctx.userAbility);
+  const doublesChance = abilityHooks.doublesSecondaryChance === true;
   for (const sec of ctx.secondaries) {
+    const effectiveChance = 'chance' in sec && doublesChance
+      ? (sec as { chance: number }).chance * 2
+      : ('chance' in sec ? (sec as { chance: number }).chance : 0);
     switch (sec.kind) {
       case 'status': {
-        if (ctx.rng() * 100 >= sec.chance) break;
+        if (ctx.rng() * 100 >= effectiveChance) break;
         const member = sec.target === 'user' ? ctx.user : ctx.target;
         const slotId = sec.target === 'user' ? ctx.userSlotId : ctx.targetSlotId;
         const types = sec.target === 'user' ? ([] as PokemonType[]) : ctx.targetTypes;
@@ -135,14 +147,14 @@ export function applySecondaries(ctx: SecondaryContext): TurnResolveEvent[] {
         break;
       }
       case 'stat': {
-        if (ctx.rng() * 100 >= sec.chance) break;
+        if (ctx.rng() * 100 >= effectiveChance) break;
         const member = sec.target === 'user' ? ctx.user : ctx.target;
         const slotId = sec.target === 'user' ? ctx.userSlotId : ctx.targetSlotId;
         events.push(applyStatBoost(member, slotId, { [sec.stat]: sec.stages } as Partial<Record<keyof StatBoosts, number>>));
         break;
       }
       case 'flinch': {
-        if (ctx.rng() * 100 >= sec.chance) break;
+        if (ctx.rng() * 100 >= effectiveChance) break;
         if (!ctx.movedSlotIds.has(ctx.targetSlotId) && !ctx.target.fainted) {
           ctx.target.volatileStatus.push({ name: 'flinch' });
           events.push({ type: 'volatile-applied', data: { targetSlotId: ctx.targetSlotId, volatile: 'flinch' } });
@@ -150,7 +162,7 @@ export function applySecondaries(ctx: SecondaryContext): TurnResolveEvent[] {
         break;
       }
       case 'confusion': {
-        if (ctx.rng() * 100 >= sec.chance) break;
+        if (ctx.rng() * 100 >= effectiveChance) break;
         const member = sec.target === 'user' ? ctx.user : ctx.target;
         const mSlotId = sec.target === 'user' ? ctx.userSlotId : ctx.targetSlotId;
         const evt = applyVolatile(member, mSlotId, ctx.userSlotId, 'confusion');

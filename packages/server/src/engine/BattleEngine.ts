@@ -498,6 +498,14 @@ export class BattleEngine {
       const isPhysical = move.category === 'physical';
       const itemHooks = getItemHooks(attacker.heldItem);
 
+      // Sheer Force: removes secondaries but boosts power by 1.3×
+      const attackerAbilityForDmg = effectiveAbilityId(attacker);
+      const sheerForceActive = getAbilityHooks(attackerAbilityForDmg).removesSecondaries === true;
+      const moveHasSecondaries = sheerForceActive && (
+        (move.effectChance !== undefined && move.effect !== undefined) ||
+        secs.some(sec => ['status', 'stat', 'flinch', 'confusion'].includes(sec.kind))
+      );
+
       let totalDamage = 0;
       for (let hit = 0; hit < hitCount; hit++) {
         if (target.fainted) break;
@@ -528,6 +536,7 @@ export class BattleEngine {
         const defStat = getEffectiveStat(rawDefStat, defBoost, defBoostKey);
         const isSpread = targetSlotIds.length > 1;
         let otherModifiers = isSpread ? 0.75 : 1;
+        if (moveHasSecondaries) otherModifiers *= 1.3;
         if (itemHooks.onAttackerModifier) {
           otherModifiers *= itemHooks.onAttackerModifier({
             holder: attacker, state: s, moveType: effectiveMoveType, basePower: effectiveBasePower, target, isPhysical,
@@ -670,8 +679,8 @@ export class BattleEngine {
       // Post-hit secondaries (applied after final hit, uses accumulated totalDamage)
       const targetHasSub = target.volatileStatus.some(v => v.name === 'substitute');
       if (totalDamage > 0) {
-        if (!target.fainted && !targetHasSub) {
-          const secondaryEvent = evaluateSecondaryEffect(move, target, targetSlotId, defTypes, s);
+        if (!target.fainted && !targetHasSub && !sheerForceActive) {
+          const secondaryEvent = evaluateSecondaryEffect(move, target, targetSlotId, defTypes, s, attackerAbilityForDmg);
           if (secondaryEvent) events.push(secondaryEvent);
           const volatileEvent = evaluateVolatileEffect(move.id, target, targetSlotId, attackerSlotId);
           if (volatileEvent) events.push(volatileEvent);
@@ -679,12 +688,13 @@ export class BattleEngine {
 
         const postSecs = secs.filter(sec => sec.kind !== 'multihit' && sec.kind !== 'ohko' && sec.kind !== 'charge');
         const isSoundMove = move.soundMove === true;
-        if (postSecs.length > 0 && !target.fainted && (!targetHasSub || isSoundMove)) {
+        if (postSecs.length > 0 && !target.fainted && (!targetHasSub || isSoundMove) && !sheerForceActive) {
           events.push(...applySecondaries({
             secondaries: postSecs,
             totalDamage,
             user: attacker,
             userSlotId: attackerSlotId,
+            userAbility: attackerAbilityForDmg,
             target,
             targetSlotId,
             targetTypes: defTypes,
