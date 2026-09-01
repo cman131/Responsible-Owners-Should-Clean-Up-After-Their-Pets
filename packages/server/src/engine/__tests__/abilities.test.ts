@@ -663,3 +663,55 @@ describe('Solar Beam — harsh-sun interactions', () => {
       .toBeGreaterThan(ns1.teams[1]!.slots[0]!.party[0]!.currentHp);
   });
 });
+
+describe('Extreme weather — move nullification', () => {
+  it('Fire move fails under heavy-rain (Primordial Sea)', () => {
+    const state = make1v1State();
+    // p1 uses flamethrower (Fire) vs p2
+    state.field.weather = { type: 'heavy-rain', turnsRemaining: 999, fromAbility: true, permanent: true };
+    const engine = new BattleEngine({ rng: () => 0.5 });
+
+    const { events, newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 }, // flamethrower = Fire
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    expect(events.some(e => e.type === 'move-failed' && (e.data as any).reason === 'heavy-rain')).toBe(true);
+    // No damage dealt by the nullified move
+    expect(newState.teams[1]!.slots[0]!.party[0]!.currentHp).toBe(100);
+  });
+
+  it('Water move fails under harsh-sun (Desolate Land)', () => {
+    const state = make1v1State();
+    // p1 uses surf (Water) vs p2
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'surf', currentPp: 15, maxPp: 15 };
+    state.field.weather = { type: 'harsh-sun', turnsRemaining: 999, fromAbility: true, permanent: true };
+    const engine = new BattleEngine({ rng: () => 0.5 });
+
+    const { events, newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 }, // surf = Water
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    expect(events.some(e => e.type === 'move-failed' && (e.data as any).reason === 'harsh-sun')).toBe(true);
+    expect(newState.teams[1]!.slots[0]!.party[0]!.currentHp).toBe(100);
+  });
+
+  it('non-Water/Fire moves still work under heavy-rain', () => {
+    const state = make1v1State();
+    // p1 uses airslash (Flying) — should not be nullified
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'airslash', currentPp: 15, maxPp: 15 };
+    // p2 also uses a non-Fire move so it isn't nullified either
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'airslash', currentPp: 15, maxPp: 15 };
+    state.field.weather = { type: 'heavy-rain', turnsRemaining: 999, fromAbility: true, permanent: true };
+    const engine = new BattleEngine({ rng: () => 0.5 });
+
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    expect(events.some(e => e.type === 'damage-dealt')).toBe(true);
+    expect(events.some(e => e.type === 'move-failed')).toBe(false);
+  });
+});

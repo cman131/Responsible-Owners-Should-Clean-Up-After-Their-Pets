@@ -341,6 +341,18 @@ export class BattleEngine {
       effectiveMoveType = WEATHER_BALL_TYPE[s.field.weather.type] ?? move.type;
     }
 
+    // Extreme-weather move nullification (must come after effectiveMoveType is resolved)
+    if (s.field.weather) {
+      const wt = s.field.weather.type;
+      if (
+        (wt === 'heavy-rain' && effectiveMoveType === 'Fire') ||
+        (wt === 'harsh-sun'  && effectiveMoveType === 'Water')
+      ) {
+        events.push({ type: 'move-failed', data: { moveId: move.id, reason: wt } });
+        return { newState: s, events };
+      }
+    }
+
     for (const targetSlotId of targetSlotIds) {
       const targetSlot = this.findSlot(s, targetSlotId);
       if (!targetSlot) continue;
