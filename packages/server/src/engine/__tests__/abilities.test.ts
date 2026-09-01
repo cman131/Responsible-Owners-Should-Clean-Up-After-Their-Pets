@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { canApplyStatus } from '../status.js';
 import { BattleEngine } from '../BattleEngine.js';
-import { make1v1State } from './fixtures.js';
+import { make1v1State, makePokemon } from './fixtures.js';
 
 afterEach(() => { vi.restoreAllMocks(); });
 
@@ -173,5 +173,44 @@ describe('onAfterHit — Rough Skin / Iron Barbs', () => {
     });
     // P1 HP unchanged (no Rough Skin damage from non-contact move)
     expect(newState.teams[0]!.slots[0]!.party[0]!.currentHp).toBe(100);
+  });
+});
+
+describe('Weather summoners — Drizzle', () => {
+  it('sets rain on switch-in', () => {
+    const state = make1v1State();
+    // Add a bench Pokémon with Drizzle to P1's party
+    const benchMon = makePokemon({ instanceId: 'p1-bench', ability: 'drizzle' });
+    state.teams[0]!.slots[0]!.party.push(benchMon);
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'switch', targetInstanceId: 'p1-bench' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    expect(newState.field.weather?.type).toBe('rain');
+  });
+
+  it('permanent weather is not decremented', () => {
+    const state = make1v1State();
+    state.field.weather = { type: 'heavy-rain', turnsRemaining: 999, fromAbility: true, permanent: true };
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 2 },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    expect(newState.field.weather?.turnsRemaining).toBe(999);
+  });
+
+  it('weather decrements and expires', () => {
+    const state = make1v1State();
+    state.field.weather = { type: 'rain', turnsRemaining: 1, fromAbility: true };
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 2 },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    expect(newState.field.weather).toBeUndefined();
+    expect(events.some(e => e.type === 'weather-ended')).toBe(true);
   });
 });

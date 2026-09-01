@@ -1002,6 +1002,16 @@ export class BattleEngine {
         }
       });
     }
+
+    // Handle weather-summoning abilities (Drizzle, Drought, etc.)
+    if (result.setWeather) {
+      const { type, turnsRemaining, permanent } = result.setWeather;
+      // Only overwrite if current weather is not permanent, or new weather is also permanent
+      if (!s.field.weather?.permanent || permanent) {
+        s.field.weather = { type, turnsRemaining, fromAbility: true, ...(permanent !== undefined ? { permanent } : {}) };
+        events.push({ type: 'weather-started', data: { weather: type, turnsRemaining } });
+      }
+    }
   }
 
   private endOfTurn(state: BattleState): TurnResult {
@@ -1077,10 +1087,12 @@ export class BattleEngine {
 
     // Field counter decrements + expiry events
     if (s.field.weather) {
-      s.field.weather.turnsRemaining -= 1;
-      if (s.field.weather.turnsRemaining <= 0) {
-        events.push({ type: 'weather-ended', data: { weather: s.field.weather.type } });
-        delete s.field.weather;
+      if (!s.field.weather.permanent) {
+        s.field.weather.turnsRemaining -= 1;
+        if (s.field.weather.turnsRemaining <= 0) {
+          events.push({ type: 'weather-ended', data: { weather: s.field.weather.type } });
+          delete s.field.weather;
+        }
       }
     }
     if (s.field.terrain) {

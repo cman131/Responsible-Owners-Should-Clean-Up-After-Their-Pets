@@ -231,6 +231,14 @@ const ABILITY_HOOKS: Record<string, AbilityHooks> = {
     onAfterHit: ({ makesContact, user: target }) =>
       makesContact ? { directDamage: Math.floor(target.maxHp / 8) } : null,
   },
+  drizzle: {
+    onSwitchIn: ({ user }) => ({
+      setWeather: {
+        type: 'rain' as WeatherType,
+        turnsRemaining: user.heldItem === 'damp-rock' ? 8 : 5,
+      },
+    }),
+  },
 };
 
 export function getAbilityHooks(abilityId: string): AbilityHooks {
