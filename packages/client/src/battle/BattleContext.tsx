@@ -140,6 +140,7 @@ export function BattleProvider({ mySlotId, initialState, children }: Props) {
     setState(pendingState);
     stateRef.current = pendingState;
     setPendingState(null);
+    setDisplayHp(new Map());
     if (pendingActionRequest !== null) {
       setActionRequest(pendingActionRequest);
       setPendingActionRequest(null);
@@ -227,6 +228,7 @@ export function BattleProvider({ mySlotId, initialState, children }: Props) {
       setPendingState(null);
       setPendingActionRequest(null);
       setPendingSwitchRequest(null);
+      setDisplayHp(new Map());
     });
 
     return () => {

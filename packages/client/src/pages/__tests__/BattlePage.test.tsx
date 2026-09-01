@@ -191,7 +191,11 @@ describe('BattlePage', () => {
     // Advance past the 600ms damage entry
     await act(async () => { vi.advanceTimersByTime(700); });
 
-    // After damage entry fires: displayHp for b1 = 68 - 40 = 28
-    expect(screen.getByText('28/194')).toBeTruthy();
+    // After damage entry fires and queue empties: displayHp is cleared, so HP should show the actual game state (fainted)
+    // The enemy Charizard should show FAINTED status, not the animated 28/194
+    expect(screen.getByText('FAINTED')).toBeTruthy();
+    expect(screen.queryByText('28/194')).toBeNull();
+
+    vi.useRealTimers();
   });
 });
