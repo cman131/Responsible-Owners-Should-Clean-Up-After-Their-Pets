@@ -293,6 +293,44 @@ describe('onMoveImmunity — Sap Sipper', () => {
   });
 });
 
+describe('Flash Fire', () => {
+  it('blocks Fire move and sets flash-fire-charged volatile', () => {
+    const state = make1v1State();
+    // Move at index 0 is flamethrower (Fire)
+    state.teams[1]!.slots[0]!.party[0]!.ability = 'flash-fire';
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.currentHp).toBe(100);
+    expect(newState.teams[1]!.slots[0]!.party[0]!.volatileStatus.some(v => v.name === 'flash-fire-charged')).toBe(true);
+    expect(events.some(e => e.type === 'ability-triggered')).toBe(true);
+  });
+
+  it('boosts Fire moves by 1.5× when charged', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    const p1 = state.teams[0]!.slots[0]!.party[0]!;
+    p1.ability = 'flash-fire';
+    p1.volatileStatus.push({ name: 'flash-fire-charged' });
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState: charged } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' }, // flamethrower
+      'slot-b1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-a1' }, // will-o-wisp (no self-heal)
+    });
+
+    const state2 = make1v1State();
+    const { newState: normal } = engine.resolveTurn(state2, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-a1' },
+    });
+    const dmgCharged = 100 - charged.teams[1]!.slots[0]!.party[0]!.currentHp;
+    const dmgNormal = 100 - normal.teams[1]!.slots[0]!.party[0]!.currentHp;
+    expect(dmgCharged).toBeGreaterThan(dmgNormal);
+  });
+});
+
 describe('Weather summoners — Drizzle', () => {
   it('sets rain on switch-in', () => {
     const state = make1v1State();

@@ -185,6 +185,12 @@ const ABILITY_HOOKS: Record<string, AbilityHooks> = {
     onMoveImmunity: ({ move }) =>
       move.type === 'Electric' ? { immune: true, statBoostDeltas: { spa: 1 } } : null,
   },
+  'flash-fire': {
+    onMoveImmunity: ({ move }) =>
+      move.type === 'Fire' ? { immune: true, chargeFlashFire: true } : null,
+    onAttackerModifier: ({ user, moveType }) =>
+      moveType === 'Fire' && user.volatileStatus.some(v => v.name === 'flash-fire-charged') ? 1.5 : 1,
+  },
   'screen-cleaner': {
     onSwitchIn: () => ({ clearScreens: true }),
   },
