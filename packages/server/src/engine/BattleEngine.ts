@@ -438,7 +438,7 @@ export class BattleEngine {
       }
 
       // Strong Winds: super-effective moves against Flying-type targets are reduced
-      if (s.field.weather?.type === 'strong-winds' && defTypes.includes('Flying')) {
+      if (s.field.weather?.type === 'strong-winds' && effectiveDefTypes.includes('Flying')) {
         if (effectiveness >= 4) effectiveness /= 2;
         else if (effectiveness > 1) effectiveness = 1;
       }

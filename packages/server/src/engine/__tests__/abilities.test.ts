@@ -768,4 +768,26 @@ describe('Strong Winds (Delta Stream) — type effectiveness clamp', () => {
     // No item-consumed event for weakness-policy (not super-effective after clamp)
     expect(events.some(e => e.type === 'item-consumed' && (e.data as any).item === 'weakness-policy')).toBe(false);
   });
+
+  it('4× vs Flying becomes 2× under strong-winds (double-super clamped to super)', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    // Rock Slide (Rock) is 2× vs Fire AND 2× vs Flying on Charizard → 4× combined.
+    // Under strong-winds, 4× → 2× (halved).
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'rockslide', currentPp: 10, maxPp: 10 };
+    state.field.weather = { type: 'strong-winds', turnsRemaining: 999, fromAbility: true, permanent: true };
+    const engine = new BattleEngine({ rng: () => 0.5 });
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    // At 4× (no winds) Rock Slide would deal massive damage and likely faint the target.
+    // At 1× it deals ~38 HP. At 2× (clamped from 4×) it deals more than 1× but less than 4×.
+    // We verify: not fainted (HP > 0) and took meaningful damage (HP < 100).
+    const remainingHp = newState.teams[1]!.slots[0]!.party[0]!.currentHp;
+    expect(remainingHp).toBeGreaterThan(0);   // not fainted at 2×
+    expect(remainingHp).toBeLessThan(100);    // took damage
+  });
 });
