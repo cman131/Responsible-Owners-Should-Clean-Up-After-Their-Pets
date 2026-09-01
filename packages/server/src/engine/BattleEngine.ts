@@ -684,6 +684,25 @@ export class BattleEngine {
             rng: this.rng,
             movedSlotIds,
           }));
+
+          // Lum Berry: cure status applied by secondary effects
+          if (target.status && !target.fainted) {
+            const lumResult = getItemHooks(target.heldItem).onStatusApplied?.({
+              holder: target,
+              state: s,
+              status: target.status,
+            });
+            if (lumResult?.cureStatus) {
+              const curedStatus = target.status;
+              delete target.status;
+              events.push({ type: 'status-cured', data: { slotId: targetSlotId, status: curedStatus, reason: 'lum-berry' } });
+              if (lumResult.consume && target.heldItem) {
+                const itemName = target.heldItem;
+                delete target.heldItem;
+                events.push({ type: 'item-consumed', data: { slotId: targetSlotId, item: itemName, reason: 'triggered' } });
+              }
+            }
+          }
         }
       }
 
