@@ -161,4 +161,37 @@ describe('BattlePage', () => {
 
     vi.useRealTimers();
   });
+
+  it('passes displayHp from context to HpBarsRow so HP animates during playback', async () => {
+    vi.useFakeTimers();
+    renderBattlePage(makeState());
+    // makeState has b1 slot with mon currentHp: 68, maxHp: 194
+
+    const turnResolveCall = mockSocket.on.mock.calls.find((c) => c[0] === 'turn:resolve');
+
+    const updatedState = makeState();
+    // In the updated state, enemy hp is 0 (fainted) — but during playback displayHp should show 28
+    updatedState.teams[1]!.slots[0]!.party[0]!.currentHp = 0;
+    updatedState.teams[1]!.slots[0]!.party[0]!.fainted = true;
+
+    act(() => {
+      turnResolveCall![1]({
+        turnNumber: 2,
+        events: [
+          { type: 'damage-dealt', data: { slotId: 'b1', targetSlotId: 'b1', damage: 40, moveId: 'tackle', effectiveness: 1 } },
+        ],
+        state: updatedState,
+      });
+    });
+
+    // Before timer fires, displayHp should show 68 - 0 = 68 (snapshot not yet decremented)
+    // HP numbers for b1: initial state has 68 hp
+    expect(screen.getByText('68/194')).toBeTruthy();
+
+    // Advance past the 600ms damage entry
+    await act(async () => { vi.advanceTimersByTime(700); });
+
+    // After damage entry fires: displayHp for b1 = 68 - 40 = 28
+    expect(screen.getByText('28/194')).toBeTruthy();
+  });
 });

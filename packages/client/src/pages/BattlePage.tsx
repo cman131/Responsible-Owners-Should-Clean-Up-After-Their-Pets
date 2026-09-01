@@ -24,7 +24,7 @@ export function BattlePage() {
 }
 
 function BattleView() {
-  const { state, mySlotId, actionRequest, switchRequest, turnLog, submitAction } = useBattle();
+  const { state, mySlotId, actionRequest, switchRequest, turnLog, displayHp, submitAction } = useBattle();
   const [targetingMove, setTargetingMove] = useState<ValidMove | null>(null);
   const [selectedTarget, setSelectedTarget] = useState<string>('');
   const [terastallize, setTerastallize] = useState(false);
@@ -107,6 +107,7 @@ function BattleView() {
         label="ENEMY"
         variant="enemy"
         slots={foeTeam?.slots.filter((s) => !s.isSpectator) ?? []}
+        displayHp={displayHp}
       />
 
       {/* Battle scene */}
@@ -117,6 +118,7 @@ function BattleView() {
         variant="own"
         slots={myTeam?.slots.filter((s) => !s.isSpectator) ?? []}
         highlightSlotId={mySlotId}
+        displayHp={displayHp}
       />
 
       {myActiveMon && <ExpBar instanceId={myActiveMon.instanceId} />}

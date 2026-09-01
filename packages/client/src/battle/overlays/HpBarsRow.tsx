@@ -42,7 +42,7 @@ export function HpBarsRow({ slots, label, variant, highlightSlotId, displayHp }:
             <span style={{ color: nameColor, fontSize: 10, width: 130 }}>
               {slot.displayName}{mon ? ` L${mon.level}` : ''}
             </span>
-            {mon && !mon.fainted ? (
+            {mon && (!mon.fainted || displayHp?.has(slot.slotId)) ? (
               <>
                 <div style={{ flex: 1, background: '#333', height: 6, borderRadius: 3 }}>
                   <div style={{
