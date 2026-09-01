@@ -331,6 +331,63 @@ describe('Flash Fire', () => {
   });
 });
 
+describe('onAfterHit — Static', () => {
+  it('applies par on contact when rng fires (rng=0)', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'bodyslam', currentPp: 15, maxPp: 15 };
+    state.teams[1]!.slots[0]!.party[0]!.ability = 'static';
+    const engine = new BattleEngine({ rng: () => 0 }); // rng=0 → 0 < 0.3 → triggers
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    expect(newState.teams[0]!.slots[0]!.party[0]!.status).toBe('par');
+  });
+
+  it('does not trigger on non-contact move', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    state.teams[1]!.slots[0]!.party[0]!.ability = 'static';
+    const engine = new BattleEngine({ rng: () => 0 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' }, // flamethrower (non-contact)
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    expect(newState.teams[0]!.slots[0]!.party[0]!.status).toBeUndefined();
+  });
+});
+
+describe('onAfterHit — Gooey', () => {
+  it('lowers attacker Spe by 1 on contact', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'bodyslam', currentPp: 15, maxPp: 15 };
+    state.teams[1]!.slots[0]!.party[0]!.ability = 'gooey';
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    expect(newState.teams[0]!.slots[0]!.party[0]!.statBoosts.spe).toBe(-1);
+  });
+});
+
+describe('onAfterHit — Mummy', () => {
+  it('overwrites attacker ability with mummy on contact', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'bodyslam', currentPp: 15, maxPp: 15 };
+    state.teams[1]!.slots[0]!.party[0]!.ability = 'mummy';
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    expect(newState.teams[0]!.slots[0]!.party[0]!.ability).toBe('mummy');
+  });
+});
+
 describe('Weather summoners — Drizzle', () => {
   it('sets rain on switch-in', () => {
     const state = make1v1State();

@@ -261,6 +261,44 @@ const ABILITY_HOOKS: Record<string, AbilityHooks> = {
     onAfterHit: ({ makesContact, user: target }) =>
       makesContact ? { directDamage: Math.floor(target.maxHp / 8) } : null,
   },
+  static: {
+    onAfterHit: ({ makesContact, rng }) =>
+      makesContact && rng() < 0.3 ? { statusToApply: 'par' } : null,
+  },
+  'flame-body': {
+    onAfterHit: ({ makesContact, rng }) =>
+      makesContact && rng() < 0.3 ? { statusToApply: 'brn' } : null,
+  },
+  'poison-point': {
+    onAfterHit: ({ makesContact, rng }) =>
+      makesContact && rng() < 0.3 ? { statusToApply: 'psn' } : null,
+  },
+  'effect-spore': {
+    onAfterHit: ({ makesContact, rng }) => {
+      if (!makesContact) return null;
+      const r = rng();
+      if (r >= 0.3) return null;
+      if (r < 0.1) return { statusToApply: 'par' };
+      if (r < 0.2) return { statusToApply: 'psn' };
+      return { statusToApply: 'slp' };
+    },
+  },
+  gooey: {
+    onAfterHit: ({ makesContact }) =>
+      makesContact ? { statBoostDeltas: { spe: -1 } } : null,
+  },
+  'tangling-hair': {
+    onAfterHit: ({ makesContact }) =>
+      makesContact ? { statBoostDeltas: { spe: -1 } } : null,
+  },
+  mummy: {
+    onAfterHit: ({ makesContact }) =>
+      makesContact ? { abilityOverride: 'mummy' } : null,
+  },
+  'cursed-body': {
+    onAfterHit: ({ makesContact, rng }) =>
+      makesContact && rng() < 0.3 ? { volatileToApply: 'disable' } : null,
+  },
   drizzle: {
     onSwitchIn: ({ user }) => ({
       setWeather: {
