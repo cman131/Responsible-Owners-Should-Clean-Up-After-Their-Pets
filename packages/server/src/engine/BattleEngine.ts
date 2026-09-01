@@ -21,6 +21,8 @@ import { getScreenMultiplier, applyEntryHazards, decrementScreens } from './side
 
 const ALWAYS_THAW_MOVES = new Set(['scald', 'steameruption', 'sparklingaria']);
 
+const CHOICE_LOCK_ITEMS = new Set(['choice-band', 'choice-specs', 'choice-scarf']);
+
 const ABILITY_VOLATILE_CLEAR = new Set(['slow-start', 'truant']);
 
 const PROTECT_FAMILY_IDS = new Set([
@@ -223,6 +225,13 @@ export class BattleEngine {
     moveSlot.currentPp = Math.max(0, moveSlot.currentPp - 1);
 
     events.push({ type: 'move-used', data: { attackerSlotId, attackerName: attacker.nickname, moveId: move.id, moveName: move.name } });
+
+    // Set choice lock after move-used fires so pre-move blocks (sleep, paralysis, flinch) don't lock
+    if (!attacker.lockedMoveId) {
+      if (CHOICE_LOCK_ITEMS.has(attacker.heldItem ?? '') || effectiveAbilityId(attacker) === 'gorilla-tactics') {
+        attacker.lockedMoveId = move.id;
+      }
+    }
 
     // Gravity blocks airborne moves
     if (s.field.gravity > 0 && GRAVITY_BLOCKED_MOVES.has(move.id)) {

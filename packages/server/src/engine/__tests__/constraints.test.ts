@@ -160,3 +160,47 @@ describe('Disable', () => {
     expect(events.some(e => e.type === 'volatile-cured' && (e.data as any).volatile === 'disable')).toBe(true);
   });
 });
+
+describe('Choice lock timing', () => {
+  it('sets lockedMoveId on the attacker after a successful move with choice-band', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'choice-band';
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 }, // flamethrower
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    expect(newState.teams[0]!.slots[0]!.party[0]!.lockedMoveId).toBe('flamethrower');
+  });
+
+  it('does NOT set lockedMoveId when Pokemon is fully asleep (move blocked before firing)', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    const p1 = state.teams[0]!.slots[0]!.party[0]!;
+    p1.heldItem = 'choice-band';
+    p1.status = 'slp';
+    p1.volatileStatus.push({ name: 'sleep', counter: 1 });
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 }, // selected but blocked
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    expect(newState.teams[0]!.slots[0]!.party[0]!.lockedMoveId).toBeUndefined();
+  });
+
+  it('sets lockedMoveId for gorilla-tactics after a successful move', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.ability = 'gorilla-tactics';
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 }, // flamethrower
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    expect(newState.teams[0]!.slots[0]!.party[0]!.lockedMoveId).toBe('flamethrower');
+  });
+});

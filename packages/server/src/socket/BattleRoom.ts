@@ -121,11 +121,6 @@ export class BattleRoom {
             return { ok: false, reason: 'choice-locked' };
           }
         }
-        // First move with choice item — set the lock
-        if (isChoiceLocked && !active.lockedMoveId) {
-          const moveSlot = active.moves[action.moveIndex];
-          if (moveSlot) active.lockedMoveId = moveSlot.moveId;
-        }
       }
     }
 

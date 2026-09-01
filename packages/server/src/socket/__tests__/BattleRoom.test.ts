@@ -134,6 +134,44 @@ describe('onPlayerActionRequired', () => {
   });
 });
 
+describe('Choice lock enforcement', () => {
+  it('enforces choice lock when lockedMoveId is already set in state', () => {
+    const state = make1v1State();
+    const p1 = state.teams[0]!.slots[0]!.party[0]!;
+    p1.heldItem = 'choice-band';
+    p1.lockedMoveId = 'flamethrower'; // already locked from previous turn
+    const room = new BattleRoom({ initialState: state });
+
+    // Try to use a different move (index 1 = airslash)
+    const result = room.submitAction('slot-a1', { type: 'move', moveIndex: 1 });
+    expect(result.ok).toBe(false);
+    expect(result.reason).toBe('choice-locked');
+  });
+
+  it('allows using the locked move when choice-locked', () => {
+    const state = make1v1State();
+    const p1 = state.teams[0]!.slots[0]!.party[0]!;
+    p1.heldItem = 'choice-band';
+    p1.lockedMoveId = 'flamethrower';
+    const room = new BattleRoom({ initialState: state });
+
+    // Using the locked move (index 0 = flamethrower) is fine
+    const result = room.submitAction('slot-a1', { type: 'move', moveIndex: 0 });
+    expect(result.ok).toBe(true);
+  });
+
+  it('lockedMoveId is set in state after first move resolves via BattleRoom', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'choice-band';
+    const room = new BattleRoom({ initialState: state });
+
+    room.submitAction('slot-a1', { type: 'move', moveIndex: 0 }); // flamethrower
+    room.submitAction('slot-b1', { type: 'move', moveIndex: 0 }); // resolves turn
+
+    expect(room.getState().teams[0]!.slots[0]!.party[0]!.lockedMoveId).toBe('flamethrower');
+  });
+});
+
 describe('forced switch correctness', () => {
   function makeStateWithBench() {
     const state = make1v1State();
