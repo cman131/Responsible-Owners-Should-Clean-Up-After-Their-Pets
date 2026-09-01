@@ -118,4 +118,43 @@ describe('BattlePage', () => {
     renderBattlePage(makeState());
     expect(screen.getByText('Waiting for others...')).toBeTruthy();
   });
+
+  it('gates action panel behind turn:resolve playback queue', async () => {
+    vi.useFakeTimers();
+    renderBattlePage(makeState());
+
+    const turnResolveCall = mockSocket.on.mock.calls.find((c) => c[0] === 'turn:resolve');
+    const actionRequestCall = mockSocket.on.mock.calls.find((c) => c[0] === 'action:request');
+    expect(turnResolveCall).toBeTruthy();
+    expect(actionRequestCall).toBeTruthy();
+
+    // Simulate turn:resolve with one move-used event (600ms delay)
+    act(() => {
+      turnResolveCall![1]({
+        turnNumber: 2,
+        events: [{ type: 'move-used', data: { attackerName: 'Bulbasaur', moveName: 'Tackle' } }],
+        state: makeState(),
+      });
+    });
+
+    // action:request arrives right after (as it does on the server)
+    act(() => {
+      actionRequestCall![1]({
+        slotId: 'a1',
+        validMoves: [{ index: 0, moveId: 'watergun', pp: 25, disabled: false, targetType: 'normal', legalTargets: ['b1'] }],
+        canSwitch: false, switchTargets: [], canTerastallize: false,
+      });
+    });
+
+    // Move panel must NOT be visible — queue is still draining
+    expect(screen.queryByText('watergun')).toBeNull();
+
+    // Advance past the 600ms delay
+    await act(async () => { vi.advanceTimersByTime(700); });
+
+    // Now the queue is empty → pending action released → move panel visible
+    expect(screen.getByText('watergun')).toBeTruthy();
+
+    vi.useRealTimers();
+  });
 });

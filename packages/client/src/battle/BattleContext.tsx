@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { getSocket } from '../socket.js';
 import type {
   BattleState, ActionRequestPayload, TurnResolvePayload, SwitchRequestPayload, TurnResolveEvent,
@@ -73,6 +73,7 @@ interface BattleContextValue {
   actionRequest: ActionRequestPayload | null;
   switchRequest: SwitchRequestPayload | null;
   turnLog: LogEntry[];
+  displayHp: Map<string, number>;
   submitAction: (payload: import('@poke-fighter/shared').ActionSubmitPayload) => void;
 }
 
@@ -92,33 +93,97 @@ interface Props {
 
 export function BattleProvider({ mySlotId, initialState, children }: Props) {
   const [state, setState] = useState<BattleState | null>(initialState ?? null);
+  const stateRef = useRef<BattleState | null>(initialState ?? null);
   const [actionRequest, setActionRequest] = useState<ActionRequestPayload | null>(null);
   const [switchRequest, setSwitchRequest] = useState<SwitchRequestPayload | null>(null);
   const [turnLog, setTurnLog] = useState<LogEntry[]>([]);
+  const [displayHp, setDisplayHp] = useState<Map<string, number>>(new Map());
+  const [eventQueue, _setEventQueue] = useState<PlaybackEntry[]>([]);
+  const eventQueueRef = useRef<PlaybackEntry[]>([]);
+  const [pendingState, setPendingState] = useState<BattleState | null>(null);
+  const [pendingActionRequest, setPendingActionRequest] = useState<ActionRequestPayload | null>(null);
+  const [pendingSwitchRequest, setPendingSwitchRequest] = useState<SwitchRequestPayload | null>(null);
+
+  function setEventQueue(value: PlaybackEntry[]) {
+    eventQueueRef.current = value;
+    _setEventQueue(value);
+  }
+
+  useEffect(() => { stateRef.current = state; }, [state]);
+
+  // Drain one entry per tick
+  useEffect(() => {
+    if (eventQueue.length === 0) return;
+    const entry = eventQueue[0]!;
+    const timer = setTimeout(() => {
+      if (entry.text) {
+        setTurnLog((prev) => [...prev, { type: 'normal', text: entry.text! }].slice(-50));
+      }
+      if (entry.hpDelta) {
+        const { slotId, delta } = entry.hpDelta;
+        setDisplayHp((prev) => {
+          const next = new Map(prev);
+          next.set(slotId, Math.max(0, (next.get(slotId) ?? 0) - delta));
+          return next;
+        });
+      }
+      const nextQueue = eventQueue.slice(1);
+      eventQueueRef.current = nextQueue;
+      _setEventQueue(nextQueue);
+    }, entry.delay);
+    return () => clearTimeout(timer);
+  }, [eventQueue]);
+
+  // When queue empties, apply pending state and release pending requests
+  useEffect(() => {
+    if (eventQueue.length > 0 || pendingState === null) return;
+    setState(pendingState);
+    stateRef.current = pendingState;
+    setPendingState(null);
+    if (pendingActionRequest !== null) {
+      setActionRequest(pendingActionRequest);
+      setPendingActionRequest(null);
+    }
+    if (pendingSwitchRequest !== null) {
+      setSwitchRequest(pendingSwitchRequest);
+      setPendingSwitchRequest(null);
+    }
+  }, [eventQueue, pendingState, pendingActionRequest, pendingSwitchRequest]);
 
   useEffect(() => {
     const socket = getSocket();
 
     socket.on('battle:start', ({ state: s }) => {
       setState(s);
+      stateRef.current = s;
+      setDisplayHp(new Map());
       setTurnLog([{ type: 'normal', text: `Battle started! Turn ${s.turnNumber}` }]);
     });
 
     socket.on('state:sync', (s: BattleState) => {
       setState(s);
+      stateRef.current = s;
     });
 
     socket.on('turn:resolve', ({ turnNumber, events, state: s }: TurnResolvePayload) => {
-      setState(s);
+      const prevState = stateRef.current;
+      if (prevState) {
+        const snapshot = new Map<string, number>();
+        for (const team of prevState.teams) {
+          for (const slot of team.slots) {
+            if (!slot.isSpectator) {
+              const mon = slot.party[slot.activePokemonIndex];
+              if (mon && !mon.fainted) snapshot.set(slot.slotId, mon.currentHp);
+            }
+          }
+        }
+        setDisplayHp(snapshot);
+      }
       const roundEntry: LogEntry = { type: 'round-start', text: `-------Round ${turnNumber - 1}-------` };
-      const eventEntries: LogEntry[] = events
-        .flatMap((e) => {
-          const result = eventToText(e);
-          return Array.isArray(result) ? result : [result];
-        })
-        .filter(Boolean)
-        .map((text) => ({ type: 'normal' as const, text }));
-      setTurnLog((prev) => [...prev, roundEntry, ...eventEntries].slice(-50));
+      setTurnLog((prev) => [...prev, roundEntry].slice(-50));
+      const entries = eventsToPlaybackEntries(events);
+      setPendingState(s);
+      setEventQueue(entries);
     });
 
     socket.on('battle:history', ({ turns }: { turns: Array<{ turnNumber: number; events: TurnResolveEvent[] }> }) => {
@@ -137,12 +202,22 @@ export function BattleProvider({ mySlotId, initialState, children }: Props) {
     });
 
     socket.on('action:request', (payload: ActionRequestPayload) => {
-      if (payload.slotId === mySlotId) setActionRequest(payload);
+      if (payload.slotId !== mySlotId) return;
+      if (eventQueueRef.current.length > 0) {
+        setPendingActionRequest(payload);
+      } else {
+        setActionRequest(payload);
+      }
     });
     socket.emit('action:resync');
 
     socket.on('switch:request', (payload: SwitchRequestPayload) => {
-      if (payload.slotId === mySlotId) setSwitchRequest(payload);
+      if (payload.slotId !== mySlotId) return;
+      if (eventQueueRef.current.length > 0) {
+        setPendingSwitchRequest(payload);
+      } else {
+        setSwitchRequest(payload);
+      }
     });
 
     socket.on('battle:end', ({ winningTeamId }) => {
@@ -168,7 +243,7 @@ export function BattleProvider({ mySlotId, initialState, children }: Props) {
   }
 
   return (
-    <BattleContext.Provider value={{ state, mySlotId, actionRequest, switchRequest, turnLog, submitAction }}>
+    <BattleContext.Provider value={{ state, mySlotId, actionRequest, switchRequest, turnLog, displayHp, submitAction }}>
       {children}
     </BattleContext.Provider>
   );
