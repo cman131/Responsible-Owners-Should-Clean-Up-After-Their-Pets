@@ -6,6 +6,7 @@ interface Props {
   label: string;
   variant: 'enemy' | 'own';
   highlightSlotId?: string;
+  displayHp?: Map<string, number>;
 }
 
 function hpColor(current: number, max: number): string {
@@ -16,7 +17,7 @@ function hpColor(current: number, max: number): string {
   return '#e74c3c';
 }
 
-export function HpBarsRow({ slots, label, variant, highlightSlotId }: Props) {
+export function HpBarsRow({ slots, label, variant, highlightSlotId, displayHp }: Props) {
   const borderColor = variant === 'enemy' ? '#555' : '#2980b9';
   const labelColor = variant === 'enemy' ? '#e74c3c' : '#3498db';
 
@@ -27,6 +28,7 @@ export function HpBarsRow({ slots, label, variant, highlightSlotId }: Props) {
         const mon = slot.party[slot.activePokemonIndex];
         const isHighlighted = highlightSlotId !== undefined && slot.slotId === highlightSlotId;
         const nameColor = isHighlighted ? '#fff' : (highlightSlotId !== undefined ? '#aaa' : '#fff');
+        const displayCurrent = displayHp?.get(slot.slotId) ?? mon?.currentHp ?? 0;
         return (
           <div
             key={slot.slotId}
@@ -43,10 +45,16 @@ export function HpBarsRow({ slots, label, variant, highlightSlotId }: Props) {
             {mon && !mon.fainted ? (
               <>
                 <div style={{ flex: 1, background: '#333', height: 6, borderRadius: 3 }}>
-                  <div style={{ background: hpColor(mon.currentHp, mon.maxHp), height: 6, borderRadius: 3, width: `${mon.maxHp > 0 ? Math.min(100, (mon.currentHp / mon.maxHp) * 100) : 0}%` }} />
+                  <div style={{
+                    background: hpColor(displayCurrent, mon.maxHp),
+                    height: 6,
+                    borderRadius: 3,
+                    width: `${mon.maxHp > 0 ? Math.min(100, (displayCurrent / mon.maxHp) * 100) : 0}%`,
+                    transition: 'width 0.4s ease-out',
+                  }} />
                 </div>
                 <span style={{ color: '#aaa', fontSize: 9, width: 65, textAlign: 'right' }}>
-                  {mon.currentHp}/{mon.maxHp}
+                  {displayCurrent}/{mon.maxHp}
                 </span>
                 <EffectsIndicator mon={mon} />
               </>

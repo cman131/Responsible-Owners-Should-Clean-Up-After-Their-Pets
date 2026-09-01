@@ -79,4 +79,37 @@ describe('HpBarsRow', () => {
     expect(screen.getByText('ENEMY')).toBeTruthy();
     expect(screen.queryByText(/L\d+/)).toBeNull(); // no "L50" or similar level text
   });
+
+  it('uses displayHp value for HP display and numbers when provided', () => {
+    const displayHp = new Map([['a1', 50]]);
+    render(
+      <HpBarsRow
+        slots={[makeSlot('a1')]}  // mon has currentHp: 100, maxHp: 200
+        label="MY TEAM"
+        variant="own"
+        displayHp={displayHp}
+      />
+    );
+    expect(screen.getByText('50/200')).toBeTruthy();
+  });
+
+  it('falls back to mon.currentHp when displayHp has no entry for the slot', () => {
+    const displayHp = new Map<string, number>(); // no entry for a1
+    render(
+      <HpBarsRow
+        slots={[makeSlot('a1')]}
+        label="MY TEAM"
+        variant="own"
+        displayHp={displayHp}
+      />
+    );
+    expect(screen.getByText('100/200')).toBeTruthy();
+  });
+
+  it('falls back to mon.currentHp when displayHp is not provided', () => {
+    render(
+      <HpBarsRow slots={[makeSlot('a1')]} label="MY TEAM" variant="own" />
+    );
+    expect(screen.getByText('100/200')).toBeTruthy();
+  });
 });
