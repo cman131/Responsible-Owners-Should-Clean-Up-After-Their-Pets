@@ -198,4 +198,17 @@ describe('BattlePage', () => {
 
     vi.useRealTimers();
   });
+
+  it('renders a Home button in the battle view', () => {
+    renderBattlePage(makeState());
+    expect(screen.getByRole('button', { name: /home/i })).toBeTruthy();
+  });
+
+  it('clicking Home emits player:leave and clears sessionStorage.mySlotId', () => {
+    sessionStorage.setItem('mySlotId', 'a1');
+    renderBattlePage(makeState());
+    fireEvent.click(screen.getByRole('button', { name: /home/i }));
+    expect(mockSocket.emit).toHaveBeenCalledWith('player:leave');
+    expect(sessionStorage.getItem('mySlotId')).toBeNull();
+  });
 });

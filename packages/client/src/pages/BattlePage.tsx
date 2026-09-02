@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { BattleProvider, useBattle } from '../battle/BattleContext.js';
+import { getSocket } from '../socket.js';
 import { BattleScene } from '../battle/BattleScene.js';
 import { MovePanel } from '../battle/overlays/MovePanel.js';
 import { SwitchPanel } from '../battle/overlays/SwitchPanel.js';
@@ -24,11 +25,18 @@ export function BattlePage() {
 }
 
 function BattleView() {
+  const navigate = useNavigate();
   const { state, mySlotId, actionRequest, switchRequest, turnLog, displayHp, animatingSlots, submitAction } = useBattle();
   const [targetingMove, setTargetingMove] = useState<ValidMove | null>(null);
   const [selectedTarget, setSelectedTarget] = useState<string>('');
   const [terastallize, setTerastallize] = useState(false);
   const [showSwitchPanel, setShowSwitchPanel] = useState(false);
+
+  function handleGoHome() {
+    getSocket().emit('player:leave');
+    sessionStorage.removeItem('mySlotId');
+    navigate('/');
+  }
 
   // Reset targeting state when a new action request arrives
   useEffect(() => {
@@ -100,7 +108,14 @@ function BattleView() {
   }
 
   return (
-    <div style={{ background: '#0d0d1a', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: 16, gap: 12 }}>
+    <div style={{ background: '#0d0d1a', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: 16, gap: 12, position: 'relative' }}>
+      <button
+        onClick={handleGoHome}
+        style={{ position: 'absolute', top: 16, left: 16, background: 'none', border: '1px solid #555', color: '#aaa', padding: '6px 14px', borderRadius: 4, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12 }}
+      >
+        ← Home
+      </button>
+
       <div style={{ color: '#f0c040', fontSize: 12, letterSpacing: 2 }}>{state.label} — Turn {state.turnNumber}</div>
 
       <HpBarsRow
