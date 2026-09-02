@@ -1,11 +1,12 @@
 import type { Socket, Server } from 'socket.io';
 import type {
   ServerToClientEvents, ClientToServerEvents, AdminActionPayload,
-  MoveAction, SwitchAction, BattleState, PokemonSpecies, Move,
+  MoveAction, SwitchAction, BattleState, PokemonSpecies, Move, HeldItem,
 } from '@poke-fighter/shared';
 import type { BattleRoom } from '../BattleRoom.js';
 import type { LobbyManager } from '../LobbyManager.js';
 import type { AppDatabase } from '../../db/Database.js';
+import { IMPLEMENTED_ITEM_IDS } from '../../engine/items.js';
 
 export function pokemonMatchesQuery(s: PokemonSpecies, query: string): boolean {
   const q = query.toLowerCase();
@@ -15,6 +16,11 @@ export function pokemonMatchesQuery(s: PokemonSpecies, query: string): boolean {
 export function moveMatchesQuery(m: Move, query: string): boolean {
   const q = query.toLowerCase();
   return m.id.toLowerCase().includes(q) || m.name.toLowerCase().includes(q);
+}
+
+export function itemMatchesQuery(i: HeldItem, query: string): boolean {
+  const q = query.toLowerCase();
+  return i.id.toLowerCase().includes(q) || i.name.toLowerCase().includes(q);
 }
 
 export function registerAdminHandlers(
@@ -67,7 +73,7 @@ export function registerAdminHandlers(
       }
       case 'data:query': {
         try {
-          const { resource } = payload.data as { resource: 'pokemon' | 'moves' };
+          const { resource } = payload.data as { resource: 'pokemon' | 'moves' | 'items' };
           const { DataLoader } = await import('../../data/loader.js');
           const data = new DataLoader();
           let results: unknown[];
@@ -87,6 +93,19 @@ export function registerAdminHandlers(
               } else {
                 results = [];
               }
+              break;
+            }
+            case 'items': {
+              const { query: itemQuery } = payload.data as { query?: string };
+              const allImplemented = data.getAllItems().filter((i) => {
+                // Normalise via item NAME to match ITEM_HOOKS hyphenated keys
+                // (items.json ids are camelCase and don't match ITEM_HOOKS keys directly)
+                const normByName = i.name.toLowerCase().replace(/\s+/g, '-');
+                return IMPLEMENTED_ITEM_IDS.has(normByName);
+              });
+              results = itemQuery
+                ? allImplemented.filter((i) => itemMatchesQuery(i, itemQuery))
+                : allImplemented;
               break;
             }
             default:

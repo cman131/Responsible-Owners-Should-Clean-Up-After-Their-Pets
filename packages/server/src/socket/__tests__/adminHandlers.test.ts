@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { pokemonMatchesQuery, moveMatchesQuery, registerAdminHandlers } from '../handlers/adminHandlers.js';
-import type { PokemonSpecies, Move, BattleState } from '@poke-fighter/shared';
+import { pokemonMatchesQuery, moveMatchesQuery, itemMatchesQuery, registerAdminHandlers } from '../handlers/adminHandlers.js';
+import type { PokemonSpecies, Move, HeldItem, BattleState } from '@poke-fighter/shared';
 import { AppDatabase } from '../../db/Database.js';
 
 const makeMove = (overrides: Partial<Move> = {}): Move => ({
@@ -17,6 +17,14 @@ const makeMove = (overrides: Partial<Move> = {}): Move => ({
   ...overrides,
 });
 
+const makeItem = (overrides: Partial<HeldItem> = {}): HeldItem => ({
+  id: 'leftovers',
+  name: 'Leftovers',
+  effectId: 'leftovers',
+  isBerry: false,
+  ...overrides,
+});
+
 describe('moveMatchesQuery', () => {
   it('matches by move id (case-insensitive)', () => {
     expect(moveMatchesQuery(makeMove({ id: 'flamethrower' }), 'flame')).toBe(true);
@@ -29,6 +37,21 @@ describe('moveMatchesQuery', () => {
 
   it('does not match an unrelated query', () => {
     expect(moveMatchesQuery(makeMove({ id: 'flamethrower', name: 'Flamethrower' }), 'tackle')).toBe(false);
+  });
+});
+
+describe('itemMatchesQuery', () => {
+  it('matches by item id (case-insensitive)', () => {
+    expect(itemMatchesQuery(makeItem({ id: 'leftovers' }), 'left')).toBe(true);
+    expect(itemMatchesQuery(makeItem({ id: 'leftovers' }), 'LEFT')).toBe(true);
+  });
+
+  it('matches by item name', () => {
+    expect(itemMatchesQuery(makeItem({ name: 'Choice Band' }), 'band')).toBe(true);
+  });
+
+  it('does not match an unrelated query', () => {
+    expect(itemMatchesQuery(makeItem({ id: 'leftovers', name: 'Leftovers' }), 'sash')).toBe(false);
   });
 });
 
@@ -148,5 +171,66 @@ describe('registerAdminHandlers – battles:connect', () => {
     db.battles.appendTurnEvents('b1', turn);
     socket.trigger('admin:action', { type: 'battles:connect', data: { battleId: 'b1' } });
     expect(socket.emit).toHaveBeenCalledWith('battle:history', { turns: [turn] });
+  });
+});
+
+describe('registerAdminHandlers – data:query items', () => {
+  function makeAdminSocket(id = 'admin-items') {
+    const handlers: Record<string, (p: unknown) => void | Promise<void>> = {};
+    return {
+      id,
+      data: {} as Record<string, unknown>,
+      emit: vi.fn(),
+      join: vi.fn(),
+      leave: vi.fn(),
+      on(event: string, handler: (p: unknown) => void | Promise<void>) { handlers[event] = handler; },
+      async trigger(event: string, payload: unknown) { await handlers[event]?.(payload); },
+    };
+  }
+
+  const mockIo = { sockets: { sockets: { values: () => [] } } } as any;
+  const mockStartBattle = vi.fn();
+  const mockLobby = { getWaitingPlayers: vi.fn(() => []), getBySlotId: vi.fn() } as any;
+
+  let db: AppDatabase;
+  let socket: ReturnType<typeof makeAdminSocket>;
+
+  beforeEach(() => {
+    db = new AppDatabase(':memory:');
+    socket = makeAdminSocket();
+    registerAdminHandlers(socket as any, mockIo, () => undefined, mockStartBattle, db, mockLobby);
+  });
+
+  afterEach(() => { db.close(); });
+
+  it('emits only implemented items for items resource', async () => {
+    await socket.trigger('admin:action', { type: 'data:query', data: { resource: 'items' } });
+
+    expect(socket.emit).toHaveBeenCalledWith('data:results', expect.objectContaining({ resource: 'items' }));
+
+    const call = (socket.emit as ReturnType<typeof vi.fn>).mock.calls
+      .find(([event]: [string]) => event === 'data:results');
+    const payload = call?.[1] as { resource: string; results: HeldItem[] };
+    expect(payload.results.length).toBeGreaterThan(0);
+    // Every result must be an implemented item (name-normalises to an IMPLEMENTED_ITEM_IDS key)
+    for (const item of payload.results) {
+      const normByName = item.name.toLowerCase().replace(/\s+/g, '-');
+      expect(['leftovers', 'choice-band', 'choice-specs', 'choice-scarf', 'assault-vest',
+        'life-orb', 'black-sludge', 'eviolite', 'scope-lens', 'razor-claw', 'light-clay',
+        'big-root', 'rocky-helmet', 'sitrus-berry', 'lum-berry', 'salac-berry', 'petaya-berry',
+        'liechi-berry', 'ganlon-berry', 'apicot-berry', 'focus-sash', 'air-balloon',
+        'weakness-policy',
+      ]).toContain(normByName);
+    }
+  });
+
+  it('filters items by query string', async () => {
+    await socket.trigger('admin:action', { type: 'data:query', data: { resource: 'items', query: 'choice' } });
+
+    const call = (socket.emit as ReturnType<typeof vi.fn>).mock.calls
+      .find(([event]: [string]) => event === 'data:results');
+    const payload = call?.[1] as { resource: string; results: HeldItem[] };
+    expect(payload.results.length).toBeGreaterThan(0);
+    expect(payload.results.every((i) => i.name.toLowerCase().includes('choice') || i.id.toLowerCase().includes('choice'))).toBe(true);
   });
 });
