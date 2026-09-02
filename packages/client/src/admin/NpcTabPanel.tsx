@@ -56,6 +56,23 @@ export function NpcTabPanel({ battleId, npcRequests, state }: Props) {
     setSelectedTarget('');
   }
 
+  function getBenchMon(slotId: string, instanceId: string) {
+    if (!state) return null;
+    for (const team of state.teams) {
+      const slot = team.slots.find((s) => s.slotId === slotId);
+      if (slot) return slot.party.find((p) => p.instanceId === instanceId) ?? null;
+    }
+    return null;
+  }
+
+  function submitNpcSwitch(slotId: string, targetInstanceId: string) {
+    getSocket().emit('admin:action', {
+      type: 'npc-action',
+      data: { battleId, slotId, action: { type: 'switch', targetInstanceId } },
+    });
+    setSubmitted((prev) => new Set([...prev, slotId]));
+  }
+
   function handleMoveClick(slotId: string, mv: ActionRequestPayload['validMoves'][number]) {
     const mode = classifyTarget(mv.targetType);
     if (mode === 'auto' || (mode === 'choose' && mv.legalTargets.length === 1)) {
@@ -95,75 +112,113 @@ export function NpcTabPanel({ battleId, npcRequests, state }: Props) {
 
       {activeRequest && (
         <div style={styles.tabBody}>
-          {/* VS summary — unique targets across all moves */}
-          <div style={styles.vsSummary}>
-            {[...new Set(activeRequest.request.validMoves.flatMap((m) => m.legalTargets))].map((targetSlotId) => {
-              const mon = getActiveMon(targetSlotId);
-              const pct = mon && !mon.fainted ? mon.currentHp / mon.maxHp : 0;
-              const barColor = pct > 0.5 ? '#27ae60' : pct > 0.2 ? '#f39c12' : '#e74c3c';
-              return (
-                <div key={targetSlotId} style={styles.vsRow}>
-                  <span style={{ color: '#e74c3c', fontSize: 9, width: 18 }}>VS</span>
-                  <span style={{ color: '#fff', fontSize: 10, flex: 1 }}>{getDisplayName(targetSlotId)}</span>
-                  {mon && !mon.fainted ? (
-                    <>
-                      <div style={{ width: 80, background: '#333', height: 4, borderRadius: 2 }}>
-                        <div style={{ background: barColor, height: 4, borderRadius: 2, width: `${pct * 100}%` }} />
-                      </div>
-                      <span style={{ color: '#aaa', fontSize: 9, width: 50, textAlign: 'right' }}>{mon.currentHp}/{mon.maxHp}</span>
-                    </>
-                  ) : (
-                    <span style={{ color: '#555', fontSize: 9 }}>FAINTED</span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Move grid */}
-          <div style={styles.moveGrid}>
-            {activeRequest.request.validMoves.map((mv) => {
-              const done = submitted.has(activeRequest.slotId);
-              const disabled = mv.disabled || mv.pp === 0 || done;
-              return (
-                <button
-                  key={mv.index}
-                  disabled={disabled}
-                  onClick={() => handleMoveClick(activeRequest.slotId, mv)}
-                  style={{ ...styles.moveBtn, opacity: disabled ? 0.4 : 1, cursor: disabled ? 'not-allowed' : 'pointer' }}
-                >
-                  <span style={{ textTransform: 'capitalize', fontSize: 11 }}>{mv.moveId}</span>
-                  <span style={{ color: '#aaa', fontSize: 10 }}>PP {mv.pp}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Target selector — multi-target only */}
-          {pendingMove?.slotId === activeRequest.slotId && (() => {
-            const pendingMoveLegalTargets = activeRequest.request.validMoves.find((m) => m.index === pendingMove.moveIndex)?.legalTargets ?? [];
-            return (
-            <div style={styles.targetRow}>
-              <span style={{ color: '#aaa', fontSize: 10 }}>Target:</span>
-              <select
-                value={selectedTarget}
-                onChange={(e) => setSelectedTarget(e.target.value)}
-                style={styles.targetSelect}
-              >
-                {pendingMoveLegalTargets.map((t) => (
-                  <option key={t} value={t}>{getDisplayName(t)}</option>
-                ))}
-              </select>
-              <button
-                onClick={() => submitNpcAction(activeRequest.slotId, pendingMove.moveIndex, selectedTarget)}
-                style={styles.confirmBtn}
-              >
-                Confirm
-              </button>
-              <button onClick={() => setPendingMove(null)} style={styles.cancelBtn}>✕</button>
+          {activeRequest.request.validMoves.length === 0 && activeRequest.request.canSwitch ? (
+            <div>
+              <div style={{ color: '#e74c3c', fontSize: 11, letterSpacing: 1, marginBottom: 8 }}>
+                SWITCH REQUIRED
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {activeRequest.request.switchTargets.map((instanceId) => {
+                  const mon = getBenchMon(activeRequest.slotId, instanceId);
+                  const done = submitted.has(activeRequest.slotId);
+                  return (
+                    <button
+                      key={instanceId}
+                      disabled={done}
+                      onClick={() => submitNpcSwitch(activeRequest.slotId, instanceId)}
+                      style={{
+                        ...styles.moveBtn,
+                        opacity: done ? 0.4 : 1,
+                        cursor: done ? 'not-allowed' : 'pointer',
+                        justifyContent: 'flex-start',
+                        gap: 8,
+                      }}
+                    >
+                      <span style={{ fontSize: 11 }}>{mon?.nickname ?? instanceId}</span>
+                      {mon && (
+                        <>
+                          <span style={{ color: '#aaa', fontSize: 10 }}>Lv.{mon.level}</span>
+                          <span style={{ color: '#aaa', fontSize: 10 }}>{mon.currentHp}/{mon.maxHp} HP</span>
+                        </>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            );
-          })()}
+          ) : (
+            <>
+              {/* VS summary — unique targets across all moves */}
+              <div style={styles.vsSummary}>
+                {[...new Set(activeRequest.request.validMoves.flatMap((m) => m.legalTargets))].map((targetSlotId) => {
+                  const mon = getActiveMon(targetSlotId);
+                  const pct = mon && !mon.fainted ? mon.currentHp / mon.maxHp : 0;
+                  const barColor = pct > 0.5 ? '#27ae60' : pct > 0.2 ? '#f39c12' : '#e74c3c';
+                  return (
+                    <div key={targetSlotId} style={styles.vsRow}>
+                      <span style={{ color: '#e74c3c', fontSize: 9, width: 18 }}>VS</span>
+                      <span style={{ color: '#fff', fontSize: 10, flex: 1 }}>{getDisplayName(targetSlotId)}</span>
+                      {mon && !mon.fainted ? (
+                        <>
+                          <div style={{ width: 80, background: '#333', height: 4, borderRadius: 2 }}>
+                            <div style={{ background: barColor, height: 4, borderRadius: 2, width: `${pct * 100}%` }} />
+                          </div>
+                          <span style={{ color: '#aaa', fontSize: 9, width: 50, textAlign: 'right' }}>{mon.currentHp}/{mon.maxHp}</span>
+                        </>
+                      ) : (
+                        <span style={{ color: '#555', fontSize: 9 }}>FAINTED</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Move grid */}
+              <div style={styles.moveGrid}>
+                {activeRequest.request.validMoves.map((mv) => {
+                  const done = submitted.has(activeRequest.slotId);
+                  const disabled = mv.disabled || mv.pp === 0 || done;
+                  return (
+                    <button
+                      key={mv.index}
+                      disabled={disabled}
+                      onClick={() => handleMoveClick(activeRequest.slotId, mv)}
+                      style={{ ...styles.moveBtn, opacity: disabled ? 0.4 : 1, cursor: disabled ? 'not-allowed' : 'pointer' }}
+                    >
+                      <span style={{ textTransform: 'capitalize', fontSize: 11 }}>{mv.moveId}</span>
+                      <span style={{ color: '#aaa', fontSize: 10 }}>PP {mv.pp}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Target selector — multi-target only */}
+              {pendingMove?.slotId === activeRequest.slotId && (() => {
+                const pendingMoveLegalTargets = activeRequest.request.validMoves.find((m) => m.index === pendingMove.moveIndex)?.legalTargets ?? [];
+                return (
+                  <div style={styles.targetRow}>
+                    <span style={{ color: '#aaa', fontSize: 10 }}>Target:</span>
+                    <select
+                      value={selectedTarget}
+                      onChange={(e) => setSelectedTarget(e.target.value)}
+                      style={styles.targetSelect}
+                    >
+                      {pendingMoveLegalTargets.map((t) => (
+                        <option key={t} value={t}>{getDisplayName(t)}</option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={() => submitNpcAction(activeRequest.slotId, pendingMove.moveIndex, selectedTarget)}
+                      style={styles.confirmBtn}
+                    >
+                      Confirm
+                    </button>
+                    <button onClick={() => setPendingMove(null)} style={styles.cancelBtn}>✕</button>
+                  </div>
+                );
+              })()}
+            </>
+          )}
         </div>
       )}
     </div>
