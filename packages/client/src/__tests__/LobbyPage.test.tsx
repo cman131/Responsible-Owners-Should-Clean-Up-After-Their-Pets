@@ -23,8 +23,8 @@ const mockBattles = [
     battleId: 'battle-1',
     label: 'Friday Night Brawl',
     slots: [
-      { slotId: 'slot-a1', displayName: 'Conor' },
-      { slotId: 'slot-b1', displayName: 'Kyle' },
+      { slotId: 'slot-a1', displayName: 'Conor', status: 'available' as const },
+      { slotId: 'slot-b1', displayName: 'Kyle', status: 'available' as const },
     ],
   },
 ];
@@ -128,5 +128,59 @@ describe('LobbyPage', () => {
     });
     expect(screen.getByText(/already taken/i)).toBeTruthy();
     expect(screen.queryByText(/waiting for the battle/i)).toBeFalsy();
+  });
+
+  it('shows "Full – In Progress" and no slot dropdown when all slots are occupied', () => {
+    const fullBattle = {
+      battleId: 'battle-2',
+      label: 'Locked Battle',
+      slots: [
+        { slotId: 'slot-a1', displayName: 'Conor', status: 'occupied' as const },
+        { slotId: 'slot-b1', displayName: 'Kyle', status: 'occupied' as const },
+      ],
+    };
+    render(<MemoryRouter><LobbyPage /></MemoryRouter>);
+    act(() => {
+      socketHandlers['lobby:battles']?.({ battles: [fullBattle] });
+    });
+    fireEvent.click(screen.getByText('Locked Battle'));
+    expect(screen.queryByRole('combobox')).toBeNull();
+    expect(screen.getByText(/full/i)).toBeTruthy();
+  });
+
+  it('appends (reconnect) to reconnectable slot names in the dropdown', () => {
+    const reconnectBattle = {
+      battleId: 'battle-3',
+      label: 'Reconnect Battle',
+      slots: [
+        { slotId: 'slot-a1', displayName: 'Conor', status: 'reconnectable' as const },
+        { slotId: 'slot-b1', displayName: 'Kyle', status: 'available' as const },
+      ],
+    };
+    render(<MemoryRouter><LobbyPage /></MemoryRouter>);
+    act(() => {
+      socketHandlers['lobby:battles']?.({ battles: [reconnectBattle] });
+    });
+    fireEvent.click(screen.getByText('Reconnect Battle'));
+    expect(screen.getByText('Conor (reconnect)')).toBeTruthy();
+  });
+
+  it('excludes occupied slots from the slot dropdown', () => {
+    const mixedBattle = {
+      battleId: 'battle-4',
+      label: 'Mixed Battle',
+      slots: [
+        { slotId: 'slot-a1', displayName: 'Conor', status: 'occupied' as const },
+        { slotId: 'slot-b1', displayName: 'Kyle', status: 'available' as const },
+      ],
+    };
+    render(<MemoryRouter><LobbyPage /></MemoryRouter>);
+    act(() => {
+      socketHandlers['lobby:battles']?.({ battles: [mixedBattle] });
+    });
+    fireEvent.click(screen.getByText('Mixed Battle'));
+    expect(screen.getByRole('combobox')).toBeTruthy();
+    expect(screen.queryByText(/Conor/)).toBeNull();
+    expect(screen.getByText('Kyle')).toBeTruthy();
   });
 });

@@ -79,6 +79,7 @@ export function LobbyPage() {
   }
 
   const selectedBattle = battles.find((b) => b.battleId === selectedBattleId) ?? null;
+  const joinableSlots = selectedBattle?.slots.filter((s) => s.status !== 'occupied') ?? [];
   const canJoin = selectedBattleId !== null && selectedSlotId !== null;
 
   return (
@@ -90,23 +91,30 @@ export function LobbyPage() {
         {battles.length === 0 ? (
           <p style={styles.emptyText}>No active battles yet. Check with your admin.</p>
         ) : (
-          battles.map((b) => (
-            <div
-              key={b.battleId}
-              onClick={() => { setSelectedBattleId(b.battleId); setSelectedSlotId(null); }}
-              style={{
-                ...styles.battleCard,
-                borderColor: selectedBattleId === b.battleId ? '#27ae60' : '#333',
-                background: selectedBattleId === b.battleId ? '#0d1a12' : '#111',
-              }}
-            >
-              <div style={styles.battleLabel}>{b.label}</div>
-              <div style={styles.slotCount}>{b.slots.length} slot{b.slots.length !== 1 ? 's' : ''} available</div>
-            </div>
-          ))
+          battles.map((b) => {
+            const joinable = b.slots.filter((s) => s.status !== 'occupied').length;
+            return (
+              <div
+                key={b.battleId}
+                onClick={() => { setSelectedBattleId(b.battleId); setSelectedSlotId(null); }}
+                style={{
+                  ...styles.battleCard,
+                  borderColor: selectedBattleId === b.battleId ? '#27ae60' : '#333',
+                  background: selectedBattleId === b.battleId ? '#0d1a12' : '#111',
+                }}
+              >
+                <div style={styles.battleLabel}>{b.label}</div>
+                {joinable > 0 ? (
+                  <div style={styles.slotCount}>{joinable} slot{joinable !== 1 ? 's' : ''} available</div>
+                ) : (
+                  <div style={{ ...styles.slotCount, color: '#666' }}>Full – In Progress</div>
+                )}
+              </div>
+            );
+          })
         )}
 
-        {selectedBattle && (
+        {selectedBattle && joinableSlots.length > 0 && (
           <div style={styles.slotSection}>
             <div style={styles.sectionLabel}>You are...</div>
             <select
@@ -115,8 +123,10 @@ export function LobbyPage() {
               onChange={(e) => setSelectedSlotId(e.target.value || null)}
             >
               <option value="">— pick your slot —</option>
-              {selectedBattle.slots.map((s) => (
-                <option key={s.slotId} value={s.slotId}>{s.displayName}</option>
+              {joinableSlots.map((s) => (
+                <option key={s.slotId} value={s.slotId}>
+                  {s.displayName}{s.status === 'reconnectable' ? ' (reconnect)' : ''}
+                </option>
               ))}
             </select>
           </div>
