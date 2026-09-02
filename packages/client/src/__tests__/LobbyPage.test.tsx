@@ -165,6 +165,39 @@ describe('LobbyPage', () => {
     expect(screen.getByText('Conor (reconnect)')).toBeTruthy();
   });
 
+  it('clears slot selection and disables JOIN when selected slot becomes occupied via update', () => {
+    const battle = {
+      battleId: 'battle-5',
+      label: 'Dynamic Battle',
+      slots: [
+        { slotId: 'slot-a1', displayName: 'Conor', status: 'available' as const },
+        { slotId: 'slot-b1', displayName: 'Kyle', status: 'available' as const },
+      ],
+    };
+    render(<MemoryRouter><LobbyPage /></MemoryRouter>);
+    act(() => {
+      socketHandlers['lobby:battles']?.({ battles: [battle] });
+    });
+    fireEvent.click(screen.getByText('Dynamic Battle'));
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'slot-a1' } });
+
+    // Now slot-a1 becomes occupied via a server update
+    act(() => {
+      socketHandlers['lobby:battles']?.({
+        battles: [{
+          ...battle,
+          slots: [
+            { slotId: 'slot-a1', displayName: 'Conor', status: 'occupied' as const },
+            { slotId: 'slot-b1', displayName: 'Kyle', status: 'available' as const },
+          ],
+        }],
+      });
+    });
+
+    const btn = screen.getByRole('button', { name: /join battle/i }) as HTMLButtonElement;
+    expect(btn.disabled).toBe(true);
+  });
+
   it('excludes occupied slots from the slot dropdown', () => {
     const mixedBattle = {
       battleId: 'battle-4',

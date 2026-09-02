@@ -22,7 +22,7 @@ export function LobbyPage() {
       setSelectedSlotId(null);
       return;
     }
-    if (selectedSlotId !== null && !battle.slots.find((s) => s.slotId === selectedSlotId)) {
+    if (selectedSlotId !== null && !battle.slots.find((s) => s.slotId === selectedSlotId && s.status !== 'occupied')) {
       setSelectedSlotId(null);
     }
   }, [battles, selectedBattleId, selectedSlotId]);
@@ -55,7 +55,7 @@ export function LobbyPage() {
     if (!selectedBattleId || !selectedSlotId) return;
 
     const battle = battles.find((b) => b.battleId === selectedBattleId);
-    const slot = battle?.slots.find((s) => s.slotId === selectedSlotId);
+    const slot = battle?.slots.find((s) => s.slotId === selectedSlotId && s.status !== 'occupied');
     if (!slot) return;
 
     setError(null);
