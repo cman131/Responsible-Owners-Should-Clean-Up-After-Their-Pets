@@ -55,4 +55,15 @@ export function registerLobbyHandlers(
     notifyAdminsOfSlotStatus(battleId);
     notifyPlayersOfBattles();
   });
+
+  socket.on('player:leave', () => {
+    const player = lobby.getBySocketId(socket.id);
+    if (!player?.battleId) return;
+    const { battleId } = player;
+    lobby.removePlayer(socket.id);
+    delete socket.data['battleId'];
+    socket.leave(`battle:${battleId}`);
+    notifyAdminsOfSlotStatus(battleId);
+    notifyPlayersOfBattles();
+  });
 }

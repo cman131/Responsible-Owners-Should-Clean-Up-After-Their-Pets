@@ -6,6 +6,7 @@ interface MockSocket {
   data: Record<string, unknown>;
   emit: ReturnType<typeof vi.fn>;
   join: ReturnType<typeof vi.fn>;
+  leave: ReturnType<typeof vi.fn>;
   on: (event: string, handler: (payload: unknown) => void) => void;
 }
 
@@ -16,6 +17,7 @@ function makeSocket(id = 'sock1'): MockSocket & { trigger(e: string, p: unknown)
     data: {},
     emit: vi.fn(),
     join: vi.fn(),
+    leave: vi.fn(),
     on: (event, handler) => { handlers[event] = handler; },
     trigger(event: string, payload: unknown) {
       handlers[event]?.(payload);
@@ -29,6 +31,7 @@ function makeLobby() {
     getBySlotId: vi.fn(),
     getBySocketId: vi.fn(),
     markDisconnected: vi.fn(),
+    removePlayer: vi.fn(),
     getWaitingPlayers: vi.fn(() => []),
     getByName: vi.fn(),
   };
@@ -228,5 +231,89 @@ describe('registerLobbyHandlers – player:join', () => {
     socket.trigger('player:join', { battleId: 'battle-1', slotId: 'slot-a1' });
     expect(socket.emit).toHaveBeenCalledWith('battle:history', { turns: [turn] });
     expect(getEventLog).toHaveBeenCalledWith('battle-1');
+  });
+});
+
+describe('registerLobbyHandlers – player:leave', () => {
+  it('removes the player, clears socket.data.battleId, leaves the room, and notifies', () => {
+    const socket = makeSocket();
+    const lobby = makeLobby();
+    const room = makeRoom();
+    const notifyAdminsOfSlotStatus = vi.fn();
+    const notifyPlayersOfBattles = vi.fn();
+
+    socket.data['battleId'] = 'battle-1';
+    lobby.getBySocketId.mockReturnValue({
+      socketId: 'sock1',
+      displayName: 'Ash',
+      battleId: 'battle-1',
+      battleSlotId: 'slot-a1',
+    });
+
+    registerLobbyHandlers(
+      socket as any,
+      lobby as any,
+      (id) => (id === 'battle-1' ? (room as any) : undefined),
+      vi.fn(),
+      notifyAdminsOfSlotStatus,
+      notifyPlayersOfBattles,
+      vi.fn(() => []),
+    );
+
+    socket.trigger('player:leave', undefined);
+
+    expect(lobby.removePlayer).toHaveBeenCalledWith('sock1');
+    expect(socket.data['battleId']).toBeUndefined();
+    expect(socket.leave).toHaveBeenCalledWith('battle:battle-1');
+    expect(notifyAdminsOfSlotStatus).toHaveBeenCalledWith('battle-1');
+    expect(notifyPlayersOfBattles).toHaveBeenCalled();
+  });
+
+  it('is a no-op when the socket has no associated player', () => {
+    const socket = makeSocket();
+    const lobby = makeLobby();
+    lobby.getBySocketId.mockReturnValue(undefined);
+    const notifyPlayersOfBattles = vi.fn();
+
+    registerLobbyHandlers(
+      socket as any,
+      lobby as any,
+      () => undefined,
+      vi.fn(),
+      vi.fn(),
+      notifyPlayersOfBattles,
+      vi.fn(() => []),
+    );
+
+    socket.trigger('player:leave', undefined);
+
+    expect(lobby.removePlayer).not.toHaveBeenCalled();
+    expect(notifyPlayersOfBattles).not.toHaveBeenCalled();
+  });
+
+  it('is a no-op when the player has no battleId', () => {
+    const socket = makeSocket();
+    const lobby = makeLobby();
+    lobby.getBySocketId.mockReturnValue({
+      socketId: 'sock1',
+      displayName: 'Ash',
+      battleId: undefined,
+    });
+    const notifyPlayersOfBattles = vi.fn();
+
+    registerLobbyHandlers(
+      socket as any,
+      lobby as any,
+      () => undefined,
+      vi.fn(),
+      vi.fn(),
+      notifyPlayersOfBattles,
+      vi.fn(() => []),
+    );
+
+    socket.trigger('player:leave', undefined);
+
+    expect(lobby.removePlayer).not.toHaveBeenCalled();
+    expect(notifyPlayersOfBattles).not.toHaveBeenCalled();
   });
 });
