@@ -936,6 +936,55 @@ export class BattleEngine {
     return this.performSwitch(state, slotId, targetInstanceId, reason);
   }
 
+  public resumeTurn(
+    state: BattleState,
+    remainingSlotOrder: string[],
+    actions: Record<string, MoveAction | SwitchAction>,
+    movedSlotIds: Set<string>,
+  ): TurnResult {
+    const events: TurnResolveEvent[] = [];
+    let s = structuredClone(state);
+
+    for (const slotId of remainingSlotOrder) {
+      if (movedSlotIds.has(slotId)) continue;
+
+      const slot = this.findSlot(s, slotId);
+      if (!slot) continue;
+      const active = slot.party[slot.activePokemonIndex];
+      if (!active || active.fainted) continue;
+
+      const action = actions[slotId];
+      if (!action) continue;
+
+      if (action.type === 'move') {
+        const moveResult = this.executeMove(s, slotId, action, movedSlotIds);
+        events.push(...moveResult.events);
+        s = moveResult.newState;
+        // Pivot chaining within a single turn is not supported — ignore pivotSwitch here
+      } else if (action.type === 'switch') {
+        const switchResult = this.executeSwitch(s, slotId, action.targetInstanceId);
+        events.push(...switchResult.events);
+        s = switchResult.newState;
+      }
+
+      movedSlotIds.add(slotId);
+      if (this.checkWinCondition(s) !== null) break;
+    }
+
+    const eotResult = this.endOfTurn(s);
+    events.push(...eotResult.events);
+    s = eotResult.newState;
+
+    const winner = this.checkWinCondition(s);
+    if (winner !== null) {
+      s = { ...s, phase: 'ended', winner };
+    } else {
+      s = { ...s, turnNumber: s.turnNumber + 1, phase: 'action' };
+    }
+
+    return { newState: s, events };
+  }
+
   private executeSwitch(state: BattleState, slotId: string, targetInstanceId: string): TurnResult {
     return this.performSwitch(state, slotId, targetInstanceId, 'voluntary');
   }

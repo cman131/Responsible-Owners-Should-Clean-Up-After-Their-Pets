@@ -1516,3 +1516,49 @@ describe('Pivot moves (U-turn / Volt Switch / Flip Turn)', () => {
     expect(result.newState.turnNumber).toBe(2);
   });
 });
+
+describe('BattleEngine.resumeTurn', () => {
+  it('processes remaining actions and EOT after a pivot interrupt', () => {
+    const state = make1v1State();
+    const bench = makePokemon({ instanceId: 'bench-a', nickname: 'Bench' });
+    state.teams[0]!.slots[0]!.party.push(bench);
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'uturn', currentPp: 20, maxPp: 20 };
+    state.teams[1]!.slots[0]!.party[0]!.currentHp = 1000;
+    state.teams[1]!.slots[0]!.party[0]!.maxHp = 1000;
+
+    const engine = new BattleEngine({ rng: () => 0 });
+
+    const interrupted = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(interrupted.pivotSlots).toEqual(['slot-a1']);
+
+    const afterSwitch = engine.processForceSwitch(
+      interrupted.newState,
+      'slot-a1',
+      'bench-a',
+      'forced',
+    );
+    expect(afterSwitch.events.some((e) => e.type === 'pokemon-switched')).toBe(true);
+
+    const resumed = engine.resumeTurn(
+      afterSwitch.newState,
+      interrupted.remainingSlotOrder!,
+      interrupted.remainingActions!,
+      interrupted.movedSlotIds!,
+    );
+
+    expect(resumed.events.some((e) => e.type === 'move-used')).toBe(true);
+    expect(resumed.newState.turnNumber).toBe(2);
+    expect(resumed.pivotSlots).toBeUndefined();
+  });
+
+  it('increments turn number to 2 even when remaining actions list is empty', () => {
+    const state = make1v1State();
+    const movedSlotIds = new Set(['slot-a1', 'slot-b1']);
+    const engine = new BattleEngine({ rng: () => 0 });
+    const resumed = engine.resumeTurn(state, [], {}, movedSlotIds);
+    expect(resumed.newState.turnNumber).toBe(2);
+  });
+});
