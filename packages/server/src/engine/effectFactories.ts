@@ -113,6 +113,7 @@ export function setSideCondition(
 ): MoveEffectHandler {
   return (ctx) => {
     const sideIdx = (side === 'ally' ? ctx.userTeamIndex : 1 - ctx.userTeamIndex) as 0 | 1;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const currentValue = (ctx.battle.field.sideConditions[sideIdx] as any)[key as string];
 
     if (options?.failIfActive && currentValue) {
