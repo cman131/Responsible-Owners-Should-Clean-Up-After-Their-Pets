@@ -97,3 +97,55 @@ describe('BattleScene', () => {
     expect(charizardImg).toBeTruthy();
   });
 });
+
+describe('animation classes', () => {
+  it('applies anim-attack-right to own slot when animating attack', () => {
+    const state = makeState('a1', 'b1');
+    const { container } = render(
+      <BattleScene state={state} mySlotId="a1" animatingSlots={new Map([['a1', 'attack']])} />,
+    );
+    expect(container.querySelector('.anim-attack-right')).not.toBeNull();
+  });
+
+  it('applies anim-attack-left to foe slot when animating attack', () => {
+    const state = makeState('a1', 'b1');
+    const { container } = render(
+      <BattleScene state={state} mySlotId="a1" animatingSlots={new Map([['b1', 'attack']])} />,
+    );
+    expect(container.querySelector('.anim-attack-left')).not.toBeNull();
+  });
+
+  it('applies anim-hit when a slot is animating hit', () => {
+    const state = makeState('a1', 'b1');
+    const { container } = render(
+      <BattleScene state={state} mySlotId="a1" animatingSlots={new Map([['b1', 'hit']])} />,
+    );
+    expect(container.querySelector('.anim-hit')).not.toBeNull();
+  });
+
+  it('applies anim-faint when a slot is animating faint', () => {
+    const state = makeState('a1', 'b1');
+    const { container } = render(
+      <BattleScene state={state} mySlotId="a1" animatingSlots={new Map([['b1', 'faint']])} />,
+    );
+    expect(container.querySelector('.anim-faint')).not.toBeNull();
+  });
+
+  it('applies no animation class when animatingSlots prop is absent', () => {
+    const state = makeState('a1', 'b1');
+    const { container } = render(<BattleScene state={state} mySlotId="a1" />);
+    expect(container.querySelector('.anim-attack-right')).toBeNull();
+    expect(container.querySelector('.anim-attack-left')).toBeNull();
+    expect(container.querySelector('.anim-hit')).toBeNull();
+    expect(container.querySelector('.anim-faint')).toBeNull();
+  });
+
+  it('applies no animation class when slot is not in animatingSlots', () => {
+    const state = makeState('a1', 'b1');
+    const { container } = render(
+      <BattleScene state={state} mySlotId="a1" animatingSlots={new Map([['c1', 'attack']])} />,
+    );
+    expect(container.querySelector('.anim-attack-right')).toBeNull();
+    expect(container.querySelector('.anim-attack-left')).toBeNull();
+  });
+});

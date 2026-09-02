@@ -1,12 +1,14 @@
 import type { BattleState, SlotState } from '@poke-fighter/shared';
 import { toShowdownId } from './utils.js';
+import './battle-animations.css';
 
 interface Props {
   state: BattleState;
   mySlotId: string;
+  animatingSlots?: Map<string, 'attack' | 'hit' | 'faint'>;
 }
 
-export function BattleScene({ state, mySlotId }: Props) {
+export function BattleScene({ state, mySlotId, animatingSlots }: Props) {
   const myTeamIdx = state.teams.findIndex((t) => t.slots.some((s) => s.slotId === mySlotId));
   const resolvedMyTeamIdx = myTeamIdx === -1 ? 0 : myTeamIdx;
   const foeTeamIdx = resolvedMyTeamIdx === 0 ? 1 : 0;
@@ -26,16 +28,31 @@ export function BattleScene({ state, mySlotId }: Props) {
       borderRadius: 4,
       overflow: 'hidden',
     }}>
-      {mySlot && renderSprite(mySlot, 'own', 0)}
-      {allySlots.map((slot, i) => renderSprite(slot, 'ally', i))}
-      {foeSlots.map((slot, i) => renderSprite(slot, 'foe', i))}
+      {mySlot && renderSprite(mySlot, 'own', 0, animatingSlots)}
+      {allySlots.map((slot, i) => renderSprite(slot, 'ally', i, animatingSlots))}
+      {foeSlots.map((slot, i) => renderSprite(slot, 'foe', i, animatingSlots))}
     </div>
   );
 }
 
-function renderSprite(slot: SlotState, role: 'own' | 'ally' | 'foe', index: number) {
+function renderSprite(
+  slot: SlotState,
+  role: 'own' | 'ally' | 'foe',
+  index: number,
+  animatingSlots?: Map<string, 'attack' | 'hit' | 'faint'>,
+) {
   const mon = slot.party[slot.activePokemonIndex];
   if (!mon || mon.fainted) return null;
+
+  const animKind = animatingSlots?.get(slot.slotId);
+  let animClassName: string | undefined;
+  if (animKind === 'attack') {
+    animClassName = role === 'foe' ? 'anim-attack-left' : 'anim-attack-right';
+  } else if (animKind === 'hit') {
+    animClassName = 'anim-hit';
+  } else if (animKind === 'faint') {
+    animClassName = 'anim-faint';
+  }
 
   const pos: React.CSSProperties = role === 'own'
     ? { bottom: 18, left: 60, width: 72, height: 72 }
@@ -52,6 +69,7 @@ function renderSprite(slot: SlotState, role: 'own' | 'ally' | 'foe', index: numb
   return (
     <div
       key={slot.slotId}
+      className={animClassName}
       style={{ position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center', ...pos }}
     >
       {mon.speciesName ? (
