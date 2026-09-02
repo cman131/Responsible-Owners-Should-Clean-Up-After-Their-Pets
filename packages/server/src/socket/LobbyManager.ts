@@ -98,3 +98,10 @@ export class LobbyManager {
     }
   }
 }
+
+export function computeSlotStatus(
+  player: ConnectedPlayer | undefined,
+): 'available' | 'reconnectable' | 'occupied' {
+  if (!player) return 'available';
+  return player.disconnectedAt !== undefined ? 'reconnectable' : 'occupied';
+}

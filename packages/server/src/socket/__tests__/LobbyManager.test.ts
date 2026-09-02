@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { LobbyManager } from '../LobbyManager.js';
+import { LobbyManager, computeSlotStatus } from '../LobbyManager.js';
 
 describe('LobbyManager', () => {
   let lobby: LobbyManager;
@@ -47,5 +47,21 @@ describe('LobbyManager', () => {
       expect(result.player.displayName).toBe('Alice');
       expect(result.player.socketId).toBe('socket-2');
     }
+  });
+});
+
+describe('computeSlotStatus', () => {
+  it('returns available when player is undefined', () => {
+    expect(computeSlotStatus(undefined)).toBe('available');
+  });
+
+  it('returns reconnectable when player has disconnectedAt set', () => {
+    const player = { socketId: 's1', displayName: 'Alice', disconnectedAt: Date.now() };
+    expect(computeSlotStatus(player)).toBe('reconnectable');
+  });
+
+  it('returns occupied when player exists with no disconnectedAt', () => {
+    const player = { socketId: 's1', displayName: 'Alice' };
+    expect(computeSlotStatus(player)).toBe('occupied');
   });
 });
