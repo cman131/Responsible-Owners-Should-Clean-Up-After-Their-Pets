@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { pokemonMatchesQuery, moveMatchesQuery, itemMatchesQuery, registerAdminHandlers } from '../handlers/adminHandlers.js';
+import { IMPLEMENTED_ITEM_IDS } from '../../engine/items.js';
 import type { PokemonSpecies, Move, HeldItem, BattleState } from '@poke-fighter/shared';
 import { AppDatabase } from '../../db/Database.js';
 
@@ -215,12 +216,7 @@ describe('registerAdminHandlers – data:query items', () => {
     // Every result must be an implemented item (name-normalises to an IMPLEMENTED_ITEM_IDS key)
     for (const item of payload.results) {
       const normByName = item.name.toLowerCase().replace(/\s+/g, '-');
-      expect(['leftovers', 'choice-band', 'choice-specs', 'choice-scarf', 'assault-vest',
-        'life-orb', 'black-sludge', 'eviolite', 'scope-lens', 'razor-claw', 'light-clay',
-        'big-root', 'rocky-helmet', 'sitrus-berry', 'lum-berry', 'salac-berry', 'petaya-berry',
-        'liechi-berry', 'ganlon-berry', 'apicot-berry', 'focus-sash', 'air-balloon',
-        'weakness-policy', 'shell-bell',
-      ]).toContain(normByName);
+      expect(IMPLEMENTED_ITEM_IDS.has(normByName)).toBe(true);
     }
   });
 
