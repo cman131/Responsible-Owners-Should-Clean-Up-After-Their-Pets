@@ -197,6 +197,28 @@ export class SocketServer {
 
     room.onSwitchRequest((slots: SlotState[]) => {
       for (const slot of slots) {
+        if (slot.isNpc) {
+          const switchTargets = slot.party
+            .filter((p, i) => i !== slot.activePokemonIndex && !p.fainted)
+            .map((p) => p.instanceId);
+          const npcSwitchRequest: import('@poke-fighter/shared').ActionRequestPayload = {
+            slotId: slot.slotId,
+            validMoves: [],
+            canSwitch: true,
+            switchTargets,
+            canTerastallize: false,
+          };
+          const adminSockets = [...this.io.sockets.sockets.values()].filter(
+            (s) => s.data['isAdmin'] === true,
+          );
+          for (const adminSocket of adminSockets) {
+            adminSocket.emit('npc:action-request', {
+              battleId: initialState.battleId,
+              slots: [{ slotId: slot.slotId, displayName: slot.displayName, request: npcSwitchRequest }],
+            });
+          }
+          continue;
+        }
         const player = this.lobby.getBySlotId(slot.slotId);
         if (!player) continue;
         const availableParty = slot.party.filter((p, i) => i !== slot.activePokemonIndex && !p.fainted);
