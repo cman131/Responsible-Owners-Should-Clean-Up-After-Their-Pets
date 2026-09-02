@@ -140,6 +140,15 @@ describe('animation classes', () => {
     expect(container.querySelector('.anim-faint')).toBeNull();
   });
 
+  it('still renders a fainted sprite when it is animating faint', () => {
+    const state = makeState('a1', 'b1');
+    state.teams[1]!.slots[0]!.party[0]!.fainted = true;
+    const { container } = render(
+      <BattleScene state={state} mySlotId="a1" animatingSlots={new Map([['b1', 'faint']])} />,
+    );
+    expect(container.querySelector('.anim-faint')).not.toBeNull();
+  });
+
   it('applies no animation class when slot is not in animatingSlots', () => {
     const state = makeState('a1', 'b1');
     const { container } = render(

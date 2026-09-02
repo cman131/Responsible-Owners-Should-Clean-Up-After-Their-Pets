@@ -42,9 +42,9 @@ function renderSprite(
   animatingSlots?: Map<string, 'attack' | 'hit' | 'faint'>,
 ) {
   const mon = slot.party[slot.activePokemonIndex];
-  if (!mon || mon.fainted) return null;
-
   const animKind = animatingSlots?.get(slot.slotId);
+  if (!mon || (mon.fainted && animKind !== 'faint')) return null;
+
   let animClassName: string | undefined;
   if (animKind === 'attack') {
     animClassName = role === 'foe' ? 'anim-attack-left' : 'anim-attack-right';

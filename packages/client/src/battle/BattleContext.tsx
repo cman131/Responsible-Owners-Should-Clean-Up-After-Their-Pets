@@ -256,6 +256,9 @@ export function BattleProvider({ mySlotId, initialState, children }: Props) {
       setPendingActionRequest(null);
       setPendingSwitchRequest(null);
       setDisplayHp(new Map());
+      // Cancel any in-flight animation clear timers before resetting state
+      for (const t of animClearTimersRef.current) clearTimeout(t);
+      animClearTimersRef.current.clear();
       setAnimatingSlots(new Map());
     });
 
