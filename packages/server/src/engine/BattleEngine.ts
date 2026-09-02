@@ -44,6 +44,14 @@ type Action = MoveAction | SwitchAction;
 export interface TurnResult {
   newState: BattleState;
   events: TurnResolveEvent[];
+  pivotSlots?: string[];
+  remainingActions?: Record<string, MoveAction | SwitchAction>;
+  remainingSlotOrder?: string[];
+  movedSlotIds?: Set<string>;
+}
+
+interface MoveResult extends TurnResult {
+  pivotSwitch?: boolean;
 }
 
 export class BattleEngine {
@@ -79,6 +87,17 @@ export class BattleEngine {
         const moveResult = this.executeMove(s, slotId, action, movedSlotIds);
         events.push(...moveResult.events);
         s = moveResult.newState;
+
+        if (moveResult.pivotSwitch) {
+          movedSlotIds.add(slotId);
+          const currentIdx = order.indexOf(slotId);
+          const remainingSlotOrder = order.slice(currentIdx + 1);
+          const remainingActions: Record<string, MoveAction | SwitchAction> = {};
+          for (const rId of remainingSlotOrder) {
+            if (actions[rId]) remainingActions[rId] = actions[rId]!;
+          }
+          return { newState: s, events, pivotSlots: [slotId], remainingActions, remainingSlotOrder, movedSlotIds };
+        }
       } else if (action.type === 'switch') {
         const switchResult = this.executeSwitch(s, slotId, action.targetInstanceId);
         events.push(...switchResult.events);
@@ -153,7 +172,7 @@ export class BattleEngine {
     attackerSlotId: string,
     action: MoveAction,
     movedSlotIds: Set<string>,
-  ): TurnResult {
+  ): MoveResult {
     const events: TurnResolveEvent[] = [];
     let s = structuredClone(state);
 
@@ -713,7 +732,9 @@ export class BattleEngine {
           if (volatileEvent) events.push(volatileEvent);
         }
 
-        const postSecs = secs.filter(sec => sec.kind !== 'multihit' && sec.kind !== 'ohko' && sec.kind !== 'charge');
+        const postSecs = secs.filter(sec =>
+          sec.kind !== 'multihit' && sec.kind !== 'ohko' && sec.kind !== 'charge' && sec.kind !== 'pivot'
+        );
         const isSoundMove = move.soundMove === true;
         if (postSecs.length > 0 && !target.fainted && (!targetHasSub || isSoundMove) && !sheerForceActive) {
           events.push(...applySecondaries({
@@ -889,6 +910,20 @@ export class BattleEngine {
     }
 
     attacker.lastMoveId = move.id;
+
+    const hasPivot = secs.some(sec => sec.kind === 'pivot');
+    if (hasPivot && !attacker.fainted) {
+      const attackerSlotForPivot = this.findSlot(s, attackerSlotId);
+      const hasBench = attackerSlotForPivot?.party.some(
+        (p, i) => i !== attackerSlotForPivot.activePokemonIndex && !p.fainted
+      ) ?? false;
+      if (hasBench) {
+        return { newState: s, events, pivotSwitch: true };
+      } else {
+        events.push({ type: 'pivot-skipped', data: { slotId: attackerSlotId } });
+      }
+    }
+
     return { newState: s, events };
   }
 

@@ -234,6 +234,34 @@ describe('Sleep prevents moving', () => {
     expect(newState.teams[0]!.slots[0]!.party[0]!.status).toBeUndefined();
     expect(events.some(e => e.type === 'status-cured')).toBe(true);
   });
+
+  it('status-cured wake-up event includes pokemonName', () => {
+    const state = make1v1State();
+    const p1 = state.teams[0]!.slots[0]!.party[0]!;
+    p1.status = 'slp';
+    p1.volatileStatus = [{ name: 'sleep', counter: 0 }];
+    const engine = new BattleEngine();
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const curedEvt = events.find(e => e.type === 'status-cured' && e.data['status'] === 'slp');
+    expect(curedEvt).toBeDefined();
+    expect(curedEvt!.data['pokemonName']).toBe('Charizard');
+  });
+
+  it('status-applied event for sleep includes pokemonName', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'hypnosis', currentPp: 20, maxPp: 20 };
+    const engine = new BattleEngine();
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const appliedEvt = events.find(e => e.type === 'status-applied' && e.data['status'] === 'slp');
+    expect(appliedEvt).toBeDefined();
+    expect(appliedEvt!.data['pokemonName']).toBe('Charizard');
+  });
 });
 
 describe('Volatile move dispatch', () => {
@@ -1448,5 +1476,43 @@ describe('screens — turn counter + expiry', () => {
 
     expect(newState.field.sideConditions[0]!.reflect).toBe(0);
     expect(events.some(e => e.type === 'screen-ended' && e.data['screen'] === 'reflect')).toBe(true);
+  });
+});
+
+describe('Pivot moves (U-turn / Volt Switch / Flip Turn)', () => {
+  it('resolveTurn returns pivotSlots when attacker has bench', () => {
+    const state = make1v1State();
+    const bench = makePokemon({ instanceId: 'bench-a', nickname: 'Bench' });
+    state.teams[0]!.slots[0]!.party.push(bench);
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'uturn', currentPp: 20, maxPp: 20 };
+
+    const engine = new BattleEngine({ rng: () => 0 });
+    const result = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    expect(result.pivotSlots).toEqual(['slot-a1']);
+    expect(result.remainingSlotOrder).toBeDefined();
+    expect(result.remainingActions).toBeDefined();
+    expect(result.movedSlotIds).toBeDefined();
+    expect(result.events.some((e) => e.type === 'move-used')).toBe(true);
+    expect(result.events.some((e) => e.type === 'damage-dealt')).toBe(true);
+    expect(result.newState.turnNumber).toBe(1);
+  });
+
+  it('emits pivot-skipped when attacker has no bench', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'uturn', currentPp: 20, maxPp: 20 };
+
+    const engine = new BattleEngine({ rng: () => 0 });
+    const result = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    expect(result.pivotSlots).toBeUndefined();
+    expect(result.events.some((e) => e.type === 'pivot-skipped')).toBe(true);
+    expect(result.newState.turnNumber).toBe(2);
   });
 });
