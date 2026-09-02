@@ -45,7 +45,17 @@ function BattleView() {
   }, [actionRequest]);
 
   if (!state) {
-    return <div style={{ padding: 48, textAlign: 'center', color: '#aaa' }}>Waiting for battle to start...</div>;
+    return (
+      <div style={{ position: 'relative', padding: 48, textAlign: 'center', color: '#aaa' }}>
+        <button
+          onClick={handleGoHome}
+          style={{ position: 'absolute', top: 16, left: 16, background: 'none', border: '1px solid #555', color: '#aaa', padding: '6px 14px', borderRadius: 4, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12 }}
+        >
+          ← Home
+        </button>
+        Waiting for battle to start...
+      </div>
+    );
   }
 
   const myTeamIdx = state.teams.findIndex((t) => t.slots.some((s) => s.slotId === mySlotId));

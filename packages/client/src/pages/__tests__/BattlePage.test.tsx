@@ -204,6 +204,16 @@ describe('BattlePage', () => {
     expect(screen.getByRole('button', { name: /home/i })).toBeTruthy();
   });
 
+  it('renders a Home button on the waiting screen when no initial state is provided', () => {
+    render(
+      <MemoryRouter initialEntries={[{ pathname: '/battle', state: null }]}>
+        <BattlePage />
+      </MemoryRouter>
+    );
+    expect(screen.getByRole('button', { name: /home/i })).toBeTruthy();
+    expect(screen.getByText(/waiting for battle/i)).toBeTruthy();
+  });
+
   it('clicking Home emits player:leave and clears sessionStorage.mySlotId', () => {
     sessionStorage.setItem('mySlotId', 'a1');
     renderBattlePage(makeState());
