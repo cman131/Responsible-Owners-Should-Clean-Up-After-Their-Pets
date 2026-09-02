@@ -45,4 +45,14 @@ describe('DataLoader', () => {
     expect(moves.length).toBeGreaterThan(0);
     expect(moves.some((m) => m.id === 'flamethrower')).toBe(true);
   });
+
+  it('getAllItems returns all items from items.json', () => {
+    const loader = new DataLoader();
+    const items = loader.getAllItems();
+    expect(items.length).toBeGreaterThan(0);
+    const sash = items.find((i) => i.id === 'focussash');
+    expect(sash).toBeDefined();
+    expect(sash?.name).toBe('Focus Sash');
+    expect(sash?.isBerry).toBe(false);
+  });
 });

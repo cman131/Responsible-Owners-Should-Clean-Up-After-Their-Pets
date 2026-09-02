@@ -119,7 +119,12 @@ const ITEM_HOOKS: Record<string, ItemHooks> = {
         ? { hpDelta: 0, statBoostDeltas: { spd: 1 }, consume: true }
         : { hpDelta: 0 },
   },
+  'focus-sash': {},
+  'air-balloon': {},
+  'weakness-policy': {},
 };
+
+export const IMPLEMENTED_ITEM_IDS: ReadonlySet<string> = new Set(Object.keys(ITEM_HOOKS));
 
 export function getItemHooks(itemId: string | undefined): ItemHooks {
   if (!itemId) return {};

@@ -69,6 +69,10 @@ export class DataLoader {
     return Array.from(this.moves.values());
   }
 
+  getAllItems(): HeldItem[] {
+    return Array.from(this.items.values());
+  }
+
   getTypeEffectiveness(attackingType: PokemonType, defendingType: PokemonType): number {
     return this.typeChart[attackingType]?.[defendingType] ?? 1;
   }
