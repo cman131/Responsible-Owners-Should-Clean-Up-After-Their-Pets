@@ -109,7 +109,8 @@ Add a `← Home` button at the top-left of the battle screen:
 - Styled to match the existing dark theme
 - On click:
   1. Emit `player:leave` on the socket
-  2. Call `navigate('/')`
+  2. Clear `sessionStorage.mySlotId` (prevents stale slot ID if the player navigates to `/battle` directly later)
+  3. Call `navigate('/')`
 - The socket stays alive through navigation; the server's `player:leave` handler pushes an updated `lobby:battles` directly to this socket, so LobbyPage has fresh data when it registers its listener
 
 No changes to `BattleContext` — its socket cleanup on unmount already works correctly.
