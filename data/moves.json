@@ -3694,7 +3694,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "flipturn"
+    "effectId": "flipturn",
+    "secondaries": [{ "kind": "pivot" }]
   },
   {
     "id": "floatyfall",
@@ -12190,7 +12191,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": true,
-    "effectId": "uturn"
+    "effectId": "uturn",
+    "secondaries": [{ "kind": "pivot" }]
   },
   {
     "id": "upperhand",
@@ -12346,7 +12348,8 @@
     "priority": 0,
     "target": "normal",
     "makesContact": false,
-    "effectId": "voltswitch"
+    "effectId": "voltswitch",
+    "secondaries": [{ "kind": "pivot" }]
   },
   {
     "id": "volttackle",
