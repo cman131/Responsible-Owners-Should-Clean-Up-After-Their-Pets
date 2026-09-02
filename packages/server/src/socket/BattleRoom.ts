@@ -379,14 +379,17 @@ export class BattleRoom {
         if (!slot.isNpc || slot.isSpectator) continue;
         const active = slot.party[slot.activePokemonIndex];
         if (!active || active.fainted) continue;
+        const hasIngrain = active.volatileStatus.some(v => v.name === 'ingrain');
         result.push({
           slotId: slot.slotId,
           displayName: slot.displayName,
           request: {
             slotId: slot.slotId,
             validMoves: this.buildValidMoves(slot.slotId, active),
-            canSwitch: false,
-            switchTargets: [],
+            canSwitch: !hasIngrain && slot.party.some((p, i) => i !== slot.activePokemonIndex && !p.fainted),
+            switchTargets: hasIngrain ? [] : slot.party
+              .filter((p, i) => i !== slot.activePokemonIndex && !p.fainted)
+              .map((p) => p.instanceId),
             canTerastallize: !active.hasTerastallized && !!active.teraType,
           },
         });
