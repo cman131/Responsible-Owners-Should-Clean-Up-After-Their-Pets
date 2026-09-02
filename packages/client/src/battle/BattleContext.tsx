@@ -109,6 +109,7 @@ export function BattleProvider({ mySlotId, initialState, children }: Props) {
   const [animatingSlots, setAnimatingSlots] = useState<Map<string, 'attack' | 'hit' | 'faint'>>(new Map());
   const [eventQueue, _setEventQueue] = useState<PlaybackEntry[]>([]);
   const eventQueueRef = useRef<PlaybackEntry[]>([]);
+  const animClearTimersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
   const [pendingState, setPendingState] = useState<BattleState | null>(null);
   const [pendingActionRequest, setPendingActionRequest] = useState<ActionRequestPayload | null>(null);
   const [pendingSwitchRequest, setPendingSwitchRequest] = useState<SwitchRequestPayload | null>(null);
@@ -119,6 +120,13 @@ export function BattleProvider({ mySlotId, initialState, children }: Props) {
   }
 
   useEffect(() => { stateRef.current = state; }, [state]);
+
+  // Clean up animation clear timers on unmount
+  useEffect(() => {
+    return () => {
+      for (const t of animClearTimersRef.current) clearTimeout(t);
+    };
+  }, []);
 
   // Drain one entry per tick
   useEffect(() => {
@@ -140,9 +148,11 @@ export function BattleProvider({ mySlotId, initialState, children }: Props) {
         const { slotId, kind } = entry.animation;
         setAnimatingSlots((prev) => { const next = new Map(prev); next.set(slotId, kind); return next; });
         const clearDelay = kind === 'attack' ? 350 : kind === 'hit' ? 300 : 600;
-        setTimeout(() => {
+        const clearTimer = setTimeout(() => {
           setAnimatingSlots((prev) => { const next = new Map(prev); next.delete(slotId); return next; });
+          animClearTimersRef.current.delete(clearTimer);
         }, clearDelay);
+        animClearTimersRef.current.add(clearTimer);
       }
       const nextQueue = eventQueue.slice(1);
       eventQueueRef.current = nextQueue;
