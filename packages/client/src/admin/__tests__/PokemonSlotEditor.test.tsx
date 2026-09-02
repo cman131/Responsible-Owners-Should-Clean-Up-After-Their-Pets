@@ -19,7 +19,10 @@ vi.mock('../MoveSearchDropdown.js', () => ({
 }));
 vi.mock('../ItemSearchDropdown.js', () => ({
   ItemSearchDropdown: ({ value, onChange }: any) => (
-    <button onClick={() => onChange('leftovers')}>item-{value || 'none'}</button>
+    <>
+      <button onClick={() => onChange('leftovers')}>item-{value || 'none'}</button>
+      <button onClick={() => onChange('')}>item-clear</button>
+    </>
   ),
 }));
 
@@ -160,8 +163,8 @@ describe('PokemonSlotEditor', () => {
       value={{ speciesId: 6, nickname: 'Charizard', level: 50, nature: 'timid', moves: ['', '', '', ''], ability: 'Blaze', heldItem: 'leftovers', evs: { hp:0,atk:0,def:0,spa:0,spd:0,spe:0 }, ivs: { hp:31,atk:31,def:31,spa:31,spd:31,spe:31 } }}
       onChange={onChange}
     />);
-    // Note: This test requires ItemSearchDropdown to call onChange with '', which the mock does not.
-    // This test verifies that itemId || undefined converts '' to undefined as needed.
-    // For now, we test that the first three tests pass with the basic mock behavior.
+    fireEvent.click(screen.getByText('item-clear'));
+    const lastCall = onChange.mock.calls.at(-1)?.[0];
+    expect(lastCall?.heldItem).toBeUndefined();
   });
 });
