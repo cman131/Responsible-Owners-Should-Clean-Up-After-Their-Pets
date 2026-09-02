@@ -30,6 +30,11 @@ export class BattleRoom {
   private onPlayerActionRequiredCb: PlayerActionRequiredCallback | null = null;
   private readonly data = new DataLoader();
   private awaitingForcedSwitches = new Map<string, 'forced' | 'phased'>();
+  private interruptedTurnContext: {
+    remainingActions: Record<string, MoveAction | SwitchAction>;
+    remainingSlotOrder: string[];
+    movedSlotIds: Set<string>;
+  } | null = null;
 
   constructor({ initialState }: BattleRoomOptions) {
     this.state = structuredClone(initialState);
@@ -416,6 +421,37 @@ export class BattleRoom {
   }
 
   private postSwitchContinuation(): void {
+    if (this.interruptedTurnContext) {
+      const ctx = this.interruptedTurnContext;
+      this.interruptedTurnContext = null;
+
+      const resumeResult = this.engine.resumeTurn(
+        this.state,
+        ctx.remainingSlotOrder,
+        ctx.remainingActions,
+        ctx.movedSlotIds,
+      );
+      this.state = resumeResult.newState;
+      this.processExpFromEvents(resumeResult.events, this.state);
+
+      try {
+        this.onTurnResolvedCb?.(resumeResult.events, this.state);
+      } catch (err) {
+        console.error('[BattleRoom] postSwitchContinuation resumeTurn threw:', err);
+      }
+
+      const newSwitchSlots = this.getPendingSwitchSlots(this.state);
+      if (newSwitchSlots.length > 0) {
+        this.awaitingForcedSwitches = new Map(newSwitchSlots.map((s) => [s.slotId, 'forced' as const]));
+        try {
+          this.onSwitchRequestCb?.(newSwitchSlots);
+        } catch (err) {
+          console.error('[BattleRoom] postSwitchContinuation onSwitchRequestCb threw:', err);
+        }
+        return;
+      }
+    }
+
     const winner = this.checkWinner(this.state);
     if (winner !== null) {
       this.state = { ...this.state, phase: 'ended', winner };
@@ -437,18 +473,51 @@ export class BattleRoom {
     const actions = Object.fromEntries(this.pendingActions);
     this.pendingActions.clear();
 
-    const { newState, events } = this.engine.resolveTurn(this.state, actions);
-    this.state = newState;
+    const result = this.engine.resolveTurn(this.state, actions);
+    this.state = result.newState;
 
-    this.processExpFromEvents(events, newState);
+    this.processExpFromEvents(result.events, result.newState);
 
     try {
-      this.onTurnResolvedCb?.(events, newState);
+      this.onTurnResolvedCb?.(result.events, this.state);
     } catch (err) {
       console.error('[BattleRoom] onTurnResolved callback threw:', err);
     }
 
-    const switchSlots = this.getPendingSwitchSlots(newState);
+    // Pivot interrupt: turn is paused; attacker(s) must switch before the turn resumes
+    if (result.pivotSlots && result.pivotSlots.length > 0) {
+      this.interruptedTurnContext = {
+        remainingActions: result.remainingActions!,
+        remainingSlotOrder: result.remainingSlotOrder!,
+        movedSlotIds: result.movedSlotIds!,
+      };
+
+      const faintSwitchSlots = this.getPendingSwitchSlots(this.state);
+      const pivotSlotSet = new Set(result.pivotSlots);
+
+      const pivotSlotStates: SlotState[] = [];
+      for (const slotId of result.pivotSlots) {
+        const slot = this.findSlot(slotId);
+        if (slot) pivotSlotStates.push(slot);
+      }
+
+      const allSwitchSlots = [
+        ...pivotSlotStates,
+        ...faintSwitchSlots.filter((s) => !pivotSlotSet.has(s.slotId)),
+      ];
+
+      this.awaitingForcedSwitches = new Map(allSwitchSlots.map((s) => [s.slotId, 'forced' as const]));
+
+      try {
+        this.onSwitchRequestCb?.(allSwitchSlots);
+      } catch (err) {
+        console.error('[BattleRoom] onSwitchRequest (pivot) callback threw:', err);
+      }
+      return;
+    }
+
+    // Regular faint-based forced switches
+    const switchSlots = this.getPendingSwitchSlots(result.newState);
     if (switchSlots.length > 0) {
       this.awaitingForcedSwitches = new Map(switchSlots.map((s) => [s.slotId, 'forced' as const]));
       try {
@@ -459,10 +528,10 @@ export class BattleRoom {
       return;
     }
 
-    if (newState.phase === 'ended' && newState.winner !== undefined) {
-      const winningTeam = newState.teams[newState.winner];
+    if (result.newState.phase === 'ended' && result.newState.winner !== undefined) {
+      const winningTeam = result.newState.teams[result.newState.winner];
       try {
-        this.onBattleEndCb?.(winningTeam?.teamId ?? '', newState);
+        this.onBattleEndCb?.(winningTeam?.teamId ?? '', result.newState);
       } catch (err) {
         console.error('[BattleRoom] onBattleEnd callback threw:', err);
       }

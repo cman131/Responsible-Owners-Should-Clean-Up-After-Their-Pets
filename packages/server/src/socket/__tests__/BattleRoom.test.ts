@@ -267,3 +267,34 @@ describe('forced switch correctness', () => {
     expect(events.some(e => e.type === 'pokemon-switched' && e.data['reason'] === 'forced')).toBe(true);
   });
 });
+
+describe('Bug 3 — pivot move integration', () => {
+  it('fires switch request after U-turn then fires action requests after switch submitted', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.isNpc = false;
+    const bench = makePokemon({ instanceId: 'bench-a', nickname: 'Bench' });
+    state.teams[0]!.slots[0]!.party.push(bench);
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'uturn', currentPp: 20, maxPp: 20 };
+    state.teams[1]!.slots[0]!.party[0]!.currentHp = 1000;
+    state.teams[1]!.slots[0]!.party[0]!.maxHp = 1000;
+
+    const room = new BattleRoom({ initialState: state });
+    const switchRequests: unknown[] = [];
+    const npcRequests: unknown[] = [];
+    const playerRequests: unknown[] = [];
+
+    room.onSwitchRequest((slots) => switchRequests.push(slots));
+    room.onNpcActionRequired((slots) => npcRequests.push(slots));
+    room.onPlayerActionRequired((reqs) => playerRequests.push(reqs));
+
+    room.submitAction('slot-a1', { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' });
+    room.submitAction('slot-b1', { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' });
+
+    expect(switchRequests.length).toBeGreaterThan(0);
+
+    room.submitAction('slot-a1', { type: 'switch', targetInstanceId: 'bench-a' });
+
+    expect(npcRequests.length + playerRequests.length).toBeGreaterThan(0);
+    expect(room.getState().turnNumber).toBe(2);
+  });
+});
