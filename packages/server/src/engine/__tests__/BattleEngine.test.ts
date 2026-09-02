@@ -253,7 +253,7 @@ describe('Sleep prevents moving', () => {
   it('status-applied event for sleep includes pokemonName', () => {
     const state = make1v1State();
     state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'hypnosis', currentPp: 20, maxPp: 20 };
-    const engine = new BattleEngine();
+    const engine = new BattleEngine({ rng: () => 0 });
     const { events } = engine.resolveTurn(state, {
       'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },
       'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
@@ -446,7 +446,7 @@ describe('Previously-unimplemented status moves', () => {
   it('Hypnosis puts the target to sleep', () => {
     const state = make1v1State();
     state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'hypnosis', currentPp: 20, maxPp: 20 };
-    const { newState } = new BattleEngine().resolveTurn(state, {
+    const { newState } = new BattleEngine({ rng: () => 0 }).resolveTurn(state, {
       'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },
       'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
     });

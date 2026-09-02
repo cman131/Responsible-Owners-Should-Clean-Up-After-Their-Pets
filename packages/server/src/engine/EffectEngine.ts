@@ -49,7 +49,7 @@ export class EffectEngine {
       if (!entry || (entry.counter ?? 0) === 0) {
         pokemon.volatileStatus = pokemon.volatileStatus.filter(v => v.name !== 'sleep');
         delete pokemon.status;
-        events.push({ type: 'status-cured', data: { slotId, status: 'slp' } });
+        events.push({ type: 'status-cured', data: { slotId, status: 'slp', pokemonName: pokemon.nickname } });
         return { blocked: false, events };
       }
       events.push({ type: 'move-blocked', data: { slotId, pokemonName: pokemon.nickname, reason: 'asleep' } });

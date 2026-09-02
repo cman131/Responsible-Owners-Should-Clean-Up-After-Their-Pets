@@ -30,7 +30,7 @@ export function applyStatus(
     const counter = Math.floor(Math.random() * 3) + 1;
     member.volatileStatus.push({ name: 'sleep', counter });
   }
-  return { type: 'status-applied', data: { slotId, status } };
+  return { type: 'status-applied', data: { slotId, status, pokemonName: member.nickname } };
 }
 
 export function applyStatBoost(
