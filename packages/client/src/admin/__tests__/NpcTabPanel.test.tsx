@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('../../socket.js', () => ({ getSocket: vi.fn() }));
 import { getSocket } from '../../socket.js';
 import { NpcTabPanel } from '../NpcTabPanel.js';
-import type { BattleState, ActionRequestPayload } from '@poke-fighter/shared';
+import type { BattleState, ActionRequestPayload, PartyMember } from '@poke-fighter/shared';
 
 const mockSocket = { emit: vi.fn() };
 beforeEach(() => {
@@ -111,7 +111,7 @@ const makeSwitchableRequest = (slotId: string, legalTargets: string[], switchTar
   canTerastallize: false,
 });
 
-const benchMon = {
+const benchMon: PartyMember = {
   instanceId: 'bench1', speciesId: 7, speciesName: 'squirtle', nickname: 'Squirtle',
   level: 40, currentHp: 100, maxHp: 120,
   stats: { hp: 120, atk: 80, def: 80, spa: 80, spd: 80, spe: 80 },
