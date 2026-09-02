@@ -124,12 +124,12 @@ export function NpcTabPanel({ battleId, npcRequests, state }: Props) {
                   return (
                     <button
                       key={instanceId}
-                      disabled={done}
+                      disabled={!mon || done}
                       onClick={() => submitNpcSwitch(activeRequest.slotId, instanceId)}
                       style={{
                         ...styles.moveBtn,
-                        opacity: done ? 0.4 : 1,
-                        cursor: done ? 'not-allowed' : 'pointer',
+                        opacity: !mon || done ? 0.4 : 1,
+                        cursor: !mon || done ? 'not-allowed' : 'pointer',
                         justifyContent: 'flex-start',
                         gap: 8,
                       }}
