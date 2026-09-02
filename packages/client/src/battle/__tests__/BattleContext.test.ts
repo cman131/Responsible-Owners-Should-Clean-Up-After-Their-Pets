@@ -21,6 +21,7 @@ describe('eventsToPlaybackEntries', () => {
     expect(entries[0]).toEqual({
       text: 'Dealt 30 damage to b1.',
       hpDelta: { slotId: 'b1', delta: 30 },
+      animation: { slotId: 'b1', kind: 'hit' },
       delay: 600,
     });
   });
@@ -34,6 +35,7 @@ describe('eventsToPlaybackEntries', () => {
     expect(entries[0]).toEqual({
       text: 'Dealt 60 damage to b1.',
       hpDelta: { slotId: 'b1', delta: 60 },
+      animation: { slotId: 'b1', kind: 'hit' },
       delay: 600,
     });
     expect(entries[1]).toEqual({ text: "It's super effective!", delay: 300 });
@@ -70,7 +72,11 @@ describe('eventsToPlaybackEntries', () => {
     ];
     const entries = eventsToPlaybackEntries(events);
     expect(entries).toHaveLength(1);
-    expect(entries[0]).toEqual({ text: "b1's Pokémon fainted!", delay: 600 });
+    expect(entries[0]).toEqual({
+      text: "b1's Pokémon fainted!",
+      animation: { slotId: 'b1', kind: 'faint' },
+      delay: 600,
+    });
   });
 
   it('converts sleep wake-up to a 600ms entry', () => {
@@ -142,5 +148,37 @@ describe('eventsToPlaybackEntries', () => {
     expect(entries[0]!.text).toBe('Pikachu used Thunderbolt!');
     expect(entries[1]!.hpDelta).toEqual({ slotId: 'b1', delta: 45 });
     expect(entries[2]!.text).toBe("It's super effective!");
+  });
+
+  it('adds attack animation to move-used entry when attackerSlotId is present', () => {
+    const events: TurnResolveEvent[] = [
+      { type: 'move-used', data: { attackerSlotId: 'a1', attackerName: 'Bulbasaur', moveName: 'Tackle', moveId: 'tackle' } },
+    ];
+    const entries = eventsToPlaybackEntries(events);
+    expect(entries[0]!.animation).toEqual({ slotId: 'a1', kind: 'attack' });
+  });
+
+  it('omits animation on move-used when attackerSlotId is absent', () => {
+    const events: TurnResolveEvent[] = [
+      { type: 'move-used', data: { attackerName: 'Bulbasaur', moveName: 'Tackle' } },
+    ];
+    const entries = eventsToPlaybackEntries(events);
+    expect(entries[0]!.animation).toBeUndefined();
+  });
+
+  it('adds hit animation to damage-dealt entry', () => {
+    const events: TurnResolveEvent[] = [
+      { type: 'damage-dealt', data: { slotId: 'b1', targetSlotId: 'b1', damage: 30, moveId: 'tackle', effectiveness: 1 } },
+    ];
+    const entries = eventsToPlaybackEntries(events);
+    expect(entries[0]!.animation).toEqual({ slotId: 'b1', kind: 'hit' });
+  });
+
+  it('adds faint animation to faint entry', () => {
+    const events: TurnResolveEvent[] = [
+      { type: 'faint', data: { slotId: 'b1' } },
+    ];
+    const entries = eventsToPlaybackEntries(events);
+    expect(entries[0]!.animation).toEqual({ slotId: 'b1', kind: 'faint' });
   });
 });
