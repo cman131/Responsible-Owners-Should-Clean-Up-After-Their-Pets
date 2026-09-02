@@ -15,6 +15,7 @@ export const SecondarySchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('recharge') }),
   z.object({ kind: z.literal('clear-hazards-self') }),
   z.object({ kind: z.literal('break-screens'), screensOnly: z.boolean() }),
+  z.object({ kind: z.literal('pivot') }),
 ]);
 
 export const MoveSchema = z.object({

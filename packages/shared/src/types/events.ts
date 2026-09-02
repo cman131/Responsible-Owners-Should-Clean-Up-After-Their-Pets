@@ -113,7 +113,8 @@ export interface TurnResolveEvent {
     | 'focus-sash'
     | 'item-consumed'
     | 'status-blocked'
-    | 'ability-triggered';
+    | 'ability-triggered'
+    | 'pivot-skipped';
   data: Record<string, unknown>;
 }
 

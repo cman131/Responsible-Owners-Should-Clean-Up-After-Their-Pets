@@ -16,4 +16,5 @@ export type Secondary =
   | { kind: 'charge';      chargeVolatile: string }
   | { kind: 'recharge' }
   | { kind: 'clear-hazards-self' }
-  | { kind: 'break-screens'; screensOnly: boolean };
+  | { kind: 'break-screens'; screensOnly: boolean }
+  | { kind: 'pivot' };
