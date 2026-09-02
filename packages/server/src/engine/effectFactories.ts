@@ -113,7 +113,7 @@ export function setSideCondition(
 ): MoveEffectHandler {
   return (ctx) => {
     const sideIdx = (side === 'ally' ? ctx.userTeamIndex : 1 - ctx.userTeamIndex) as 0 | 1;
-    const currentValue = (ctx.battle.field.sideConditions[sideIdx] as Record<string, unknown>)[key as string];
+    const currentValue = (ctx.battle.field.sideConditions[sideIdx] as any)[key as string];
 
     if (options?.failIfActive && currentValue) {
       return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'already-active' } }] };

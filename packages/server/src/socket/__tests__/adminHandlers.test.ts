@@ -210,7 +210,7 @@ describe('registerAdminHandlers – data:query items', () => {
     expect(socket.emit).toHaveBeenCalledWith('data:results', expect.objectContaining({ resource: 'items' }));
 
     const call = (socket.emit as ReturnType<typeof vi.fn>).mock.calls
-      .find(([event]: [string]) => event === 'data:results');
+      .find(([event]: any[]) => event === 'data:results');
     const payload = call?.[1] as { resource: string; results: HeldItem[] };
     expect(payload.results.length).toBeGreaterThan(0);
     // Every result must be an implemented item (name-normalises to an IMPLEMENTED_ITEM_IDS key)
@@ -224,7 +224,7 @@ describe('registerAdminHandlers – data:query items', () => {
     await socket.trigger('admin:action', { type: 'data:query', data: { resource: 'items', query: 'choice' } });
 
     const call = (socket.emit as ReturnType<typeof vi.fn>).mock.calls
-      .find(([event]: [string]) => event === 'data:results');
+      .find(([event]: any[]) => event === 'data:results');
     const payload = call?.[1] as { resource: string; results: HeldItem[] };
     expect(payload.results.length).toBeGreaterThan(0);
     expect(payload.results.every((i) => i.name.toLowerCase().includes('choice') || i.id.toLowerCase().includes('choice'))).toBe(true);
