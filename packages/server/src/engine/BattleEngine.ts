@@ -84,7 +84,7 @@ export class BattleEngine {
       if (!active || active.fainted) continue;
 
       if (action.type === 'move') {
-        const moveResult = this.executeMove(s, slotId, action, movedSlotIds);
+        const moveResult = this.executeMove(s, slotId, action, movedSlotIds, order);
         events.push(...moveResult.events);
         s = moveResult.newState;
 
@@ -172,6 +172,7 @@ export class BattleEngine {
     attackerSlotId: string,
     action: MoveAction,
     movedSlotIds: Set<string>,
+    order: string[],
   ): MoveResult {
     const events: TurnResolveEvent[] = [];
     let s = structuredClone(state);
@@ -826,6 +827,26 @@ export class BattleEngine {
         }
       }
 
+      // Shell Bell — heal attacker after dealing damage
+      if (totalDamage > 0 && !attacker.fainted) {
+        const sbResult = getItemHooks(attacker.heldItem).onHealAfterAttack?.({
+          holder: attacker,
+          state: s,
+          moveType: effectiveMoveType,
+          basePower: effectiveBasePower,
+          target,
+          isPhysical,
+          damageDealt: totalDamage,
+        });
+        if (sbResult && sbResult.hpDelta > 0) {
+          const healed = Math.min(sbResult.hpDelta, attacker.maxHp - attacker.currentHp);
+          if (healed > 0) {
+            attacker.currentHp += healed;
+            events.push({ type: 'heal', data: { slotId: attackerSlotId, amount: healed, remainingHp: attacker.currentHp } });
+          }
+        }
+      }
+
       // Post-hit item triggers (Rocky Helmet, Air Balloon pop, Weakness Policy)
       if (totalDamage > 0 && !attacker.fainted) {
         // Rocky Helmet
@@ -957,7 +978,7 @@ export class BattleEngine {
       if (!action) continue;
 
       if (action.type === 'move') {
-        const moveResult = this.executeMove(s, slotId, action, movedSlotIds);
+        const moveResult = this.executeMove(s, slotId, action, movedSlotIds, remainingSlotOrder);
         events.push(...moveResult.events);
         s = moveResult.newState;
         // Pivot chaining within a single turn is not supported — ignore pivotSwitch here

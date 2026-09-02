@@ -367,3 +367,37 @@ describe('Big Root — drain boost', () => {
     expect(healWithBR).toBe(Math.floor(healNoBR * 2));
   });
 });
+
+describe('Shell Bell', () => {
+  it('heals attacker floor(damage/8) after dealing damage', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'tackle', currentPp: 35, maxPp: 35 };
+    const p1 = state.teams[0]!.slots[0]!.party[0]!;
+    p1.currentHp = 50; // not at full HP so there is room to heal
+    p1.heldItem = 'shell-bell';
+    state.teams[1]!.slots[0]!.party[0]!.moves[2] = { moveId: 'splash', currentPp: 40, maxPp: 40 };
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    // Tackle deals 17 damage. Shell Bell heals floor(17/8) = 2 HP.
+    expect(newState.teams[0]!.slots[0]!.party[0]!.currentHp).toBe(52);
+  });
+
+  it('does not heal beyond maxHp', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'tackle', currentPp: 35, maxPp: 35 };
+    // p1 already at full HP — shell bell heal (2) is capped to 0 headroom
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'shell-bell';
+    state.teams[1]!.slots[0]!.party[0]!.moves[2] = { moveId: 'splash', currentPp: 40, maxPp: 40 };
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    expect(newState.teams[0]!.slots[0]!.party[0]!.currentHp).toBe(100);
+  });
+});

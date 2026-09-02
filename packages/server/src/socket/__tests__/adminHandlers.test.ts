@@ -219,7 +219,7 @@ describe('registerAdminHandlers – data:query items', () => {
         'life-orb', 'black-sludge', 'eviolite', 'scope-lens', 'razor-claw', 'light-clay',
         'big-root', 'rocky-helmet', 'sitrus-berry', 'lum-berry', 'salac-berry', 'petaya-berry',
         'liechi-berry', 'ganlon-berry', 'apicot-berry', 'focus-sash', 'air-balloon',
-        'weakness-policy',
+        'weakness-policy', 'shell-bell',
       ]).toContain(normByName);
     }
   });

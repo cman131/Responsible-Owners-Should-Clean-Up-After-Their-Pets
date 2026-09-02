@@ -1,4 +1,4 @@
-import type { PartyMember, BattleState, PokemonType, StatBoosts } from '@poke-fighter/shared';
+import type { PartyMember, BattleState, PokemonType, StatBoosts, Move } from '@poke-fighter/shared';
 
 export interface ItemContext {
   holder: PartyMember;
@@ -31,6 +31,8 @@ export interface ItemHooks {
   critStageBonus?: number;
   screenExtension?: number;
   drainMultiplier?: number;
+  onHealAfterAttack?: (ctx: ItemAttackContext & { damageDealt: number }) => { hpDelta: number };
+  onAccuracyModifier?: (ctx: ItemContext & { move: Move; isFirst: boolean }) => number;
 }
 
 const ITEM_HOOKS: Record<string, ItemHooks> = {
@@ -118,6 +120,9 @@ const ITEM_HOOKS: Record<string, ItemHooks> = {
       holder.currentHp <= holder.maxHp / 4
         ? { hpDelta: 0, statBoostDeltas: { spd: 1 }, consume: true }
         : { hpDelta: 0 },
+  },
+  'shell-bell': {
+    onHealAfterAttack: ({ damageDealt }) => ({ hpDelta: Math.floor(damageDealt / 8) }),
   },
   // handled inline in BattleEngine — stubs ensure they appear in IMPLEMENTED_ITEM_IDS
   'focus-sash': {},
