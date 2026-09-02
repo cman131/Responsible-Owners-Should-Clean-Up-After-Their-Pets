@@ -98,6 +98,8 @@ export class BattleRoom {
       } catch (err) {
         console.error('[BattleRoom] onTurnResolvedCb (forced switch) threw:', err);
       }
+      if (this.awaitingForcedSwitches.size > 0) return { ok: true };
+      this.postSwitchContinuation();
       return { ok: true };
     }
 
@@ -411,6 +413,24 @@ export class BattleRoom {
       }
     }
     return result;
+  }
+
+  private postSwitchContinuation(): void {
+    const winner = this.checkWinner(this.state);
+    if (winner !== null) {
+      this.state = { ...this.state, phase: 'ended', winner };
+      const winningTeamId = this.state.teams[winner]?.teamId ?? '';
+      try {
+        this.onBattleEndCb?.(winningTeamId, this.state);
+      } catch (err) {
+        console.error('[BattleRoom] postSwitchContinuation onBattleEndCb threw:', err);
+      }
+      return;
+    }
+    const npcRequests = this.buildNpcRequests();
+    if (npcRequests.length > 0) this.onNpcActionRequiredCb?.(npcRequests);
+    const playerRequests = this.buildPlayerRequests();
+    if (playerRequests.length > 0) this.onPlayerActionRequiredCb?.(playerRequests);
   }
 
   private resolveTurn(): void {

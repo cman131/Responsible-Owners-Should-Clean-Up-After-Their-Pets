@@ -172,6 +172,60 @@ describe('Choice lock enforcement', () => {
   });
 });
 
+describe('Bug 1 — post-forced-switch continuation', () => {
+  it('fires action requests after the only forced switch resolves', () => {
+    const state = make1v1State();
+    // Give slot-a1 a bench pokemon so it can switch
+    const bench = makePokemon({ instanceId: 'bench-mon', nickname: 'Bench' });
+    state.teams[0]!.slots[0]!.party.push(bench);
+
+    const room = new BattleRoom({ initialState: state });
+    const npcRequests: unknown[] = [];
+    const playerRequests: unknown[] = [];
+
+    room.onSwitchRequest(() => {});
+    room.onNpcActionRequired((slots) => npcRequests.push(slots));
+    room.onPlayerActionRequired((reqs) => playerRequests.push(reqs));
+
+    // Force slot-a1's active mon to faint (triggers switch request)
+    room.forceFaint('slot-a1');
+
+    // Submit the forced switch
+    room.submitAction('slot-a1', { type: 'switch', targetInstanceId: 'bench-mon' });
+
+    // After switch resolves, next-turn action requests must fire
+    expect(npcRequests.length + playerRequests.length).toBeGreaterThan(0);
+  });
+
+  it('waits when a second forced switch is still pending', () => {
+    const state = make1v1State();
+    const bench1 = makePokemon({ instanceId: 'bench-a', nickname: 'BenchA' });
+    const bench2 = makePokemon({ instanceId: 'bench-b', nickname: 'BenchB' });
+    state.teams[0]!.slots[0]!.party.push(bench1);
+    state.teams[1]!.slots[0]!.party.push(bench2);
+
+    const room = new BattleRoom({ initialState: state });
+    const npcRequests: unknown[] = [];
+    const playerRequests: unknown[] = [];
+
+    room.onSwitchRequest(() => {});
+    room.onNpcActionRequired((slots) => npcRequests.push(slots));
+    room.onPlayerActionRequired((reqs) => playerRequests.push(reqs));
+
+    // Both active mons faint
+    room.forceFaint('slot-a1');
+    room.forceFaint('slot-b1');
+
+    const countBefore = npcRequests.length + playerRequests.length;
+
+    // Only submit one of the two required switches
+    room.submitAction('slot-a1', { type: 'switch', targetInstanceId: 'bench-a' });
+
+    // Still waiting on slot-b1 — must not fire action requests yet
+    expect(npcRequests.length + playerRequests.length).toBe(countBefore);
+  });
+});
+
 describe('forced switch correctness', () => {
   function makeStateWithBench() {
     const state = make1v1State();
