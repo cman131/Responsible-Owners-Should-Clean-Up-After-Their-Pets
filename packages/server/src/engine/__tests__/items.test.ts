@@ -1,8 +1,24 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { BattleEngine } from '../BattleEngine.js';
+import { IMPLEMENTED_ITEM_IDS } from '../items.js';
 import { make1v1State } from './fixtures.js';
 
 afterEach(() => { vi.restoreAllMocks(); });
+
+describe('IMPLEMENTED_ITEM_IDS', () => {
+  it('contains expected hyphenated item keys', () => {
+    expect(IMPLEMENTED_ITEM_IDS.has('leftovers')).toBe(true);
+    expect(IMPLEMENTED_ITEM_IDS.has('choice-band')).toBe(true);
+    expect(IMPLEMENTED_ITEM_IDS.has('focus-sash')).toBe(true);
+    expect(IMPLEMENTED_ITEM_IDS.has('sitrus-berry')).toBe(true);
+  });
+
+  it('does not contain camelCase ids (those belong to items.json, not ITEM_HOOKS)', () => {
+    expect(IMPLEMENTED_ITEM_IDS.has('focussash')).toBe(false);
+    expect(IMPLEMENTED_ITEM_IDS.has('choiceband')).toBe(false);
+    expect(IMPLEMENTED_ITEM_IDS.has('sitrusberry')).toBe(false);
+  });
+});
 
 describe('Focus Sash', () => {
   it('survives OHKO at 1 HP when at full HP', () => {

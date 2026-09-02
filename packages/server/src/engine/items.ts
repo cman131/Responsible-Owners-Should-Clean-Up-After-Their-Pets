@@ -119,6 +119,7 @@ const ITEM_HOOKS: Record<string, ItemHooks> = {
         ? { hpDelta: 0, statBoostDeltas: { spd: 1 }, consume: true }
         : { hpDelta: 0 },
   },
+  // handled inline in BattleEngine — stubs ensure they appear in IMPLEMENTED_ITEM_IDS
   'focus-sash': {},
   'air-balloon': {},
   'weakness-policy': {},
