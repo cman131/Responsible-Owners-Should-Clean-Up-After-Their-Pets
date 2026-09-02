@@ -97,3 +97,93 @@ describe('NpcTabPanel', () => {
     expect(container.firstChild).toBeNull();
   });
 });
+
+const makeSwitchableRequest = (slotId: string, legalTargets: string[], switchTargets: string[]): ActionRequestPayload => ({
+  slotId,
+  validMoves: [
+    { index: 0, moveId: 'surf', pp: 15, disabled: false, targetType: 'normal', legalTargets },
+    { index: 1, moveId: 'icebeam', pp: 10, disabled: false, targetType: 'normal', legalTargets },
+    { index: 2, moveId: 'blizzard', pp: 5, disabled: false, targetType: 'allAdjacentFoes', legalTargets },
+    { index: 3, moveId: 'flash', pp: 20, disabled: false, targetType: 'normal', legalTargets },
+  ],
+  canSwitch: true,
+  switchTargets,
+  canTerastallize: false,
+});
+
+const benchMon = {
+  instanceId: 'bench1', speciesId: 7, speciesName: 'squirtle', nickname: 'Squirtle',
+  level: 40, currentHp: 100, maxHp: 120,
+  stats: { hp: 120, atk: 80, def: 80, spa: 80, spd: 80, spe: 80 },
+  ability: 'torrent',
+  moves: [
+    { moveId: 'watergun', currentPp: 25, maxPp: 25 },
+    { moveId: 'tackle', currentPp: 35, maxPp: 35 },
+    { moveId: 'tail-whip', currentPp: 30, maxPp: 30 },
+    { moveId: 'bubble', currentPp: 30, maxPp: 30 },
+  ],
+  volatileStatus: [], statBoosts: { atk: 0, def: 0, spa: 0, spd: 0, spe: 0, accuracy: 0, evasion: 0 },
+  hasTerastallized: false, fainted: false, expTotal: 0,
+};
+
+const stateWithBench: BattleState = {
+  ...state,
+  teams: [
+    state.teams[0]!,
+    {
+      teamId: 'team-b',
+      slots: [
+        { ...state.teams[1]!.slots[0]!, party: [state.teams[1]!.slots[0]!.party[0]!, benchMon] },
+        state.teams[1]!.slots[1]!,
+      ],
+    },
+  ],
+};
+
+describe('NpcTabPanel — voluntary switch', () => {
+  it('shows SWITCH POKÉMON button when canSwitch is true and moves are available', () => {
+    const requests = [{ slotId: 'b1', displayName: 'Blastoise', request: makeSwitchableRequest('b1', ['a1'], ['bench1']) }];
+    render(<NpcTabPanel battleId="test" npcRequests={requests} state={stateWithBench} />);
+    expect(screen.getByText('SWITCH POKÉMON')).toBeTruthy();
+  });
+
+  it('clicking SWITCH POKÉMON shows bench list and Cancel button', () => {
+    const requests = [{ slotId: 'b1', displayName: 'Blastoise', request: makeSwitchableRequest('b1', ['a1'], ['bench1']) }];
+    render(<NpcTabPanel battleId="test" npcRequests={requests} state={stateWithBench} />);
+    fireEvent.click(screen.getByText('SWITCH POKÉMON'));
+    expect(screen.getByText('Squirtle')).toBeTruthy();
+    expect(screen.getByText('Cancel')).toBeTruthy();
+    expect(screen.queryByText('surf')).toBeNull();
+  });
+
+  it('clicking a bench Pokémon submits the switch action and marks slot submitted', () => {
+    const requests = [{ slotId: 'b1', displayName: 'Blastoise', request: makeSwitchableRequest('b1', ['a1'], ['bench1']) }];
+    render(<NpcTabPanel battleId="test" npcRequests={requests} state={stateWithBench} />);
+    fireEvent.click(screen.getByText('SWITCH POKÉMON'));
+    fireEvent.click(screen.getByText('Squirtle'));
+    expect(mockSocket.emit).toHaveBeenCalledWith('admin:action', {
+      type: 'npc-action',
+      data: { battleId: 'test', slotId: 'b1', action: { type: 'switch', targetInstanceId: 'bench1' } },
+    });
+    expect(screen.getByText('Blastoise ✓')).toBeTruthy();
+  });
+
+  it('clicking Cancel returns to the move grid without submitting', () => {
+    const requests = [{ slotId: 'b1', displayName: 'Blastoise', request: makeSwitchableRequest('b1', ['a1'], ['bench1']) }];
+    render(<NpcTabPanel battleId="test" npcRequests={requests} state={stateWithBench} />);
+    fireEvent.click(screen.getByText('SWITCH POKÉMON'));
+    fireEvent.click(screen.getByText('Cancel'));
+    expect(screen.getByText('surf')).toBeTruthy();
+    expect(mockSocket.emit).not.toHaveBeenCalled();
+  });
+
+  it('forced switch (no valid moves, canSwitch true) shows no Cancel button', () => {
+    const forcedRequest: ActionRequestPayload = {
+      slotId: 'b1', validMoves: [], canSwitch: true, switchTargets: ['bench1'], canTerastallize: false,
+    };
+    const requests = [{ slotId: 'b1', displayName: 'Blastoise', request: forcedRequest }];
+    render(<NpcTabPanel battleId="test" npcRequests={requests} state={stateWithBench} />);
+    expect(screen.getByText('Squirtle')).toBeTruthy();
+    expect(screen.queryByText('Cancel')).toBeNull();
+  });
+});
