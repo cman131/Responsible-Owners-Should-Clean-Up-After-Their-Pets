@@ -402,3 +402,199 @@ describe('Shell Bell', () => {
     expect(newState.teams[0]!.slots[0]!.party[0]!.currentHp).toBe(100);
   });
 });
+
+describe('Wide Lens', () => {
+  it('boosts accuracy ×1.1 — willowisp (85%) hits at rng=0.88 when holder has Wide Lens', () => {
+    // rng=0.88: 88 >= 85 → miss without Wide Lens; floor(85*1.1)=93, 88 < 93 → hit with Wide Lens
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'willowisp', currentPp: 15, maxPp: 15 };
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'wide-lens';
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    p2.speciesId = 1; // Bulbasaur (Grass/Poison) — not immune to burn
+    p2.ability = 'overgrow';
+    const engine = new BattleEngine({ rng: () => 0.88 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.status).toBe('brn');
+  });
+
+  it('without Wide Lens — willowisp misses at rng=0.88', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'willowisp', currentPp: 15, maxPp: 15 };
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    p2.speciesId = 1;
+    p2.ability = 'overgrow';
+    const engine = new BattleEngine({ rng: () => 0.88 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.status).toBeUndefined();
+  });
+});
+
+describe('Zoom Lens', () => {
+  it('boosts accuracy when holder moves second — willowisp hits at rng=0.88', () => {
+    // p2 (spe=80) moves after p1 (spe=100) → isFirst=false → Zoom Lens activates
+    // floor(85*1.2)=102 → capped to 100 → always hits at rng=0.88
+    const state = make1v1State();
+    const p1 = state.teams[0]!.slots[0]!.party[0]!;
+    p1.speciesId = 1; // Bulbasaur — not immune to burn
+    p1.ability = 'overgrow';
+    // p2 uses willowisp (move index 3), holds Zoom Lens
+    state.teams[1]!.slots[0]!.party[0]!.heldItem = 'zoom-lens';
+    // p1 uses roost (move index 2) — no accuracy roll involved for its action
+    const engine = new BattleEngine({ rng: () => 0.88 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 2 },              // roost — self-target, no accuracy roll
+      'slot-b1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-a1' }, // willowisp
+    });
+    expect(newState.teams[0]!.slots[0]!.party[0]!.status).toBe('brn');
+  });
+
+  it('does not boost accuracy when holder moves first', () => {
+    // p1 (spe=100) moves before p2 (spe=80) → isFirst=true → Zoom Lens does not activate
+    // 85% accuracy, rng=0.88: 88 >= 85 → miss
+    const state = make1v1State();
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    p2.speciesId = 1; // not immune to burn
+    p2.ability = 'overgrow';
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'willowisp', currentPp: 15, maxPp: 15 };
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'zoom-lens';
+    const engine = new BattleEngine({ rng: () => 0.88 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 2 }, // roost
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.status).toBeUndefined();
+  });
+});
+
+describe('Bright Powder', () => {
+  it('reduces attacker accuracy ×0.9 — willowisp (85%) misses at rng=0.78 when defender holds it', () => {
+    // floor(85*0.9)=76, rng=0.78: 78 >= 76 → MISS; without Bright Powder: 78 < 85 → hit
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'willowisp', currentPp: 15, maxPp: 15 };
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    p2.speciesId = 1; // not immune to burn
+    p2.ability = 'overgrow';
+    p2.heldItem = 'bright-powder';
+    const engine = new BattleEngine({ rng: () => 0.78 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.status).toBeUndefined();
+  });
+
+  it('without Bright Powder — willowisp hits at rng=0.78', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'willowisp', currentPp: 15, maxPp: 15 };
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    p2.speciesId = 1;
+    p2.ability = 'overgrow';
+    const engine = new BattleEngine({ rng: () => 0.78 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.status).toBe('brn');
+  });
+});
+
+describe('Charcoal', () => {
+  it('boosts Fire move by ×1.2', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    const p1 = state.teams[0]!.slots[0]!.party[0]!;
+    p1.heldItem = 'charcoal';
+    p1.moves[0] = { moveId: 'ember', currentPp: 25, maxPp: 25 }; // Fire move
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 1 },
+    });
+    // damage with charcoal should be more than without
+    const state2 = make1v1State();
+    state2.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'ember', currentPp: 25, maxPp: 25 };
+    const engine2 = new BattleEngine({ rng: () => 0.5 });
+    const { newState: newState2 } = engine2.resolveTurn(state2, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 1 },
+    });
+    const hpWithCharcoal = newState.teams[1]!.slots[0]!.party[0]!.currentHp;
+    const hpWithout = newState2.teams[1]!.slots[0]!.party[0]!.currentHp;
+    expect(hpWithCharcoal).toBeLessThan(hpWithout);
+  });
+
+  it('does not boost Water moves', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    const p1 = state.teams[0]!.slots[0]!.party[0]!;
+    p1.heldItem = 'charcoal';
+    p1.moves[0] = { moveId: 'watergun', currentPp: 25, maxPp: 25 }; // Water move
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 1 },
+    });
+    const state2 = make1v1State();
+    state2.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'watergun', currentPp: 25, maxPp: 25 };
+    const engine2 = new BattleEngine({ rng: () => 0.5 });
+    const { newState: newState2 } = engine2.resolveTurn(state2, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 1 },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.currentHp).toBe(newState2.teams[1]!.slots[0]!.party[0]!.currentHp);
+  });
+});
+
+describe('Expert Belt', () => {
+  it('+20% on super-effective hit', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    // Ember (Fire) vs Grass type → ×2 effective
+    const state = make1v1State();
+    const p1 = state.teams[0]!.slots[0]!.party[0]!;
+    p1.heldItem = 'expert-belt';
+    p1.moves[0] = { moveId: 'ember', currentPp: 25, maxPp: 25 };
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    p2.speciesId = 1; // Bulbasaur: Grass/Poison
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 1 },
+    });
+    const state2 = make1v1State();
+    state2.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'ember', currentPp: 25, maxPp: 25 };
+    state2.teams[1]!.slots[0]!.party[0]!.speciesId = 1;
+    const engine2 = new BattleEngine({ rng: () => 0.5 });
+    const { newState: newState2 } = engine2.resolveTurn(state2, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 1 },
+    });
+    const hpWithBelt = newState.teams[1]!.slots[0]!.party[0]!.currentHp;
+    const hpWithout = newState2.teams[1]!.slots[0]!.party[0]!.currentHp;
+    expect(hpWithBelt).toBeLessThan(hpWithout);
+  });
+
+  it('no boost on neutral hit', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'expert-belt';
+    // tackle (Normal) vs default pokemon → neutral
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 1 },
+    });
+    const state2 = make1v1State();
+    const engine2 = new BattleEngine({ rng: () => 0.5 });
+    const { newState: newState2 } = engine2.resolveTurn(state2, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 1 },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.currentHp).toBe(newState2.teams[1]!.slots[0]!.party[0]!.currentHp);
+  });
+});

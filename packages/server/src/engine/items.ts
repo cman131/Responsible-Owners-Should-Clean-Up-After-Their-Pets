@@ -10,6 +10,7 @@ export interface ItemAttackContext extends ItemContext {
   basePower: number;
   target: PartyMember;
   isPhysical: boolean;
+  effectiveness?: number;
 }
 
 export interface ItemHooks {
@@ -124,10 +125,40 @@ const ITEM_HOOKS: Record<string, ItemHooks> = {
   'shell-bell': {
     onHealAfterAttack: ({ damageDealt }) => ({ hpDelta: Math.floor(damageDealt / 8) }),
   },
+  'wide-lens': {
+    onAccuracyModifier: () => 1.1,
+  },
+  'zoom-lens': {
+    onAccuracyModifier: ({ isFirst }) => isFirst ? 1 : 1.2,
+  },
+  'bright-powder': {
+    onAccuracyModifier: () => 0.9,
+  },
   // handled inline in BattleEngine — stubs ensure they appear in IMPLEMENTED_ITEM_IDS
   'focus-sash': {},
   'air-balloon': {},
   'weakness-policy': {},
+  // Type-boosting items
+  'charcoal': { onAttackerModifier: ({ moveType }) => moveType === 'Fire' ? 1.2 : 1 },
+  'mystic-water': { onAttackerModifier: ({ moveType }) => moveType === 'Water' ? 1.2 : 1 },
+  'miracle-seed': { onAttackerModifier: ({ moveType }) => moveType === 'Grass' ? 1.2 : 1 },
+  'magnet': { onAttackerModifier: ({ moveType }) => moveType === 'Electric' ? 1.2 : 1 },
+  'never-melt-ice': { onAttackerModifier: ({ moveType }) => moveType === 'Ice' ? 1.2 : 1 },
+  'twisted-spoon': { onAttackerModifier: ({ moveType }) => moveType === 'Psychic' ? 1.2 : 1 },
+  'black-belt': { onAttackerModifier: ({ moveType }) => moveType === 'Fighting' ? 1.2 : 1 },
+  'poison-barb': { onAttackerModifier: ({ moveType }) => moveType === 'Poison' ? 1.2 : 1 },
+  'soft-sand': { onAttackerModifier: ({ moveType }) => moveType === 'Ground' ? 1.2 : 1 },
+  'sharp-beak': { onAttackerModifier: ({ moveType }) => moveType === 'Flying' ? 1.2 : 1 },
+  'silver-powder': { onAttackerModifier: ({ moveType }) => moveType === 'Bug' ? 1.2 : 1 },
+  'hard-stone': { onAttackerModifier: ({ moveType }) => moveType === 'Rock' ? 1.2 : 1 },
+  'spell-tag': { onAttackerModifier: ({ moveType }) => moveType === 'Ghost' ? 1.2 : 1 },
+  'dragon-fang': { onAttackerModifier: ({ moveType }) => moveType === 'Dragon' ? 1.2 : 1 },
+  'black-glasses': { onAttackerModifier: ({ moveType }) => moveType === 'Dark' ? 1.2 : 1 },
+  'metal-coat': { onAttackerModifier: ({ moveType }) => moveType === 'Steel' ? 1.2 : 1 },
+  'silk-scarf': { onAttackerModifier: ({ moveType }) => moveType === 'Normal' ? 1.2 : 1 },
+  'fairy-feather': { onAttackerModifier: ({ moveType }) => moveType === 'Fairy' ? 1.2 : 1 },
+  // Damage modifier items
+  'expert-belt': { onDamageModifier: ({ effectiveness }) => effectiveness !== undefined && effectiveness > 1 ? 1.2 : 1 },
 };
 
 export const IMPLEMENTED_ITEM_IDS: ReadonlySet<string> = new Set(Object.keys(ITEM_HOOKS));

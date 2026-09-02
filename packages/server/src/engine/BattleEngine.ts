@@ -287,6 +287,33 @@ export class BattleEngine {
         return { newState: s, events };
       }
 
+      // Accuracy check for status moves (e.g. Will-O-Wisp, Thunder Wave)
+      {
+        const primaryTargetSlotId = filteredSlotIds[0] ?? '';
+        let statusHitChance: number | 'always' = computeHitChance(move.accuracy, attacker.statBoosts.accuracy, 0);
+        if (typeof statusHitChance === 'number') {
+          const isFirst = order.indexOf(attackerSlotId) < order.indexOf(primaryTargetSlotId);
+          const attItemMod = getItemHooks(attacker.heldItem).onAccuracyModifier?.({
+            holder: attacker, state: s, move, isFirst,
+          });
+          if (attItemMod !== undefined) statusHitChance = Math.min(100, Math.floor(statusHitChance * attItemMod));
+          if (filteredSlotIds.length === 1) {
+            const tSlot = this.findSlot(s, primaryTargetSlotId);
+            const tMon = tSlot?.party[tSlot.activePokemonIndex];
+            if (tMon) {
+              const defItemMod = getItemHooks(tMon.heldItem).onAccuracyModifier?.({
+                holder: tMon, state: s, move, isFirst,
+              });
+              if (defItemMod !== undefined) statusHitChance = Math.min(100, Math.floor(statusHitChance * defItemMod));
+            }
+          }
+          if (this.rng() * 100 >= statusHitChance) {
+            events.push({ type: 'miss', data: { attackerSlotId, moveId: move.id } });
+            return { newState: s, events };
+          }
+        }
+      }
+
       const ctx: MoveContext = {
         battle: s,
         user: attacker,
@@ -334,6 +361,25 @@ export class BattleEngine {
       // Gravity boosts all move accuracy by 5/3
       if (s.field.gravity > 0 && hitChance !== 'always') {
         hitChance = Math.min(100, Math.floor((hitChance as number) * 5 / 3));
+      }
+      // Item-based accuracy modifiers (Wide Lens, Zoom Lens, Bright Powder)
+      if (typeof hitChance === 'number') {
+        const primaryTargetSlotId = targetSlotIds[0] ?? '';
+        const isFirst = order.indexOf(attackerSlotId) < order.indexOf(primaryTargetSlotId);
+        const attItemMod = getItemHooks(attacker.heldItem).onAccuracyModifier?.({
+          holder: attacker, state: s, move, isFirst,
+        });
+        if (attItemMod !== undefined) hitChance = Math.min(100, Math.floor(hitChance * attItemMod));
+        if (targetSlotIds.length === 1) {
+          const tSlot = this.findSlot(s, primaryTargetSlotId);
+          const tMon = tSlot?.party[tSlot.activePokemonIndex];
+          if (tMon) {
+            const defItemMod = getItemHooks(tMon.heldItem).onAccuracyModifier?.({
+              holder: tMon, state: s, move, isFirst,
+            });
+            if (defItemMod !== undefined) hitChance = Math.min(100, Math.floor(hitChance * defItemMod));
+          }
+        }
       }
       if (hitChance !== 'always' && this.rng() * 100 >= hitChance) {
         events.push({ type: 'miss', data: { attackerSlotId, moveId: move.id } });
@@ -658,7 +704,7 @@ export class BattleEngine {
         let finalDamage = damage;
         const abilityDmgMod = abilityHooks.onDamageModifier?.({ user: attacker, state: s, moveType: effectiveMoveType, basePower: effectiveBasePower, target });
         if (abilityDmgMod !== undefined) finalDamage = Math.floor(finalDamage * abilityDmgMod);
-        const itemDmgMod = itemHooks.onDamageModifier?.({ holder: attacker, state: s, moveType: effectiveMoveType, basePower: effectiveBasePower, target, isPhysical });
+        const itemDmgMod = itemHooks.onDamageModifier?.({ holder: attacker, state: s, moveType: effectiveMoveType, basePower: effectiveBasePower, target, isPhysical, effectiveness });
         if (itemDmgMod !== undefined) finalDamage = Math.floor(finalDamage * itemDmgMod);
 
         const subEntry = target.volatileStatus.find(v => v.name === 'substitute');
