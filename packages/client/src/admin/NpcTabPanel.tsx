@@ -91,6 +91,35 @@ export function NpcTabPanel({ battleId, npcRequests, state }: Props) {
 
   const activeRequest = npcRequests.find((r) => r.slotId === activeTab);
 
+  function renderBenchList(slotId: string, onSelect: (instanceId: string) => void) {
+    const req = npcRequests.find((r) => r.slotId === slotId);
+    if (!req) return null;
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {req.request.switchTargets.map((instanceId) => {
+          const mon = getBenchMon(slotId, instanceId);
+          const done = submitted.has(slotId);
+          return (
+            <button
+              key={instanceId}
+              disabled={!mon || done}
+              onClick={() => onSelect(instanceId)}
+              style={{ ...styles.moveBtn, opacity: !mon || done ? 0.4 : 1, cursor: !mon || done ? 'not-allowed' : 'pointer', justifyContent: 'flex-start', gap: 8 }}
+            >
+              <span style={{ fontSize: 11 }}>{mon?.nickname ?? instanceId}</span>
+              {mon && (
+                <>
+                  <span style={{ color: '#aaa', fontSize: 10 }}>Lv.{mon.level}</span>
+                  <span style={{ color: '#aaa', fontSize: 10 }}>{mon.currentHp}/{mon.maxHp} HP</span>
+                </>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
   return (
     <div style={styles.panel}>
       <div style={styles.header}>NPC ACTIONS — {submitted.size}/{npcRequests.length} submitted</div>
@@ -99,7 +128,7 @@ export function NpcTabPanel({ battleId, npcRequests, state }: Props) {
         {npcRequests.map((r) => (
           <button
             key={r.slotId}
-            onClick={() => setActiveTab(r.slotId)}
+            onClick={() => { setActiveTab(r.slotId); setSwitchingSlotId(null); }}
             style={{
               ...styles.tab,
               background: activeTab === r.slotId ? '#e74c3c' : '#1a1a2e',
@@ -117,28 +146,7 @@ export function NpcTabPanel({ battleId, npcRequests, state }: Props) {
           {switchingSlotId === activeRequest.slotId ? (
             <div>
               <div style={{ color: '#27ae60', fontSize: 11, letterSpacing: 1, marginBottom: 8 }}>SWITCH POKÉMON</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {activeRequest.request.switchTargets.map((instanceId) => {
-                  const mon = getBenchMon(activeRequest.slotId, instanceId);
-                  const done = submitted.has(activeRequest.slotId);
-                  return (
-                    <button
-                      key={instanceId}
-                      disabled={!mon || done}
-                      onClick={() => { submitNpcSwitch(activeRequest.slotId, instanceId); setSwitchingSlotId(null); }}
-                      style={{ ...styles.moveBtn, opacity: !mon || done ? 0.4 : 1, cursor: !mon || done ? 'not-allowed' : 'pointer', justifyContent: 'flex-start', gap: 8 }}
-                    >
-                      <span style={{ fontSize: 11 }}>{mon?.nickname ?? instanceId}</span>
-                      {mon && (
-                        <>
-                          <span style={{ color: '#aaa', fontSize: 10 }}>Lv.{mon.level}</span>
-                          <span style={{ color: '#aaa', fontSize: 10 }}>{mon.currentHp}/{mon.maxHp} HP</span>
-                        </>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+              {renderBenchList(activeRequest.slotId, (instanceId) => { submitNpcSwitch(activeRequest.slotId, instanceId); setSwitchingSlotId(null); })}
               <button onClick={() => setSwitchingSlotId(null)} style={{ ...styles.cancelBtn, marginTop: 8 }}>Cancel</button>
             </div>
           ) : activeRequest.request.validMoves.length === 0 && activeRequest.request.canSwitch ? (
@@ -146,34 +154,7 @@ export function NpcTabPanel({ battleId, npcRequests, state }: Props) {
               <div style={{ color: '#e74c3c', fontSize: 11, letterSpacing: 1, marginBottom: 8 }}>
                 SWITCH REQUIRED
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {activeRequest.request.switchTargets.map((instanceId) => {
-                  const mon = getBenchMon(activeRequest.slotId, instanceId);
-                  const done = submitted.has(activeRequest.slotId);
-                  return (
-                    <button
-                      key={instanceId}
-                      disabled={!mon || done}
-                      onClick={() => submitNpcSwitch(activeRequest.slotId, instanceId)}
-                      style={{
-                        ...styles.moveBtn,
-                        opacity: !mon || done ? 0.4 : 1,
-                        cursor: !mon || done ? 'not-allowed' : 'pointer',
-                        justifyContent: 'flex-start',
-                        gap: 8,
-                      }}
-                    >
-                      <span style={{ fontSize: 11 }}>{mon?.nickname ?? instanceId}</span>
-                      {mon && (
-                        <>
-                          <span style={{ color: '#aaa', fontSize: 10 }}>Lv.{mon.level}</span>
-                          <span style={{ color: '#aaa', fontSize: 10 }}>{mon.currentHp}/{mon.maxHp} HP</span>
-                        </>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+              {renderBenchList(activeRequest.slotId, (instanceId) => submitNpcSwitch(activeRequest.slotId, instanceId))}
             </div>
           ) : (
             <>
