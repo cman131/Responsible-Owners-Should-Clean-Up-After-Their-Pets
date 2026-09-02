@@ -20,11 +20,13 @@ export function NpcTabPanel({ battleId, npcRequests, state }: Props) {
   const [submitted, setSubmitted] = useState<Set<string>>(new Set());
   const [pendingMove, setPendingMove] = useState<{ slotId: string; moveIndex: 0 | 1 | 2 | 3 } | null>(null);
   const [selectedTarget, setSelectedTarget] = useState<string>('');
+  const [switchingSlotId, setSwitchingSlotId] = useState<string | null>(null);
 
   useEffect(() => {
     setSubmitted(new Set());
     setPendingMove(null);
     setSelectedTarget('');
+    setSwitchingSlotId(null);
     if (npcRequests.length > 0) setActiveTab(npcRequests[0]!.slotId);
   }, [npcRequests]);
 
@@ -112,7 +114,34 @@ export function NpcTabPanel({ battleId, npcRequests, state }: Props) {
 
       {activeRequest && (
         <div style={styles.tabBody}>
-          {activeRequest.request.validMoves.length === 0 && activeRequest.request.canSwitch ? (
+          {switchingSlotId === activeRequest.slotId ? (
+            <div>
+              <div style={{ color: '#27ae60', fontSize: 11, letterSpacing: 1, marginBottom: 8 }}>SWITCH POKÉMON</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {activeRequest.request.switchTargets.map((instanceId) => {
+                  const mon = getBenchMon(activeRequest.slotId, instanceId);
+                  const done = submitted.has(activeRequest.slotId);
+                  return (
+                    <button
+                      key={instanceId}
+                      disabled={!mon || done}
+                      onClick={() => { submitNpcSwitch(activeRequest.slotId, instanceId); setSwitchingSlotId(null); }}
+                      style={{ ...styles.moveBtn, opacity: !mon || done ? 0.4 : 1, cursor: !mon || done ? 'not-allowed' : 'pointer', justifyContent: 'flex-start', gap: 8 }}
+                    >
+                      <span style={{ fontSize: 11 }}>{mon?.nickname ?? instanceId}</span>
+                      {mon && (
+                        <>
+                          <span style={{ color: '#aaa', fontSize: 10 }}>Lv.{mon.level}</span>
+                          <span style={{ color: '#aaa', fontSize: 10 }}>{mon.currentHp}/{mon.maxHp} HP</span>
+                        </>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              <button onClick={() => setSwitchingSlotId(null)} style={{ ...styles.cancelBtn, marginTop: 8 }}>Cancel</button>
+            </div>
+          ) : activeRequest.request.validMoves.length === 0 && activeRequest.request.canSwitch ? (
             <div>
               <div style={{ color: '#e74c3c', fontSize: 11, letterSpacing: 1, marginBottom: 8 }}>
                 SWITCH REQUIRED
@@ -191,6 +220,16 @@ export function NpcTabPanel({ battleId, npcRequests, state }: Props) {
                   );
                 })}
               </div>
+
+              {/* Voluntary switch button */}
+              {activeRequest.request.canSwitch && activeRequest.request.switchTargets.length > 0 && !submitted.has(activeRequest.slotId) && (
+                <button
+                  onClick={() => setSwitchingSlotId(activeRequest.slotId)}
+                  style={{ ...styles.moveBtn, background: '#1a3a1a', borderColor: '#27ae60', marginTop: 4, width: '100%', justifyContent: 'center' }}
+                >
+                  SWITCH POKÉMON
+                </button>
+              )}
 
               {/* Target selector — multi-target only */}
               {pendingMove?.slotId === activeRequest.slotId && (() => {
