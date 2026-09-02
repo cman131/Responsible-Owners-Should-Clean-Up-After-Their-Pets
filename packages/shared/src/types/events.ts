@@ -166,7 +166,11 @@ export interface BattleSummary {
 export interface BattleJoinOption {
   battleId: string;
   label: string;
-  slots: Array<{ slotId: string; displayName: string }>;
+  slots: Array<{
+    slotId: string;
+    displayName: string;
+    status: 'available' | 'reconnectable' | 'occupied';
+  }>;
 }
 
 export interface SlotStatusPayload {
@@ -208,4 +212,5 @@ export interface ClientToServerEvents {
   'action:resync': () => void;
   'switch:submit': (payload: SwitchSubmitPayload) => void;
   'admin:action': (payload: AdminActionPayload) => void;
+  'player:leave': () => void;
 }
