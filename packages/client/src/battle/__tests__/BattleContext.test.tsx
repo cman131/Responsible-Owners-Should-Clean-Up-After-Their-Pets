@@ -39,6 +39,17 @@ async function fireTurnResolveAndDrain(events: unknown[], state: unknown = { tur
   }
 }
 
+async function fireTurnAndAdvance(events: unknown[], ms: number) {
+  act(() => {
+    socketListeners['turn:resolve']?.({
+      turnNumber: 2,
+      events,
+      state: { turnNumber: 2, phase: 'action', teams: [], field: {} },
+    });
+  });
+  await act(async () => { vi.advanceTimersByTime(ms); });
+}
+
 describe('turn:resolve', () => {
   beforeEach(() => { vi.useFakeTimers(); });
   afterEach(() => { vi.useRealTimers(); });
@@ -211,5 +222,89 @@ describe('damage-dealt effectiveness lines', () => {
     expect(log[1]).toEqual({ type: 'normal', text: 'Dealt 40 damage to s2.' });
     expect(log[2]).toEqual({ type: 'normal', text: "It's super effective!" });
     expect(log[3]).toEqual({ type: 'normal', text: 'A critical hit!' });
+  });
+});
+
+describe('animatingSlots', () => {
+  beforeEach(() => { vi.useFakeTimers(); });
+  afterEach(() => { vi.useRealTimers(); });
+
+  it('is empty initially', () => {
+    const { result } = renderHook(() => useBattle(), { wrapper });
+    expect(result.current.animatingSlots.size).toBe(0);
+  });
+
+  it('sets attack kind for attacker slot when move-used entry is drained', async () => {
+    const { result } = renderHook(() => useBattle(), { wrapper });
+    // Advance 650ms: past the 600ms entry delay, but before the 350ms clear timer (fires at 950ms)
+    await fireTurnAndAdvance(
+      [{ type: 'move-used', data: { attackerSlotId: 'a1', attackerName: 'Bulbasaur', moveName: 'Tackle', moveId: 'tackle' } }],
+      650,
+    );
+    expect(result.current.animatingSlots.get('a1')).toBe('attack');
+  });
+
+  it('clears attack slot after 350ms', async () => {
+    const { result } = renderHook(() => useBattle(), { wrapper });
+    act(() => {
+      socketListeners['turn:resolve']?.({
+        turnNumber: 2,
+        events: [{ type: 'move-used', data: { attackerSlotId: 'a1', attackerName: 'Bulbasaur', moveName: 'Tackle', moveId: 'tackle' } }],
+        state: { turnNumber: 2, phase: 'action', teams: [], field: {} },
+      });
+    });
+    await act(async () => { vi.advanceTimersByTime(650); }); // entry fires at 600ms; clear timer starts
+    expect(result.current.animatingSlots.get('a1')).toBe('attack');
+    await act(async () => { vi.advanceTimersByTime(400); }); // total 1050ms, clear fires at 950ms (600+350)
+    expect(result.current.animatingSlots.get('a1')).toBeUndefined();
+  });
+
+  it('sets hit kind for target slot when damage-dealt entry is drained', async () => {
+    const { result } = renderHook(() => useBattle(), { wrapper });
+    // Advance 650ms: past 600ms entry delay, before 300ms clear timer (fires at 900ms)
+    await fireTurnAndAdvance(
+      [{ type: 'damage-dealt', data: { targetSlotId: 's2', damage: 30, moveId: 'tackle', effectiveness: 1 } }],
+      650,
+    );
+    expect(result.current.animatingSlots.get('s2')).toBe('hit');
+  });
+
+  it('clears hit slot after 300ms', async () => {
+    const { result } = renderHook(() => useBattle(), { wrapper });
+    act(() => {
+      socketListeners['turn:resolve']?.({
+        turnNumber: 2,
+        events: [{ type: 'damage-dealt', data: { targetSlotId: 's2', damage: 30, moveId: 'tackle', effectiveness: 1 } }],
+        state: { turnNumber: 2, phase: 'action', teams: [], field: {} },
+      });
+    });
+    await act(async () => { vi.advanceTimersByTime(650); });
+    expect(result.current.animatingSlots.get('s2')).toBe('hit');
+    await act(async () => { vi.advanceTimersByTime(350); }); // total 1000ms, clear fires at 900ms (600+300)
+    expect(result.current.animatingSlots.get('s2')).toBeUndefined();
+  });
+
+  it('sets faint kind for slot when faint entry is drained', async () => {
+    const { result } = renderHook(() => useBattle(), { wrapper });
+    await fireTurnAndAdvance(
+      [{ type: 'faint', data: { slotId: 'b1' } }],
+      650,
+    );
+    expect(result.current.animatingSlots.get('b1')).toBe('faint');
+  });
+
+  it('clears faint slot after 600ms', async () => {
+    const { result } = renderHook(() => useBattle(), { wrapper });
+    act(() => {
+      socketListeners['turn:resolve']?.({
+        turnNumber: 2,
+        events: [{ type: 'faint', data: { slotId: 'b1' } }],
+        state: { turnNumber: 2, phase: 'action', teams: [], field: {} },
+      });
+    });
+    await act(async () => { vi.advanceTimersByTime(650); }); // entry fires at 600ms; clear timer starts
+    expect(result.current.animatingSlots.get('b1')).toBe('faint');
+    await act(async () => { vi.advanceTimersByTime(700); }); // total 1350ms, clear fires at 1200ms (600+600)
+    expect(result.current.animatingSlots.get('b1')).toBeUndefined();
   });
 });

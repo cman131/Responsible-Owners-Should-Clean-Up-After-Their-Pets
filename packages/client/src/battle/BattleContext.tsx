@@ -81,6 +81,7 @@ interface BattleContextValue {
   switchRequest: SwitchRequestPayload | null;
   turnLog: LogEntry[];
   displayHp: Map<string, number>;
+  animatingSlots: Map<string, 'attack' | 'hit' | 'faint'>;
   submitAction: (payload: import('@poke-fighter/shared').ActionSubmitPayload) => void;
 }
 
@@ -105,6 +106,7 @@ export function BattleProvider({ mySlotId, initialState, children }: Props) {
   const [switchRequest, setSwitchRequest] = useState<SwitchRequestPayload | null>(null);
   const [turnLog, setTurnLog] = useState<LogEntry[]>([]);
   const [displayHp, setDisplayHp] = useState<Map<string, number>>(new Map());
+  const [animatingSlots, setAnimatingSlots] = useState<Map<string, 'attack' | 'hit' | 'faint'>>(new Map());
   const [eventQueue, _setEventQueue] = useState<PlaybackEntry[]>([]);
   const eventQueueRef = useRef<PlaybackEntry[]>([]);
   const [pendingState, setPendingState] = useState<BattleState | null>(null);
@@ -133,6 +135,14 @@ export function BattleProvider({ mySlotId, initialState, children }: Props) {
           next.set(slotId, Math.max(0, (next.get(slotId) ?? 0) - delta));
           return next;
         });
+      }
+      if (entry.animation) {
+        const { slotId, kind } = entry.animation;
+        setAnimatingSlots((prev) => { const next = new Map(prev); next.set(slotId, kind); return next; });
+        const clearDelay = kind === 'attack' ? 350 : kind === 'hit' ? 300 : 600;
+        setTimeout(() => {
+          setAnimatingSlots((prev) => { const next = new Map(prev); next.delete(slotId); return next; });
+        }, clearDelay);
       }
       const nextQueue = eventQueue.slice(1);
       eventQueueRef.current = nextQueue;
@@ -236,6 +246,7 @@ export function BattleProvider({ mySlotId, initialState, children }: Props) {
       setPendingActionRequest(null);
       setPendingSwitchRequest(null);
       setDisplayHp(new Map());
+      setAnimatingSlots(new Map());
     });
 
     return () => {
@@ -256,7 +267,7 @@ export function BattleProvider({ mySlotId, initialState, children }: Props) {
   }
 
   return (
-    <BattleContext.Provider value={{ state, mySlotId, actionRequest, switchRequest, turnLog, displayHp, submitAction }}>
+    <BattleContext.Provider value={{ state, mySlotId, actionRequest, switchRequest, turnLog, displayHp, animatingSlots, submitAction }}>
       {children}
     </BattleContext.Provider>
   );
