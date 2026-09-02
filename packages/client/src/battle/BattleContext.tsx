@@ -67,6 +67,11 @@ export function eventsToPlaybackEntries(events: TurnResolveEvent[]): PlaybackEnt
       case 'pokemon-switched':
         entries.push({ text: `${String(event.data['slotId'])}'s Pokémon was switched out!`, delay: 600 });
         break;
+      case 'pivot-skipped': {
+        const slotId = String(event.data['slotId']);
+        entries.push({ text: `${slotId} has no Pokémon left to send in!`, delay: 600 });
+        break;
+      }
       default:
         break;
     }
@@ -307,6 +312,7 @@ function eventToText(event: TurnResolveEvent): string | string[] {
     }
     case 'terastallize': return `${String(event.data['slotId'])} Terastallized into ${String(event.data['teraType'])} type!`;
     case 'pokemon-switched': return `${String(event.data['slotId'])}'s Pokémon was switched out!`;
+    case 'pivot-skipped': return `${String(event.data['slotId'])} has no Pokémon left to send in!`;
     case 'crit': return 'A critical hit!';
     default: return '';
   }
