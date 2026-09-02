@@ -2,7 +2,7 @@ import type { Server as HttpServer } from 'node:http';
 import { join } from 'node:path';
 import { Server } from 'socket.io';
 import type { ServerToClientEvents, ClientToServerEvents, BattleState, SlotState, BattleJoinOption } from '@poke-fighter/shared';
-import { LobbyManager } from './LobbyManager.js';
+import { LobbyManager, computeSlotStatus } from './LobbyManager.js';
 import { BattleRoom } from './BattleRoom.js';
 import { registerLobbyHandlers } from './handlers/lobbyHandlers.js';
 import { registerBattleHandlers } from './handlers/battleHandlers.js';
@@ -88,16 +88,15 @@ export class SocketServer {
     const options: BattleJoinOption[] = [];
     for (const [battleId, room] of this.rooms) {
       const state = room.getStateSnapshot();
-      const available = state.teams
+      const slots = state.teams
         .flatMap((t) => t.slots)
-        .filter((s) => !s.isNpc && !s.isSpectator && !this.lobby.getBySlotId(s.slotId));
-      if (available.length > 0) {
-        options.push({
-          battleId,
-          label: state.label,
-          slots: available.map((s) => ({ slotId: s.slotId, displayName: s.displayName })),
-        });
-      }
+        .filter((s) => !s.isNpc && !s.isSpectator)
+        .map((s) => ({
+          slotId: s.slotId,
+          displayName: s.displayName,
+          status: computeSlotStatus(this.lobby.getBySlotId(s.slotId)),
+        }));
+      options.push({ battleId, label: state.label, slots });
     }
     return options;
   }
