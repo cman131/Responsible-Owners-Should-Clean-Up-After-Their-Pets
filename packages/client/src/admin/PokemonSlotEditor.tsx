@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import type { PokemonSpecies, PokemonSet } from '@poke-fighter/shared';
 import { PokemonSearchDropdown } from './PokemonSearchDropdown.js';
 import { MoveSearchDropdown } from './MoveSearchDropdown.js';
+import { ItemSearchDropdown } from './ItemSearchDropdown.js';
 import { TYPE_COLORS } from './pokemonTypeColors.js';
 import { getSocket } from '../socket.js';
 import { toShowdownId } from '../battle/utils.js';
@@ -163,6 +164,15 @@ export function PokemonSlotEditor({ value, onChange }: Props) {
                 <option value={value.ability ?? ''}>{value.ability ?? ''}</option>
               </select>
             )}
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <label style={lbl}>Item</label>
+            <div style={{ flex: 1 }}>
+              <ItemSearchDropdown
+                value={value.heldItem ?? ''}
+                onChange={(itemId) => updateField('heldItem', itemId || undefined)}
+              />
+            </div>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <label style={lbl}>Nature</label>
