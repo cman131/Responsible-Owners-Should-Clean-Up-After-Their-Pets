@@ -90,6 +90,13 @@ describe('ItemSearchDropdown', () => {
     expect(onChange).toHaveBeenCalledWith('');
   });
 
+  it('shows raw value as italic chip when value is set but items have not loaded', () => {
+    render(<ItemSearchDropdown value="focus-sash" onChange={vi.fn()} />);
+    // Items not loaded yet — selectedItem is null — should show fallback chip
+    expect(screen.getByText('focus-sash')).toBeTruthy();
+    expect(screen.queryByPlaceholderText('Search items...')).toBeNull();
+  });
+
   it('cleans up the data:results listener on unmount', () => {
     const { unmount } = render(<ItemSearchDropdown value="" onChange={vi.fn()} />);
     unmount();

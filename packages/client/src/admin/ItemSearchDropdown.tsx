@@ -64,6 +64,15 @@ export function ItemSearchDropdown({ value, onChange }: Props) {
     );
   }
 
+  if (value && !selectedItem) {
+    return (
+      <div style={{ background: '#0d1a2e', border: '1px solid #555', borderRadius: 4, padding: '5px 8px', display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+        <span style={{ color: '#888', flex: 1, fontStyle: 'italic' }}>{value}</span>
+        <button onClick={clear} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: 14, padding: '0 2px', lineHeight: 1, fontFamily: 'inherit' }}>✕</button>
+      </div>
+    );
+  }
+
   return (
     <div style={{ position: 'relative' }}>
       <input
