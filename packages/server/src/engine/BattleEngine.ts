@@ -829,7 +829,7 @@ export class BattleEngine {
 
       // Shell Bell — heal attacker after dealing damage
       if (totalDamage > 0 && !attacker.fainted) {
-        const sbResult = getItemHooks(attacker.heldItem).onHealAfterAttack?.({
+        const sbResult = itemHooks.onHealAfterAttack?.({
           holder: attacker,
           state: s,
           moveType: effectiveMoveType,

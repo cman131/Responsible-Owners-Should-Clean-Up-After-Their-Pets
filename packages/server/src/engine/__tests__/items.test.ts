@@ -378,12 +378,13 @@ describe('Shell Bell', () => {
     p1.heldItem = 'shell-bell';
     state.teams[1]!.slots[0]!.party[0]!.moves[2] = { moveId: 'splash', currentPp: 40, maxPp: 40 };
     const engine = new BattleEngine({ rng: () => 0.5 });
-    const { newState } = engine.resolveTurn(state, {
+    const { newState, events } = engine.resolveTurn(state, {
       'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
       'slot-b1': { type: 'move', moveIndex: 2 },
     });
     // Tackle deals 17 damage. Shell Bell heals floor(17/8) = 2 HP.
     expect(newState.teams[0]!.slots[0]!.party[0]!.currentHp).toBe(52);
+    expect(events.some(e => e.type === 'heal')).toBe(true);
   });
 
   it('does not heal beyond maxHp', () => {
