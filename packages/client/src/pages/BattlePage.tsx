@@ -24,7 +24,7 @@ export function BattlePage() {
 }
 
 function BattleView() {
-  const { state, mySlotId, actionRequest, switchRequest, turnLog, displayHp, submitAction } = useBattle();
+  const { state, mySlotId, actionRequest, switchRequest, turnLog, displayHp, animatingSlots, submitAction } = useBattle();
   const [targetingMove, setTargetingMove] = useState<ValidMove | null>(null);
   const [selectedTarget, setSelectedTarget] = useState<string>('');
   const [terastallize, setTerastallize] = useState(false);
@@ -111,7 +111,7 @@ function BattleView() {
       />
 
       {/* Battle scene */}
-      <BattleScene state={state} mySlotId={mySlotId} />
+      <BattleScene state={state} mySlotId={mySlotId} animatingSlots={animatingSlots} />
 
       <HpBarsRow
         label="MY TEAM"
