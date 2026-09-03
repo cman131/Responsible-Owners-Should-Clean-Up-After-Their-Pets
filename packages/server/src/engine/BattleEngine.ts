@@ -1655,7 +1655,7 @@ export class BattleEngine {
           slot.wish.turnsRemaining--;
           if (slot.wish.turnsRemaining <= 0) {
             const wishTarget = slot.party[slot.activePokemonIndex];
-            if (wishTarget && !wishTarget.fainted) {
+            if (wishTarget && !wishTarget.fainted && !wishTarget.volatileStatus.some(v => v.name === 'heal-block')) {
               const heal = Math.min(slot.wish.hp, wishTarget.maxHp - wishTarget.currentHp);
               if (heal > 0) {
                 wishTarget.currentHp += heal;
