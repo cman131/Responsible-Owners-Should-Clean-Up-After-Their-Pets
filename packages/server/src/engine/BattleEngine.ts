@@ -185,13 +185,14 @@ export class BattleEngine {
     const attacker = attackerSlot.party[attackerSlot.activePokemonIndex];
     if (!attacker) return { newState: s, events };
 
-    // Save lastDamageTaken before clearing — retaliation moves (Counter/Mirror Coat/etc.) need it
-    const savedLastDamageTaken = attacker.lastDamageTaken;
-    delete attacker.lastDamageTaken;
-
     const preMoveResult = this.effectEngine.runPreMove(attacker, attackerSlotId, s, this.getAllSlots(s));
     events.push(...preMoveResult.events);
     if (preMoveResult.blocked) return { newState: s, events };
+
+    // Save lastDamageTaken before clearing — retaliation moves (Counter/Mirror Coat/etc.) need it
+    // Only clear it if the move actually fires (not when blocked by sleep, paralysis, flinch, etc.)
+    const savedLastDamageTaken = attacker.lastDamageTaken;
+    delete attacker.lastDamageTaken;
 
     const moveSlot = attacker.moves[action.moveIndex];
     if (!moveSlot) return { newState: s, events };

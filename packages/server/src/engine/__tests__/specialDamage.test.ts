@@ -162,4 +162,57 @@ describe('Counter / Mirror Coat / Metal Burst', () => {
     );
     expect(mirrorCoatFailed).toBe(true);
   });
+
+  it('Metal Burst after taking damage deals floor(1.5x) to attacker', () => {
+    // p1 uses Metal Burst (priority -3.5), p2 uses flamethrower (priority 0, special)
+    // Make p1 slower so p2 attacks first (natural speed ordering), setting p1.lastDamageTaken
+    // Then p1 uses Metal Burst dealing floor(damage * 1.5) back to p2
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'metalburst', currentPp: 10, maxPp: 10 };
+    // Make p1 much slower so p2 (flamethrower) attacks first
+    state.teams[0]!.slots[0]!.party[0]!.stats = {
+      ...state.teams[0]!.slots[0]!.party[0]!.stats,
+      spe: 1,
+    };
+    // p2 default move[0] is flamethrower (special)
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    // Metal Burst works for any damage category, so no move-failed expected
+    const failedEvents = events.filter((e: TurnResolveEvent) => e.type === 'move-failed');
+    expect(failedEvents).toHaveLength(0);
+
+    // p1 took flamethrower damage; Metal Burst should have dealt floor(damage * 1.5) to p2
+    const p1 = newState.teams[0]!.slots[0]!.party[0]!;
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    const flamethrowerDamage = 100 - p1.currentHp;
+    expect(flamethrowerDamage).toBeGreaterThan(0);
+    const metalBurstDamage = 100 - p2.currentHp;
+    expect(metalBurstDamage).toBe(Math.floor(flamethrowerDamage * 1.5));
+  });
+
+  it('Metal Burst with no prior damage emits move-failed', () => {
+    // p1 uses Metal Burst but has no lastDamageTaken (p2 uses roost, deals no damage)
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'metalburst', currentPp: 10, maxPp: 10 };
+    // p2 uses roost (non-damaging), so p1 takes no damage → lastDamageTaken remains undefined
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'roost', currentPp: 10, maxPp: 10 };
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' }, // roost is self-targeting
+    });
+
+    const failedEvents = events.filter((e: TurnResolveEvent) => e.type === 'move-failed');
+    expect(failedEvents.length).toBeGreaterThan(0);
+    const metalBurstFailed = failedEvents.some(
+      (e: TurnResolveEvent) => e.type === 'move-failed' && (e.data as { moveId: string }).moveId === 'metalburst'
+    );
+    expect(metalBurstFailed).toBe(true);
+  });
 });
