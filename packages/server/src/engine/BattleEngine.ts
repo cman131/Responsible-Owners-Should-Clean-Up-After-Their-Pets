@@ -1650,6 +1650,22 @@ export class BattleEngine {
 
     for (const team of s.teams) {
       for (const slot of team.slots) {
+        // Resolve Wish before per-pokemon EoT effects
+        if (slot.wish) {
+          slot.wish.turnsRemaining--;
+          if (slot.wish.turnsRemaining <= 0) {
+            const wishTarget = slot.party[slot.activePokemonIndex];
+            if (wishTarget && !wishTarget.fainted) {
+              const heal = Math.min(slot.wish.hp, wishTarget.maxHp - wishTarget.currentHp);
+              if (heal > 0) {
+                wishTarget.currentHp += heal;
+                events.push({ type: 'heal', data: { slotId: slot.slotId, amount: heal, remainingHp: wishTarget.currentHp } });
+              }
+            }
+            delete slot.wish;
+          }
+        }
+
         const active = slot.party[slot.activePokemonIndex];
         if (!active || active.fainted) continue;
 

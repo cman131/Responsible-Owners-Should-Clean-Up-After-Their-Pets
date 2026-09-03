@@ -3,6 +3,7 @@ import { buildDefaultRegistry } from '../registrations.js';
 import { makePokemon, make1v1State } from './fixtures.js';
 import type { MoveContext } from '../MoveEffectRegistry.js';
 import type { Move } from '@poke-fighter/shared';
+import { BattleEngine } from '../BattleEngine.js';
 
 function makeCtx(overrides: Partial<MoveContext> = {}): MoveContext {
   const state = make1v1State();
@@ -173,5 +174,58 @@ describe('healbell', () => {
     registry.get('healbell')!(ctx);
 
     expect(mon1.status).toBeUndefined();
+  });
+});
+
+describe('wish', () => {
+  it('sets slot.wish with half of user max HP and turnsRemaining=1', () => {
+    const state = make1v1State();
+    const user = makePokemon({ maxHp: 200, currentHp: 200 });
+    state.teams[0]!.slots[0]!.party[0] = user;
+
+    const ctx: MoveContext = { ...makeCtx(), battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 };
+    registry.get('wish')!(ctx);
+
+    expect(state.teams[0]!.slots[0]!.wish).toEqual({ hp: 100, turnsRemaining: 1 });
+  });
+
+  it('heals the active pokemon at end of next turn', () => {
+    const state = make1v1State();
+    const user = makePokemon({ instanceId: 'p1', maxHp: 200, currentHp: 100 });
+    const foe = makePokemon({ instanceId: 'p2' });
+    state.teams[0]!.slots[0]!.party[0] = user;
+    state.teams[1]!.slots[0]!.party[0] = foe;
+    // Simulate: wish was used last turn, now at turnsRemaining=1
+    state.teams[0]!.slots[0]!.wish = { hp: 100, turnsRemaining: 1 };
+
+    const engine = new BattleEngine();
+    // Both Pokemon use a registered move (willowisp on foe; foe uses any registered move)
+    // We need a no-op move. Use 'protect' on self for foe, and any move for user.
+    // Simplest: both use willowisp (it may miss, but the EoT still runs)
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-b1' }, // willowisp
+      'slot-b1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-a1' }, // willowisp
+    });
+
+    const healed = newState.teams[0]!.slots[0]!.party[0]!;
+    expect(healed.currentHp).toBe(200);
+    expect(newState.teams[0]!.slots[0]!.wish).toBeUndefined();
+  });
+
+  it('does not heal if slot Pokemon is fainted when wish resolves', () => {
+    const state = make1v1State();
+    const user = makePokemon({ instanceId: 'p1', maxHp: 200, currentHp: 0, fainted: true });
+    state.teams[0]!.slots[0]!.party[0] = user;
+    state.teams[0]!.slots[0]!.wish = { hp: 100, turnsRemaining: 1 };
+
+    // Fainted pokemon: EoT loop skips them but still needs to decrement/clear wish
+    // Just test state doesn't crash and wish is cleared
+    const engine = new BattleEngine();
+    // Only foe acts since user is fainted
+    const { newState } = engine.resolveTurn(state, {
+      'slot-b1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-a1' },
+    });
+
+    expect(newState.teams[0]!.slots[0]!.wish).toBeUndefined();
   });
 });

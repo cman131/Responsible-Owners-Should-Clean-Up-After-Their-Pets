@@ -5,7 +5,7 @@ import {
   setWeather, setTerrain, setSideCondition, trickRoom, gravity, custom,
   protect, endure, substitute, disable, taunt, encore, torment,
   aquaRing, ingrain, magnetRise, perishSong, destinyBond, roost,
-  embargoFactory, healBlockFactory, cureTeamStatus,
+  embargoFactory, healBlockFactory, cureTeamStatus, wish,
 } from './effectFactories.js';
 import { clearHazards, clearScreens } from './sideConditions.js';
 import { applyStatBoost } from './effects.js';
@@ -97,6 +97,7 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
   r.register('morningsun',  healPercent(0.5)); // weather variant added in Task 10
   r.register('aromatherapy', cureTeamStatus());
   r.register('healbell',     cureTeamStatus());
+  r.register('wish',         wish());
 
   // ── Weather ────────────────────────────────────────────────────────
   r.register('sunnyday',   setWeather('sun',  5));
