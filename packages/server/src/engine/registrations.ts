@@ -91,6 +91,18 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
   // is omitted until the battle state is extended to track per-instance weight.
   r.register('autotomize',  statModSelf('spe', 2));
 
+  r.register('filletaway', custom((ctx) => {
+    if (ctx.user.currentHp <= 1) {
+      return { events: [{ type: 'move-failed', data: { moveId: 'filletaway', reason: 'too-weak' } }] };
+    }
+    const events: TurnResolveEvent[] = [];
+    const cost = Math.floor(ctx.user.currentHp / 2);
+    ctx.user.currentHp -= cost;
+    events.push({ type: 'damage-dealt', data: { source: 'filletaway', slotId: ctx.userSlotId, damage: cost, remainingHp: ctx.user.currentHp } });
+    events.push(applyStatBoost(ctx.user, ctx.userSlotId, { atk: 2, spa: 2, spe: 2 }));
+    return { events };
+  }));
+
   // ── Target stat drops ──────────────────────────────────────────────
   r.register('leer',       statModTarget('def', -1));
   r.register('growl',      statModTarget('atk', -1));

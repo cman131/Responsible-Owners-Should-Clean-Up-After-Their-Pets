@@ -215,3 +215,27 @@ describe('autotomize', () => {
     expect(events[0]!.type).toBe('stat-change');
   });
 });
+
+describe('filletaway', () => {
+  it('costs half current HP and boosts atk/spa/spe by +2', () => {
+    const user = makePokemon({ maxHp: 100, currentHp: 100 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0] = user;
+    const { events } = invoke('filletaway', { battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 });
+    expect(user.currentHp).toBe(50);
+    expect(user.statBoosts.atk).toBe(2);
+    expect(user.statBoosts.spa).toBe(2);
+    expect(user.statBoosts.spe).toBe(2);
+    expect(events[0]!.type).toBe('damage-dealt');
+    expect(events[1]!.type).toBe('stat-change');
+  });
+
+  it('fails if currentHp is 1', () => {
+    const user = makePokemon({ maxHp: 100, currentHp: 1 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0] = user;
+    const { events } = invoke('filletaway', { battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 });
+    expect(events[0]!.type).toBe('move-failed');
+    expect(user.currentHp).toBe(1);
+  });
+});
