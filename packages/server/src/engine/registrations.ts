@@ -103,6 +103,20 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
     return { events };
   }));
 
+  r.register('bellydrum', custom((ctx) => {
+    const halfMaxHp = Math.floor(ctx.user.maxHp / 2);
+    if (ctx.user.currentHp <= halfMaxHp || ctx.user.statBoosts.atk === 6) {
+      return { events: [{ type: 'move-failed', data: { moveId: 'bellydrum', reason: 'cant-use' } }] };
+    }
+    const events: TurnResolveEvent[] = [];
+    ctx.user.currentHp -= halfMaxHp;
+    events.push({ type: 'damage-dealt', data: { source: 'bellydrum', slotId: ctx.userSlotId, damage: halfMaxHp, remainingHp: ctx.user.currentHp } });
+    const oldAtk = ctx.user.statBoosts.atk;
+    ctx.user.statBoosts.atk = 6;
+    events.push({ type: 'stat-change', data: { slotId: ctx.userSlotId, changes: { atk: 6 - oldAtk } } });
+    return { events };
+  }));
+
   // ── Target stat drops ──────────────────────────────────────────────
   r.register('leer',       statModTarget('def', -1));
   r.register('growl',      statModTarget('atk', -1));

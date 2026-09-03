@@ -239,3 +239,34 @@ describe('filletaway', () => {
     expect(user.currentHp).toBe(1);
   });
 });
+
+describe('bellydrum', () => {
+  it('costs 50% max HP and sets atk to +6', () => {
+    const user = makePokemon({ maxHp: 100, currentHp: 100 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0] = user;
+    const { events } = invoke('bellydrum', { battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 });
+    expect(user.currentHp).toBe(50);
+    expect(user.statBoosts.atk).toBe(6);
+    expect(events[0]!.type).toBe('damage-dealt');
+    expect(events[1]!.type).toBe('stat-change');
+  });
+
+  it('fails if HP is at or below 50% of max', () => {
+    const user = makePokemon({ maxHp: 100, currentHp: 50 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0] = user;
+    const { events } = invoke('bellydrum', { battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 });
+    expect(events[0]!.type).toBe('move-failed');
+    expect(user.currentHp).toBe(50);
+  });
+
+  it('fails if atk is already +6', () => {
+    const user = makePokemon({ maxHp: 100, currentHp: 100, statBoosts: { atk: 6, def: 0, spa: 0, spd: 0, spe: 0, accuracy: 0, evasion: 0 } });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0] = user;
+    const { events } = invoke('bellydrum', { battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 });
+    expect(events[0]!.type).toBe('move-failed');
+    expect(user.currentHp).toBe(100);
+  });
+});
