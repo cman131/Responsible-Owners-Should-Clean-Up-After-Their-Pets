@@ -580,6 +580,7 @@ export class BattleEngine {
         const ohkoDmg = target.currentHp;
         target.currentHp = 0;
         target.fainted = true;
+        target.lastDamageTaken = { amount: ohkoDmg, category: move.category as 'physical' | 'special', fromSlotId: attackerSlotId };
         events.push({ type: 'damage-dealt', data: {
           attackerSlotId, targetSlotId, moveId: move.id,
           damage: ohkoDmg, effectiveness: 1, remainingHp: 0,
@@ -614,6 +615,7 @@ export class BattleEngine {
       const perTargetBasePower = resolvedPower !== move.basePower ? resolvedPower : effectiveBasePower;
 
       let totalDamage = 0;
+      let hpDamageTaken = 0;
       for (let hit = 0; hit < hitCount; hit++) {
         if (target.fainted) break;
 
@@ -723,6 +725,7 @@ export class BattleEngine {
 
         const subEntry = target.volatileStatus.find(v => v.name === 'substitute');
         if (subEntry && subEntry.hp !== undefined) {
+          // Substitute absorbed — lastDamageTaken only tracks direct HP damage
           const subDamage = Math.min(finalDamage, subEntry.hp);
           subEntry.hp -= subDamage;
           totalDamage += subDamage;
@@ -754,7 +757,7 @@ export class BattleEngine {
           }
           target.currentHp -= cappedDamage;
           totalDamage += cappedDamage;
-          target.lastDamageTaken = { amount: cappedDamage, category: move.category as 'physical' | 'special', fromSlotId: attackerSlotId };
+          hpDamageTaken += cappedDamage;
 
           events.push({ type: 'damage-dealt', data: {
             attackerSlotId, targetSlotId, moveId: move.id,
@@ -782,6 +785,11 @@ export class BattleEngine {
             }
           }
         }
+      }
+
+      // Record total HP damage taken from this move (covers multi-hit moves correctly)
+      if (hpDamageTaken > 0) {
+        target.lastDamageTaken = { amount: hpDamageTaken, category: move.category as 'physical' | 'special', fromSlotId: attackerSlotId };
       }
 
       // Post-hit secondaries (applied after final hit, uses accumulated totalDamage)
