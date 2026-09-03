@@ -647,6 +647,69 @@ describe('Magnitude', () => {
   });
 });
 
+describe('Bide', () => {
+  it('accumulates damage over 2 turns and releases 2x on turn 3', () => {
+    // Turn 1: p1 uses Bide; p2 attacks p1 for some damage
+    // Turn 2: p1 is locked in bide (move blocked by runPreMove), p2 attacks p1 again
+    // Turn 3: Pre-move triggers Bide release → deals 2× accumulated damage to last attacker
+
+    let state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'bide', currentPp: 10, maxPp: 10 };
+    // p2 uses tackle (physical) for deterministic-ish damage
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'tackle', currentPp: 35, maxPp: 35 };
+    // Give p1 lots of HP so it survives 3 turns of tackle
+    state.teams[0]!.slots[0]!.party[0]!.currentHp = 200;
+    state.teams[0]!.slots[0]!.party[0]!.maxHp = 200;
+    // Give p2 lots of HP so Bide release doesn't guarantee KO
+    state.teams[1]!.slots[0]!.party[0]!.currentHp = 200;
+    state.teams[1]!.slots[0]!.party[0]!.maxHp = 200;
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+
+    // Turn 1: p1 uses Bide (self-targeting); p2 uses tackle on p1
+    const result1 = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },  // Bide is self-targeting
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    const p1AfterT1 = result1.newState.teams[0]!.slots[0]!.party[0]!;
+    const bideVolatileT1 = p1AfterT1.volatileStatus.find(v => v.name === 'bide');
+    expect(bideVolatileT1).toBeDefined();
+    expect(bideVolatileT1?.counter).toBe(2);
+    const damageFromT1 = 200 - p1AfterT1.currentHp; // how much p2's tackle hit for
+    expect(damageFromT1).toBeGreaterThan(0);
+
+    // Turn 2: p1 is biding (any move submitted is blocked); p2 attacks again
+    const result2 = engine.resolveTurn(result1.newState, {
+      'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },  // any move, will be blocked
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    const p1AfterT2 = result2.newState.teams[0]!.slots[0]!.party[0]!;
+    const bideVolatileT2 = p1AfterT2.volatileStatus.find(v => v.name === 'bide');
+    expect(bideVolatileT2).toBeDefined();
+    expect(bideVolatileT2?.counter).toBe(1);
+    const damageFromT2 = p1AfterT1.currentHp - p1AfterT2.currentHp;
+    expect(damageFromT2).toBeGreaterThan(0);
+    const totalAccumulated = damageFromT1 + damageFromT2;
+
+    // Turn 3: Bide releases; p2 takes 2× accumulated damage
+    const p2HpBeforeT3 = result2.newState.teams[1]!.slots[0]!.party[0]!.currentHp;
+    const result3 = engine.resolveTurn(result2.newState, {
+      'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },  // any move, Bide fires instead
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    const p2AfterT3 = result3.newState.teams[1]!.slots[0]!.party[0]!;
+    const bideReleaseDamage = p2HpBeforeT3 - p2AfterT3.currentHp;
+    expect(bideReleaseDamage).toBe(totalAccumulated * 2);
+
+    // Bide volatile should be cleared
+    const p1AfterT3 = result3.newState.teams[0]!.slots[0]!.party[0]!;
+    expect(p1AfterT3.volatileStatus.find(v => v.name === 'bide')).toBeUndefined();
+  });
+});
+
 describe('Phasing moves (Dragon Tail / Circle Throw)', () => {
   it('Dragon Tail deals damage and forces target to switch to bench member', () => {
     // p1 uses dragontail (priority -6), p2 has 2 party members (active + 1 bench)

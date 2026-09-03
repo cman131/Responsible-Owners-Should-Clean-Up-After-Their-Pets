@@ -26,9 +26,43 @@ export class EffectEngine {
     pokemon: PartyMember,
     slotId: string,
     _state: BattleState,
-    _allSlots: SlotContext[],
+    allSlots: SlotContext[],
   ): PreMoveResult {
     const events: TurnResolveEvent[] = [];
+
+    // Bide: decrement counter; release on counter reaching 0
+    const bideEntry = pokemon.volatileStatus.find(v => v.name === 'bide');
+    if (bideEntry) {
+      bideEntry.counter = (bideEntry.counter ?? 1) - 1;
+      if ((bideEntry.counter ?? 0) <= 0) {
+        // Release: deal 2x accumulated damage to last attacker
+        pokemon.volatileStatus = pokemon.volatileStatus.filter(v => v.name !== 'bide');
+        const accumulated = bideEntry.accumulated ?? 0;
+        if (accumulated > 0 && pokemon.lastDamageTaken) {
+          const lastAttackerCtx = allSlots.find(s => s.slotId === pokemon.lastDamageTaken!.fromSlotId);
+          if (lastAttackerCtx && !lastAttackerCtx.member.fainted) {
+            const bideRelease = accumulated * 2;
+            const actual = Math.min(bideRelease, lastAttackerCtx.member.currentHp);
+            lastAttackerCtx.member.currentHp -= actual;
+            events.push({ type: 'damage-dealt', data: {
+              source: 'bide',
+              slotId: lastAttackerCtx.slotId,
+              damage: actual,
+              remainingHp: lastAttackerCtx.member.currentHp,
+            }});
+            if (lastAttackerCtx.member.currentHp <= 0) {
+              lastAttackerCtx.member.fainted = true;
+              lastAttackerCtx.member.currentHp = 0;
+              events.push({ type: 'faint', data: { slotId: lastAttackerCtx.slotId, instanceId: lastAttackerCtx.member.instanceId } });
+            }
+          }
+        }
+        // Whether or not damage was dealt, block the chosen move
+        return { blocked: true, events };
+      }
+      // Still biding (counter > 0) — block chosen move
+      return { blocked: true, events };
+    }
 
     const flinchEntry = pokemon.volatileStatus.find(v => v.name === 'flinch');
     if (flinchEntry) {

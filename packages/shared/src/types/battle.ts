@@ -16,6 +16,7 @@ export interface VolatileStatusEntry {
   variant?: string;           // protect: which protect move was used
   hp?: number;                // substitute: proxy HP pool
   sourceSlotId?: string;
+  accumulated?: number;       // bide: accumulated damage
 }
 
 export interface StatBoosts {

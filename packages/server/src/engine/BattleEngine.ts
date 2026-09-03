@@ -278,6 +278,16 @@ export class BattleEngine {
       return { newState: s, events };
     }
 
+    // Bide: apply volatile on first use (turn 1 entry)
+    if (move.id === 'bide') {
+      if (!attacker.volatileStatus.some(v => v.name === 'bide')) {
+        attacker.volatileStatus.push({ name: 'bide', counter: 2, accumulated: 0 });
+        events.push({ type: 'volatile-applied', data: { targetSlotId: attackerSlotId, volatile: 'bide' } });
+      }
+      attacker.lastMoveId = move.id;
+      return { newState: s, events };
+    }
+
     if (move.category === 'status') {
       const { targets: rawTargets, targetSlotIds: rawTargetSlotIds } = this.resolveStatusTargets(s, attackerSlotId, action, move);
       const rawTargetTypes = rawTargets.map(t => this.resolveEffectiveTypes(t));
@@ -986,6 +996,11 @@ export class BattleEngine {
       // Record total HP damage taken from this move (covers multi-hit moves correctly)
       if (hpDamageTaken > 0) {
         target.lastDamageTaken = { amount: hpDamageTaken, category: move.category as 'physical' | 'special', fromSlotId: attackerSlotId };
+        // Bide: accumulate HP damage taken
+        const bideEntry = target.volatileStatus.find(v => v.name === 'bide');
+        if (bideEntry) {
+          bideEntry.accumulated = (bideEntry.accumulated ?? 0) + hpDamageTaken;
+        }
       }
 
       // Post-hit secondaries (applied after final hit, uses accumulated totalDamage)
