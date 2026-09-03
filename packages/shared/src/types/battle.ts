@@ -52,6 +52,7 @@ export interface PartyMember {
   teraType?: PokemonType;
   hasTerastallized: boolean;
   lastMoveId?: string;
+  lastDamageTaken?: { amount: number; category: 'physical' | 'special'; fromSlotId: string };
   friendship?: number;
   tracedAbilityId?: string;
   lockedMoveId?: string;

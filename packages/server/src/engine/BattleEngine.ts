@@ -183,6 +183,8 @@ export class BattleEngine {
     const attacker = attackerSlot.party[attackerSlot.activePokemonIndex];
     if (!attacker) return { newState: s, events };
 
+    delete attacker.lastDamageTaken;
+
     const preMoveResult = this.effectEngine.runPreMove(attacker, attackerSlotId, s, this.getAllSlots(s));
     events.push(...preMoveResult.events);
     if (preMoveResult.blocked) return { newState: s, events };
@@ -752,6 +754,7 @@ export class BattleEngine {
           }
           target.currentHp -= cappedDamage;
           totalDamage += cappedDamage;
+          target.lastDamageTaken = { amount: cappedDamage, category: move.category as 'physical' | 'special', fromSlotId: attackerSlotId };
 
           events.push({ type: 'damage-dealt', data: {
             attackerSlotId, targetSlotId, moveId: move.id,
