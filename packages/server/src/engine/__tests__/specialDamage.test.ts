@@ -351,6 +351,83 @@ describe('HP-based damage moves', () => {
   });
 });
 
+describe('Stat-override damage moves', () => {
+  it('Foul Play uses target Atk stat: higher target Atk = more damage', () => {
+    // Set up state where target has high Atk vs normal
+    // p1 uses foulplay (physical, 95 BP), p2 has Atk=150
+    // Compare damage vs scenario where p2 has Atk=50
+    // Verify higher target Atk → more Foul Play damage
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'foulplay', currentPp: 15, maxPp: 15 };
+    state.teams[0]!.slots[0]!.party[0]!.stats.atk = 50; // attacker has LOW atk (irrelevant for Foul Play)
+    state.teams[1]!.slots[0]!.party[0]!.stats.atk = 150; // target has HIGH atk
+    // p2 uses swordsdance so it does not damage or heal itself
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' }, // swordsdance = no damage
+    });
+
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    // Foul Play with p2 Atk=150 should deal meaningful damage
+    expect(p2.currentHp).toBeLessThan(100);
+
+    // Now compare with low-Atk target
+    const state2 = make1v1State();
+    state2.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'foulplay', currentPp: 15, maxPp: 15 };
+    state2.teams[0]!.slots[0]!.party[0]!.stats.atk = 50; // same low atk
+    state2.teams[1]!.slots[0]!.party[0]!.stats.atk = 50; // target also low atk
+    state2.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+
+    const { newState: newState2 } = engine.resolveTurn(state2, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+    const p2b = newState2.teams[1]!.slots[0]!.party[0]!;
+
+    // Higher target Atk → more Foul Play damage
+    expect(p2.currentHp).toBeLessThan(p2b.currentHp);
+  });
+
+  it('Body Press uses user Def stat: higher user Def = more damage', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'bodypress', currentPp: 10, maxPp: 10 };
+    state.teams[0]!.slots[0]!.party[0]!.stats.def = 200; // high def → high damage
+    state.teams[0]!.slots[0]!.party[0]!.stats.atk = 50;  // low atk (irrelevant)
+    // p2 uses swordsdance so it does not damage or heal itself
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' }, // swordsdance = no damage
+    });
+
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+
+    // Compare with low-def attacker
+    const state2 = make1v1State();
+    state2.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'bodypress', currentPp: 10, maxPp: 10 };
+    state2.teams[0]!.slots[0]!.party[0]!.stats.def = 50; // low def
+    state2.teams[0]!.slots[0]!.party[0]!.stats.atk = 50;
+    state2.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+
+    const { newState: newState2 } = engine.resolveTurn(state2, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+    const p2b = newState2.teams[1]!.slots[0]!.party[0]!;
+
+    // High-def attacker deals more Body Press damage
+    expect(p2.currentHp).toBeLessThan(p2b.currentHp);
+  });
+});
+
 describe('Fixed & level-based damage moves', () => {
   it('Seismic Toss at level 50 deals exactly 50 HP', () => {
     const state = make1v1State(); // p1 is level 50 by default

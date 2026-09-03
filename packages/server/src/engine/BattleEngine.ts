@@ -746,14 +746,20 @@ export class BattleEngine {
           : (attackerSpecies?.types ?? ['Normal']) as PokemonType[];
         const stab = attackerTypes.includes(effectiveMoveType);
 
-        const rawAtkStat = isPhysical ? attacker.stats.atk : attacker.stats.spa;
-        const boostKey = isPhysical ? 'atk' as const : 'spa' as const;
+        let rawAtkStat = isPhysical ? attacker.stats.atk : attacker.stats.spa;
+        let boostKey: keyof StatBoosts = isPhysical ? 'atk' : 'spa';
         const rawDefStat = isPhysical ? target.stats.def : target.stats.spd;
         const defBoostKey = isPhysical ? 'def' as const : 'spd' as const;
 
+        // Stat-override moves
+        if (move.id === 'foulplay') rawAtkStat = target.stats.atk;
+        if (move.id === 'bodypress') { rawAtkStat = attacker.stats.def; boostKey = 'def'; }
+
         const critStage = computeCritStage(move.critRatio, attacker.volatileStatus, getItemHooks(attacker.heldItem).critStageBonus ?? 0);
         const isCritical = this.rng() < critProbability(critStage);
-        const atkBoost = isCritical ? Math.max(0, attacker.statBoosts[boostKey]) : attacker.statBoosts[boostKey];
+        // For Foul Play, use target's atk boost; otherwise use attacker's boost
+        const boostSource = move.id === 'foulplay' ? target : attacker;
+        const atkBoost = isCritical ? Math.max(0, boostSource.statBoosts[boostKey as keyof StatBoosts]) : boostSource.statBoosts[boostKey as keyof StatBoosts];
         const defBoost = isCritical ? Math.min(0, target.statBoosts[defBoostKey]) : target.statBoosts[defBoostKey];
 
         let atkStat = getEffectiveStat(rawAtkStat, atkBoost, boostKey);
