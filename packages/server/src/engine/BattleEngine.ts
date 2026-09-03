@@ -1178,6 +1178,8 @@ export class BattleEngine {
         }
       }
 
+      attacker.lastMoveId = move.id;
+
       // Dragon Tail / Circle Throw — force-switch after dealing damage
       if (PHASING_MOVES.has(move.id) && !target.fainted && totalDamage > 0) {
         const benchMembers = targetSlot.party.filter(
@@ -1193,8 +1195,6 @@ export class BattleEngine {
         // If no bench, just skip the force-switch (target stays in)
       }
     }
-
-    attacker.lastMoveId = move.id;
 
     const hasPivot = secs.some(sec => sec.kind === 'pivot');
     if (hasPivot && !attacker.fainted) {
