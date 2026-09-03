@@ -24,6 +24,13 @@ const ALWAYS_THAW_MOVES = new Set(['scald', 'steameruption', 'sparklingaria']);
 
 const COUNTER_MOVES = new Set(['counter', 'mirrorcoat', 'metalburst', 'comeuppance']);
 
+const FIXED_DAMAGE_MOVES: Record<string, (attacker: PartyMember) => number> = {
+  seismictoss: (a) => a.level,
+  nightshade:  (a) => a.level,
+  dragonrage:  () => 40,
+  sonicboom:   () => 20,
+};
+
 const CHOICE_LOCK_ITEMS = new Set(['choice-band', 'choice-specs', 'choice-scarf']);
 
 const ABILITY_VOLATILE_CLEAR = new Set(['slow-start', 'truant']);
@@ -616,6 +623,23 @@ export class BattleEngine {
         events.push({ type: 'damage-dealt', data: {
           attackerSlotId, targetSlotId, moveId: move.id,
           damage: actualCounter, effectiveness: 1, remainingHp: target.currentHp,
+        }});
+        if (target.currentHp <= 0) {
+          target.fainted = true;
+          events.push({ type: 'faint', data: { slotId: targetSlotId, instanceId: target.instanceId } });
+        }
+        continue; // skip normal damage formula
+      }
+
+      // Fixed-damage moves — bypass calcDamage
+      const fixedDmgFn = FIXED_DAMAGE_MOVES[move.id];
+      if (fixedDmgFn) {
+        const fixedDamage = fixedDmgFn(attacker);
+        const actualFixed = Math.min(fixedDamage, target.currentHp);
+        target.currentHp -= actualFixed;
+        events.push({ type: 'damage-dealt', data: {
+          attackerSlotId, targetSlotId, moveId: move.id,
+          damage: actualFixed, effectiveness: 1, remainingHp: target.currentHp,
         }});
         if (target.currentHp <= 0) {
           target.fainted = true;

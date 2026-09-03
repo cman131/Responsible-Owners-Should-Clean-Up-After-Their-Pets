@@ -216,3 +216,54 @@ describe('Counter / Mirror Coat / Metal Burst', () => {
     expect(metalBurstFailed).toBe(true);
   });
 });
+
+describe('Fixed & level-based damage moves', () => {
+  it('Seismic Toss at level 50 deals exactly 50 HP', () => {
+    const state = make1v1State(); // p1 is level 50 by default
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'seismictoss', currentPp: 20, maxPp: 20 };
+    // p2 submits no action — only p1 attacks
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2.currentHp).toBe(50); // 100 - 50 = 50
+  });
+
+  it('Night Shade at level 50 deals exactly 50 HP', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'nightshade', currentPp: 15, maxPp: 15 };
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2.currentHp).toBe(50); // 100 - 50 = 50
+  });
+
+  it('Dragon Rage deals exactly 40 HP', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'dragonrage', currentPp: 10, maxPp: 10 };
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2.currentHp).toBe(60); // 100 - 40 = 60
+  });
+
+  it('Sonic Boom deals exactly 20 HP', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'sonicboom', currentPp: 20, maxPp: 20 };
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2.currentHp).toBe(80); // 100 - 20 = 80
+  });
+});
