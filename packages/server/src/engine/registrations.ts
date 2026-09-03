@@ -92,6 +92,9 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
   r.register('milkdrink',   healPercent(0.5));
   r.register('moonlight',   healPercent(0.5));
   r.register('synthesis',   healPercent(0.5));
+  r.register('slackoff',    healPercent(0.5));
+  r.register('shoreup',     healPercent(0.5)); // weather variant added in Task 10
+  r.register('morningsun',  healPercent(0.5)); // weather variant added in Task 10
 
   // ── Weather ────────────────────────────────────────────────────────
   r.register('sunnyday',   setWeather('sun',  5));
