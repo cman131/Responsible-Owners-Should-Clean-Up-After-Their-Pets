@@ -435,6 +435,22 @@ export class BattleEngine {
       effectiveMoveType = WEATHER_BALL_TYPE[s.field.weather.type] ?? move.type;
     }
 
+    // Magnitude: weighted random tier → sets base power
+    if (move.id === 'magnitude') {
+      const roll = this.rng();
+      let magnitudeNum: number;
+      let magnitudeBp: number;
+      if (roll < 0.05)       { magnitudeNum = 4;  magnitudeBp = 10;  }
+      else if (roll < 0.15)  { magnitudeNum = 5;  magnitudeBp = 30;  }
+      else if (roll < 0.35)  { magnitudeNum = 6;  magnitudeBp = 50;  }
+      else if (roll < 0.65)  { magnitudeNum = 7;  magnitudeBp = 70;  }
+      else if (roll < 0.85)  { magnitudeNum = 8;  magnitudeBp = 90;  }
+      else if (roll < 0.95)  { magnitudeNum = 9;  magnitudeBp = 110; }
+      else                   { magnitudeNum = 10; magnitudeBp = 150; }
+      effectiveBasePower = magnitudeBp;
+      events.push({ type: 'move-note', data: { note: `Magnitude ${magnitudeNum}!` } });
+    }
+
     // Extreme-weather move nullification (must come after effectiveMoveType is resolved)
     if (s.field.weather) {
       const wt = s.field.weather.type;

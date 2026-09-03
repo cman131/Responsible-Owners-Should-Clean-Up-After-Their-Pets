@@ -114,7 +114,8 @@ export interface TurnResolveEvent {
     | 'item-consumed'
     | 'status-blocked'
     | 'ability-triggered'
-    | 'pivot-skipped';
+    | 'pivot-skipped'
+    | 'move-note';
   data: Record<string, unknown>;
 }
 

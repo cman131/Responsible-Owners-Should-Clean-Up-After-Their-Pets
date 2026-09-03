@@ -546,6 +546,107 @@ describe('Beat Up', () => {
   });
 });
 
+describe('Magnitude', () => {
+  // Magnitude is a Ground-type move. Charizard (speciesId=6) is Fire/Flying and immune to Ground.
+  // Use Bulbasaur (speciesId=1, Grass/Poison) as the target — grounded and not immune to Ground.
+  function makeMagnitudeState() {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'magnitude', currentPp: 30, maxPp: 30 };
+    // p2 uses a grounded species (Bulbasaur, speciesId=1) so Ground moves hit
+    state.teams[1]!.slots[0]!.party[0]!.speciesId = 1;
+    state.teams[1]!.slots[0]!.party[0]!.speciesName = 'bulbasaur';
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+    return state;
+  }
+
+  it('Magnitude 7 (rng=0.5) deals damage and emits move-note "Magnitude 7!"', () => {
+    // rng=0.5 → 0.35 < 0.5 < 0.65 → Magnitude 7 → BP 70
+    const state = makeMagnitudeState();
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    // Damage should be > 0
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2.currentHp).toBeLessThan(100);
+
+    // A move-note event should be emitted with "Magnitude 7!"
+    const noteEvent = events.find((e: TurnResolveEvent) => e.type === 'move-note');
+    expect(noteEvent).toBeDefined();
+    expect((noteEvent!.data as { note: string }).note).toBe('Magnitude 7!');
+  });
+
+  it('Magnitude 4 (rng=0.02) deals less damage than Magnitude 7 (rng=0.5)', () => {
+    // rng=0.02 → < 0.05 → Magnitude 4 → BP 10 (always hits: 0.02*100=2 < 100)
+    // rng=0.5  → Magnitude 7 → BP 70
+    // randomDamageFactor uses Math.random directly, not this.rng, so constant rng is safe
+    const state4 = makeMagnitudeState();
+    const state7 = makeMagnitudeState();
+
+    const engine4 = new BattleEngine({ rng: () => 0.02 });
+    const { newState: ns4 } = engine4.resolveTurn(state4, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const engine7 = new BattleEngine({ rng: () => 0.5 });
+    const { newState: ns7 } = engine7.resolveTurn(state7, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const damage4 = 100 - ns4.teams[1]!.slots[0]!.party[0]!.currentHp;
+    const damage7 = 100 - ns7.teams[1]!.slots[0]!.party[0]!.currentHp;
+
+    // Magnitude 4 (BP 10) should deal less damage than Magnitude 7 (BP 70)
+    expect(damage4).toBeGreaterThan(0);
+    expect(damage4).toBeLessThan(damage7);
+  });
+
+  it('Magnitude 10 (rng=0.97) deals more damage than Magnitude 7 (rng=0.5)', () => {
+    // rng=0.97 → >= 0.95 → Magnitude 10 → BP 150 (accuracy: 0.97*100=97 < 100 → hits)
+    // rng=0.5 → Magnitude 7 → BP 70
+    const state10 = makeMagnitudeState();
+    const state7 = makeMagnitudeState();
+
+    const engine10 = new BattleEngine({ rng: () => 0.97 });
+    const { newState: ns10 } = engine10.resolveTurn(state10, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const engine7 = new BattleEngine({ rng: () => 0.5 });
+    const { newState: ns7 } = engine7.resolveTurn(state7, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const damage10 = 100 - ns10.teams[1]!.slots[0]!.party[0]!.currentHp;
+    const damage7 = 100 - ns7.teams[1]!.slots[0]!.party[0]!.currentHp;
+
+    // Magnitude 10 (BP 150) should deal more damage than Magnitude 7 (BP 70)
+    expect(damage10).toBeGreaterThan(damage7);
+  });
+
+  it('move-note event contains the correct Magnitude tier text for Magnitude 9', () => {
+    // rng=0.9 → 0.85 <= 0.9 < 0.95 → Magnitude 9 → BP 110 (accuracy: 0.9*100=90 < 100 → hits)
+    const state = makeMagnitudeState();
+
+    const engine9 = new BattleEngine({ rng: () => 0.9 });
+    const { events } = engine9.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const noteEvent = events.find((e: TurnResolveEvent) => e.type === 'move-note');
+    expect(noteEvent).toBeDefined();
+    expect((noteEvent!.data as { note: string }).note).toBe('Magnitude 9!');
+  });
+});
+
 describe('Phasing moves (Dragon Tail / Circle Throw)', () => {
   it('Dragon Tail deals damage and forces target to switch to bench member', () => {
     // p1 uses dragontail (priority -6), p2 has 2 party members (active + 1 bench)
