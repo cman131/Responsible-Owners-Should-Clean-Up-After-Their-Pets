@@ -623,6 +623,8 @@ export class BattleEngine {
         target.currentHp = 0;
         target.fainted = true;
         target.lastDamageTaken = { amount: ohkoDmg, category: move.category as 'physical' | 'special', fromSlotId: attackerSlotId };
+        const bideVolOhko = target.volatileStatus.find(v => v.name === 'bide');
+        if (bideVolOhko) bideVolOhko.accumulated = (bideVolOhko.accumulated ?? 0) + ohkoDmg;
         events.push({ type: 'damage-dealt', data: {
           attackerSlotId, targetSlotId, moveId: move.id,
           damage: ohkoDmg, effectiveness: 1, remainingHp: 0,
@@ -650,6 +652,9 @@ export class BattleEngine {
 
         const actualCounter = Math.min(counterDamage, target.currentHp);
         target.currentHp -= actualCounter;
+        target.lastDamageTaken = { amount: actualCounter, category: move.category as 'physical' | 'special', fromSlotId: attackerSlotId };
+        const bideVolCounter = target.volatileStatus.find(v => v.name === 'bide');
+        if (bideVolCounter) bideVolCounter.accumulated = (bideVolCounter.accumulated ?? 0) + actualCounter;
         events.push({ type: 'damage-dealt', data: {
           attackerSlotId, targetSlotId, moveId: move.id,
           damage: actualCounter, effectiveness: 1, remainingHp: target.currentHp,
@@ -668,6 +673,8 @@ export class BattleEngine {
         const actualFixed = Math.min(fixedDamage, target.currentHp);
         target.currentHp -= actualFixed;
         target.lastDamageTaken = { amount: actualFixed, category: move.category as 'physical' | 'special', fromSlotId: attackerSlotId };
+        const bideVolFixed = target.volatileStatus.find(v => v.name === 'bide');
+        if (bideVolFixed) bideVolFixed.accumulated = (bideVolFixed.accumulated ?? 0) + actualFixed;
         events.push({ type: 'damage-dealt', data: {
           attackerSlotId, targetSlotId, moveId: move.id,
           damage: actualFixed, effectiveness: 1, remainingHp: target.currentHp,
@@ -689,6 +696,8 @@ export class BattleEngine {
         const cappedHalf = Math.min(halfDmg, target.currentHp);
         target.currentHp -= cappedHalf;
         target.lastDamageTaken = { amount: cappedHalf, category: move.category as 'physical' | 'special', fromSlotId: attackerSlotId };
+        const bideVolHalf = target.volatileStatus.find(v => v.name === 'bide');
+        if (bideVolHalf) bideVolHalf.accumulated = (bideVolHalf.accumulated ?? 0) + cappedHalf;
         events.push({ type: 'damage-dealt', data: {
           attackerSlotId, targetSlotId, moveId: move.id,
           damage: cappedHalf, effectiveness: 1, remainingHp: target.currentHp,
@@ -709,6 +718,8 @@ export class BattleEngine {
         const endeavorDmg = target.currentHp - attacker.currentHp;
         target.currentHp -= endeavorDmg;
         target.lastDamageTaken = { amount: endeavorDmg, category: move.category as 'physical' | 'special', fromSlotId: attackerSlotId };
+        const bideVolEndeavor = target.volatileStatus.find(v => v.name === 'bide');
+        if (bideVolEndeavor) bideVolEndeavor.accumulated = (bideVolEndeavor.accumulated ?? 0) + endeavorDmg;
         events.push({ type: 'damage-dealt', data: {
           attackerSlotId, targetSlotId, moveId: move.id,
           damage: endeavorDmg, effectiveness: 1, remainingHp: target.currentHp,
@@ -723,6 +734,8 @@ export class BattleEngine {
         const cappedGambit = Math.min(gambitDmg, target.currentHp);
         target.currentHp -= cappedGambit;
         target.lastDamageTaken = { amount: cappedGambit, category: move.category as 'physical' | 'special', fromSlotId: attackerSlotId };
+        const bideVolGambit = target.volatileStatus.find(v => v.name === 'bide');
+        if (bideVolGambit) bideVolGambit.accumulated = (bideVolGambit.accumulated ?? 0) + cappedGambit;
         events.push({ type: 'damage-dealt', data: {
           attackerSlotId, targetSlotId, moveId: move.id,
           damage: cappedGambit, effectiveness: 1, remainingHp: target.currentHp,
@@ -785,6 +798,8 @@ export class BattleEngine {
 
         if (beatUpTotal > 0) {
           target.lastDamageTaken = { amount: beatUpTotal, category: 'physical', fromSlotId: attackerSlotId };
+          const bideVolBeatUp = target.volatileStatus.find(v => v.name === 'bide');
+          if (bideVolBeatUp) bideVolBeatUp.accumulated = (bideVolBeatUp.accumulated ?? 0) + beatUpTotal;
         }
         continue;
       }

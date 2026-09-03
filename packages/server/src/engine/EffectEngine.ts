@@ -61,6 +61,7 @@ export class EffectEngine {
         return { blocked: true, events };
       }
       // Still biding (counter > 0) — block chosen move
+      events.push({ type: 'move-blocked', data: { slotId, pokemonName: pokemon.nickname, reason: 'bide' } });
       return { blocked: true, events };
     }
 
