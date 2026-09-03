@@ -392,11 +392,14 @@ export function cureTeamStatus(): MoveEffectHandler {
 export function wish(): MoveEffectHandler {
   return (ctx) => {
     if (ctx.user.volatileStatus.some(v => v.name === 'heal-block')) {
-      return { events: [{ type: 'move-failed', data: { moveId: 'wish', reason: 'heal-blocked' } }] };
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'heal-blocked' } }] };
     }
     const userSlot = ctx.battle.teams[ctx.userTeamIndex]!.slots.find(s => s.slotId === ctx.userSlotId);
     if (!userSlot) return { events: [] };
-    userSlot.wish = { hp: Math.floor(ctx.user.maxHp / 2), turnsRemaining: 1 };
+    if (userSlot.wish) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'already-active' } }] };
+    }
+    userSlot.wish = { hp: Math.floor(ctx.user.maxHp / 2), turnsRemaining: 2 };
     return { events: [{ type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'wish' } }] };
   };
 }

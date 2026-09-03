@@ -178,7 +178,7 @@ describe('healbell', () => {
 });
 
 describe('wish', () => {
-  it('sets slot.wish with half of user max HP and turnsRemaining=1', () => {
+  it('sets slot.wish with half of user max HP and turnsRemaining=2', () => {
     const state = make1v1State();
     const user = makePokemon({ maxHp: 200, currentHp: 200 });
     state.teams[0]!.slots[0]!.party[0] = user;
@@ -186,7 +186,20 @@ describe('wish', () => {
     const ctx: MoveContext = { ...makeCtx(), battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 };
     registry.get('wish')!(ctx);
 
-    expect(state.teams[0]!.slots[0]!.wish).toEqual({ hp: 100, turnsRemaining: 1 });
+    expect(state.teams[0]!.slots[0]!.wish).toEqual({ hp: 100, turnsRemaining: 2 });
+  });
+
+  it('fails if a wish is already pending on the slot', () => {
+    const state = make1v1State();
+    const user = makePokemon({ maxHp: 200, currentHp: 200 });
+    state.teams[0]!.slots[0]!.party[0] = user;
+    state.teams[0]!.slots[0]!.wish = { hp: 50, turnsRemaining: 2 };
+
+    const ctx: MoveContext = { ...makeCtx(), battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 };
+    const { events } = registry.get('wish')!(ctx);
+
+    expect(events.some(e => e.type === 'move-failed')).toBe(true);
+    expect(state.teams[0]!.slots[0]!.wish).toEqual({ hp: 50, turnsRemaining: 2 }); // unchanged
   });
 
   it('heals the active pokemon at end of next turn', () => {
