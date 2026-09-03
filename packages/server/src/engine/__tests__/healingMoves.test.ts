@@ -923,3 +923,98 @@ describe('rest', () => {
     expect(user.volatileStatus.some(v => v.name === 'toxic')).toBe(false);
   });
 });
+
+describe('healingwish', () => {
+  it('faints the user and sets pendingHeal on the slot', () => {
+    const state = make1v1State();
+    const user = makePokemon({ instanceId: 'p1', maxHp: 100, currentHp: 80 });
+    state.teams[0]!.slots[0]!.party[0] = user;
+
+    const ctx: MoveContext = { ...makeCtx(), battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 };
+    const { events } = registry.get('healingwish')!(ctx);
+
+    expect(user.fainted).toBe(true);
+    expect(user.currentHp).toBe(0);
+    expect(state.teams[0]!.slots[0]!.pendingHeal).toBe('healingwish');
+    expect(events.some(e => e.type === 'faint')).toBe(true);
+  });
+
+  it('fully heals the next pokemon that switches in', () => {
+    const state = make1v1State();
+    const foe = makePokemon({ instanceId: 'p2' });
+    state.teams[1]!.slots[0]!.party[0] = foe;
+
+    const active = makePokemon({ instanceId: 'p1', fainted: true, currentHp: 0 });
+    // Use a very large maxHp so the bench is clearly at full after healing, even after taking foe damage
+    const bench = makePokemon({ instanceId: 'p1-bench', maxHp: 10000, currentHp: 80 });
+    state.teams[0]!.slots[0]!.party = [active, bench];
+    state.teams[0]!.slots[0]!.pendingHeal = 'healingwish';
+
+    const engine = new BattleEngine();
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'switch', targetInstanceId: 'p1-bench' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    const slot = newState.teams[0]!.slots[0]!;
+    const incoming = slot.party[slot.activePokemonIndex]!;
+    expect(incoming.instanceId).toBe('p1-bench');
+    // Bench was healed to maxHp (10000) on switch-in; even after foe's attack it's well above original 80
+    expect(incoming.currentHp).toBeGreaterThan(80);
+    expect(events.some(e => e.type === 'heal')).toBe(true);
+    expect(slot.pendingHeal).toBeUndefined();
+  });
+});
+
+describe('lunardance', () => {
+  it('faints the user and sets pendingHeal=lunardance', () => {
+    const state = make1v1State();
+    const user = makePokemon({ instanceId: 'p1' });
+    state.teams[0]!.slots[0]!.party[0] = user;
+
+    const ctx: MoveContext = { ...makeCtx(), battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 };
+    registry.get('lunardance')!(ctx);
+
+    expect(user.fainted).toBe(true);
+    expect(state.teams[0]!.slots[0]!.pendingHeal).toBe('lunardance');
+  });
+
+  it('restores HP and PP for the next switch-in', () => {
+    const state = make1v1State();
+    const foe = makePokemon({ instanceId: 'p2' });
+    state.teams[1]!.slots[0]!.party[0] = foe;
+
+    const active = makePokemon({ instanceId: 'p1', fainted: true, currentHp: 0 });
+    // Use a very large maxHp so we can confirm healing even after foe's attack
+    const bench = makePokemon({
+      instanceId: 'p1-bench',
+      maxHp: 10000,
+      currentHp: 50,
+      moves: [
+        { moveId: 'flamethrower', currentPp: 0, maxPp: 15 },
+        { moveId: 'airslash',     currentPp: 3, maxPp: 15 },
+        { moveId: 'roost',        currentPp: 0, maxPp: 10 },
+        { moveId: 'willowisp',    currentPp: 15, maxPp: 15 },
+      ],
+    });
+    state.teams[0]!.slots[0]!.party = [active, bench];
+    state.teams[0]!.slots[0]!.pendingHeal = 'lunardance';
+
+    const engine = new BattleEngine();
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'switch', targetInstanceId: 'p1-bench' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    const slot = newState.teams[0]!.slots[0]!;
+    const incoming = slot.party[slot.activePokemonIndex]!;
+    // Bench was healed to maxHp on switch-in; even after foe's attack it's well above original 50
+    expect(incoming.currentHp).toBeGreaterThan(50);
+    expect(events.some(e => e.type === 'heal')).toBe(true);
+    // PP fully restored
+    expect(incoming.moves[0]!.currentPp).toBe(15);
+    expect(incoming.moves[1]!.currentPp).toBe(15);
+    expect(incoming.moves[2]!.currentPp).toBe(10);
+    expect(slot.pendingHeal).toBeUndefined();
+  });
+});

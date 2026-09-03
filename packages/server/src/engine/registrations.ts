@@ -125,6 +125,28 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
   r.register('healbell',     cureTeamStatus());
   r.register('wish',         wish());
 
+  r.register('healingwish', custom((ctx) => {
+    const userSlot = ctx.battle.teams[ctx.userTeamIndex]!.slots.find(s => s.slotId === ctx.userSlotId);
+    if (!userSlot) return { events: [] };
+    ctx.user.currentHp = 0;
+    ctx.user.fainted = true;
+    userSlot.pendingHeal = 'healingwish';
+    return {
+      events: [{ type: 'faint', data: { slotId: ctx.userSlotId, instanceId: ctx.user.instanceId } }],
+    };
+  }));
+
+  r.register('lunardance', custom((ctx) => {
+    const userSlot = ctx.battle.teams[ctx.userTeamIndex]!.slots.find(s => s.slotId === ctx.userSlotId);
+    if (!userSlot) return { events: [] };
+    ctx.user.currentHp = 0;
+    ctx.user.fainted = true;
+    userSlot.pendingHeal = 'lunardance';
+    return {
+      events: [{ type: 'faint', data: { slotId: ctx.userSlotId, instanceId: ctx.user.instanceId } }],
+    };
+  }));
+
   r.register('refresh', custom((ctx) => {
     if (!ctx.user.status) {
       return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'no-status' } }] };

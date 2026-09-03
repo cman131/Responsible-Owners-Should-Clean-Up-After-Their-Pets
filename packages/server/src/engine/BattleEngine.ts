@@ -139,7 +139,9 @@ export class BattleEngine {
       const slot = this.findSlot(s, slotId);
       if (!slot) continue;
       const active = slot.party[slot.activePokemonIndex];
-      if (!active || active.fainted) continue;
+      // Skip moves when there is no active (or active has fainted).
+      // Allow switches even when active has fainted (faint-replacement flow).
+      if (action.type !== 'switch' && (!active || active.fainted)) continue;
 
       if (action.type === 'move') {
         const moveResult = this.executeMove(s, slotId, action, movedSlotIds, order);
@@ -1546,6 +1548,20 @@ export class BattleEngine {
       const incomingTypes = this.resolveEffectiveTypes(incoming);
       const grounded = isGrounded(incoming, incomingTypes, s.field.gravity > 0);
       events.push(...applyEntryHazards(incoming, slotId, incomingSide, incomingTeamIndex, incomingTypes, grounded, this.data));
+    }
+
+    // Healing Wish / Lunar Dance: heal incoming Pokemon if flag is set
+    if (slot.pendingHeal && incoming) {
+      const priorHp = incoming.currentHp;
+      incoming.currentHp = incoming.maxHp;
+      if (slot.pendingHeal === 'lunardance') {
+        for (const m of incoming.moves) m.currentPp = m.maxPp;
+      }
+      const healAmount = incoming.maxHp - priorHp;
+      delete slot.pendingHeal;
+      if (healAmount > 0) {
+        events.push({ type: 'heal', data: { slotId, amount: healAmount, remainingHp: incoming.maxHp } });
+      }
     }
 
     // 5. onSwitchIn ability hook
