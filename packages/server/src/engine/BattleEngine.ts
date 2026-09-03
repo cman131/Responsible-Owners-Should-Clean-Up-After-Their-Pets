@@ -31,6 +31,8 @@ const FIXED_DAMAGE_MOVES: Record<string, (attacker: PartyMember) => number> = {
   sonicboom:   () => 20,
 };
 
+const HP_HALVING_MOVES = new Set(['superfang', 'naturesmadness', 'ruination']);
+
 const CHOICE_LOCK_ITEMS = new Set(['choice-band', 'choice-specs', 'choice-scarf']);
 
 const ABILITY_VOLATILE_CLEAR = new Set(['slow-start', 'truant']);
@@ -637,6 +639,7 @@ export class BattleEngine {
         const fixedDamage = fixedDmgFn(attacker);
         const actualFixed = Math.min(fixedDamage, target.currentHp);
         target.currentHp -= actualFixed;
+        target.lastDamageTaken = { amount: actualFixed, category: move.category as 'physical' | 'special', fromSlotId: attackerSlotId };
         events.push({ type: 'damage-dealt', data: {
           attackerSlotId, targetSlotId, moveId: move.id,
           damage: actualFixed, effectiveness: 1, remainingHp: target.currentHp,
@@ -646,6 +649,65 @@ export class BattleEngine {
           events.push({ type: 'faint', data: { slotId: targetSlotId, instanceId: target.instanceId } });
         }
         continue; // skip normal damage formula
+      }
+
+      // HP-halving moves (Super Fang, Nature's Madness, Ruination)
+      if (HP_HALVING_MOVES.has(move.id)) {
+        if (target.currentHp <= 1) {
+          events.push({ type: 'move-failed', data: { moveId: move.id, reason: 'target-at-1hp' } });
+          continue;
+        }
+        const halfDmg = Math.max(1, Math.floor(target.currentHp / 2));
+        const cappedHalf = Math.min(halfDmg, target.currentHp);
+        target.currentHp -= cappedHalf;
+        target.lastDamageTaken = { amount: cappedHalf, category: move.category as 'physical' | 'special', fromSlotId: attackerSlotId };
+        events.push({ type: 'damage-dealt', data: {
+          attackerSlotId, targetSlotId, moveId: move.id,
+          damage: cappedHalf, effectiveness: 1, remainingHp: target.currentHp,
+        }});
+        if (target.currentHp <= 0) {
+          target.fainted = true;
+          events.push({ type: 'faint', data: { slotId: targetSlotId, instanceId: target.instanceId } });
+        }
+        continue;
+      }
+
+      // Endeavor: sets target HP to attacker HP
+      if (move.id === 'endeavor') {
+        if (target.currentHp <= attacker.currentHp) {
+          events.push({ type: 'move-failed', data: { moveId: move.id, reason: 'attacker-hp-not-lower' } });
+          continue;
+        }
+        const endeavorDmg = target.currentHp - attacker.currentHp;
+        target.currentHp -= endeavorDmg;
+        target.lastDamageTaken = { amount: endeavorDmg, category: move.category as 'physical' | 'special', fromSlotId: attackerSlotId };
+        events.push({ type: 'damage-dealt', data: {
+          attackerSlotId, targetSlotId, moveId: move.id,
+          damage: endeavorDmg, effectiveness: 1, remainingHp: target.currentHp,
+        }});
+        // Endeavor never kills (target HP = attacker HP, which is >= 1)
+        continue;
+      }
+
+      // Final Gambit: deals damage equal to attacker's HP, then attacker faints
+      if (move.id === 'finalgambit') {
+        const gambitDmg = attacker.currentHp;
+        const cappedGambit = Math.min(gambitDmg, target.currentHp);
+        target.currentHp -= cappedGambit;
+        target.lastDamageTaken = { amount: cappedGambit, category: move.category as 'physical' | 'special', fromSlotId: attackerSlotId };
+        events.push({ type: 'damage-dealt', data: {
+          attackerSlotId, targetSlotId, moveId: move.id,
+          damage: cappedGambit, effectiveness: 1, remainingHp: target.currentHp,
+        }});
+        if (target.currentHp <= 0) {
+          target.fainted = true;
+          events.push({ type: 'faint', data: { slotId: targetSlotId, instanceId: target.instanceId } });
+        }
+        // Attacker also faints regardless
+        attacker.currentHp = 0;
+        attacker.fainted = true;
+        events.push({ type: 'faint', data: { slotId: attackerSlotId, instanceId: attacker.instanceId } });
+        continue;
       }
 
       const multihitSec = secs.find(sec => sec.kind === 'multihit');

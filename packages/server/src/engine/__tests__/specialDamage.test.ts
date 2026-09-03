@@ -163,6 +163,30 @@ describe('Counter / Mirror Coat / Metal Burst', () => {
     expect(mirrorCoatFailed).toBe(true);
   });
 
+  it('Mirror Coat after Sonic Boom (special fixed-damage move) deals 2x', () => {
+    // p1 uses Mirror Coat (priority -5), p2 uses Sonic Boom (priority 0, special, fixed 20 dmg)
+    // p2 moves first, hits p1 with special damage (20 HP), p1 counters with 2x (40 HP)
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'mirrorcoat', currentPp: 20, maxPp: 20 };
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'sonicboom', currentPp: 20, maxPp: 20 };
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    const failedEvents = events.filter((e: TurnResolveEvent) => e.type === 'move-failed');
+    expect(failedEvents).toHaveLength(0);
+
+    const p1 = newState.teams[0]!.slots[0]!.party[0]!;
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    const sonicBoomDamage = 100 - p1.currentHp; // should be exactly 20
+    expect(sonicBoomDamage).toBe(20);
+    const mirrorCoatDamage = 100 - p2.currentHp; // should be 2x * 20 = 40
+    expect(mirrorCoatDamage).toBe(40);
+  });
+
   it('Metal Burst after taking damage deals floor(1.5x) to attacker', () => {
     // p1 uses Metal Burst (priority -3.5), p2 uses flamethrower (priority 0, special)
     // Make p1 slower so p2 attacks first (natural speed ordering), setting p1.lastDamageTaken
@@ -214,6 +238,116 @@ describe('Counter / Mirror Coat / Metal Burst', () => {
       (e: TurnResolveEvent) => e.type === 'move-failed' && (e.data as { moveId: string }).moveId === 'metalburst'
     );
     expect(metalBurstFailed).toBe(true);
+  });
+});
+
+describe('HP-based damage moves', () => {
+  it('Super Fang on 100 HP target deals 50 damage', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'superfang', currentPp: 10, maxPp: 10 };
+    // p2 uses swordsdance so it does not damage p1
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2.currentHp).toBe(50); // floor(100 / 2) = 50 damage
+    const failedEvents = events.filter((e: TurnResolveEvent) => e.type === 'move-failed');
+    expect(failedEvents).toHaveLength(0);
+  });
+
+  it('Super Fang fails when target is at 1 HP', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'superfang', currentPp: 10, maxPp: 10 };
+    state.teams[1]!.slots[0]!.party[0]!.currentHp = 1;
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2.currentHp).toBe(1); // HP unchanged
+    const failedEvents = events.filter((e: TurnResolveEvent) => e.type === 'move-failed');
+    expect(failedEvents.length).toBeGreaterThan(0);
+    const superfangFailed = failedEvents.some(
+      (e: TurnResolveEvent) => e.type === 'move-failed' && (e.data as { moveId: string }).moveId === 'superfang'
+    );
+    expect(superfangFailed).toBe(true);
+  });
+
+  it('Endeavor with attacker at 30 HP and target at 80 HP deals 50 damage, target HP becomes 30', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'endeavor', currentPp: 5, maxPp: 5 };
+    state.teams[0]!.slots[0]!.party[0]!.currentHp = 30;
+    state.teams[1]!.slots[0]!.party[0]!.currentHp = 80;
+    // p2 uses swordsdance so it does not damage p1 (keeping p1 at 30 HP)
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2.currentHp).toBe(30); // target HP equals attacker HP
+    const failedEvents = events.filter((e: TurnResolveEvent) => e.type === 'move-failed');
+    expect(failedEvents).toHaveLength(0);
+  });
+
+  it('Endeavor fails when attacker HP >= target HP', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'endeavor', currentPp: 5, maxPp: 5 };
+    state.teams[0]!.slots[0]!.party[0]!.currentHp = 80;
+    state.teams[1]!.slots[0]!.party[0]!.currentHp = 30;
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2.currentHp).toBe(30); // HP unchanged
+    const failedEvents = events.filter((e: TurnResolveEvent) => e.type === 'move-failed');
+    expect(failedEvents.length).toBeGreaterThan(0);
+    const endeavorFailed = failedEvents.some(
+      (e: TurnResolveEvent) => e.type === 'move-failed' && (e.data as { moveId: string }).moveId === 'endeavor'
+    );
+    expect(endeavorFailed).toBe(true);
+  });
+
+  it('Final Gambit with attacker at 40 HP deals 40 damage to target and attacker faints', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'finalgambit', currentPp: 5, maxPp: 5 };
+    state.teams[0]!.slots[0]!.party[0]!.currentHp = 40;
+    // p2 starts at 100 HP, uses swordsdance so p1 stays at 40 HP
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const p1 = newState.teams[0]!.slots[0]!.party[0]!;
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2.currentHp).toBe(60); // 100 - 40 = 60
+    expect(p1.currentHp).toBe(0);  // attacker's HP goes to 0
+    expect(p1.fainted).toBe(true); // attacker faints
+    const faintEvents = events.filter((e: TurnResolveEvent) => e.type === 'faint');
+    const attackerFainted = faintEvents.some(
+      (e: TurnResolveEvent) => e.type === 'faint' && (e.data as { slotId: string }).slotId === 'slot-a1'
+    );
+    expect(attackerFainted).toBe(true);
   });
 });
 
