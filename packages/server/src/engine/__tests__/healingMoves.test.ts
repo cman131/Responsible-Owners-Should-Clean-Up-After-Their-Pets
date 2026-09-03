@@ -973,10 +973,12 @@ describe('lunardance', () => {
     state.teams[0]!.slots[0]!.party[0] = user;
 
     const ctx: MoveContext = { ...makeCtx(), battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 };
-    registry.get('lunardance')!(ctx);
+    const { events } = registry.get('lunardance')!(ctx);
 
     expect(user.fainted).toBe(true);
+    expect(user.currentHp).toBe(0);
     expect(state.teams[0]!.slots[0]!.pendingHeal).toBe('lunardance');
+    expect(events.some(e => e.type === 'faint')).toBe(true);
   });
 
   it('restores HP and PP for the next switch-in', () => {
