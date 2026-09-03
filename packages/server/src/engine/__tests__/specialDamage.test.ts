@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { BattleEngine } from '../BattleEngine.js';
 import { make1v1State } from './fixtures.js';
+import type { TurnResolveEvent } from '@poke-fighter/shared';
 
 describe('lastDamageTaken tracking', () => {
   it('records physical damage on the target (target does not move this turn)', () => {
@@ -40,7 +41,7 @@ describe('lastDamageTaken tracking', () => {
     expect(p2.lastDamageTaken!.fromSlotId).toBe('slot-a1');
   });
 
-  it('clears lastDamageTaken from the attacker at the start of their move', () => {
+  it('clears lastDamageTaken from the attacker at the start of their moveAction', () => {
     const state = make1v1State();
     // p1 will move first (spe=100 > p2 spe=80)
     // Give p1 a status move (roost) so p2 does NOT get hit by p1, meaning p2's lastDamageTaken
@@ -64,5 +65,101 @@ describe('lastDamageTaken tracking', () => {
     // the start of their move execution. Since nobody hit p2 this turn, it should remain undefined.
     const p2 = newState.teams[1]!.slots[0]!.party[0]!;
     expect(p2.lastDamageTaken).toBeUndefined();
+  });
+});
+
+describe('Counter / Mirror Coat / Metal Burst', () => {
+  it('Counter after p2 physical attack deals 2x that damage to p2', () => {
+    // p1 uses Counter (priority -5), p2 uses tackle (priority 0, physical)
+    // p2 moves first (higher priority), hits p1, sets p1.lastDamageTaken (physical)
+    // p1 then uses Counter targeting p2, dealing 2x the damage p2 dealt
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'counter', currentPp: 20, maxPp: 20 };
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'tackle', currentPp: 35, maxPp: 35 };
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    // Verify no move-failed event for counter
+    const failedEvents = events.filter((e: TurnResolveEvent) => e.type === 'move-failed');
+    expect(failedEvents).toHaveLength(0);
+
+    // p1 took tackle damage; counter should have dealt 2x that to p2
+    const p1 = newState.teams[0]!.slots[0]!.party[0]!;
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    const tackleDamage = 100 - p1.currentHp; // damage p2 dealt to p1
+    expect(tackleDamage).toBeGreaterThan(0);
+    const counterDamage = 100 - p2.currentHp; // damage counter dealt to p2
+    expect(counterDamage).toBe(tackleDamage * 2);
+  });
+
+  it('Counter with no prior damage emits move-failed', () => {
+    // p1 uses Counter but has no lastDamageTaken (p2 also uses Counter, so no physical damage flows)
+    // Actually: p2 uses Counter too (priority -5), neither takes damage before their move → both fail
+    // Simpler: p1 uses Counter, p2 uses Mirror Coat — neither is physical damage to p1
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'counter', currentPp: 20, maxPp: 20 };
+    // p2 uses roost (non-damaging), so p1 takes no damage → lastDamageTaken remains undefined
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'roost', currentPp: 10, maxPp: 10 };
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' }, // roost is self-targeting
+    });
+
+    const failedEvents = events.filter((e: TurnResolveEvent) => e.type === 'move-failed');
+    expect(failedEvents.length).toBeGreaterThan(0);
+    const counterFailed = failedEvents.some(
+      (e: TurnResolveEvent) => e.type === 'move-failed' && (e.data as { moveId: string }).moveId === 'counter'
+    );
+    expect(counterFailed).toBe(true);
+  });
+
+  it('Mirror Coat after p2 special attack deals 2x that damage to p2', () => {
+    // p1 uses Mirror Coat (priority -5), p2 uses flamethrower (priority 0, special)
+    // p2 moves first, hits p1 with special damage, p1 counters with 2x
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'mirrorcoat', currentPp: 20, maxPp: 20 };
+    // p2 default move[0] is flamethrower (special)
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    const failedEvents = events.filter((e: TurnResolveEvent) => e.type === 'move-failed');
+    expect(failedEvents).toHaveLength(0);
+
+    const p1 = newState.teams[0]!.slots[0]!.party[0]!;
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    const flamethrowerDamage = 100 - p1.currentHp;
+    expect(flamethrowerDamage).toBeGreaterThan(0);
+    const mirrorCoatDamage = 100 - p2.currentHp;
+    expect(mirrorCoatDamage).toBe(flamethrowerDamage * 2);
+  });
+
+  it('Mirror Coat after physical attack emits move-failed', () => {
+    // p1 uses Mirror Coat, p2 uses tackle (physical) → Mirror Coat requires special damage → fails
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'mirrorcoat', currentPp: 20, maxPp: 20 };
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'tackle', currentPp: 35, maxPp: 35 };
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    const failedEvents = events.filter((e: TurnResolveEvent) => e.type === 'move-failed');
+    expect(failedEvents.length).toBeGreaterThan(0);
+    const mirrorCoatFailed = failedEvents.some(
+      (e: TurnResolveEvent) => e.type === 'move-failed' && (e.data as { moveId: string }).moveId === 'mirrorcoat'
+    );
+    expect(mirrorCoatFailed).toBe(true);
   });
 });

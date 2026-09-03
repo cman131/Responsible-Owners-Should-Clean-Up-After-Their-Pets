@@ -22,6 +22,8 @@ import { resolvePower } from './dynamicPower.js';
 
 const ALWAYS_THAW_MOVES = new Set(['scald', 'steameruption', 'sparklingaria']);
 
+const COUNTER_MOVES = new Set(['counter', 'mirrorcoat', 'metalburst', 'comeuppance']);
+
 const CHOICE_LOCK_ITEMS = new Set(['choice-band', 'choice-specs', 'choice-scarf']);
 
 const ABILITY_VOLATILE_CLEAR = new Set(['slow-start', 'truant']);
@@ -183,6 +185,8 @@ export class BattleEngine {
     const attacker = attackerSlot.party[attackerSlot.activePokemonIndex];
     if (!attacker) return { newState: s, events };
 
+    // Save lastDamageTaken before clearing — retaliation moves (Counter/Mirror Coat/etc.) need it
+    const savedLastDamageTaken = attacker.lastDamageTaken;
     delete attacker.lastDamageTaken;
 
     const preMoveResult = this.effectEngine.runPreMove(attacker, attackerSlotId, s, this.getAllSlots(s));
@@ -587,6 +591,36 @@ export class BattleEngine {
         }});
         events.push({ type: 'faint', data: { slotId: targetSlotId, instanceId: target.instanceId } });
         continue;
+      }
+
+      // Counter / Mirror Coat / Metal Burst / Comeuppance — retaliation moves
+      if (COUNTER_MOVES.has(move.id)) {
+        const ldt = savedLastDamageTaken;
+        let counterDamage: number | null = null;
+        if (move.id === 'counter') {
+          counterDamage = (ldt?.category === 'physical') ? ldt.amount * 2 : null;
+        } else if (move.id === 'mirrorcoat') {
+          counterDamage = (ldt?.category === 'special') ? ldt.amount * 2 : null;
+        } else { // metalburst, comeuppance
+          counterDamage = ldt ? Math.floor(ldt.amount * 1.5) : null;
+        }
+
+        if (counterDamage === null) {
+          events.push({ type: 'move-failed', data: { moveId: move.id, reason: 'no-damage-to-counter' } });
+          continue;
+        }
+
+        const actualCounter = Math.min(counterDamage, target.currentHp);
+        target.currentHp -= actualCounter;
+        events.push({ type: 'damage-dealt', data: {
+          attackerSlotId, targetSlotId, moveId: move.id,
+          damage: actualCounter, effectiveness: 1, remainingHp: target.currentHp,
+        }});
+        if (target.currentHp <= 0) {
+          target.fainted = true;
+          events.push({ type: 'faint', data: { slotId: targetSlotId, instanceId: target.instanceId } });
+        }
+        continue; // skip normal damage formula
       }
 
       const multihitSec = secs.find(sec => sec.kind === 'multihit');
