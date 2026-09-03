@@ -52,6 +52,7 @@ export interface PartyMember {
   teraType?: PokemonType;
   hasTerastallized: boolean;
   lastMoveId?: string;
+  friendship?: number;
   tracedAbilityId?: string;
   lockedMoveId?: string;
   isEvioliteEligible?: boolean;

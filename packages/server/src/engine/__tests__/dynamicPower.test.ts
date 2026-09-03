@@ -2,10 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { resolvePower } from '../dynamicPower.js';
 
 // minimal stubs
-const mon = (overrides = {}) => ({
+const mon = (overrides: Record<string, unknown> = {}) => ({
   stats: { atk: 100, def: 100, spa: 100, spd: 100, spe: 100 },
   statBoosts: { atk: 0, def: 0, spa: 0, spd: 0, spe: 0, accuracy: 0, evasion: 0 },
-  currentHp: 100, maxHp: 100, status: undefined, heldItem: undefined,
+  currentHp: 100, maxHp: 100,
   volatileStatus: [], level: 50,
   ...overrides,
 });

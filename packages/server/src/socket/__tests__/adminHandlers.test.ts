@@ -67,6 +67,7 @@ const makeSpecies = (overrides: Partial<PokemonSpecies>): PokemonSpecies => ({
   expGrowth: 'MediumSlow',
   learnset: [],
   evolutionStage: 1,
+  weightkg: 6.9,
   ...overrides,
 });
 

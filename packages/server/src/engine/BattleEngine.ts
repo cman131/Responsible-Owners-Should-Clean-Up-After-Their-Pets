@@ -18,6 +18,7 @@ import { buildDefaultRegistry } from './registrations.js';
 import { SWITCH_CLEAR_NAMES, SWITCH_CLEAR_PREFIXES } from './volatileClearRules.js';
 import { isGrounded, GRAVITY_BLOCKED_MOVES, WEATHER_ACCURACY, SOLAR_MOVES, WEATHER_BALL_TYPE, GRASSY_TERRAIN_HALVED } from './fieldState.js';
 import { getScreenMultiplier, applyEntryHazards, decrementScreens } from './sideConditions.js';
+import { resolvePower } from './dynamicPower.js';
 
 const ALWAYS_THAW_MOVES = new Set(['scald', 'steameruption', 'sparklingaria']);
 
@@ -599,6 +600,17 @@ export class BattleEngine {
         secs.some(sec => ['status', 'stat', 'flinch', 'confusion'].includes(sec.kind))
       );
 
+      // Look up species weights for weight-based move power
+      const attackerSpeciesForPower = this.data.getSpecies(attacker.speciesId);
+      const targetSpeciesForPower = this.data.getSpecies(target.speciesId);
+      const resolvedPower = resolvePower(
+        move,
+        { ...attacker, weightkg: attackerSpeciesForPower?.weightkg ?? 0 },
+        { ...target, weightkg: targetSpeciesForPower?.weightkg ?? 0 },
+        s.field,
+      );
+      const perTargetBasePower = resolvedPower !== move.basePower ? resolvedPower : effectiveBasePower;
+
       let totalDamage = 0;
       for (let hit = 0; hit < hitCount; hit++) {
         if (target.fainted) break;
@@ -623,7 +635,7 @@ export class BattleEngine {
         const abilityHooks = getAbilityHooks(attacker.ability);
         if (abilityHooks.onAttackerModifier) {
           atkStat = Math.floor(atkStat * abilityHooks.onAttackerModifier({
-            user: attacker, state: s, moveType: effectiveMoveType, basePower: effectiveBasePower, target,
+            user: attacker, state: s, moveType: effectiveMoveType, basePower: perTargetBasePower, target,
           }));
         }
         const defStat = getEffectiveStat(rawDefStat, defBoost, defBoostKey);
@@ -632,7 +644,7 @@ export class BattleEngine {
         if (moveHasSecondaries) otherModifiers *= 1.3;
         if (itemHooks.onAttackerModifier) {
           otherModifiers *= itemHooks.onAttackerModifier({
-            holder: attacker, state: s, moveType: effectiveMoveType, basePower: effectiveBasePower, target, isPhysical,
+            holder: attacker, state: s, moveType: effectiveMoveType, basePower: perTargetBasePower, target, isPhysical,
           });
         }
 
@@ -667,7 +679,7 @@ export class BattleEngine {
             state: s,
             move,
             moveType: effectiveMoveType,
-            basePower: effectiveBasePower,
+            basePower: perTargetBasePower,
             isPhysical,
             makesContact: move.makesContact === true,
             effectiveness,
@@ -680,7 +692,7 @@ export class BattleEngine {
           holder: target,
           state: s,
           moveType: effectiveMoveType,
-          basePower: effectiveBasePower,
+          basePower: perTargetBasePower,
           target: attacker,
           isPhysical,
         });
@@ -690,7 +702,7 @@ export class BattleEngine {
           level: attacker.level,
           attackStat: atkStat,
           defenseStat: defStat,
-          basePower: effectiveBasePower,
+          basePower: perTargetBasePower,
           typeEffectiveness: effectiveness,
           stab,
           isBurned: isPhysical && attacker.status === 'brn',
@@ -702,9 +714,9 @@ export class BattleEngine {
         });
 
         let finalDamage = damage;
-        const abilityDmgMod = abilityHooks.onDamageModifier?.({ user: attacker, state: s, moveType: effectiveMoveType, basePower: effectiveBasePower, target });
+        const abilityDmgMod = abilityHooks.onDamageModifier?.({ user: attacker, state: s, moveType: effectiveMoveType, basePower: perTargetBasePower, target });
         if (abilityDmgMod !== undefined) finalDamage = Math.floor(finalDamage * abilityDmgMod);
-        const itemDmgMod = itemHooks.onDamageModifier?.({ holder: attacker, state: s, moveType: effectiveMoveType, basePower: effectiveBasePower, target, isPhysical, effectiveness });
+        const itemDmgMod = itemHooks.onDamageModifier?.({ holder: attacker, state: s, moveType: effectiveMoveType, basePower: perTargetBasePower, target, isPhysical, effectiveness });
         if (itemDmgMod !== undefined) finalDamage = Math.floor(finalDamage * itemDmgMod);
 
         const subEntry = target.volatileStatus.find(v => v.name === 'substitute');
