@@ -103,6 +103,18 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
     return { events };
   }));
 
+  r.register('clangoroussoul', custom((ctx) => {
+    const cost = Math.floor(ctx.user.maxHp / 3);
+    if (ctx.user.currentHp <= cost) {
+      return { events: [{ type: 'move-failed', data: { moveId: 'clangoroussoul', reason: 'too-weak' } }] };
+    }
+    ctx.user.currentHp -= cost;
+    const events: TurnResolveEvent[] = [];
+    events.push({ type: 'damage-dealt', data: { source: 'clangoroussoul', slotId: ctx.userSlotId, damage: cost, remainingHp: ctx.user.currentHp } });
+    events.push(applyStatBoost(ctx.user, ctx.userSlotId, { atk: 1, def: 1, spa: 1, spd: 1, spe: 1 }));
+    return { events };
+  }));
+
   r.register('bellydrum', custom((ctx) => {
     const halfMaxHp = Math.floor(ctx.user.maxHp / 2);
     if (ctx.user.currentHp <= halfMaxHp || ctx.user.statBoosts.atk === 6) {

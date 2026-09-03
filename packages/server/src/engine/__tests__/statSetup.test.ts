@@ -240,6 +240,34 @@ describe('filletaway', () => {
   });
 });
 
+describe('clangoroussoul', () => {
+  it('costs floor(maxHp/3) HP and boosts all five stats by +1', () => {
+    const user = makePokemon({ maxHp: 150, currentHp: 150 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0] = user;
+    const { events } = invoke('clangoroussoul', { battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 });
+    expect(user.currentHp).toBe(100);
+    expect(user.statBoosts.atk).toBe(1);
+    expect(user.statBoosts.def).toBe(1);
+    expect(user.statBoosts.spa).toBe(1);
+    expect(user.statBoosts.spd).toBe(1);
+    expect(user.statBoosts.spe).toBe(1);
+    expect(events[0]!.type).toBe('damage-dealt');
+    expect((events[0]! as any).data.damage).toBe(50);
+    expect((events[0]! as any).data.remainingHp).toBe(100);
+    expect(events[1]!.type).toBe('stat-change');
+  });
+
+  it('fails if currentHp is at or below floor(maxHp/3)', () => {
+    const user = makePokemon({ maxHp: 150, currentHp: 50 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0] = user;
+    const { events } = invoke('clangoroussoul', { battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 });
+    expect(events[0]!.type).toBe('move-failed');
+    expect(user.currentHp).toBe(50);
+  });
+});
+
 describe('bellydrum', () => {
   it('costs 50% max HP and sets atk to +6', () => {
     const user = makePokemon({ maxHp: 100, currentHp: 100 });
