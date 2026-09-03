@@ -710,6 +710,57 @@ export class BattleEngine {
         continue;
       }
 
+      // Beat Up: hits once per healthy, non-statused party member (Gen 5+ mechanics)
+      if (move.id === 'beatup') {
+        const beatUpMembers = attackerSlot.party.filter(m => !m.fainted && !m.status);
+        if (beatUpMembers.length === 0) {
+          events.push({ type: 'move-failed', data: { moveId: move.id, reason: 'no-healthy-members' } });
+          continue;
+        }
+
+        let beatUpTotal = 0;
+        for (const member of beatUpMembers) {
+          if (target.fainted) break;
+
+          const memberSpecies = this.data.getSpecies(member.speciesId);
+          const memberBaseAtk = memberSpecies?.baseStats.atk ?? 60;
+          const beatUpPower = Math.floor(memberBaseAtk / 10) + 5;
+
+          const { damage: beatUpDmg } = calcDamage({
+            level: attacker.level,
+            attackStat: 10,
+            defenseStat: target.stats.def,
+            basePower: beatUpPower,
+            typeEffectiveness: effectiveness,
+            stab: false,
+            isBurned: false,
+            randomFactor: randomDamageFactor(),
+            isCritical: false,
+            moveType: 'Dark',
+            otherModifiers: 1,
+          });
+
+          const actualBeatUp = Math.min(beatUpDmg, target.currentHp);
+          target.currentHp -= actualBeatUp;
+          beatUpTotal += actualBeatUp;
+
+          events.push({ type: 'damage-dealt', data: {
+            attackerSlotId, targetSlotId, moveId: move.id,
+            damage: actualBeatUp, effectiveness, remainingHp: target.currentHp,
+          }});
+
+          if (target.currentHp <= 0) {
+            target.fainted = true;
+            events.push({ type: 'faint', data: { slotId: targetSlotId, instanceId: target.instanceId } });
+          }
+        }
+
+        if (beatUpTotal > 0) {
+          target.lastDamageTaken = { amount: beatUpTotal, category: 'physical', fromSlotId: attackerSlotId };
+        }
+        continue;
+      }
+
       const multihitSec = secs.find(sec => sec.kind === 'multihit');
       const hitCount = multihitSec ? this.rollHitCount(multihitSec.hits) : 1;
 

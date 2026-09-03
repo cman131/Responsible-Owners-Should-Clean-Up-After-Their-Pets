@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { BattleEngine } from '../BattleEngine.js';
-import { make1v1State } from './fixtures.js';
+import { make1v1State, makePokemon } from './fixtures.js';
 import type { TurnResolveEvent } from '@poke-fighter/shared';
 
 describe('lastDamageTaken tracking', () => {
@@ -476,5 +476,72 @@ describe('Fixed & level-based damage moves', () => {
 
     const p2 = newState.teams[1]!.slots[0]!.party[0]!;
     expect(p2.currentHp).toBe(80); // 100 - 20 = 80
+  });
+});
+
+describe('Beat Up', () => {
+  it('hits once per healthy party member — 3 healthy members = 3 damage-dealt events', () => {
+    const state = make1v1State();
+    // Add 2 more Charizard (speciesId=6, base atk=84) to p1's party
+    const extra1 = makePokemon({ instanceId: 'p1-mon2', speciesId: 6 });
+    const extra2 = makePokemon({ instanceId: 'p1-mon3', speciesId: 6 });
+    state.teams[0]!.slots[0]!.party.push(extra1, extra2);
+    // p1 uses beatup
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'beatup', currentPp: 10, maxPp: 10 };
+    // p2 uses swordsdance so it doesn't damage p1
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' }, // swordsdance is self-targeting
+    });
+
+    const beatUpDmgEvents = events.filter(
+      (e: TurnResolveEvent) => e.type === 'damage-dealt' && (e.data as { moveId?: string }).moveId === 'beatup'
+    );
+    expect(beatUpDmgEvents).toHaveLength(3); // one hit per healthy party member
+  });
+
+  it('skips fainted and statused party members — only healthy members hit', () => {
+    const state = make1v1State();
+    // Add 2 more party members to p1 — one fainted, one with burn status
+    const faintedMon = makePokemon({ instanceId: 'p1-mon2', speciesId: 6, fainted: true, currentHp: 0 });
+    const burnedMon = makePokemon({ instanceId: 'p1-mon3', speciesId: 6 });
+    burnedMon.status = 'brn';
+    state.teams[0]!.slots[0]!.party.push(faintedMon, burnedMon);
+    // p1 uses beatup — only the active (healthy) member contributes
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'beatup', currentPp: 10, maxPp: 10 };
+    // p2 uses swordsdance so it doesn't damage p1
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const beatUpDmgEvents = events.filter(
+      (e: TurnResolveEvent) => e.type === 'damage-dealt' && (e.data as { moveId?: string }).moveId === 'beatup'
+    );
+    expect(beatUpDmgEvents).toHaveLength(1); // only the healthy active mon contributes
+  });
+
+  it('each hit deals positive damage based on party member base atk', () => {
+    const state = make1v1State();
+    // Single healthy party member (the active Charizard, base atk=84)
+    // Beat Up power = floor(84/10) + 5 = 13
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'beatup', currentPp: 10, maxPp: 10 };
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    // Should deal some damage (positive hit)
+    expect(p2.currentHp).toBeLessThan(100);
   });
 });
