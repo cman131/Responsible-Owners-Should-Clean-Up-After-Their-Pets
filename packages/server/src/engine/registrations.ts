@@ -71,6 +71,21 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
   r.register('quiverdance', multiStatModSelf({ spa: 1, spd: 1, spe: 1 }));
   r.register('shellsmash',  multiStatModSelf({ def: -1, spd: -1, atk: 2, spa: 2, spe: 2 }));
   r.register('coil',        multiStatModSelf({ atk: 1, def: 1, accuracy: 1 }));
+  r.register('rockpolish',  statModSelf('spe', 2));
+  r.register('tailglow',    statModSelf('spa', 3));
+  r.register('growth',      multiStatModSelf({ atk: 1, spa: 1 })); // placeholder; Task 12 will replace with weather-sensitive version
+  r.register('workup',      multiStatModSelf({ atk: 1, spa: 1 }));
+  r.register('howl',        statModSelf('atk', 1));
+  r.register('meditate',    statModSelf('atk', 1));
+  r.register('sharpen',     statModSelf('atk', 1));
+  r.register('harden',      statModSelf('def', 1));
+  r.register('defensecurl', statModSelf('def', 1));
+  r.register('withdraw',    statModSelf('def', 1));
+  r.register('cottonguard', statModSelf('def', 3));
+  r.register('cosmicpower', multiStatModSelf({ def: 1, spd: 1 }));
+  r.register('shiftgear',   multiStatModSelf({ spe: 2, atk: 1 }));
+  r.register('geomancy',    multiStatModSelf({ spa: 2, spd: 2, spe: 2 })); // placeholder; Task 10 will replace
+  r.register('victorydance',multiStatModSelf({ atk: 1, def: 1, spe: 1 }));
 
   // ── Target stat drops ──────────────────────────────────────────────
   r.register('leer',       statModTarget('def', -1));
