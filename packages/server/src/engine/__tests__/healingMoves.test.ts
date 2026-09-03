@@ -102,3 +102,76 @@ describe('morningsun', () => {
     expect(events[0]!.data['amount']).toBe(10);
   });
 });
+
+describe('aromatherapy', () => {
+  it('cures status of all non-fainted party members on the user team', () => {
+    const state = make1v1State();
+    const mon1 = makePokemon({ instanceId: 'a1', status: 'brn' as const });
+    const mon2 = makePokemon({ instanceId: 'a2', status: 'par' as const });
+    const mon3 = makePokemon({ instanceId: 'a3', status: 'psn' as const });
+    state.teams[0]!.slots[0]!.party = [mon1, mon2, mon3];
+
+    const ctx: MoveContext = {
+      ...makeCtx(),
+      battle: state,
+      user: mon1,
+      userSlotId: 'slot-a1',
+      userTeamIndex: 0,
+    };
+    const handler = registry.get('aromatherapy')!;
+    handler(ctx);
+
+    expect(mon1.status).toBeUndefined();
+    expect(mon2.status).toBeUndefined();
+    expect(mon3.status).toBeUndefined();
+  });
+
+  it('emits a status-cured event for each cured pokemon', () => {
+    const state = make1v1State();
+    const mon1 = makePokemon({ instanceId: 'a1', status: 'brn' as const });
+    const mon2 = makePokemon({ instanceId: 'a2', status: 'par' as const });
+    state.teams[0]!.slots[0]!.party = [mon1, mon2];
+
+    const ctx: MoveContext = { ...makeCtx(), battle: state, user: mon1, userSlotId: 'slot-a1', userTeamIndex: 0 };
+    const { events } = registry.get('aromatherapy')!(ctx);
+
+    expect(events.filter(e => e.type === 'status-cured')).toHaveLength(2);
+  });
+
+  it('does not affect fainted party members', () => {
+    const state = make1v1State();
+    const mon1 = makePokemon({ instanceId: 'a1' });
+    const mon2 = makePokemon({ instanceId: 'a2', status: 'brn' as const, fainted: true });
+    state.teams[0]!.slots[0]!.party = [mon1, mon2];
+
+    const ctx: MoveContext = { ...makeCtx(), battle: state, user: mon1, userSlotId: 'slot-a1', userTeamIndex: 0 };
+    registry.get('aromatherapy')!(ctx);
+
+    expect(mon2.status).toBe('brn');
+  });
+
+  it('clears the toxic volatile counter', () => {
+    const state = make1v1State();
+    const mon1 = makePokemon({ instanceId: 'a1', status: 'tox' as const, volatileStatus: [{ name: 'toxic', counter: 3 }] });
+    state.teams[0]!.slots[0]!.party = [mon1];
+
+    const ctx: MoveContext = { ...makeCtx(), battle: state, user: mon1, userSlotId: 'slot-a1', userTeamIndex: 0 };
+    registry.get('aromatherapy')!(ctx);
+
+    expect(mon1.status).toBeUndefined();
+    expect(mon1.volatileStatus.some(v => v.name === 'toxic')).toBe(false);
+  });
+});
+
+describe('healbell', () => {
+  it('cures status of all non-fainted party members (same as aromatherapy)', () => {
+    const state = make1v1State();
+    const mon1 = makePokemon({ instanceId: 'a1', status: 'slp' as const });
+    state.teams[0]!.slots[0]!.party = [mon1];
+
+    const ctx: MoveContext = { ...makeCtx(), battle: state, user: mon1, userSlotId: 'slot-a1', userTeamIndex: 0 };
+    registry.get('healbell')!(ctx);
+
+    expect(mon1.status).toBeUndefined();
+  });
+});

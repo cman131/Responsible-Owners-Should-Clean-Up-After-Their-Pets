@@ -371,3 +371,20 @@ export function healBlockFactory(): MoveEffectHandler {
     return { events };
   };
 }
+
+export function cureTeamStatus(): MoveEffectHandler {
+  return (ctx) => {
+    const events: TurnResolveEvent[] = [];
+    for (const slot of ctx.battle.teams[ctx.userTeamIndex]!.slots) {
+      for (const mon of slot.party) {
+        if (!mon.fainted && mon.status) {
+          const old = mon.status;
+          delete mon.status;
+          mon.volatileStatus = mon.volatileStatus.filter(v => v.name !== 'toxic');
+          events.push({ type: 'status-cured', data: { slotId: slot.slotId, status: old, reason: 'move' } });
+        }
+      }
+    }
+    return { events };
+  };
+}
