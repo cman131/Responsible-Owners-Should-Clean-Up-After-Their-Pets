@@ -836,3 +836,90 @@ describe('shoreup (weather-sensitive)', () => {
     expect(user.currentHp).toBe(50); // 25% of 200 = 50
   });
 });
+
+describe('rest', () => {
+  it('heals user to full HP and applies sleep with counter=2', () => {
+    const state = make1v1State();
+    const user = makePokemon({ maxHp: 200, currentHp: 100 });
+    state.teams[0]!.slots[0]!.party[0] = user;
+
+    const ctx: MoveContext = { ...makeCtx(), battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 };
+    const { events } = registry.get('rest')!(ctx);
+
+    expect(user.currentHp).toBe(200);
+    expect(user.status).toBe('slp');
+    const sleepEntry = user.volatileStatus.find(v => v.name === 'sleep');
+    expect(sleepEntry?.counter).toBe(2);
+    expect(events.some(e => e.type === 'heal')).toBe(true);
+    expect(events.find(e => e.type === 'heal')?.data['amount']).toBe(100);
+    expect(events.some(e => e.type === 'status-applied')).toBe(true);
+  });
+
+  it('clears an existing status before sleeping', () => {
+    const state = make1v1State();
+    const user = makePokemon({ maxHp: 200, currentHp: 100, status: 'brn' as const });
+    state.teams[0]!.slots[0]!.party[0] = user;
+
+    const ctx: MoveContext = { ...makeCtx(), battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 };
+    const { events } = registry.get('rest')!(ctx);
+
+    expect(user.status).toBe('slp');
+    expect(events.some(e => e.type === 'status-cured')).toBe(true);
+  });
+
+  it('fails if user is already asleep', () => {
+    const state = make1v1State();
+    const user = makePokemon({
+      maxHp: 200, currentHp: 100,
+      status: 'slp' as const,
+      volatileStatus: [{ name: 'sleep', counter: 1 }],
+    });
+    state.teams[0]!.slots[0]!.party[0] = user;
+
+    const ctx: MoveContext = { ...makeCtx(), battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 };
+    const { events } = registry.get('rest')!(ctx);
+
+    expect(events.some(e => e.type === 'move-failed')).toBe(true);
+    expect(user.currentHp).toBe(100);
+  });
+
+  it('fails if user HP is already full', () => {
+    const state = make1v1State();
+    const user = makePokemon({ maxHp: 200, currentHp: 200 });
+    state.teams[0]!.slots[0]!.party[0] = user;
+
+    const ctx: MoveContext = { ...makeCtx(), battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 };
+    const { events } = registry.get('rest')!(ctx);
+
+    expect(events.some(e => e.type === 'move-failed')).toBe(true);
+    expect(user.status).toBeUndefined();
+  });
+
+  it('sets sleep counter to exactly 2 (not random)', () => {
+    const state = make1v1State();
+    for (let i = 0; i < 20; i++) {
+      const user = makePokemon({ maxHp: 200, currentHp: 100 });
+      state.teams[0]!.slots[0]!.party[0] = user;
+      const ctx: MoveContext = { ...makeCtx(), battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 };
+      registry.get('rest')!(ctx);
+      const sleepEntry = user.volatileStatus.find(v => v.name === 'sleep');
+      expect(sleepEntry?.counter).toBe(2);
+    }
+  });
+
+  it('clears toxic volatile when curing prior tox status', () => {
+    const state = make1v1State();
+    const user = makePokemon({
+      maxHp: 200, currentHp: 100,
+      status: 'tox' as const,
+      volatileStatus: [{ name: 'toxic', counter: 3 }],
+    });
+    state.teams[0]!.slots[0]!.party[0] = user;
+
+    const ctx: MoveContext = { ...makeCtx(), battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 };
+    registry.get('rest')!(ctx);
+
+    expect(user.status).toBe('slp');
+    expect(user.volatileStatus.some(v => v.name === 'toxic')).toBe(false);
+  });
+});

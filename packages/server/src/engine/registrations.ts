@@ -303,6 +303,30 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
     return { events };
   }));
 
+  r.register('rest', custom((ctx) => {
+    if (ctx.user.status === 'slp') {
+      return { events: [{ type: 'move-failed', data: { moveId: 'rest', reason: 'already-asleep' } }] };
+    }
+    if (ctx.user.currentHp >= ctx.user.maxHp) {
+      return { events: [{ type: 'move-failed', data: { moveId: 'rest', reason: 'hp-full' } }] };
+    }
+    const events: TurnResolveEvent[] = [];
+    if (ctx.user.status) {
+      const old = ctx.user.status;
+      delete ctx.user.status;
+      ctx.user.volatileStatus = ctx.user.volatileStatus.filter(v => v.name !== 'toxic' && v.name !== 'sleep');
+      events.push({ type: 'status-cured', data: { slotId: ctx.userSlotId, status: old, reason: 'move' } });
+    }
+    ctx.user.status = 'slp';
+    ctx.user.volatileStatus = ctx.user.volatileStatus.filter(v => v.name !== 'sleep');
+    ctx.user.volatileStatus.push({ name: 'sleep', counter: 2 });
+    events.push({ type: 'status-applied', data: { slotId: ctx.userSlotId, status: 'slp', pokemonName: ctx.user.nickname } });
+    const healAmount = ctx.user.maxHp - ctx.user.currentHp;
+    ctx.user.currentHp = ctx.user.maxHp;
+    events.push({ type: 'heal', data: { slotId: ctx.userSlotId, amount: healAmount, remainingHp: ctx.user.maxHp } });
+    return { events };
+  }));
+
   // ── Weather ────────────────────────────────────────────────────────
   r.register('sunnyday',   setWeather('sun',  5));
   r.register('raindance',  setWeather('rain', 5));
