@@ -69,6 +69,8 @@ export interface SlotState {
   isSpectator: boolean;
   party: PartyMember[];
   activePokemonIndex: number;
+  wish?: { hp: number; turnsRemaining: number };
+  pendingHeal?: 'healingwish' | 'lunardance';
 }
 
 export interface TeamState {
