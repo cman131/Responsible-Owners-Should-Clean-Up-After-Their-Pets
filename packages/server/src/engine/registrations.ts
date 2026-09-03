@@ -1,4 +1,5 @@
 import { MoveEffectRegistry } from './MoveEffectRegistry.js';
+import type { MoveContext } from './MoveEffectRegistry.js';
 import {
   statModSelf, statModTarget, multiStatModSelf,
   applyStatusTarget, applyVolatileTarget, applyVolatileSelf, healPercent,
@@ -9,7 +10,20 @@ import {
 } from './effectFactories.js';
 import { clearHazards, clearScreens } from './sideConditions.js';
 import { applyStatBoost } from './effects.js';
+import { canApplyStatus } from './status.js';
+import { getEffectiveStat } from './stats.js';
 import type { TurnResolveEvent } from '@poke-fighter/shared';
+
+function sunBoostHeal(ctx: MoveContext): { events: TurnResolveEvent[] } {
+  const weather = ctx.battle.field.weather?.type;
+  const fraction = (weather === 'sun' || weather === 'harsh-sun') ? 2 / 3
+    : (!weather) ? 0.5
+    : 0.25;
+  const heal = Math.min(Math.floor(ctx.user.maxHp * fraction), ctx.user.maxHp - ctx.user.currentHp);
+  if (heal <= 0) return { events: [] };
+  ctx.user.currentHp += heal;
+  return { events: [{ type: 'heal', data: { slotId: ctx.userSlotId, amount: heal, remainingHp: ctx.user.currentHp } }] };
+}
 
 export function buildDefaultRegistry(): MoveEffectRegistry {
   const r = new MoveEffectRegistry();
@@ -90,14 +104,204 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
   r.register('recover',     healPercent(0.5));
   r.register('softboiled',  healPercent(0.5));
   r.register('milkdrink',   healPercent(0.5));
-  r.register('moonlight',   healPercent(0.5));
-  r.register('synthesis',   healPercent(0.5));
+  r.register('moonlight',  custom(sunBoostHeal));
+  r.register('synthesis',  custom(sunBoostHeal));
+
   r.register('slackoff',    healPercent(0.5));
-  r.register('shoreup',     healPercent(0.5)); // weather variant added in Task 10
-  r.register('morningsun',  healPercent(0.5)); // weather variant added in Task 10
+
+  r.register('shoreup', custom((ctx) => {
+    const weather = ctx.battle.field.weather?.type;
+    const fraction = (weather === 'sand') ? 2 / 3
+      : (!weather || weather === 'sun') ? 0.5
+      : 0.25;
+    const heal = Math.min(Math.floor(ctx.user.maxHp * fraction), ctx.user.maxHp - ctx.user.currentHp);
+    if (heal <= 0) return { events: [] };
+    ctx.user.currentHp += heal;
+    return { events: [{ type: 'heal', data: { slotId: ctx.userSlotId, amount: heal, remainingHp: ctx.user.currentHp } }] };
+  }));
+
+  r.register('morningsun', custom(sunBoostHeal));
   r.register('aromatherapy', cureTeamStatus());
   r.register('healbell',     cureTeamStatus());
   r.register('wish',         wish());
+
+  r.register('refresh', custom((ctx) => {
+    if (!ctx.user.status) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'no-status' } }] };
+    }
+    const old = ctx.user.status;
+    delete ctx.user.status;
+    ctx.user.volatileStatus = ctx.user.volatileStatus.filter(v => v.name !== 'toxic' && v.name !== 'sleep');
+    return { events: [{ type: 'status-cured', data: { slotId: ctx.userSlotId, status: old, reason: 'move' } }] };
+  }));
+
+  r.register('purify', custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+    if (!target.status) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'no-status' } }] };
+    }
+    const events: TurnResolveEvent[] = [];
+    const old = target.status;
+    delete target.status;
+    target.volatileStatus = target.volatileStatus.filter(v => v.name !== 'toxic' && v.name !== 'sleep');
+    events.push({ type: 'status-cured', data: { slotId: targetSlotId, status: old, reason: 'move' } });
+    const isHealBlocked = ctx.user.volatileStatus.some(v => v.name === 'heal-block');
+    if (!isHealBlocked) {
+      const heal = Math.min(Math.floor(ctx.user.maxHp * 0.5), ctx.user.maxHp - ctx.user.currentHp);
+      if (heal > 0) {
+        ctx.user.currentHp += heal;
+        events.push({ type: 'heal', data: { slotId: ctx.userSlotId, amount: heal, remainingHp: ctx.user.currentHp } });
+      }
+    }
+    return { events };
+  }));
+
+  r.register('psychoshift', custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+    if (!ctx.user.status) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'no-status' } }] };
+    }
+    if (target.status) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'target-has-status' } }] };
+    }
+    const canReceive = canApplyStatus({
+      status: ctx.user.status,
+      types: ctx.targetTypes[0] ?? [],
+      currentStatus: target.status,
+      ability: target.ability,
+      battle: ctx.battle,
+    });
+    if (!canReceive) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'immune' } }] };
+    }
+    const events: TurnResolveEvent[] = [];
+    const transferred = ctx.user.status;
+    target.status = transferred;
+    if (transferred === 'slp') {
+      const counter = Math.floor(Math.random() * 3) + 1;
+      target.volatileStatus.push({ name: 'sleep', counter });
+    }
+    delete ctx.user.status;
+    ctx.user.volatileStatus = ctx.user.volatileStatus.filter(v => v.name !== 'toxic' && v.name !== 'sleep');
+    events.push({ type: 'status-applied', data: { slotId: targetSlotId, status: transferred, pokemonName: target.nickname } });
+    events.push({ type: 'status-cured', data: { slotId: ctx.userSlotId, status: transferred, reason: 'move' } });
+    return { events };
+  }));
+
+  r.register('painsplit', custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+    if (ctx.user.currentHp === target.currentHp) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'equal-hp' } }] };
+    }
+    const newHp = Math.floor((ctx.user.currentHp + target.currentHp) / 2);
+    const events: TurnResolveEvent[] = [];
+
+    const oldUserHp = ctx.user.currentHp;
+    const oldTargetHp = target.currentHp;
+    ctx.user.currentHp = Math.min(newHp, ctx.user.maxHp);
+    target.currentHp = Math.min(newHp, target.maxHp);
+
+    const userDelta = ctx.user.currentHp - oldUserHp;
+    const targetDelta = target.currentHp - oldTargetHp;
+
+    if (userDelta > 0) {
+      events.push({ type: 'heal', data: { slotId: ctx.userSlotId, amount: userDelta, remainingHp: ctx.user.currentHp } });
+    } else if (userDelta < 0) {
+      events.push({ type: 'damage-dealt', data: { source: 'painsplit', slotId: ctx.userSlotId, damage: -userDelta, remainingHp: ctx.user.currentHp } });
+    }
+    if (targetDelta > 0) {
+      events.push({ type: 'heal', data: { slotId: targetSlotId, amount: targetDelta, remainingHp: target.currentHp } });
+    } else if (targetDelta < 0) {
+      events.push({ type: 'damage-dealt', data: { source: 'painsplit', slotId: targetSlotId, damage: -targetDelta, remainingHp: target.currentHp } });
+    }
+
+    return { events };
+  }));
+
+  r.register('strengthsap', custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+    if (target.statBoosts.atk <= -6) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'atk-min' } }] };
+    }
+    const events: TurnResolveEvent[] = [];
+    const atkValue = getEffectiveStat(target.stats.atk, target.statBoosts.atk, 'atk');
+    const heal = Math.min(atkValue, ctx.user.maxHp - ctx.user.currentHp);
+    if (heal > 0) {
+      ctx.user.currentHp += heal;
+      events.push({ type: 'heal', data: { slotId: ctx.userSlotId, amount: heal, remainingHp: ctx.user.currentHp } });
+    }
+    events.push(applyStatBoost(target, targetSlotId, { atk: -1 }));
+    return { events };
+  }));
+
+  r.register('healpulse', custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+    const heal = Math.min(Math.floor(target.maxHp * 0.5), target.maxHp - target.currentHp);
+    if (heal <= 0) return { events: [] };
+    target.currentHp += heal;
+    return { events: [{ type: 'heal', data: { slotId: targetSlotId, amount: heal, remainingHp: target.currentHp } }] };
+  }));
+
+  r.register('floralhealing', custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+    const isGrassy = ctx.battle.field.terrain?.type === 'grassy';
+    const fraction = isGrassy ? 2 / 3 : 0.5;
+    const heal = Math.min(Math.floor(target.maxHp * fraction), target.maxHp - target.currentHp);
+    if (heal <= 0) return { events: [] };
+    target.currentHp += heal;
+    return { events: [{ type: 'heal', data: { slotId: targetSlotId, amount: heal, remainingHp: target.currentHp } }] };
+  }));
+
+  r.register('lifedew', custom((ctx) => {
+    const heal = Math.min(Math.floor(ctx.user.maxHp * 0.25), ctx.user.maxHp - ctx.user.currentHp);
+    if (heal <= 0) return { events: [] };
+    ctx.user.currentHp += heal;
+    return { events: [{ type: 'heal', data: { slotId: ctx.userSlotId, amount: heal, remainingHp: ctx.user.currentHp } }] };
+  }));
+
+  r.register('junglehealing', custom((ctx) => {
+    const events: TurnResolveEvent[] = [];
+    const heal = Math.min(Math.floor(ctx.user.maxHp * 0.25), ctx.user.maxHp - ctx.user.currentHp);
+    if (heal > 0) {
+      ctx.user.currentHp += heal;
+      events.push({ type: 'heal', data: { slotId: ctx.userSlotId, amount: heal, remainingHp: ctx.user.currentHp } });
+    }
+    if (ctx.user.status) {
+      const old = ctx.user.status;
+      delete ctx.user.status;
+      ctx.user.volatileStatus = ctx.user.volatileStatus.filter(v => v.name !== 'toxic' && v.name !== 'sleep');
+      events.push({ type: 'status-cured', data: { slotId: ctx.userSlotId, status: old, reason: 'move' } });
+    }
+    return { events };
+  }));
+
+  r.register('lunarblessing', custom((ctx) => {
+    const events: TurnResolveEvent[] = [];
+    const heal = Math.min(Math.floor(ctx.user.maxHp * 0.25), ctx.user.maxHp - ctx.user.currentHp);
+    if (heal > 0) {
+      ctx.user.currentHp += heal;
+      events.push({ type: 'heal', data: { slotId: ctx.userSlotId, amount: heal, remainingHp: ctx.user.currentHp } });
+    }
+    if (ctx.user.status) {
+      const old = ctx.user.status;
+      delete ctx.user.status;
+      ctx.user.volatileStatus = ctx.user.volatileStatus.filter(v => v.name !== 'toxic' && v.name !== 'sleep');
+      events.push({ type: 'status-cured', data: { slotId: ctx.userSlotId, status: old, reason: 'move' } });
+    }
+    return { events };
+  }));
 
   // ── Weather ────────────────────────────────────────────────────────
   r.register('sunnyday',   setWeather('sun',  5));

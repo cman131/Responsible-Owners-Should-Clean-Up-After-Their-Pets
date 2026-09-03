@@ -242,3 +242,597 @@ describe('wish', () => {
     expect(newState.teams[0]!.slots[0]!.wish).toBeUndefined();
   });
 });
+
+describe('refresh', () => {
+  it('clears the user status condition', () => {
+    const state = make1v1State();
+    const user = makePokemon({ status: 'brn' as const });
+    state.teams[0]!.slots[0]!.party[0] = user;
+
+    const ctx: MoveContext = { ...makeCtx(), battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 };
+    const { events } = registry.get('refresh')!(ctx);
+
+    expect(user.status).toBeUndefined();
+    expect(events.some(e => e.type === 'status-cured')).toBe(true);
+  });
+
+  it('fails if user has no status', () => {
+    const state = make1v1State();
+    const user = makePokemon();
+    state.teams[0]!.slots[0]!.party[0] = user;
+
+    const ctx: MoveContext = { ...makeCtx(), battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 };
+    const { events } = registry.get('refresh')!(ctx);
+
+    expect(events.some(e => e.type === 'move-failed')).toBe(true);
+  });
+
+  it('clears sleep volatile when curing slp', () => {
+    const state = make1v1State();
+    const user = makePokemon({
+      status: 'slp' as const,
+      volatileStatus: [{ name: 'sleep', counter: 1 }],
+    });
+    state.teams[0]!.slots[0]!.party[0] = user;
+
+    const ctx: MoveContext = { ...makeCtx(), battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 };
+    registry.get('refresh')!(ctx);
+
+    expect(user.status).toBeUndefined();
+    expect(user.volatileStatus.some(v => v.name === 'sleep')).toBe(false);
+  });
+});
+
+describe('purify', () => {
+  it('cures target status and heals user 50% if target had status', () => {
+    const state = make1v1State();
+    const user = makePokemon({ maxHp: 200, currentHp: 100 });
+    const target = makePokemon({ status: 'psn' as const });
+    state.teams[0]!.slots[0]!.party[0] = user;
+    state.teams[1]!.slots[0]!.party[0] = target;
+
+    const ctx: MoveContext = {
+      ...makeCtx(),
+      battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0,
+      targets: [target], targetSlotIds: ['slot-b1'], targetTypes: [['Normal']],
+    };
+    registry.get('purify')!(ctx);
+
+    expect(target.status).toBeUndefined();
+    expect(user.currentHp).toBe(200);
+  });
+
+  it('fails if target has no status', () => {
+    const state = make1v1State();
+    const user = makePokemon({ maxHp: 200, currentHp: 100 });
+    const target = makePokemon();
+    state.teams[0]!.slots[0]!.party[0] = user;
+    state.teams[1]!.slots[0]!.party[0] = target;
+
+    const ctx: MoveContext = {
+      ...makeCtx(),
+      battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0,
+      targets: [target], targetSlotIds: ['slot-b1'], targetTypes: [['Normal']],
+    };
+    const { events } = registry.get('purify')!(ctx);
+
+    expect(user.currentHp).toBe(100);
+    expect(events.some(e => e.type === 'move-failed')).toBe(true);
+  });
+
+  it('cures target status but skips self-heal if user is heal-blocked', () => {
+    const state = make1v1State();
+    const user = makePokemon({ maxHp: 200, currentHp: 100, volatileStatus: [{ name: 'heal-block', turnsRemaining: 2 }] });
+    const target = makePokemon({ status: 'psn' as const });
+    state.teams[0]!.slots[0]!.party[0] = user;
+    state.teams[1]!.slots[0]!.party[0] = target;
+
+    const ctx: MoveContext = {
+      ...makeCtx(),
+      battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0,
+      targets: [target], targetSlotIds: ['slot-b1'], targetTypes: [['Normal']],
+    };
+    registry.get('purify')!(ctx);
+
+    expect(target.status).toBeUndefined(); // status cured
+    expect(user.currentHp).toBe(100); // no heal
+  });
+});
+
+describe('psychoshift', () => {
+  it('transfers user status to target and clears user status', () => {
+    const state = make1v1State();
+    const user = makePokemon({ status: 'brn' as const });
+    const target = makePokemon();
+    state.teams[0]!.slots[0]!.party[0] = user;
+    state.teams[1]!.slots[0]!.party[0] = target;
+
+    const ctx: MoveContext = {
+      ...makeCtx(),
+      battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0,
+      targets: [target], targetSlotIds: ['slot-b1'], targetTypes: [['Normal']],
+    };
+    registry.get('psychoshift')!(ctx);
+
+    expect(user.status).toBeUndefined();
+    expect(target.status).toBe('brn');
+  });
+
+  it('fails if user has no status', () => {
+    const state = make1v1State();
+    const user = makePokemon();
+    const target = makePokemon();
+    state.teams[0]!.slots[0]!.party[0] = user;
+    state.teams[1]!.slots[0]!.party[0] = target;
+
+    const ctx: MoveContext = {
+      ...makeCtx(),
+      battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0,
+      targets: [target], targetSlotIds: ['slot-b1'], targetTypes: [['Normal']],
+    };
+    const { events } = registry.get('psychoshift')!(ctx);
+
+    expect(events.some(e => e.type === 'move-failed')).toBe(true);
+  });
+
+  it('fails if target already has status', () => {
+    const state = make1v1State();
+    const user = makePokemon({ status: 'brn' as const });
+    const target = makePokemon({ status: 'par' as const });
+    state.teams[0]!.slots[0]!.party[0] = user;
+    state.teams[1]!.slots[0]!.party[0] = target;
+
+    const ctx: MoveContext = {
+      ...makeCtx(),
+      battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0,
+      targets: [target], targetSlotIds: ['slot-b1'], targetTypes: [['Normal']],
+    };
+    const { events } = registry.get('psychoshift')!(ctx);
+
+    expect(events.some(e => e.type === 'move-failed')).toBe(true);
+    expect(user.status).toBe('brn');
+  });
+});
+
+describe('painsplit', () => {
+  it('averages HP between user and target', () => {
+    const state = make1v1State();
+    const user = makePokemon({ maxHp: 200, currentHp: 30 });
+    const target = makePokemon({ maxHp: 200, currentHp: 90 });
+    state.teams[0]!.slots[0]!.party[0] = user;
+    state.teams[1]!.slots[0]!.party[0] = target;
+
+    const ctx: MoveContext = {
+      ...makeCtx(),
+      battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0,
+      targets: [target], targetSlotIds: ['slot-b1'], targetTypes: [['Normal']],
+    };
+    const { events } = registry.get('painsplit')!(ctx);
+
+    expect(user.currentHp).toBe(60);
+    expect(target.currentHp).toBe(60);
+    // user gained 30 HP → heal event
+    const healEvt = events.find(e => e.type === 'heal');
+    expect(healEvt?.data['slotId']).toBe('slot-a1');
+    expect(healEvt?.data['amount']).toBe(30);
+    // target lost 30 HP → damage-dealt event
+    const dmgEvt = events.find(e => e.type === 'damage-dealt');
+    expect(dmgEvt?.data['slotId']).toBe('slot-b1');
+    expect(dmgEvt?.data['damage']).toBe(30);
+  });
+
+  it('caps HP at max for each pokemon', () => {
+    const state = make1v1State();
+    const user = makePokemon({ maxHp: 50, currentHp: 10 });
+    const target = makePokemon({ maxHp: 50, currentHp: 40 });
+    state.teams[0]!.slots[0]!.party[0] = user;
+    state.teams[1]!.slots[0]!.party[0] = target;
+
+    const ctx: MoveContext = {
+      ...makeCtx(),
+      battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0,
+      targets: [target], targetSlotIds: ['slot-b1'], targetTypes: [['Normal']],
+    };
+    registry.get('painsplit')!(ctx);
+
+    expect(user.currentHp).toBe(25);
+    expect(target.currentHp).toBe(25);
+  });
+
+  it('fails if user and target have equal HP', () => {
+    const state = make1v1State();
+    const user = makePokemon({ maxHp: 100, currentHp: 50 });
+    const target = makePokemon({ maxHp: 100, currentHp: 50 });
+    state.teams[0]!.slots[0]!.party[0] = user;
+    state.teams[1]!.slots[0]!.party[0] = target;
+
+    const ctx: MoveContext = {
+      ...makeCtx(),
+      battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0,
+      targets: [target], targetSlotIds: ['slot-b1'], targetTypes: [['Normal']],
+    };
+    const { events } = registry.get('painsplit')!(ctx);
+
+    expect(events.some(e => e.type === 'move-failed')).toBe(true);
+  });
+
+  it('does not emit event for user when user HP is capped and does not change', () => {
+    const state = make1v1State();
+    // avg = floor((100+200)/2) = 150; user capped at maxHp=100 (no change), target goes to 150 (-50)
+    const user = makePokemon({ maxHp: 100, currentHp: 100 });
+    const target = makePokemon({ maxHp: 300, currentHp: 200 });
+    state.teams[0]!.slots[0]!.party[0] = user;
+    state.teams[1]!.slots[0]!.party[0] = target;
+
+    const ctx: MoveContext = {
+      ...makeCtx(),
+      battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0,
+      targets: [target], targetSlotIds: ['slot-b1'], targetTypes: [['Normal']],
+    };
+    const { events } = registry.get('painsplit')!(ctx);
+
+    expect(user.currentHp).toBe(100); // capped at max, no change
+    expect(target.currentHp).toBe(150); // lost 50 HP
+    const dmgEvt = events.find(e => e.type === 'damage-dealt');
+    expect(dmgEvt?.data['slotId']).toBe('slot-b1');
+    expect(dmgEvt?.data['damage']).toBe(50);
+    expect(events.some(e => e.type === 'heal')).toBe(false); // user unchanged, no heal
+  });
+});
+
+describe('strengthsap', () => {
+  it('heals user by target effective Atk and drops target Atk by 1', () => {
+    const state = make1v1State();
+    const user = makePokemon({ maxHp: 200, currentHp: 100 });
+    const target = makePokemon({ stats: { hp: 100, atk: 100, def: 100, spa: 100, spd: 100, spe: 100 } });
+    state.teams[0]!.slots[0]!.party[0] = user;
+    state.teams[1]!.slots[0]!.party[0] = target;
+
+    const ctx: MoveContext = {
+      ...makeCtx(),
+      battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0,
+      targets: [target], targetSlotIds: ['slot-b1'], targetTypes: [['Normal']],
+    };
+    registry.get('strengthsap')!(ctx);
+
+    expect(user.currentHp).toBe(200);
+    expect(target.statBoosts.atk).toBe(-1);
+  });
+
+  it('fails if target Atk is at -6', () => {
+    const state = make1v1State();
+    const user = makePokemon({ maxHp: 200, currentHp: 100 });
+    const target = makePokemon({ statBoosts: { atk: -6, def: 0, spa: 0, spd: 0, spe: 0, accuracy: 0, evasion: 0 } });
+    state.teams[0]!.slots[0]!.party[0] = user;
+    state.teams[1]!.slots[0]!.party[0] = target;
+
+    const ctx: MoveContext = {
+      ...makeCtx(),
+      battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0,
+      targets: [target], targetSlotIds: ['slot-b1'], targetTypes: [['Normal']],
+    };
+    const { events } = registry.get('strengthsap')!(ctx);
+
+    expect(events.some(e => e.type === 'move-failed')).toBe(true);
+    expect(user.currentHp).toBe(100);
+  });
+});
+
+describe('healpulse', () => {
+  it('heals the target (opponent in 1v1) by 50% max HP', () => {
+    const state = make1v1State();
+    const user = makePokemon({ maxHp: 100, currentHp: 100 });
+    const target = makePokemon({ maxHp: 200, currentHp: 80 });
+    state.teams[0]!.slots[0]!.party[0] = user;
+    state.teams[1]!.slots[0]!.party[0] = target;
+
+    const ctx: MoveContext = {
+      ...makeCtx(),
+      battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0,
+      targets: [target], targetSlotIds: ['slot-b1'], targetTypes: [['Normal']],
+    };
+    const { events } = registry.get('healpulse')!(ctx);
+
+    expect(target.currentHp).toBe(180); // 80 + 100 (50% of 200)
+    expect(events[0]!.type).toBe('heal');
+    expect(events[0]!.data['amount']).toBe(100);
+  });
+});
+
+describe('floralhealing', () => {
+  it('heals target 50% max HP normally', () => {
+    const state = make1v1State();
+    const target = makePokemon({ maxHp: 200, currentHp: 0 });
+    state.teams[1]!.slots[0]!.party[0] = target;
+
+    const ctx: MoveContext = {
+      ...makeCtx(),
+      battle: state,
+      targets: [target], targetSlotIds: ['slot-b1'], targetTypes: [['Normal']],
+    };
+    const { events } = registry.get('floralhealing')!(ctx);
+
+    expect(target.currentHp).toBe(100);
+    expect(events[0]!.data['amount']).toBe(100);
+  });
+
+  it('heals target floor(2/3) in grassy terrain', () => {
+    const state = make1v1State();
+    state.field.terrain = { type: 'grassy', turnsRemaining: 5 };
+    const target = makePokemon({ maxHp: 300, currentHp: 0 });
+    state.teams[1]!.slots[0]!.party[0] = target;
+
+    const ctx: MoveContext = {
+      ...makeCtx(),
+      battle: state,
+      targets: [target], targetSlotIds: ['slot-b1'], targetTypes: [['Normal']],
+    };
+    const { events } = registry.get('floralhealing')!(ctx);
+
+    expect(target.currentHp).toBe(200); // floor(300 * 2/3) = 200
+    expect(events[0]!.data['amount']).toBe(200);
+  });
+});
+
+describe('lifedew', () => {
+  it('heals user 25% max HP', () => {
+    const state = make1v1State();
+    const user = makePokemon({ maxHp: 200, currentHp: 100 });
+    state.teams[0]!.slots[0]!.party[0] = user;
+
+    const ctx: MoveContext = { ...makeCtx(), battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 };
+    const { events } = registry.get('lifedew')!(ctx);
+
+    expect(user.currentHp).toBe(150);
+    expect(events[0]!.data['amount']).toBe(50);
+  });
+});
+
+describe('junglehealing', () => {
+  it('heals user 25% and cures status', () => {
+    const state = make1v1State();
+    const user = makePokemon({ maxHp: 200, currentHp: 100, status: 'psn' as const });
+    state.teams[0]!.slots[0]!.party[0] = user;
+
+    const ctx: MoveContext = { ...makeCtx(), battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 };
+    const { events } = registry.get('junglehealing')!(ctx);
+
+    expect(user.currentHp).toBe(150);
+    expect(user.status).toBeUndefined();
+    expect(events.some(e => e.type === 'status-cured')).toBe(true);
+  });
+
+  it('heals user 25% even if no status', () => {
+    const state = make1v1State();
+    const user = makePokemon({ maxHp: 200, currentHp: 100 });
+    state.teams[0]!.slots[0]!.party[0] = user;
+
+    const ctx: MoveContext = { ...makeCtx(), battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 };
+    registry.get('junglehealing')!(ctx);
+
+    expect(user.currentHp).toBe(150);
+  });
+});
+
+describe('lunarblessing', () => {
+  it('heals user 25% and cures user status', () => {
+    const state = make1v1State();
+    const user = makePokemon({ maxHp: 200, currentHp: 100, status: 'brn' as const });
+    state.teams[0]!.slots[0]!.party[0] = user;
+
+    const ctx: MoveContext = { ...makeCtx(), battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 };
+    const { events } = registry.get('lunarblessing')!(ctx);
+
+    expect(user.currentHp).toBe(150);
+    expect(user.status).toBeUndefined();
+    expect(events.some(e => e.type === 'status-cured')).toBe(true);
+  });
+});
+
+describe('moonlight (weather-sensitive)', () => {
+  it('heals 50% with no weather', () => {
+    const state = make1v1State();
+    const user = makePokemon({ maxHp: 200, currentHp: 0 });
+    state.teams[0]!.slots[0]!.party[0] = user;
+
+    const ctx: MoveContext = { ...makeCtx(), battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 };
+    const { events } = registry.get('moonlight')!(ctx);
+
+    expect(user.currentHp).toBe(100);
+    expect(events[0]!.data['amount']).toBe(100);
+  });
+
+  it('heals floor(2/3) in sun', () => {
+    const state = make1v1State();
+    state.field.weather = { type: 'sun', turnsRemaining: 5, fromAbility: false };
+    const user = makePokemon({ maxHp: 300, currentHp: 0 });
+    state.teams[0]!.slots[0]!.party[0] = user;
+
+    const ctx: MoveContext = { ...makeCtx(), battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 };
+    const { events } = registry.get('moonlight')!(ctx);
+
+    expect(user.currentHp).toBe(200); // floor(300 * 2/3) = 200
+    expect(events[0]!.data['amount']).toBe(200);
+  });
+
+  it('heals floor(2/3) in harsh-sun', () => {
+    const state = make1v1State();
+    state.field.weather = { type: 'harsh-sun', turnsRemaining: 5, fromAbility: false };
+    const user = makePokemon({ maxHp: 300, currentHp: 0 });
+    state.teams[0]!.slots[0]!.party[0] = user;
+
+    const ctx: MoveContext = { ...makeCtx(), battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 };
+    registry.get('moonlight')!(ctx);
+
+    expect(user.currentHp).toBe(200);
+  });
+
+  it('heals 25% in rain', () => {
+    const state = make1v1State();
+    state.field.weather = { type: 'rain', turnsRemaining: 5, fromAbility: false };
+    const user = makePokemon({ maxHp: 200, currentHp: 0 });
+    state.teams[0]!.slots[0]!.party[0] = user;
+
+    const ctx: MoveContext = { ...makeCtx(), battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 };
+    const { events } = registry.get('moonlight')!(ctx);
+
+    expect(user.currentHp).toBe(50); // floor(200 * 0.25) = 50
+    expect(events[0]!.data['amount']).toBe(50);
+  });
+
+  it('heals 25% in sand', () => {
+    const state = make1v1State();
+    state.field.weather = { type: 'sand', turnsRemaining: 5, fromAbility: false };
+    const user = makePokemon({ maxHp: 200, currentHp: 0 });
+    state.teams[0]!.slots[0]!.party[0] = user;
+
+    const ctx: MoveContext = { ...makeCtx(), battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 };
+    registry.get('moonlight')!(ctx);
+
+    expect(user.currentHp).toBe(50);
+  });
+});
+
+describe('synthesis (weather-sensitive)', () => {
+  it('heals 50% with no weather', () => {
+    const state = make1v1State();
+    const user = makePokemon({ maxHp: 200, currentHp: 0 });
+    state.teams[0]!.slots[0]!.party[0] = user;
+
+    const ctx: MoveContext = { ...makeCtx(), battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 };
+    const { events } = registry.get('synthesis')!(ctx);
+
+    expect(user.currentHp).toBe(100);
+    expect(events[0]!.data['amount']).toBe(100);
+  });
+
+  it('heals floor(2/3) in sun', () => {
+    const state = make1v1State();
+    state.field.weather = { type: 'sun', turnsRemaining: 5, fromAbility: false };
+    const user = makePokemon({ maxHp: 300, currentHp: 0 });
+    state.teams[0]!.slots[0]!.party[0] = user;
+
+    const ctx: MoveContext = { ...makeCtx(), battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 };
+    const { events } = registry.get('synthesis')!(ctx);
+
+    expect(user.currentHp).toBe(200);
+    expect(events[0]!.data['amount']).toBe(200);
+  });
+
+  it('heals 25% in rain', () => {
+    const state = make1v1State();
+    state.field.weather = { type: 'rain', turnsRemaining: 5, fromAbility: false };
+    const user = makePokemon({ maxHp: 200, currentHp: 0 });
+    state.teams[0]!.slots[0]!.party[0] = user;
+
+    const ctx: MoveContext = { ...makeCtx(), battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 };
+    const { events } = registry.get('synthesis')!(ctx);
+
+    expect(user.currentHp).toBe(50);
+    expect(events[0]!.data['amount']).toBe(50);
+  });
+});
+
+describe('morningsun (weather-sensitive)', () => {
+  it('heals 50% with no weather', () => {
+    const state = make1v1State();
+    const user = makePokemon({ maxHp: 200, currentHp: 0 });
+    state.teams[0]!.slots[0]!.party[0] = user;
+
+    const ctx: MoveContext = { ...makeCtx(), battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 };
+    const { events } = registry.get('morningsun')!(ctx);
+
+    expect(user.currentHp).toBe(100);
+    expect(events[0]!.data['amount']).toBe(100);
+  });
+
+  it('heals floor(2/3) in harsh-sun', () => {
+    const state = make1v1State();
+    state.field.weather = { type: 'harsh-sun', turnsRemaining: 5, fromAbility: false };
+    const user = makePokemon({ maxHp: 300, currentHp: 0 });
+    state.teams[0]!.slots[0]!.party[0] = user;
+
+    const ctx: MoveContext = { ...makeCtx(), battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 };
+    const { events } = registry.get('morningsun')!(ctx);
+
+    expect(user.currentHp).toBe(200);
+    expect(events[0]!.data['amount']).toBe(200);
+  });
+
+  it('heals 25% in sand', () => {
+    const state = make1v1State();
+    state.field.weather = { type: 'sand', turnsRemaining: 5, fromAbility: false };
+    const user = makePokemon({ maxHp: 200, currentHp: 0 });
+    state.teams[0]!.slots[0]!.party[0] = user;
+
+    const ctx: MoveContext = { ...makeCtx(), battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 };
+    const { events } = registry.get('morningsun')!(ctx);
+
+    expect(user.currentHp).toBe(50);
+    expect(events[0]!.data['amount']).toBe(50);
+  });
+});
+
+describe('shoreup (weather-sensitive)', () => {
+  it('heals 50% with no weather', () => {
+    const state = make1v1State();
+    const user = makePokemon({ maxHp: 200, currentHp: 0 });
+    state.teams[0]!.slots[0]!.party[0] = user;
+
+    const ctx: MoveContext = { ...makeCtx(), battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 };
+    const { events } = registry.get('shoreup')!(ctx);
+
+    expect(user.currentHp).toBe(100);
+    expect(events[0]!.data['amount']).toBe(100);
+  });
+
+  it('heals floor(2/3) in sand', () => {
+    const state = make1v1State();
+    state.field.weather = { type: 'sand', turnsRemaining: 5, fromAbility: false };
+    const user = makePokemon({ maxHp: 300, currentHp: 0 });
+    state.teams[0]!.slots[0]!.party[0] = user;
+
+    const ctx: MoveContext = { ...makeCtx(), battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 };
+    const { events } = registry.get('shoreup')!(ctx);
+
+    expect(user.currentHp).toBe(200); // floor(300 * 2/3) = 200
+    expect(events[0]!.data['amount']).toBe(200);
+  });
+
+  it('heals 25% in rain', () => {
+    const state = make1v1State();
+    state.field.weather = { type: 'rain', turnsRemaining: 5, fromAbility: false };
+    const user = makePokemon({ maxHp: 200, currentHp: 0 });
+    state.teams[0]!.slots[0]!.party[0] = user;
+
+    const ctx: MoveContext = { ...makeCtx(), battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 };
+    const { events } = registry.get('shoreup')!(ctx);
+
+    expect(user.currentHp).toBe(50);
+    expect(events[0]!.data['amount']).toBe(50);
+  });
+
+  it('heals 50% in sun (not boosted for shoreup)', () => {
+    const state = make1v1State();
+    state.field.weather = { type: 'sun', turnsRemaining: 5, fromAbility: false };
+    const user = makePokemon({ maxHp: 200, currentHp: 0 });
+    state.teams[0]!.slots[0]!.party[0] = user;
+
+    const ctx: MoveContext = { ...makeCtx(), battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 };
+    registry.get('shoreup')!(ctx);
+
+    expect(user.currentHp).toBe(100); // sun doesn't boost shoreup, stays at 50%
+  });
+
+  it('heals 25% in harsh-sun', () => {
+    const state = make1v1State();
+    state.field.weather = { type: 'harsh-sun', turnsRemaining: 5, fromAbility: false };
+    const user = makePokemon({ maxHp: 200, currentHp: 0 });
+    state.teams[0]!.slots[0]!.party[0] = user;
+
+    const ctx: MoveContext = { ...makeCtx(), battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 };
+    registry.get('shoreup')!(ctx);
+
+    expect(user.currentHp).toBe(50); // 25% of 200 = 50
+  });
+});
