@@ -807,3 +807,317 @@ describe('Phasing moves (Dragon Tail / Circle Throw)', () => {
     expect(p2Slot.party[activeIndex]!.fainted).toBe(true);
   });
 });
+
+// ─── Task 10: Misc special-damage moves ───────────────────────────────────────
+
+describe('Psywave', () => {
+  it('deals Math.floor(level * (rng*1.5 + 0.5)) damage at level 50 with rng=0.5', () => {
+    // damage = Math.floor(50 * (0.5 * 1.5 + 0.5)) = Math.floor(50 * 1.25) = 62
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'psywave', currentPp: 15, maxPp: 15 };
+    // Give target 200 HP so the 62 damage does not KO it
+    state.teams[1]!.slots[0]!.party[0]!.currentHp = 200;
+    state.teams[1]!.slots[0]!.party[0]!.maxHp = 200;
+    // p2 does no damage
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2.currentHp).toBe(200 - 62);
+  });
+
+  it('deals at least 1 damage (minimum clamp)', () => {
+    // rng=0 → Math.floor(50 * (0*1.5 + 0.5)) = Math.floor(25) = 25, still > 0
+    // For a true minimum test at level 1: Math.floor(1 * (0*1.5+0.5)) = Math.floor(0.5) = 0 → clamped to 1
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.level = 1;
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'psywave', currentPp: 15, maxPp: 15 };
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+
+    const engine = new BattleEngine({ rng: () => 0 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    // At level 1 with rng=0: Math.floor(1 * 0.5) = 0, clamped to 1
+    expect(p2.currentHp).toBe(99); // 100 - 1 = 99
+  });
+
+  it('sets lastDamageTaken on the target', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'psywave', currentPp: 15, maxPp: 15 };
+    state.teams[1]!.slots[0]!.party[0]!.currentHp = 200;
+    state.teams[1]!.slots[0]!.party[0]!.maxHp = 200;
+    // p2 submits no action so lastDamageTaken is NOT cleared by p2's own move execution
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      // p2 does not act
+    });
+
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2.lastDamageTaken).toBeDefined();
+    expect(p2.lastDamageTaken!.amount).toBe(62);
+    expect(p2.lastDamageTaken!.fromSlotId).toBe('slot-a1');
+  });
+});
+
+describe('Present', () => {
+  it('rng=0.2 (< 0.40) → 40 BP deals positive damage', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'present', currentPp: 15, maxPp: 15 };
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+
+    const engine = new BattleEngine({ rng: () => 0.2 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2.currentHp).toBeLessThan(100);
+  });
+
+  it('rng=0.5 (< 0.70) → 80 BP deals more damage than 40 BP roll', () => {
+    const state40 = make1v1State();
+    state40.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'present', currentPp: 15, maxPp: 15 };
+    state40.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+
+    const state80 = make1v1State();
+    state80.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'present', currentPp: 15, maxPp: 15 };
+    state80.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+
+    const engine40 = new BattleEngine({ rng: () => 0.2 }); // 40 BP
+    const { newState: ns40 } = engine40.resolveTurn(state40, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const engine80 = new BattleEngine({ rng: () => 0.5 }); // 80 BP
+    const { newState: ns80 } = engine80.resolveTurn(state80, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    // 80 BP should deal more damage than 40 BP (lower remaining HP)
+    expect(ns80.teams[1]!.slots[0]!.party[0]!.currentHp).toBeLessThan(ns40.teams[1]!.slots[0]!.party[0]!.currentHp);
+  });
+
+  it('rng=0.85 (>= 0.80) → heals target for 25% of max HP', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'present', currentPp: 15, maxPp: 15 };
+    // Set target to partial HP so healing is visible
+    state.teams[1]!.slots[0]!.party[0]!.currentHp = 60;
+    state.teams[1]!.slots[0]!.party[0]!.maxHp = 100;
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+
+    const engine = new BattleEngine({ rng: () => 0.85 });
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    // 25% of maxHp=100 = 25; 60 + 25 = 85
+    expect(p2.currentHp).toBe(85);
+
+    // Should emit a heal event
+    const healEvent = events.find(e => e.type === 'heal' && (e.data as { slotId: string }).slotId === 'slot-b1');
+    expect(healEvent).toBeDefined();
+  });
+});
+
+describe('Spit Up', () => {
+  it('with stockpile counter=2 deals 200 damage', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'spitup', currentPp: 10, maxPp: 10 };
+    // Give target 300 HP so we can see the 200 damage clearly
+    state.teams[1]!.slots[0]!.party[0]!.currentHp = 300;
+    state.teams[1]!.slots[0]!.party[0]!.maxHp = 300;
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+    // Set stockpile volatile with counter=2
+    state.teams[0]!.slots[0]!.party[0]!.volatileStatus.push({ name: 'stockpile', counter: 2 });
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2.currentHp).toBe(300 - 200); // 100 * 2 = 200
+  });
+
+  it('with no stockpile volatile emits move-failed', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'spitup', currentPp: 10, maxPp: 10 };
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+    // No stockpile volatile
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const failedEvents = events.filter(e => e.type === 'move-failed');
+    const spitUpFailed = failedEvents.some(
+      e => e.type === 'move-failed' && (e.data as { moveId: string }).moveId === 'spitup'
+    );
+    expect(spitUpFailed).toBe(true);
+  });
+
+  it('after spit up, stockpile volatile is removed from attacker', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'spitup', currentPp: 10, maxPp: 10 };
+    state.teams[1]!.slots[0]!.party[0]!.currentHp = 300;
+    state.teams[1]!.slots[0]!.party[0]!.maxHp = 300;
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+    state.teams[0]!.slots[0]!.party[0]!.volatileStatus.push({ name: 'stockpile', counter: 1 });
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const p1 = newState.teams[0]!.slots[0]!.party[0]!;
+    const stockpileEntry = p1.volatileStatus.find(v => v.name === 'stockpile');
+    expect(stockpileEntry).toBeUndefined();
+  });
+});
+
+describe('Fling', () => {
+  it('with iron-ball (130 BP) deals more damage than with oran-berry (10 BP)', () => {
+    const stateHeavy = make1v1State();
+    stateHeavy.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'fling', currentPp: 10, maxPp: 10 };
+    stateHeavy.teams[0]!.slots[0]!.party[0]!.heldItem = 'iron-ball';
+    stateHeavy.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+
+    const stateLight = make1v1State();
+    stateLight.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'fling', currentPp: 10, maxPp: 10 };
+    stateLight.teams[0]!.slots[0]!.party[0]!.heldItem = 'oran-berry';
+    stateLight.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+
+    const engineHeavy = new BattleEngine({ rng: () => 0.5 });
+    const { newState: nsHeavy } = engineHeavy.resolveTurn(stateHeavy, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const engineLight = new BattleEngine({ rng: () => 0.5 });
+    const { newState: nsLight } = engineLight.resolveTurn(stateLight, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const damageHeavy = 100 - nsHeavy.teams[1]!.slots[0]!.party[0]!.currentHp;
+    const damageLight = 100 - nsLight.teams[1]!.slots[0]!.party[0]!.currentHp;
+    expect(damageHeavy).toBeGreaterThan(damageLight);
+  });
+
+  it('with no held item emits move-failed', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'fling', currentPp: 10, maxPp: 10 };
+    // No heldItem
+    delete state.teams[0]!.slots[0]!.party[0]!.heldItem;
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const failedEvents = events.filter(e => e.type === 'move-failed');
+    const flingFailed = failedEvents.some(
+      e => e.type === 'move-failed' && (e.data as { moveId: string }).moveId === 'fling'
+    );
+    expect(flingFailed).toBe(true);
+  });
+
+  it('after successful Fling, heldItem is removed from attacker', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'fling', currentPp: 10, maxPp: 10 };
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'iron-ball';
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const p1 = newState.teams[0]!.slots[0]!.party[0]!;
+    expect(p1.heldItem).toBeUndefined();
+  });
+});
+
+describe('Natural Gift', () => {
+  it('with no berry held emits move-failed', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'naturalgift', currentPp: 15, maxPp: 15 };
+    // No heldItem
+    delete state.teams[0]!.slots[0]!.party[0]!.heldItem;
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const failedEvents = events.filter(e => e.type === 'move-failed');
+    const ngFailed = failedEvents.some(
+      e => e.type === 'move-failed' && (e.data as { moveId: string }).moveId === 'naturalgift'
+    );
+    expect(ngFailed).toBe(true);
+  });
+
+  it('with a non-berry item emits move-failed', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'naturalgift', currentPp: 15, maxPp: 15 };
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'iron-ball'; // not a berry
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const failedEvents = events.filter(e => e.type === 'move-failed');
+    const ngFailed = failedEvents.some(
+      e => e.type === 'move-failed' && (e.data as { moveId: string }).moveId === 'naturalgift'
+    );
+    expect(ngFailed).toBe(true);
+  });
+
+  it('with lum-berry (Flying type, 80 BP) deals damage and consumes berry', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'naturalgift', currentPp: 15, maxPp: 15 };
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'lum-berry';
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const p1 = newState.teams[0]!.slots[0]!.party[0]!;
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    // Berry was consumed
+    expect(p1.heldItem).toBeUndefined();
+    // Target took damage
+    expect(p2.currentHp).toBeLessThan(100);
+  });
+});

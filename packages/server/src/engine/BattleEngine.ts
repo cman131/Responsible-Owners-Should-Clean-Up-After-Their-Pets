@@ -35,6 +35,50 @@ const HP_HALVING_MOVES = new Set(['superfang', 'naturesmadness', 'ruination']);
 
 const PHASING_MOVES = new Set(['dragontail', 'circlethrow']);
 
+const FLING_POWER: Record<string, number> = {
+  'iron-ball': 130,
+  'hard-stone': 100,
+  'rocky-helmet': 100,
+  'thick-club': 90,
+  'flame-orb': 30,
+  'toxic-orb': 30,
+  'life-orb': 30,
+  'choice-band': 30,
+  'choice-specs': 30,
+  'choice-scarf': 30,
+  'leftovers': 10,
+  'black-sludge': 30,
+  'assault-vest': 10,
+  'eviolite': 40,
+  'black-belt': 30,
+  'razor-fang': 30,
+  'kings-rock': 30,
+  'light-ball': 30,
+  'oran-berry': 10,
+  'sitrus-berry': 10,
+  'lum-berry': 10,
+  'leppa-berry': 10,
+};
+
+const NATURAL_GIFT_TABLE: Record<string, { power: number; type: PokemonType }> = {
+  'cheri-berry':  { power: 80, type: 'Fire' },
+  'chesto-berry': { power: 80, type: 'Water' },
+  'pecha-berry':  { power: 80, type: 'Electric' },
+  'rawst-berry':  { power: 80, type: 'Grass' },
+  'aspear-berry': { power: 80, type: 'Ice' },
+  'leppa-berry':  { power: 80, type: 'Fighting' },
+  'oran-berry':   { power: 80, type: 'Poison' },
+  'persim-berry': { power: 80, type: 'Ground' },
+  'lum-berry':    { power: 80, type: 'Flying' },
+  'sitrus-berry': { power: 80, type: 'Psychic' },
+  'figy-berry':   { power: 80, type: 'Bug' },
+  'wiki-berry':   { power: 80, type: 'Rock' },
+  'mago-berry':   { power: 80, type: 'Ghost' },
+  'aguav-berry':  { power: 80, type: 'Dragon' },
+  'iapapa-berry': { power: 80, type: 'Dark' },
+  'razz-berry':   { power: 80, type: 'Steel' },
+};
+
 const CHOICE_LOCK_ITEMS = new Set(['choice-band', 'choice-specs', 'choice-scarf']);
 
 const ABILITY_VOLATILE_CLEAR = new Set(['slow-start', 'truant']);
@@ -461,6 +505,30 @@ export class BattleEngine {
       events.push({ type: 'move-note', data: { note: `Magnitude ${magnitudeNum}!` } });
     }
 
+    // Fling: check for item and set power before the target loop
+    if (move.id === 'fling') {
+      if (!attacker.heldItem) {
+        events.push({ type: 'move-failed', data: { moveId: move.id, reason: 'no-item' } });
+        return { newState: s, events };
+      }
+      effectiveBasePower = FLING_POWER[attacker.heldItem] ?? 30;
+    }
+
+    // Natural Gift: check for berry and set power/type before the target loop
+    if (move.id === 'naturalgift') {
+      if (!attacker.heldItem) {
+        events.push({ type: 'move-failed', data: { moveId: move.id, reason: 'no-berry' } });
+        return { newState: s, events };
+      }
+      const ngEntry = NATURAL_GIFT_TABLE[attacker.heldItem];
+      if (!ngEntry) {
+        events.push({ type: 'move-failed', data: { moveId: move.id, reason: 'no-berry' } });
+        return { newState: s, events };
+      }
+      effectiveBasePower = ngEntry.power;
+      effectiveMoveType = ngEntry.type;
+    }
+
     // Extreme-weather move nullification (must come after effectiveMoveType is resolved)
     if (s.field.weather) {
       const wt = s.field.weather.type;
@@ -804,6 +872,103 @@ export class BattleEngine {
         continue;
       }
 
+      // Psywave: level-based random damage, bypasses type effectiveness
+      if (move.id === 'psywave') {
+        const psywaveDmg = Math.max(1, Math.floor(attacker.level * (this.rng() * 1.5 + 0.5)));
+        const actualPsywave = Math.min(psywaveDmg, target.currentHp);
+        target.currentHp -= actualPsywave;
+        target.lastDamageTaken = { amount: actualPsywave, category: 'special', fromSlotId: attackerSlotId };
+        const bideVolPsywave = target.volatileStatus.find(v => v.name === 'bide');
+        if (bideVolPsywave) bideVolPsywave.accumulated = (bideVolPsywave.accumulated ?? 0) + actualPsywave;
+        events.push({ type: 'damage-dealt', data: {
+          attackerSlotId, targetSlotId, moveId: move.id,
+          damage: actualPsywave, effectiveness: 1, remainingHp: target.currentHp,
+        }});
+        if (target.currentHp <= 0) {
+          target.fainted = true;
+          events.push({ type: 'faint', data: { slotId: targetSlotId, instanceId: target.instanceId } });
+        }
+        continue;
+      }
+
+      // Present: RNG roll determines 40/80/120 BP damage or 25% heal
+      if (move.id === 'present') {
+        const presentRoll = this.rng();
+        if (presentRoll >= 0.80) {
+          // Heal target for 25% of their max HP
+          const healAmount = Math.max(1, Math.floor(target.maxHp / 4));
+          const actualHeal = Math.min(healAmount, target.maxHp - target.currentHp);
+          target.currentHp += actualHeal;
+          events.push({ type: 'heal', data: { slotId: targetSlotId, amount: actualHeal, remainingHp: target.currentHp } });
+          continue;
+        }
+        // Damage case: use standard calcDamage inline with rolled BP
+        let presentBp: number;
+        if (presentRoll < 0.40)      presentBp = 40;
+        else if (presentRoll < 0.70) presentBp = 80;
+        else                          presentBp = 120;
+
+        const presentAttackerSpecies = this.data.getSpecies(attacker.speciesId);
+        const presentAttackerTypes = attacker.hasTerastallized && attacker.teraType
+          ? [attacker.teraType] as PokemonType[]
+          : (presentAttackerSpecies?.types ?? ['Normal']) as PokemonType[];
+        const presentStab = presentAttackerTypes.includes('Normal' as PokemonType);
+        const { damage: presentDmg } = calcDamage({
+          level: attacker.level,
+          attackStat: attacker.stats.atk,
+          defenseStat: target.stats.def,
+          basePower: presentBp,
+          typeEffectiveness: effectiveness,
+          stab: presentStab,
+          isBurned: false,
+          randomFactor: randomDamageFactor(),
+          isCritical: false,
+          moveType: 'Normal',
+          otherModifiers: 1,
+        });
+        const actualPresent = Math.min(presentDmg, target.currentHp);
+        target.currentHp -= actualPresent;
+        target.lastDamageTaken = { amount: actualPresent, category: 'physical', fromSlotId: attackerSlotId };
+        const bideVolPresent = target.volatileStatus.find(v => v.name === 'bide');
+        if (bideVolPresent) bideVolPresent.accumulated = (bideVolPresent.accumulated ?? 0) + actualPresent;
+        events.push({ type: 'damage-dealt', data: {
+          attackerSlotId, targetSlotId, moveId: move.id,
+          damage: actualPresent, effectiveness, remainingHp: target.currentHp,
+        }});
+        if (target.currentHp <= 0) {
+          target.fainted = true;
+          events.push({ type: 'faint', data: { slotId: targetSlotId, instanceId: target.instanceId } });
+        }
+        continue;
+      }
+
+      // Spit Up: damage based on stockpile stacks, then remove stockpile
+      if (move.id === 'spitup') {
+        const stockpileVol = attacker.volatileStatus.find(v => v.name === 'stockpile');
+        if (!stockpileVol) {
+          events.push({ type: 'move-failed', data: { moveId: move.id, reason: 'no-stockpile' } });
+          continue;
+        }
+        const stackCount = stockpileVol.counter ?? 1;
+        const spitUpDmg = 100 * stackCount;
+        const actualSpitUp = Math.min(spitUpDmg, target.currentHp);
+        target.currentHp -= actualSpitUp;
+        target.lastDamageTaken = { amount: actualSpitUp, category: 'special', fromSlotId: attackerSlotId };
+        const bideVolSpitUp = target.volatileStatus.find(v => v.name === 'bide');
+        if (bideVolSpitUp) bideVolSpitUp.accumulated = (bideVolSpitUp.accumulated ?? 0) + actualSpitUp;
+        events.push({ type: 'damage-dealt', data: {
+          attackerSlotId, targetSlotId, moveId: move.id,
+          damage: actualSpitUp, effectiveness: 1, remainingHp: target.currentHp,
+        }});
+        if (target.currentHp <= 0) {
+          target.fainted = true;
+          events.push({ type: 'faint', data: { slotId: targetSlotId, instanceId: target.instanceId } });
+        }
+        // Remove stockpile volatile
+        attacker.volatileStatus = attacker.volatileStatus.filter(v => v.name !== 'stockpile');
+        continue;
+      }
+
       const multihitSec = secs.find(sec => sec.kind === 'multihit');
       const hitCount = multihitSec ? this.rollHitCount(multihitSec.hits) : 1;
 
@@ -1016,6 +1181,16 @@ export class BattleEngine {
         if (bideEntry) {
           bideEntry.accumulated = (bideEntry.accumulated ?? 0) + hpDamageTaken;
         }
+      }
+
+      // Fling: consume the item after hitting
+      if (move.id === 'fling' && attacker.heldItem) {
+        delete attacker.heldItem;
+      }
+
+      // Natural Gift: consume the berry after hitting
+      if (move.id === 'naturalgift' && attacker.heldItem) {
+        delete attacker.heldItem;
       }
 
       // Post-hit secondaries (applied after final hit, uses accumulated totalDamage)
