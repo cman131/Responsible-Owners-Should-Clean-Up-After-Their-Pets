@@ -505,16 +505,19 @@ export class BattleEngine {
       events.push({ type: 'move-note', data: { note: `Magnitude ${magnitudeNum}!` } });
     }
 
-    // Fling: check for item and set power before the target loop
+    // Fling: check for item and set power before the target loop; consume item here so it is
+    // always removed even if the target is protected or immune
     if (move.id === 'fling') {
       if (!attacker.heldItem) {
         events.push({ type: 'move-failed', data: { moveId: move.id, reason: 'no-item' } });
         return { newState: s, events };
       }
       effectiveBasePower = FLING_POWER[attacker.heldItem] ?? 30;
+      delete attacker.heldItem;
     }
 
-    // Natural Gift: check for berry and set power/type before the target loop
+    // Natural Gift: check for berry and set power/type before the target loop; consume berry here
+    // so it is always removed even if the target is protected or immune
     if (move.id === 'naturalgift') {
       if (!attacker.heldItem) {
         events.push({ type: 'move-failed', data: { moveId: move.id, reason: 'no-berry' } });
@@ -527,6 +530,7 @@ export class BattleEngine {
       }
       effectiveBasePower = ngEntry.power;
       effectiveMoveType = ngEntry.type;
+      delete attacker.heldItem;
     }
 
     // Extreme-weather move nullification (must come after effectiveMoveType is resolved)
@@ -1181,16 +1185,6 @@ export class BattleEngine {
         if (bideEntry) {
           bideEntry.accumulated = (bideEntry.accumulated ?? 0) + hpDamageTaken;
         }
-      }
-
-      // Fling: consume the item after hitting
-      if (move.id === 'fling' && attacker.heldItem) {
-        delete attacker.heldItem;
-      }
-
-      // Natural Gift: consume the berry after hitting
-      if (move.id === 'naturalgift' && attacker.heldItem) {
-        delete attacker.heldItem;
       }
 
       // Post-hit secondaries (applied after final hit, uses accumulated totalDamage)
