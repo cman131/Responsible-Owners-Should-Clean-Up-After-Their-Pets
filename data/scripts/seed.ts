@@ -109,6 +109,7 @@ const allSpecies = allSpeciesRaw.map((s) => {
     expGrowth: expData.expGrowth,
     learnset: [] as string[],
     evolutionStage,
+    weightkg: s.weightkg,
   };
 });
 

@@ -51,6 +51,7 @@ export interface PokemonSpecies {
   expGrowth: ExpGrowthCurve;
   learnset: string[];     // move IDs this species can learn in Gen 9
   evolutionStage: 1 | 2 | 3;
+  weightkg: number;
 }
 
 export interface Move {
