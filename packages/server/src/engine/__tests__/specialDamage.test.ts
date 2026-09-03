@@ -545,3 +545,101 @@ describe('Beat Up', () => {
     expect(p2.currentHp).toBeLessThan(100);
   });
 });
+
+describe('Phasing moves (Dragon Tail / Circle Throw)', () => {
+  it('Dragon Tail deals damage and forces target to switch to bench member', () => {
+    // p1 uses dragontail (priority -6), p2 has 2 party members (active + 1 bench)
+    // p2 uses swordsdance (priority 0) so p2 acts first (no damage), then p1 uses Dragon Tail
+    // After: p2's active pokemon should change to the bench member
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'dragontail', currentPp: 10, maxPp: 10 };
+
+    // Add a bench member for p2
+    const benchMon = makePokemon({ instanceId: 'p2-bench', speciesId: 6 });
+    state.teams[1]!.slots[0]!.party.push(benchMon);
+
+    // p2 uses swordsdance (self-targeting, no damage)
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    // p2's active pokemon should have changed to bench member
+    const p2Slot = newState.teams[1]!.slots[0]!;
+    const newActiveInstanceId = p2Slot.party[p2Slot.activePokemonIndex]!.instanceId;
+    expect(newActiveInstanceId).toBe('p2-bench');
+
+    // Damage event should exist for dragontail
+    expect(events.some(e => e.type === 'damage-dealt' && (e.data as { moveId?: string }).moveId === 'dragontail')).toBe(true);
+  });
+
+  it('Dragon Tail does not force switch when target has no bench members', () => {
+    // Default 1v1 state: p2 has only 1 pokemon, no bench
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'dragontail', currentPp: 10, maxPp: 10 };
+    // p2 uses swordsdance (no damage)
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+
+    const initialIndex = state.teams[1]!.slots[0]!.activePokemonIndex;
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    // Active index should be unchanged — no bench to switch to
+    expect(newState.teams[1]!.slots[0]!.activePokemonIndex).toBe(initialIndex);
+  });
+
+  it('Circle Throw also forces switch to bench member', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'circlethrow', currentPp: 10, maxPp: 10 };
+
+    // Add a bench member for p2
+    const benchMon = makePokemon({ instanceId: 'p2-bench-ct', speciesId: 6 });
+    state.teams[1]!.slots[0]!.party.push(benchMon);
+
+    // p2 uses swordsdance (no damage)
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const p2Slot = newState.teams[1]!.slots[0]!;
+    const newActiveInstanceId = p2Slot.party[p2Slot.activePokemonIndex]!.instanceId;
+    expect(newActiveInstanceId).toBe('p2-bench-ct');
+  });
+
+  it('Dragon Tail does not force switch if target fainted from the damage', () => {
+    // Set up p2 with 1 HP so Dragon Tail KOs them
+    // Even if there's a bench member, no force-switch should occur after a KO
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'dragontail', currentPp: 10, maxPp: 10 };
+    state.teams[1]!.slots[0]!.party[0]!.currentHp = 1;
+
+    // Give p2 a bench member
+    const benchMon = makePokemon({ instanceId: 'p2-bench-ko', speciesId: 6 });
+    state.teams[1]!.slots[0]!.party.push(benchMon);
+
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    // p2's original active mon should be fainted
+    const p2Slot = newState.teams[1]!.slots[0]!;
+    // The activePokemonIndex still points at the original (fainted) mon; no auto-switch from phasing
+    const activeIndex = p2Slot.activePokemonIndex;
+    expect(p2Slot.party[activeIndex]!.fainted).toBe(true);
+  });
+});

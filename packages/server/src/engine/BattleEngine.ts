@@ -33,6 +33,8 @@ const FIXED_DAMAGE_MOVES: Record<string, (attacker: PartyMember) => number> = {
 
 const HP_HALVING_MOVES = new Set(['superfang', 'naturesmadness', 'ruination']);
 
+const PHASING_MOVES = new Set(['dragontail', 'circlethrow']);
+
 const CHOICE_LOCK_ITEMS = new Set(['choice-band', 'choice-specs', 'choice-scarf']);
 
 const ABILITY_VOLATILE_CLEAR = new Set(['slow-start', 'truant']);
@@ -1174,6 +1176,21 @@ export class BattleEngine {
             events.push({ type: 'faint', data: { slotId: attackerSlotId, instanceId: attacker.instanceId } });
           }
         }
+      }
+
+      // Dragon Tail / Circle Throw — force-switch after dealing damage
+      if (PHASING_MOVES.has(move.id) && !target.fainted && totalDamage > 0) {
+        const benchMembers = targetSlot.party.filter(
+          (m, i) => i !== targetSlot.activePokemonIndex && !m.fainted
+        );
+        if (benchMembers.length > 0) {
+          const randomBench = benchMembers[Math.floor(this.rng() * benchMembers.length)]!;
+          const phaseResult = this.performSwitch(s, targetSlotId, randomBench.instanceId, 'phased');
+          events.push(...phaseResult.events);
+          s = phaseResult.newState;
+          // Note: target/targetSlot references are stale after s update, but we're done with them
+        }
+        // If no bench, just skip the force-switch (target stays in)
       }
     }
 
