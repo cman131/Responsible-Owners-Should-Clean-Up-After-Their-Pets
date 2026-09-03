@@ -62,7 +62,19 @@ describe('shoreup', () => {
       battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0,
     });
     expect(user.currentHp).toBe(100);
-    expect(events.some(e => e.type === 'heal')).toBe(true);
+    expect(events[0]!.type).toBe('heal');
+    expect(events[0]!.data['amount']).toBe(50);
+  });
+
+  it('does not overheal past max HP', () => {
+    const user = makePokemon({ maxHp: 100, currentHp: 90 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0] = user;
+    const { events } = invoke('shoreup', {
+      battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0,
+    });
+    expect(user.currentHp).toBe(100);
+    expect(events[0]!.data['amount']).toBe(10);
   });
 });
 
@@ -75,6 +87,18 @@ describe('morningsun', () => {
       battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0,
     });
     expect(user.currentHp).toBe(100);
-    expect(events.some(e => e.type === 'heal')).toBe(true);
+    expect(events[0]!.type).toBe('heal');
+    expect(events[0]!.data['amount']).toBe(50);
+  });
+
+  it('does not overheal past max HP', () => {
+    const user = makePokemon({ maxHp: 100, currentHp: 90 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0] = user;
+    const { events } = invoke('morningsun', {
+      battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0,
+    });
+    expect(user.currentHp).toBe(100);
+    expect(events[0]!.data['amount']).toBe(10);
   });
 });
