@@ -86,6 +86,10 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
   r.register('shiftgear',   multiStatModSelf({ spe: 2, atk: 1 }));
   r.register('geomancy',    multiStatModSelf({ spa: 2, spd: 2, spe: 2 })); // placeholder; Task 10 will replace
   r.register('victorydance',multiStatModSelf({ atk: 1, def: 1, spe: 1 }));
+  // TODO: autotomize also reduces user weight by 100 kg (min 0.1 kg), but PartyMember
+  // does not carry a weightkg field (that lives on PokemonSpecies). Weight reduction
+  // is omitted until the battle state is extended to track per-instance weight.
+  r.register('autotomize',  statModSelf('spe', 2));
 
   // ── Target stat drops ──────────────────────────────────────────────
   r.register('leer',       statModTarget('def', -1));

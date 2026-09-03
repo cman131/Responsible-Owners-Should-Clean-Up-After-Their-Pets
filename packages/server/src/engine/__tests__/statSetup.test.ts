@@ -204,3 +204,14 @@ describe('victorydance', () => {
     expect(events[0]!.type).toBe('stat-change');
   });
 });
+
+describe('autotomize', () => {
+  it('raises spe by 2', () => {
+    const user = makePokemon();
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0] = user;
+    const { events } = invoke('autotomize', { battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 });
+    expect(user.statBoosts.spe).toBe(2);
+    expect(events[0]!.type).toBe('stat-change');
+  });
+});
