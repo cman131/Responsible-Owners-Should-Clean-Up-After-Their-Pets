@@ -9,6 +9,8 @@ export const SWITCH_CLEAR_NAMES = new Set([
   'destiny-bond', 'endure',
   'substitute',
   'sleep',
+  'laser-focus',
+  'geomancy-charge',
 ]);
 
 export const SWITCH_CLEAR_PREFIXES = ['charging-'];
