@@ -499,6 +499,120 @@ describe('Parting Shot', () => {
   });
 });
 
+describe('Roar & Whirlwind', () => {
+  it('Roar forces target to switch to bench member', () => {
+    const engine = new BattleEngine();
+    const state = make1v1State();
+
+    // Give slot-b1 (opponent) a bench member
+    const oppBench = makePokemon({ instanceId: 'opp-bench' });
+    state.teams[1]!.slots[0]!.party.push(oppBench);
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'roar', currentPp: 20, maxPp: 20 };
+
+    const result = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    // Target was force-switched to bench member
+    const targetSlot = result.newState.teams[1]!.slots[0]!;
+    const activeTarget = targetSlot.party[targetSlot.activePokemonIndex]!;
+    expect(activeTarget.instanceId).toBe('opp-bench');
+    // pokemon-switched event emitted
+    expect(result.events.some(e => e.type === 'pokemon-switched')).toBe(true);
+  });
+
+  it('fails when target has no bench (single Pokemon)', () => {
+    const engine = new BattleEngine();
+    const state = make1v1State();
+
+    // No bench for opponent — only one Pokemon in party
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'roar', currentPp: 20, maxPp: 20 };
+
+    const result = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    const failedEvent = result.events.find(e => e.type === 'move-failed');
+    expect(failedEvent).toBeDefined();
+    expect((failedEvent as any).data.reason).toBe('no-eligible-bench');
+    // Target should not have switched
+    expect(result.newState.teams[1]!.slots[0]!.activePokemonIndex).toBe(0);
+  });
+
+  it('fails when target has ingrain volatile', () => {
+    const engine = new BattleEngine();
+    const state = make1v1State();
+
+    // Give opponent a bench and ingrain
+    const oppBench = makePokemon({ instanceId: 'opp-bench' });
+    state.teams[1]!.slots[0]!.party.push(oppBench);
+    state.teams[1]!.slots[0]!.party[0]!.volatileStatus.push({ name: 'ingrain' });
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'roar', currentPp: 20, maxPp: 20 };
+
+    const result = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    const failedEvent = result.events.find(e => e.type === 'move-failed');
+    expect(failedEvent).toBeDefined();
+    expect((failedEvent as any).data.reason).toBe('ingrain');
+    // Target should not have switched
+    const targetSlot = result.newState.teams[1]!.slots[0]!;
+    expect(targetSlot.party[targetSlot.activePokemonIndex]!.instanceId).toBe('p2-mon');
+  });
+
+  it('fails when target has suction-cups ability', () => {
+    const engine = new BattleEngine();
+    const state = make1v1State();
+
+    // Give opponent a bench and suction-cups ability
+    const oppBench = makePokemon({ instanceId: 'opp-bench' });
+    state.teams[1]!.slots[0]!.party.push(oppBench);
+    state.teams[1]!.slots[0]!.party[0]!.ability = 'suction-cups';
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'roar', currentPp: 20, maxPp: 20 };
+
+    const result = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    const failedEvent = result.events.find(e => e.type === 'move-failed');
+    expect(failedEvent).toBeDefined();
+    expect((failedEvent as any).data.reason).toBe('suction-cups');
+    // Target should not have switched
+    const targetSlot = result.newState.teams[1]!.slots[0]!;
+    expect(targetSlot.party[targetSlot.activePokemonIndex]!.instanceId).toBe('p2-mon');
+  });
+
+  it('Whirlwind is registered (basic smoke test)', () => {
+    const engine = new BattleEngine();
+    const state = make1v1State();
+
+    // Give opponent a bench member
+    const oppBench = makePokemon({ instanceId: 'opp-bench-ww' });
+    state.teams[1]!.slots[0]!.party.push(oppBench);
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'whirlwind', currentPp: 20, maxPp: 20 };
+
+    const result = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    // Should not emit 'unimplemented' move-failed
+    const unimplEvent = result.events.find(
+      e => e.type === 'move-failed' && (e as any).data.reason === 'unimplemented'
+    );
+    expect(unimplEvent).toBeUndefined();
+    // Target was force-switched
+    const targetSlot = result.newState.teams[1]!.slots[0]!;
+    const activeTarget = targetSlot.party[targetSlot.activePokemonIndex]!;
+    expect(activeTarget.instanceId).toBe('opp-bench-ww');
+  });
+});
+
 describe('Teleport', () => {
   it('returns pivotSlots containing the user slot when user has a bench member', () => {
     const engine = new BattleEngine();

@@ -461,6 +461,34 @@ export function teleport(): MoveEffectHandler {
   return (_ctx) => ({ events: [], pivotSwitch: true });
 }
 
+export function forceSwitch(): MoveEffectHandler {
+  return (ctx) => {
+    const target = ctx.targets[0]!;
+    const targetSlotId = ctx.targetSlotIds[0]!;
+
+    if (target.volatileStatus.some(v => v.name === 'ingrain')) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'ingrain' } }] };
+    }
+
+    const effectiveAbility = target.tracedAbilityId ?? target.ability;
+    if (effectiveAbility === 'suction-cups') {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'suction-cups' } }] };
+    }
+
+    const targetSlot = ctx.battle.teams.flatMap(t => t.slots).find(s => s.slotId === targetSlotId);
+    const bench = targetSlot?.party.filter(
+      (p, i) => i !== targetSlot.activePokemonIndex && !p.fainted
+    ) ?? [];
+
+    if (bench.length === 0) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'no-eligible-bench' } }] };
+    }
+
+    const chosen = bench[Math.floor(ctx.rng() * bench.length)]!;
+    return { events: [], forceSwitch: { targetSlotId, targetInstanceId: chosen.instanceId } };
+  };
+}
+
 export function shedTail(): MoveEffectHandler {
   return (ctx) => {
     const cost = Math.floor(ctx.user.maxHp / 2);

@@ -424,6 +424,12 @@ export class BattleEngine {
       if (handler) {
         const handlerResult = handler(ctx);
         events.push(...handlerResult.events);
+        if (handlerResult.forceSwitch) {
+          const { targetSlotId, targetInstanceId } = handlerResult.forceSwitch;
+          const switchResult = this.performSwitch(s, targetSlotId, targetInstanceId, 'phased');
+          events.push(...switchResult.events);
+          s = switchResult.newState;
+        }
         if (handlerResult.pivotSwitch) {
           const attackerSlotForPivot = this.findSlot(s, attackerSlotId);
           const hasBench = attackerSlotForPivot?.party.some(

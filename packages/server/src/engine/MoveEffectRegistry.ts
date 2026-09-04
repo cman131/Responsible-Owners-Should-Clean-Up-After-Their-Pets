@@ -18,6 +18,7 @@ export interface MoveContext {
 export interface MoveEffectOutput {
   events: TurnResolveEvent[];
   pivotSwitch?: boolean;
+  forceSwitch?: { targetSlotId: string; targetInstanceId: string };
 }
 
 export type MoveEffectHandler = (ctx: MoveContext) => MoveEffectOutput;
