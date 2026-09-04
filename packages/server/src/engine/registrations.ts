@@ -382,6 +382,18 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
     return { events };
   }));
 
+  r.register('takeheart', custom((ctx) => {
+    const events: TurnResolveEvent[] = [];
+    if (ctx.user.status) {
+      const old = ctx.user.status;
+      delete ctx.user.status;
+      ctx.user.volatileStatus = ctx.user.volatileStatus.filter(v => v.name !== 'toxic' && v.name !== 'sleep');
+      events.push({ type: 'status-cured', data: { slotId: ctx.userSlotId, status: old, reason: 'move' } });
+    }
+    events.push(applyStatBoost(ctx.user, ctx.userSlotId, { spa: 1, spd: 1 }));
+    return { events };
+  }));
+
   r.register('rest', custom((ctx) => {
     if (ctx.user.status === 'slp') {
       return { events: [{ type: 'move-failed', data: { moveId: 'rest', reason: 'already-asleep' } }] };

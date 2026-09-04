@@ -298,3 +298,29 @@ describe('bellydrum', () => {
     expect(user.currentHp).toBe(100);
   });
 });
+
+describe('takeheart', () => {
+  it('clears user status and boosts spa and spd by +1', () => {
+    const user = makePokemon({ status: 'brn' as const });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0] = user;
+    const { events } = invoke('takeheart', { battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 });
+    expect(user.status).toBeUndefined();
+    expect(user.statBoosts.spa).toBe(1);
+    expect(user.statBoosts.spd).toBe(1);
+    expect(events[0]!.type).toBe('status-cured');
+    expect((events[0]! as any).data.status).toBe('brn');
+    expect(events[1]!.type).toBe('stat-change');
+  });
+
+  it('boosts spa and spd even with no status', () => {
+    const user = makePokemon();
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0] = user;
+    const { events } = invoke('takeheart', { battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 });
+    expect(user.statBoosts.spa).toBe(1);
+    expect(user.statBoosts.spd).toBe(1);
+    expect(events[0]!.type).toBe('stat-change');
+    expect(events.every(e => e.type !== 'move-failed')).toBe(true);
+  });
+});
