@@ -23,6 +23,16 @@ export function multiStatModSelf(boosts: Partial<Record<keyof StatBoosts, number
   return (ctx) => ({ events: [applyStatBoost(ctx.user, ctx.userSlotId, boosts)] });
 }
 
+export function multiStatModTarget(boosts: Partial<Record<keyof StatBoosts, number>>): MoveEffectHandler {
+  return (ctx) => {
+    const events: TurnResolveEvent[] = [];
+    for (let i = 0; i < ctx.targets.length; i++) {
+      events.push(applyStatBoost(ctx.targets[i]!, ctx.targetSlotIds[i]!, boosts));
+    }
+    return { events };
+  };
+}
+
 export function applyStatusTarget(status: StatusCondition): MoveEffectHandler {
   return (ctx) => {
     const events: TurnResolveEvent[] = [];

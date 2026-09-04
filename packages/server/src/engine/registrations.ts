@@ -1,7 +1,7 @@
 import { MoveEffectRegistry } from './MoveEffectRegistry.js';
 import type { MoveContext } from './MoveEffectRegistry.js';
 import {
-  statModSelf, statModTarget, multiStatModSelf,
+  statModSelf, statModTarget, multiStatModSelf, multiStatModTarget,
   applyStatusTarget, applyVolatileTarget, applyVolatileSelf, healPercent,
   setWeather, setTerrain, setSideCondition, trickRoom, gravity, custom,
   protect, endure, substitute, disable, taunt, encore, torment,
@@ -165,6 +165,23 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
   r.register('faketears',  statModTarget('spd', -2));
   r.register('flash',      statModTarget('accuracy', -1));
   r.register('sandattack', statModTarget('accuracy', -1));
+  r.register('tickle',       multiStatModTarget({ atk: -1, def: -1 }));
+  r.register('scaryface',    statModTarget('spe', -2));
+  r.register('tearfullook',  multiStatModTarget({ atk: -1, spa: -1 }));
+  r.register('nobleroar',    multiStatModTarget({ atk: -1, spa: -1 }));
+  r.register('featherdance', statModTarget('atk', -2));
+  r.register('captivate',    statModTarget('spa', -2));
+  r.register('babydolleyes', statModTarget('atk', -1));
+  r.register('eerieimpulse', statModTarget('spa', -2));
+  r.register('stringshot',   statModTarget('spe', -2));
+  r.register('cottonspore',  statModTarget('spe', -2));
+  r.register('smokescreen',  statModTarget('accuracy', -1));
+  r.register('kinesis',      statModTarget('accuracy', -1));
+  r.register('sweetscent',   statModTarget('evasion', -2));
+  r.register('confide',      statModTarget('spa', -1));
+  r.register('playnice',     statModTarget('atk', -1));
+  r.register('spicyextract', multiStatModTarget({ spa: 2, def: -2 }));
+  // venomdrench is Task 4 - skip here
 
   // ── Protect family ────────────────────────────────────────────────────
   r.register('protect',       protect('protect'));
