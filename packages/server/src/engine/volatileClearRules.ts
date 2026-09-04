@@ -13,6 +13,7 @@ export const SWITCH_CLEAR_NAMES = new Set([
   'geomancy-charge',
   'infatuation',
   'trapped', 'octolock', 'no-retreat',
+  'imprison',
 ]);
 
 export const SWITCH_CLEAR_PREFIXES = ['charging-'];

@@ -292,6 +292,21 @@ export class BattleEngine {
       return { newState: s, events };
     }
 
+    // Imprison: block moves that the imprisoning foe also knows
+    for (const team of s.teams) {
+      if (team.slots.some(sl => sl.slotId === attackerSlotId)) continue; // skip attacker's own team
+      for (const sl of team.slots) {
+        const activeMon = sl.party[sl.activePokemonIndex];
+        if (!activeMon || activeMon.fainted) continue;
+        if (activeMon.volatileStatus.some(v => v.name === 'imprison')) {
+          if (activeMon.moves.some(m => m.moveId === move.id)) {
+            events.push({ type: 'move-blocked', data: { slotId: attackerSlotId, reason: 'imprison', moveId: move.id } });
+            return { newState: s, events };
+          }
+        }
+      }
+    }
+
     // Decrement Disable (only if move was not blocked by it above)
     const disableDecEntry = attacker.volatileStatus.find(v => v.name === 'disable');
     if (disableDecEntry) {

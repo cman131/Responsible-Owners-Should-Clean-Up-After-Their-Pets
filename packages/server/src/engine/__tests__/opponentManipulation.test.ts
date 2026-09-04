@@ -939,3 +939,81 @@ describe('minimize double-damage interaction', () => {
     expect(dmgMinimized).toBe(dmgClean);
   });
 });
+
+// ── Imprison ──────────────────────────────────────────────────────────────────
+
+describe('imprison', () => {
+  it('applies imprison volatile to the user (p1)', () => {
+    const engine = makeEngine();
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'imprison', currentPp: 10, maxPp: 10 };
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const p1 = newState.teams[0]!.slots[0]!.party[0]!;
+    expect(p1.volatileStatus.some(v => v.name === 'imprison')).toBe(true);
+  });
+
+  it('does not apply imprison volatile to the target (p2)', () => {
+    const engine = makeEngine();
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'imprison', currentPp: 10, maxPp: 10 };
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2.volatileStatus.some(v => v.name === 'imprison')).toBe(false);
+  });
+
+  it('blocks opponent from using a move that the imprisoning Pokemon also knows', () => {
+    // Setup: p1 has imprison volatile (already used Imprison).
+    // Both p1 and p2 know flamethrower (default move 0).
+    // p2 tries to use flamethrower — should be blocked.
+    const engine = makeEngine();
+    const state = make1v1State();
+    // p1 already has imprison volatile applied
+    state.teams[0]!.slots[0]!.party[0]!.volatileStatus.push({ name: 'imprison' });
+    // Both have flamethrower as move 0 (default)
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'flamethrower', currentPp: 15, maxPp: 15 };
+    // Give p1 flamethrower at a different slot so the block check can find it
+    state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'flamethrower', currentPp: 15, maxPp: 15 };
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const blockedEvent = events.find(
+      e => e.type === 'move-blocked' && (e.data as any).reason === 'imprison' && (e.data as any).slotId === 'slot-b1'
+    );
+    expect(blockedEvent).toBeDefined();
+  });
+
+  it('does not block opponent from using a move that the imprisoning Pokemon does NOT know', () => {
+    // p1 has imprison volatile, but p1 does NOT know surf.
+    // p2 uses surf — should NOT be blocked.
+    const engine = makeEngine();
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.volatileStatus.push({ name: 'imprison' });
+    // p1's moves: growl, airslash, roost, willowisp (no surf)
+    state.teams[0]!.slots[0]!.party[0]!.moves = [
+      { moveId: 'growl', currentPp: 40, maxPp: 40 },
+      { moveId: 'airslash', currentPp: 15, maxPp: 15 },
+      { moveId: 'roost', currentPp: 10, maxPp: 10 },
+      { moveId: 'willowisp', currentPp: 15, maxPp: 15 },
+    ];
+    // p2 uses surf (which p1 does NOT know)
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'surf', currentPp: 15, maxPp: 15 };
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const blockedEvent = events.find(
+      e => e.type === 'move-blocked' && (e.data as any).reason === 'imprison' && (e.data as any).slotId === 'slot-b1'
+    );
+    expect(blockedEvent).toBeUndefined();
+  });
+});
