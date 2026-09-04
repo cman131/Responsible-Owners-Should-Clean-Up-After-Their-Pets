@@ -399,3 +399,102 @@ describe('Shed Tail', () => {
     expect(slot.batonPassData).toBeUndefined();
   });
 });
+
+describe('Parting Shot', () => {
+  it('applies -1 Atk and -1 SpA to the target, then triggers a pivot switch', () => {
+    const engine = new BattleEngine();
+    const state = make1v1State();
+
+    // Give slot-a1 (user) a bench member and Parting Shot
+    const bench = makePokemon({ instanceId: 'p1-bench' });
+    state.teams[0]!.slots[0]!.party.push(bench);
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'partingshot', currentPp: 20, maxPp: 20 };
+
+    const result = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    // Stat drops applied to opponent (slot-b1)
+    expect(result.newState.teams[1]!.slots[0]!.party[0]!.statBoosts.atk).toBe(-1);
+    expect(result.newState.teams[1]!.slots[0]!.party[0]!.statBoosts.spa).toBe(-1);
+    // Pivot switch triggered for user (slot-a1)
+    expect(result.pivotSlots).toContain('slot-a1');
+  });
+
+  it('emits pivot-skipped and stat drops still apply when user has no bench member', () => {
+    const engine = new BattleEngine();
+    const state = make1v1State();
+
+    // No bench — only one Pokemon
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'partingshot', currentPp: 20, maxPp: 20 };
+    // Opponent uses a move that doesn't touch Atk or SpA so we can assert precisely
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'agility', currentPp: 30, maxPp: 30 };
+
+    const result = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    expect(result.pivotSlots).toBeUndefined();
+    // The stat drops still apply even when pivot is skipped (move effect fired first)
+    expect(result.newState.teams[1]!.slots[0]!.party[0]!.statBoosts.atk).toBe(-1);
+    expect(result.newState.teams[1]!.slots[0]!.party[0]!.statBoosts.spa).toBe(-1);
+  });
+
+  it('fails with move-failed (immune) when target is a Dark-type', () => {
+    const engine = new BattleEngine();
+    const state = make1v1State();
+
+    // Give bench so pivot would otherwise fire
+    const bench = makePokemon({ instanceId: 'p1-bench' });
+    state.teams[0]!.slots[0]!.party.push(bench);
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'partingshot', currentPp: 20, maxPp: 20 };
+
+    // Make target Dark-type via Terastallization (resolveEffectiveTypes checks teraType first)
+    state.teams[1]!.slots[0]!.party[0]!.hasTerastallized = true;
+    state.teams[1]!.slots[0]!.party[0]!.teraType = 'Dark';
+
+    const result = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    // Move fails: no stat drops, no pivot
+    expect(result.pivotSlots).toBeUndefined();
+    expect(result.newState.teams[1]!.slots[0]!.party[0]!.statBoosts.atk).toBe(0);
+    expect(result.newState.teams[1]!.slots[0]!.party[0]!.statBoosts.spa).toBe(0);
+    const failedEvent = result.events.find(e => e.type === 'move-failed');
+    expect(failedEvent).toBeDefined();
+    expect((failedEvent as any).data.reason).toBe('immune');
+  });
+
+  it('does NOT carry over batonPassData (no stat boosts/volatiles passed to incoming)', () => {
+    const engine = new BattleEngine();
+    const state = make1v1State();
+
+    // Set +2 Atk on user — Parting Shot should NOT pass it along
+    state.teams[0]!.slots[0]!.party[0]!.statBoosts.atk = 2;
+
+    const bench = makePokemon({ instanceId: 'p1-bench' });
+    state.teams[0]!.slots[0]!.party.push(bench);
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'partingshot', currentPp: 20, maxPp: 20 };
+
+    const result1 = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    expect(result1.pivotSlots).toContain('slot-a1');
+    // No batonPassData should be set on the slot
+    expect(result1.newState.teams[0]!.slots[0]!.batonPassData).toBeUndefined();
+
+    const result2 = engine.processForceSwitch(result1.newState, 'slot-a1', 'p1-bench', 'forced');
+
+    const incomingSlot = result2.newState.teams[0]!.slots[0]!;
+    const incoming = incomingSlot.party[incomingSlot.activePokemonIndex]!;
+    expect(incoming.instanceId).toBe('p1-bench');
+    // Incoming should NOT have +2 Atk (no baton pass)
+    expect(incoming.statBoosts.atk).toBe(0);
+  });
+});

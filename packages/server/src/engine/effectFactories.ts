@@ -438,6 +438,25 @@ export function batonPass(): MoveEffectHandler {
   };
 }
 
+export function partingShot(): MoveEffectHandler {
+  return (ctx) => {
+    const target = ctx.targets[0]!;
+    const targetSlotId = ctx.targetSlotIds[0]!;
+    const targetTypes = ctx.targetTypes[0]!;
+
+    // Dark-type immunity: Parting Shot fails against Dark-type targets (Gen 6+)
+    if (targetTypes.includes('Dark')) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'immune' } }] };
+    }
+
+    // Apply -1 Atk and -1 SpA to the target
+    const statDropEvent = applyStatBoost(target, targetSlotId, { atk: -1, spa: -1 });
+
+    // Signal pivot switch (no batonPassData — nothing is passed to the incoming Pokemon)
+    return { events: [statDropEvent], pivotSwitch: true };
+  };
+}
+
 export function shedTail(): MoveEffectHandler {
   return (ctx) => {
     const cost = Math.floor(ctx.user.maxHp / 2);
