@@ -22,6 +22,8 @@ import { resolvePower } from './dynamicPower.js';
 
 const ALWAYS_THAW_MOVES = new Set(['scald', 'steameruption', 'sparklingaria']);
 
+const MINIMIZE_DOUBLES = new Set(['stomp', 'steamroller', 'bodyslam', 'dragonrush', 'phantomforce', 'shadowforce', 'flyingpress']);
+
 const COUNTER_MOVES = new Set(['counter', 'mirrorcoat', 'metalburst', 'comeuppance']);
 
 const FIXED_DAMAGE_MOVES: Record<string, (attacker: PartyMember) => number> = {
@@ -1004,7 +1006,12 @@ export class BattleEngine {
         { ...target, weightkg: targetSpeciesForPower?.weightkg ?? 0 },
         s.field,
       );
-      const perTargetBasePower = resolvedPower !== move.basePower ? resolvedPower : effectiveBasePower;
+      let perTargetBasePower = resolvedPower !== move.basePower ? resolvedPower : effectiveBasePower;
+
+      // Minimize: certain moves deal double base power against a minimized target
+      if (target.volatileStatus.some(v => v.name === 'minimize') && MINIMIZE_DOUBLES.has(move.id)) {
+        perTargetBasePower *= 2;
+      }
 
       let totalDamage = 0;
       let hpDamageTaken = 0;

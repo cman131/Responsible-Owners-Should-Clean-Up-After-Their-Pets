@@ -84,6 +84,8 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
   }));
 
   // ── Self stat boosts ───────────────────────────────────────────────
+  r.register('minimize',    statModSelf('evasion', 2));
+  r.register('doubleteam',  statModSelf('evasion', 1));
   r.register('swordsdance', statModSelf('atk', 2));
   r.register('nastyplot',   statModSelf('spa', 2));
   r.register('agility',     statModSelf('spe', 2));

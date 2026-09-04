@@ -803,3 +803,139 @@ describe('noretreat', () => {
     expect(failedEvent).toBeDefined();
   });
 });
+
+// ── Minimize / Double Team (evasion boosts) ───────────────────────────────────
+
+describe('minimize', () => {
+  it('raises user evasion by 2', () => {
+    const { p1Boosts } = resolveP1Move('minimize');
+    expect(p1Boosts.evasion).toBe(2);
+  });
+
+  it('does not affect non-evasion self stats (using neutral p2 move)', () => {
+    // Use swordsdance as p2's move so it doesn't touch p1's stats
+    const engine = makeEngine();
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'minimize', currentPp: 20, maxPp: 20 };
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const p1Boosts = newState.teams[0]!.slots[0]!.party[0]!.statBoosts;
+    expect(p1Boosts.atk).toBe(0);
+    expect(p1Boosts.def).toBe(0);
+    expect(p1Boosts.spa).toBe(0);
+    expect(p1Boosts.spd).toBe(0);
+    expect(p1Boosts.spe).toBe(0);
+    expect(p1Boosts.accuracy).toBe(0);
+  });
+});
+
+describe('doubleteam', () => {
+  it('raises user evasion by 1', () => {
+    const { p1Boosts } = resolveP1Move('doubleteam');
+    expect(p1Boosts.evasion).toBe(1);
+  });
+
+  it('does not affect non-evasion self stats (using neutral p2 move)', () => {
+    // Use swordsdance as p2's move so it doesn't touch p1's stats
+    const engine = makeEngine();
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'doubleteam', currentPp: 15, maxPp: 15 };
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const p1Boosts = newState.teams[0]!.slots[0]!.party[0]!.statBoosts;
+    expect(p1Boosts.atk).toBe(0);
+    expect(p1Boosts.def).toBe(0);
+    expect(p1Boosts.spa).toBe(0);
+    expect(p1Boosts.spd).toBe(0);
+    expect(p1Boosts.spe).toBe(0);
+    expect(p1Boosts.accuracy).toBe(0);
+  });
+});
+
+// ── Minimize double-damage interaction ────────────────────────────────────────
+
+describe('minimize double-damage interaction', () => {
+  it('stomp deals double damage against a minimized target vs a non-minimized target', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+
+    // Without minimize
+    const stateClean = make1v1State();
+    stateClean.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'stomp', currentPp: 20, maxPp: 20 };
+    stateClean.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const { events: eventsClean } = engine.resolveTurn(stateClean, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    vi.restoreAllMocks();
+    const dmgClean = eventsClean.find(
+      e => e.type === 'damage-dealt' && (e.data as any).attackerSlotId === 'slot-a1'
+    )?.data['damage'] as number;
+
+    // With minimize pre-applied to target
+    const stateMinimized = make1v1State();
+    stateMinimized.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'stomp', currentPp: 20, maxPp: 20 };
+    stateMinimized.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+    stateMinimized.teams[1]!.slots[0]!.party[0]!.volatileStatus.push({ name: 'minimize' });
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const { events: eventsMinimized } = engine.resolveTurn(stateMinimized, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    vi.restoreAllMocks();
+    const dmgMinimized = eventsMinimized.find(
+      e => e.type === 'damage-dealt' && (e.data as any).attackerSlotId === 'slot-a1'
+    )?.data['damage'] as number;
+
+    expect(dmgClean).toBeDefined();
+    expect(dmgMinimized).toBeDefined();
+    // Minimized target should take approximately 2x damage (allow ±1 for rounding)
+    expect(dmgMinimized).toBeGreaterThanOrEqual(dmgClean * 2 - 1);
+    expect(dmgMinimized).toBeLessThanOrEqual(dmgClean * 2 + 1);
+    expect(dmgMinimized).toBeGreaterThan(dmgClean);
+  });
+
+  it('flamethrower (non-MINIMIZE_DOUBLES move) deals normal damage against a minimized target', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+
+    // Without minimize
+    const stateClean = make1v1State();
+    stateClean.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'flamethrower', currentPp: 15, maxPp: 15 };
+    stateClean.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const { events: eventsClean } = engine.resolveTurn(stateClean, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    vi.restoreAllMocks();
+    const dmgClean = eventsClean.find(
+      e => e.type === 'damage-dealt' && (e.data as any).attackerSlotId === 'slot-a1'
+    )?.data['damage'] as number;
+
+    // With minimize pre-applied to target
+    const stateMinimized = make1v1State();
+    stateMinimized.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'flamethrower', currentPp: 15, maxPp: 15 };
+    stateMinimized.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+    stateMinimized.teams[1]!.slots[0]!.party[0]!.volatileStatus.push({ name: 'minimize' });
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const { events: eventsMinimized } = engine.resolveTurn(stateMinimized, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    vi.restoreAllMocks();
+    const dmgMinimized = eventsMinimized.find(
+      e => e.type === 'damage-dealt' && (e.data as any).attackerSlotId === 'slot-a1'
+    )?.data['damage'] as number;
+
+    expect(dmgClean).toBeDefined();
+    expect(dmgMinimized).toBeDefined();
+    // Flamethrower does NOT get the minimize double-damage bonus
+    expect(dmgMinimized).toBe(dmgClean);
+  });
+});
