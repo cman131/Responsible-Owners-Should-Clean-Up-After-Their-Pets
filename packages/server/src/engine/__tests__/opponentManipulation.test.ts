@@ -812,6 +812,17 @@ describe('minimize', () => {
     expect(p1Boosts.evasion).toBe(2);
   });
 
+  it('applies minimize volatile to user', () => {
+    const engine = makeEngine();
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'minimize', currentPp: 20, maxPp: 20 };
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    expect(newState.teams[0]!.slots[0]!.party[0]!.volatileStatus.some(v => v.name === 'minimize')).toBe(true);
+  });
+
   it('does not affect non-evasion self stats (using neutral p2 move)', () => {
     // Use swordsdance as p2's move so it doesn't touch p1's stats
     const engine = makeEngine();

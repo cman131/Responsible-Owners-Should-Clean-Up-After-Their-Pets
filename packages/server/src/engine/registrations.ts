@@ -85,7 +85,14 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
   }));
 
   // ── Self stat boosts ───────────────────────────────────────────────
-  r.register('minimize',    statModSelf('evasion', 2));
+  r.register('minimize', custom((ctx) => {
+    const events: TurnResolveEvent[] = [applyStatBoost(ctx.user, ctx.userSlotId, { evasion: 2 })];
+    if (!ctx.user.volatileStatus.some(v => v.name === 'minimize')) {
+      ctx.user.volatileStatus.push({ name: 'minimize' });
+      events.push({ type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'minimize' } });
+    }
+    return { events };
+  }));
   r.register('doubleteam',  statModSelf('evasion', 1));
   r.register('swordsdance', statModSelf('atk', 2));
   r.register('nastyplot',   statModSelf('spa', 2));
