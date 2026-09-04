@@ -4,7 +4,7 @@ import type { MoveEffectHandler } from './MoveEffectRegistry.js';
 import { getItemHooks } from './items.js';
 
 const BATON_PASS_VOLATILES = new Set([
-  'focusenergy', 'substitute', 'aqua-ring', 'ingrain', 'magnet-rise',
+  'focusenergy', 'substitute', 'aqua-ring', 'magnet-rise',
   'power-trick', 'laser-focus',
 ]);
 
@@ -421,6 +421,11 @@ export function wish(): MoveEffectHandler {
 
 export function batonPass(): MoveEffectHandler {
   return (ctx) => {
+    // Ingrain prevents using Baton Pass (Gen 4+): the user cannot switch while rooted
+    if (ctx.user.volatileStatus.some(v => v.name === 'ingrain')) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'ingrain' } }] };
+    }
+
     // Capture carry-over volatiles and stat boosts BEFORE performSwitch clears them
     const carriedVolatiles: VolatileStatusEntry[] = ctx.user.volatileStatus
       .filter(v => BATON_PASS_VOLATILES.has(v.name))
@@ -440,8 +445,10 @@ export function batonPass(): MoveEffectHandler {
 
 export function partingShot(): MoveEffectHandler {
   return (ctx) => {
-    const target = ctx.targets[0]!;
-    const targetSlotId = ctx.targetSlotIds[0]!;
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+
     const targetTypes = ctx.targetTypes[0]!;
 
     // Dark-type immunity: Parting Shot fails against Dark-type targets (Gen 6+)
@@ -449,8 +456,12 @@ export function partingShot(): MoveEffectHandler {
       return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'immune' } }] };
     }
 
-    // Apply -1 Atk and -1 SpA to the target
+    // Apply -1 Atk and -1 SpA; fail if neither stat can drop (both already at -6)
     const statDropEvent = applyStatBoost(target, targetSlotId, { atk: -1, spa: -1 });
+    const hasChanges = Object.keys((statDropEvent.data as Record<string, unknown>)['changes'] as object).length > 0;
+    if (!hasChanges) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'stat-cannot-drop' } }] };
+    }
 
     // Signal pivot switch (no batonPassData — nothing is passed to the incoming Pokemon)
     return { events: [statDropEvent], pivotSwitch: true };
@@ -463,8 +474,9 @@ export function teleport(): MoveEffectHandler {
 
 export function forceSwitch(): MoveEffectHandler {
   return (ctx) => {
-    const target = ctx.targets[0]!;
-    const targetSlotId = ctx.targetSlotIds[0]!;
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
 
     if (target.volatileStatus.some(v => v.name === 'ingrain')) {
       return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'ingrain' } }] };

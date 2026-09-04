@@ -204,6 +204,41 @@ describe('Baton Pass', () => {
     expect(incoming.volatileStatus.some(v => v.name === 'confusion')).toBe(false);
   });
 
+  it('fails (move-blocked) when user has trapped volatile', () => {
+    const engine = new BattleEngine();
+    const state = make1v1State();
+    const bench = makePokemon({ instanceId: 'p1-bench' });
+    state.teams[0]!.slots[0]!.party.push(bench);
+    state.teams[0]!.slots[0]!.party[0]!.volatileStatus.push({ name: 'trapped' });
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'batonpass', currentPp: 40, maxPp: 40 };
+
+    const result = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    expect(result.pivotSlots).toBeUndefined();
+    expect(result.events.some(e => e.type === 'move-blocked')).toBe(true);
+    expect(result.newState.teams[0]!.slots[0]!.batonPassData).toBeUndefined();
+  });
+
+  it('fails when user has ingrain volatile (cannot switch while rooted)', () => {
+    const engine = new BattleEngine();
+    const state = make1v1State();
+    const bench = makePokemon({ instanceId: 'p1-bench' });
+    state.teams[0]!.slots[0]!.party.push(bench);
+    state.teams[0]!.slots[0]!.party[0]!.volatileStatus.push({ name: 'ingrain' });
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'batonpass', currentPp: 40, maxPp: 40 };
+
+    const result = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    expect(result.pivotSlots).toBeUndefined();
+    expect(result.events.some(e => e.type === 'move-failed')).toBe(true);
+  });
+
   it('clears batonPassData from the slot after use', () => {
     const engine = new BattleEngine();
     const state = make1v1State();
@@ -496,6 +531,27 @@ describe('Parting Shot', () => {
     expect(incoming.instanceId).toBe('p1-bench');
     // Incoming should NOT have +2 Atk (no baton pass)
     expect(incoming.statBoosts.atk).toBe(0);
+  });
+
+  it('fails when target stats cannot drop (both Atk and SpA already at -6)', () => {
+    const engine = new BattleEngine();
+    const state = make1v1State();
+
+    // Target already at minimum Atk and SpA
+    state.teams[1]!.slots[0]!.party[0]!.statBoosts.atk = -6;
+    state.teams[1]!.slots[0]!.party[0]!.statBoosts.spa = -6;
+
+    const bench = makePokemon({ instanceId: 'p1-bench' });
+    state.teams[0]!.slots[0]!.party.push(bench);
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'partingshot', currentPp: 20, maxPp: 20 };
+
+    const result = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    expect(result.pivotSlots).toBeUndefined();
+    expect(result.events.some(e => e.type === 'move-failed')).toBe(true);
   });
 });
 

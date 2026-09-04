@@ -432,14 +432,22 @@ export class BattleEngine {
         }
         if (handlerResult.pivotSwitch) {
           const attackerSlotForPivot = this.findSlot(s, attackerSlotId);
-          const hasBench = attackerSlotForPivot?.party.some(
-            (p, i) => i !== attackerSlotForPivot.activePokemonIndex && !p.fainted
-          ) ?? false;
-          if (hasBench) {
-            return { newState: s, events, pivotSwitch: true };
-          } else {
-            events.push({ type: 'pivot-skipped', data: { slotId: attackerSlotId } });
+          const isTrapped = attacker.volatileStatus.some(
+            v => v.name === 'trapped' || v.name === 'no-retreat'
+          );
+          if (isTrapped) {
             if (attackerSlotForPivot) delete attackerSlotForPivot.batonPassData;
+            events.push({ type: 'move-blocked', data: { slotId: attackerSlotId, reason: 'trapped' } });
+          } else {
+            const hasBench = attackerSlotForPivot?.party.some(
+              (p, i) => i !== attackerSlotForPivot.activePokemonIndex && !p.fainted
+            ) ?? false;
+            if (hasBench) {
+              return { newState: s, events, pivotSwitch: true };
+            } else {
+              events.push({ type: 'pivot-skipped', data: { slotId: attackerSlotId } });
+              if (attackerSlotForPivot) delete attackerSlotForPivot.batonPassData;
+            }
           }
         }
       } else {
