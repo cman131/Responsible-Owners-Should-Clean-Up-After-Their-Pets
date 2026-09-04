@@ -394,6 +394,17 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
     return { events };
   }));
 
+  r.register('acupressure', custom((ctx) => {
+    const eligible = (['atk', 'def', 'spa', 'spd', 'spe', 'accuracy', 'evasion'] as const)
+      .filter(stat => ctx.user.statBoosts[stat] < 6);
+    if (eligible.length === 0) {
+      return { events: [{ type: 'move-failed', data: { moveId: 'acupressure', reason: 'all-maxed' } }] };
+    }
+    const idx = Math.floor(ctx.rng() * eligible.length);
+    const chosen = eligible[idx]!;
+    return { events: [applyStatBoost(ctx.user, ctx.userSlotId, { [chosen]: 2 })] };
+  }));
+
   r.register('rest', custom((ctx) => {
     if (ctx.user.status === 'slp') {
       return { events: [{ type: 'move-failed', data: { moveId: 'rest', reason: 'already-asleep' } }] };

@@ -299,6 +299,46 @@ describe('bellydrum', () => {
   });
 });
 
+describe('acupressure', () => {
+  it('boosts a random eligible stat by +2 (rng=0 → atk)', () => {
+    const user = makePokemon();
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0] = user;
+    const { events } = invoke('acupressure', {
+      battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0,
+      rng: () => 0,  // selects first eligible = atk
+    });
+    expect(user.statBoosts.atk).toBe(2);
+    expect(events[0]!.type).toBe('stat-change');
+  });
+
+  it('fails if all stats are at +6', () => {
+    const user = makePokemon({
+      statBoosts: { atk: 6, def: 6, spa: 6, spd: 6, spe: 6, accuracy: 6, evasion: 6 }
+    });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0] = user;
+    const { events } = invoke('acupressure', {
+      battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0,
+    });
+    expect(events.some(e => e.type === 'move-failed')).toBe(true);
+  });
+
+  it('skips already-maxed stats (rng=0 with atk=6 → selects def)', () => {
+    const user = makePokemon({
+      statBoosts: { atk: 6, def: 0, spa: 0, spd: 0, spe: 0, accuracy: 0, evasion: 0 }
+    });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0] = user;
+    const { events } = invoke('acupressure', {
+      battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0,
+      rng: () => 0,  // first eligible with atk excluded = def
+    });
+    expect(user.statBoosts.def).toBe(2);
+    expect(user.statBoosts.atk).toBe(6); // unchanged
+  });
+});
+
 describe('takeheart', () => {
   it('clears user status and boosts spa and spd by +1', () => {
     const user = makePokemon({ status: 'brn' as const });
