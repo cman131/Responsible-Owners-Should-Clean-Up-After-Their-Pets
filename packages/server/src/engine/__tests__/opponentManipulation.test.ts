@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { BattleEngine } from '../BattleEngine.js';
 import { makePokemon, make1v1State } from './fixtures.js';
+import type { SwitchAction } from '@poke-fighter/shared';
 
 function makeEngine() {
   return new BattleEngine({ rng: () => 0 });
@@ -614,5 +615,191 @@ describe('spite', () => {
     const p2After = newState.teams[1]!.slots[0]!.party[0]!;
     // Should floor at 0, not go negative
     expect(p2After.moves[0]!.currentPp).toBe(0);
+  });
+});
+
+// ── Trapping moves ────────────────────────────────────────────────────────────
+
+describe('meanlook', () => {
+  it('applies trapped volatile to the target', () => {
+    const { newState } = resolveP1Move('meanlook');
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2.volatileStatus.some(v => v.name === 'trapped')).toBe(true);
+  });
+
+  it('does not apply trapped volatile to the user', () => {
+    const { newState } = resolveP1Move('meanlook');
+    const p1 = newState.teams[0]!.slots[0]!.party[0]!;
+    expect(p1.volatileStatus.some(v => v.name === 'trapped')).toBe(false);
+  });
+});
+
+describe('block', () => {
+  it('applies trapped volatile to the target', () => {
+    const { newState } = resolveP1Move('block');
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2.volatileStatus.some(v => v.name === 'trapped')).toBe(true);
+  });
+});
+
+describe('spiderweb', () => {
+  it('applies trapped volatile to the target', () => {
+    const { newState } = resolveP1Move('spiderweb');
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2.volatileStatus.some(v => v.name === 'trapped')).toBe(true);
+  });
+});
+
+describe('trapped volatile prevents switching', () => {
+  it('a Pokemon with trapped volatile cannot switch out', () => {
+    const engine = makeEngine();
+    const state = make1v1State();
+    // Give p2 a bench member so a switch would otherwise be valid
+    const bench = makePokemon({ instanceId: 'p2-bench' });
+    state.teams[1]!.slots[0]!.party.push(bench);
+    // Pre-apply trapped to p2's active
+    state.teams[1]!.slots[0]!.party[0]!.volatileStatus.push({ name: 'trapped' });
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+    // p2 tries to switch to bench
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'switch', targetInstanceId: 'p2-bench' } as SwitchAction,
+    });
+    // The switch should be blocked — p2's active index stays at 0
+    expect(newState.teams[1]!.slots[0]!.activePokemonIndex).toBe(0);
+    // A move-blocked event with reason 'trapped' should be emitted
+    const blockedEvent = events.find(e => e.type === 'move-blocked' && (e.data as any).reason === 'trapped');
+    expect(blockedEvent).toBeDefined();
+  });
+
+  it('a Pokemon without trapped volatile can switch out normally', () => {
+    const engine = makeEngine();
+    const state = make1v1State();
+    const bench = makePokemon({ instanceId: 'p2-bench' });
+    state.teams[1]!.slots[0]!.party.push(bench);
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'switch', targetInstanceId: 'p2-bench' } as SwitchAction,
+    });
+    // The switch should succeed
+    expect(newState.teams[1]!.slots[0]!.activePokemonIndex).toBe(1);
+  });
+});
+
+describe('octolock', () => {
+  it('applies trapped volatile to the target', () => {
+    const { newState } = resolveP1Move('octolock');
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2.volatileStatus.some(v => v.name === 'trapped')).toBe(true);
+  });
+
+  it('applies octolock volatile to the target', () => {
+    const { newState } = resolveP1Move('octolock');
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2.volatileStatus.some(v => v.name === 'octolock')).toBe(true);
+  });
+
+  it('lowers target def and spd by 1 at end of turn when octolock volatile is present', () => {
+    const engine = makeEngine();
+    const state = make1v1State();
+    // Pre-apply octolock volatile to p2
+    state.teams[1]!.slots[0]!.party[0]!.volatileStatus.push({ name: 'octolock' });
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const p2After = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2After.statBoosts.def).toBe(-1);
+    expect(p2After.statBoosts.spd).toBe(-1);
+  });
+
+  it('octolock drops accumulate each turn', () => {
+    const engine = makeEngine();
+    const state = make1v1State();
+    state.teams[1]!.slots[0]!.party[0]!.volatileStatus.push({ name: 'octolock' });
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+    const { newState: afterTurn1 } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const { newState: afterTurn2 } = engine.resolveTurn(afterTurn1, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const p2After = afterTurn2.teams[1]!.slots[0]!.party[0]!;
+    expect(p2After.statBoosts.def).toBe(-2);
+    expect(p2After.statBoosts.spd).toBe(-2);
+  });
+});
+
+describe('noretreat', () => {
+  it('applies no-retreat volatile to the user', () => {
+    const { newState } = resolveP1Move('noretreat');
+    const p1 = newState.teams[0]!.slots[0]!.party[0]!;
+    expect(p1.volatileStatus.some(v => v.name === 'no-retreat')).toBe(true);
+  });
+
+  it('does not apply no-retreat volatile to the target', () => {
+    const { newState } = resolveP1Move('noretreat');
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2.volatileStatus.some(v => v.name === 'no-retreat')).toBe(false);
+  });
+
+  it('boosts all 5 stats by +1 for the user', () => {
+    // Use growl as p2's move (targets p1 atk) would cancel the atk boost,
+    // so we use a neutral move for p2 instead.
+    const engine = makeEngine();
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'noretreat', currentPp: 5, maxPp: 5 };
+    // p2 uses swordsdance (self boost, does not affect p1's stats)
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const p1Boosts = newState.teams[0]!.slots[0]!.party[0]!.statBoosts;
+    expect(p1Boosts.atk).toBe(1);
+    expect(p1Boosts.def).toBe(1);
+    expect(p1Boosts.spa).toBe(1);
+    expect(p1Boosts.spd).toBe(1);
+    expect(p1Boosts.spe).toBe(1);
+  });
+
+  it('a Pokemon with no-retreat volatile cannot switch out', () => {
+    const engine = makeEngine();
+    const state = make1v1State();
+    const bench = makePokemon({ instanceId: 'p1-bench' });
+    state.teams[0]!.slots[0]!.party.push(bench);
+    // Pre-apply no-retreat to p1's active
+    state.teams[0]!.slots[0]!.party[0]!.volatileStatus.push({ name: 'no-retreat' });
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+    // p1 tries to switch to bench
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'switch', targetInstanceId: 'p1-bench' } as SwitchAction,
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    // The switch should be blocked — p1's active index stays at 0
+    expect(newState.teams[0]!.slots[0]!.activePokemonIndex).toBe(0);
+    const blockedEvent = events.find(e => e.type === 'move-blocked' && (e.data as any).reason === 'trapped');
+    expect(blockedEvent).toBeDefined();
+  });
+
+  it('fails when no-retreat is already active', () => {
+    const engine = makeEngine();
+    const state = make1v1State();
+    // Pre-apply no-retreat to p1
+    state.teams[0]!.slots[0]!.party[0]!.volatileStatus.push({ name: 'no-retreat' });
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'noretreat', currentPp: 5, maxPp: 5 };
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const failedEvent = events.find(e => e.type === 'move-failed' && (e.data as any).moveId === 'noretreat');
+    expect(failedEvent).toBeDefined();
   });
 });

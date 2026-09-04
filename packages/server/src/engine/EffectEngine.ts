@@ -4,7 +4,7 @@ import type {
 import { FREEZE_THAW_CHANCE, PARALYSIS_FULL_PARALYSIS_CHANCE, CONFUSION_HURT_CHANCE, getBurnDamage, getPoisonDamage, getToxicDamage } from './status.js';
 import { calcDamage, randomDamageFactor } from './damage.js';
 import { getEffectiveStat } from './stats.js';
-import { applyStatus } from './effects.js';
+import { applyStatus, applyStatBoost } from './effects.js';
 
 export interface SlotContext {
   member: PartyMember;
@@ -201,6 +201,12 @@ export class EffectEngine {
     if (curseEntry) {
       this.applyDamage(pokemon, slotId, Math.floor(pokemon.maxHp / 4), 'curse', events);
       if (pokemon.fainted) return { events };
+    }
+
+    // Octolock: lower def and spd by 1 each end of turn
+    const octolockEntry = pokemon.volatileStatus.find(v => v.name === 'octolock');
+    if (octolockEntry) {
+      events.push(applyStatBoost(pokemon, slotId, { def: -1, spd: -1 }));
     }
 
     const leechEntry = pokemon.volatileStatus.find(v => v.name === 'leech-seed');

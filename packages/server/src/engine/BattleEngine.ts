@@ -1497,6 +1497,18 @@ export class BattleEngine {
   }
 
   private executeSwitch(state: BattleState, slotId: string, targetInstanceId: string): TurnResult {
+    const events: TurnResolveEvent[] = [];
+    const slot = this.findSlot(state, slotId);
+    const active = slot?.party[slot.activePokemonIndex];
+    if (active) {
+      const isTrapped = active.volatileStatus.some(
+        v => v.name === 'trapped' || v.name === 'no-retreat',
+      );
+      if (isTrapped) {
+        events.push({ type: 'move-blocked', data: { slotId, reason: 'trapped' } });
+        return { newState: state, events };
+      }
+    }
     return this.performSwitch(state, slotId, targetInstanceId, 'voluntary');
   }
 

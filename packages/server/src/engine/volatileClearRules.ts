@@ -12,6 +12,7 @@ export const SWITCH_CLEAR_NAMES = new Set([
   'laser-focus',
   'geomancy-charge',
   'infatuation',
+  'trapped', 'octolock', 'no-retreat',
 ]);
 
 export const SWITCH_CLEAR_PREFIXES = ['charging-'];

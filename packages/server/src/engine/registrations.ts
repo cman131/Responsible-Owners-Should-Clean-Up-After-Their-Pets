@@ -9,7 +9,7 @@ import {
   embargoFactory, healBlockFactory, cureTeamStatus, wish,
 } from './effectFactories.js';
 import { clearHazards, clearScreens } from './sideConditions.js';
-import { applyStatBoost } from './effects.js';
+import { applyStatBoost, applyVolatile } from './effects.js';
 import { canApplyStatus } from './status.js';
 import { getEffectiveStat } from './stats.js';
 import type { TurnResolveEvent } from '@poke-fighter/shared';
@@ -674,6 +674,35 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
     const [side0, side1] = ctx.battle.field.sideConditions;
     ctx.battle.field.sideConditions = [side1!, side0!];
     return { events: [{ type: 'court-change', data: {} }] };
+  }));
+
+  // ── Trapping moves ─────────────────────────────────────────────────
+  r.register('meanlook',  applyVolatileTarget('trapped'));
+  r.register('block',     applyVolatileTarget('trapped'));
+  r.register('spiderweb', applyVolatileTarget('trapped'));
+
+  r.register('octolock', custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+    const events: TurnResolveEvent[] = [];
+    const trappedEvent = applyVolatile(target, targetSlotId, ctx.userSlotId, 'trapped');
+    if (trappedEvent) events.push(trappedEvent);
+    const octolockEvent = applyVolatile(target, targetSlotId, ctx.userSlotId, 'octolock');
+    if (octolockEvent) events.push(octolockEvent);
+    return { events };
+  }));
+
+  r.register('noretreat', custom((ctx) => {
+    const events: TurnResolveEvent[] = [];
+    // Cannot use No Retreat if already trapped
+    if (ctx.user.volatileStatus.some(v => v.name === 'no-retreat')) {
+      return { events: [{ type: 'move-failed', data: { moveId: 'noretreat', reason: 'already-used' } }] };
+    }
+    ctx.user.volatileStatus.push({ name: 'no-retreat' });
+    events.push({ type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'no-retreat' } });
+    events.push(applyStatBoost(ctx.user, ctx.userSlotId, { atk: 1, def: 1, spa: 1, spd: 1, spe: 1 }));
+    return { events };
   }));
 
   return r;
