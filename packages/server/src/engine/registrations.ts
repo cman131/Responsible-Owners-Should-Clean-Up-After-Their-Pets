@@ -46,6 +46,7 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
   r.register('leechseed',   applyVolatileTarget('leech-seed'));
   r.register('yawn',        applyVolatileTarget('yawn', 2));
   r.register('focusenergy', applyVolatileSelf('focusenergy'));
+  r.register('laserfocus',  applyVolatileSelf('laser-focus'));
   r.register('aquaring',    aquaRing());
   r.register('ingrain',     ingrain());
   r.register('magnetrise',  magnetRise());

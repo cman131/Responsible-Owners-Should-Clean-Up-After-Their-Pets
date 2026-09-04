@@ -3,6 +3,7 @@ import { buildDefaultRegistry } from '../registrations.js';
 import { makePokemon, make1v1State } from './fixtures.js';
 import type { MoveContext } from '../MoveEffectRegistry.js';
 import type { Move } from '@poke-fighter/shared';
+import { BattleEngine } from '../BattleEngine.js';
 
 function makeCtx(overrides: Partial<MoveContext> = {}): MoveContext {
   const state = make1v1State();
@@ -362,5 +363,41 @@ describe('takeheart', () => {
     expect(user.statBoosts.spd).toBe(1);
     expect(events[0]!.type).toBe('stat-change');
     expect(events.every(e => e.type !== 'move-failed')).toBe(true);
+  });
+});
+
+describe('laserfocus', () => {
+  it('guarantees a crit on the next attack', () => {
+    const state = make1v1State();
+    // p1 uses laserfocus move slot 0, has a damaging move in slot 1
+    state.teams[0]!.slots[0]!.party[0]!.moves = [
+      { moveId: 'laserfocus', currentPp: 5, maxPp: 5 },
+      { moveId: 'flamethrower', currentPp: 15, maxPp: 15 },
+    ];
+    // p2 uses any move
+    state.teams[1]!.slots[0]!.party[0]!.moves = [
+      { moveId: 'flamethrower', currentPp: 15, maxPp: 15 },
+    ];
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+
+    // Turn 1: p1 uses laserfocus
+    const { newState: s1 } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    // Verify laser-focus volatile is set
+    const p1 = s1.teams[0]!.slots[0]!.party[0]!;
+    expect(p1.volatileStatus.some(v => v.name === 'laser-focus')).toBe(true);
+
+    // Turn 2: p1 uses flamethrower
+    const { events: t2Events } = engine.resolveTurn(s1, {
+      'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    // Expect a crit event on the turn p1 attacks
+    expect(t2Events.some(e => e.type === 'crit')).toBe(true);
   });
 });

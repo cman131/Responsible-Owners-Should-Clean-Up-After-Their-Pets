@@ -1179,6 +1179,9 @@ export class BattleEngine {
         }
       }
 
+      // Laser Focus: consumed after the attack fires (volatile cleared post-hit)
+      attacker.volatileStatus = attacker.volatileStatus.filter(v => v.name !== 'laser-focus');
+
       // Record total HP damage taken from this move (covers multi-hit moves correctly)
       if (hpDamageTaken > 0) {
         target.lastDamageTaken = { amount: hpDamageTaken, category: move.category as 'physical' | 'special', fromSlotId: attackerSlotId };
