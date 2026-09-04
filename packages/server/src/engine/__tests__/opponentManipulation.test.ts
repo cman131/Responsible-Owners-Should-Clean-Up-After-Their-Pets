@@ -189,3 +189,61 @@ describe('attract', () => {
     expect(p1Boosts.atk).toBe(-1);
   });
 });
+
+describe('nightmare', () => {
+  it('applies nightmare volatile to the target via the move', () => {
+    const engine = makeEngine();
+    const state = make1v1State();
+    // p2 is already asleep
+    state.teams[1]!.slots[0]!.party[0]!.status = 'slp';
+    state.teams[1]!.slots[0]!.party[0]!.volatileStatus.push({ name: 'sleep', counter: 3 });
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'nightmare', currentPp: 15, maxPp: 15 };
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2.volatileStatus.some(v => v.name === 'nightmare')).toBe(true);
+  });
+
+  it('deals 25% max HP damage at EOT to a sleeping Pokemon with nightmare', () => {
+    const engine = makeEngine();
+    const state = make1v1State();
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    // p2 has maxHp=100, so 25% = 25
+    p2.status = 'slp';
+    p2.volatileStatus.push({ name: 'sleep', counter: 3 });
+    p2.volatileStatus.push({ name: 'nightmare' });
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const p2After = newState.teams[1]!.slots[0]!.party[0]!;
+    // Should have taken 25 damage (25% of 100)
+    expect(p2After.currentHp).toBe(75);
+  });
+
+  it('removes nightmare volatile when the Pokemon is no longer asleep', () => {
+    const engine = makeEngine();
+    const state = make1v1State();
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    // p2 has burn status (not asleep) but still has nightmare volatile
+    p2.status = 'brn';
+    p2.volatileStatus.push({ name: 'nightmare' });
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const p2After = newState.teams[1]!.slots[0]!.party[0]!;
+    // Nightmare volatile should have been removed
+    expect(p2After.volatileStatus.some(v => v.name === 'nightmare')).toBe(false);
+    // Should NOT have taken nightmare damage (only burn damage = 6 = floor(100/16))
+    // Burn damage = floor(100/16) = 6
+    expect(p2After.currentHp).toBe(94);
+  });
+});

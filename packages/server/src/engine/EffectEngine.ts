@@ -183,6 +183,19 @@ export class EffectEngine {
       if (pokemon.fainted) return { events };
     }
 
+    // Nightmare: 25% EOT damage while asleep
+    const nightmareEntry = pokemon.volatileStatus.find(v => v.name === 'nightmare');
+    if (nightmareEntry) {
+      if (pokemon.status === 'slp') {
+        this.applyDamage(pokemon, slotId, Math.floor(pokemon.maxHp / 4), 'nightmare', events);
+        if (pokemon.fainted) return { events };
+      } else {
+        // Woke up — remove nightmare
+        pokemon.volatileStatus = pokemon.volatileStatus.filter(v => v.name !== 'nightmare');
+        events.push({ type: 'volatile-cured', data: { slotId, volatile: 'nightmare' } });
+      }
+    }
+
     const leechEntry = pokemon.volatileStatus.find(v => v.name === 'leech-seed');
     if (leechEntry) {
       const drain = Math.max(1, Math.floor(pokemon.maxHp / 8));

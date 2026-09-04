@@ -56,6 +56,7 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
   r.register('odorsleuth',  applyVolatileTarget('foresight'));
   r.register('miracleeye',  applyVolatileTarget('miracle-eye'));
   r.register('destinybond', destinyBond());
+  r.register('nightmare',   applyVolatileTarget('nightmare'));
 
   // ── Self stat boosts ───────────────────────────────────────────────
   r.register('swordsdance', statModSelf('atk', 2));
