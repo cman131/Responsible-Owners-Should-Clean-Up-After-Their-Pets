@@ -85,7 +85,29 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
   r.register('cottonguard', statModSelf('def', 3));
   r.register('cosmicpower', multiStatModSelf({ def: 1, spd: 1 }));
   r.register('shiftgear',   multiStatModSelf({ spe: 2, atk: 1 }));
-  r.register('geomancy',    multiStatModSelf({ spa: 2, spd: 2, spe: 2 })); // placeholder; Task 10 will replace
+  r.register('geomancy', custom((ctx) => {
+    const events: TurnResolveEvent[] = [];
+    const hasCharge = ctx.user.volatileStatus.some(v => v.name === 'geomancy-charge');
+    const hasPowerHerb = ctx.user.heldItem === 'power-herb';
+
+    if (!hasCharge && !hasPowerHerb) {
+      // Turn 1: start charging
+      ctx.user.volatileStatus.push({ name: 'geomancy-charge' });
+      events.push({ type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'geomancy-charge' } });
+      return { events };
+    }
+
+    // Turn 2 (or Power Herb): remove charge volatile and apply boosts
+    ctx.user.volatileStatus = ctx.user.volatileStatus.filter(v => v.name !== 'geomancy-charge');
+
+    if (hasPowerHerb) {
+      delete ctx.user.heldItem;
+      events.push({ type: 'item-consumed', data: { slotId: ctx.userSlotId, item: 'power-herb', reason: 'power-herb' } });
+    }
+
+    events.push(applyStatBoost(ctx.user, ctx.userSlotId, { spa: 2, spd: 2, spe: 2 }));
+    return { events };
+  }));
   r.register('victorydance',multiStatModSelf({ atk: 1, def: 1, spe: 1 }));
   // TODO: autotomize also reduces user weight by 100 kg (min 0.1 kg), but PartyMember
   // does not carry a weightkg field (that lives on PokemonSpecies). Weight reduction

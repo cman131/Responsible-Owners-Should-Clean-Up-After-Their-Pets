@@ -181,15 +181,39 @@ describe('shiftgear', () => {
 });
 
 describe('geomancy', () => {
-  it('raises spa, spd, and spe by 2 each', () => {
+  it('on turn 1 adds geomancy-charge volatile and does not boost stats', () => {
     const user = makePokemon();
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0] = user;
+    const { events } = invoke('geomancy', { battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 });
+    expect(user.volatileStatus.some(v => v.name === 'geomancy-charge')).toBe(true);
+    expect(user.statBoosts.spa).toBe(0);
+    expect(events.some(e => e.type === 'stat-change')).toBe(false);
+  });
+
+  it('on turn 2 applies +2 to spa/spd/spe and removes charge volatile', () => {
+    const user = makePokemon({ volatileStatus: [{ name: 'geomancy-charge' }] });
     const state = make1v1State();
     state.teams[0]!.slots[0]!.party[0] = user;
     const { events } = invoke('geomancy', { battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 });
     expect(user.statBoosts.spa).toBe(2);
     expect(user.statBoosts.spd).toBe(2);
     expect(user.statBoosts.spe).toBe(2);
-    expect(events[0]!.type).toBe('stat-change');
+    expect(user.volatileStatus.some(v => v.name === 'geomancy-charge')).toBe(false);
+    expect(events.some(e => e.type === 'stat-change')).toBe(true);
+  });
+
+  it('with Power Herb boosts immediately without charging', () => {
+    const user = makePokemon({ heldItem: 'power-herb' });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0] = user;
+    const { events } = invoke('geomancy', { battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 });
+    expect(user.statBoosts.spa).toBe(2);
+    expect(user.statBoosts.spd).toBe(2);
+    expect(user.statBoosts.spe).toBe(2);
+    expect(user.heldItem).toBeUndefined();
+    expect(events.some(e => e.type === 'item-consumed')).toBe(true);
+    expect(events.some(e => e.type === 'stat-change')).toBe(true);
   });
 });
 
