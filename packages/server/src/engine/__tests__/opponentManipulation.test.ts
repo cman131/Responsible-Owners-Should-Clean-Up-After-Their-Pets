@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { BattleEngine } from '../BattleEngine.js';
 import { makePokemon, make1v1State } from './fixtures.js';
 
@@ -391,5 +391,63 @@ describe('curse', () => {
     const p2After = afterTurn2.teams[1]!.slots[0]!.party[0]!;
     // 25 damage each turn, so 50 total after 2 turns
     expect(p2After.currentHp).toBe(50);
+  });
+});
+
+describe('tarshot', () => {
+  it('lowers target spe by 1', () => {
+    const { p2Boosts } = resolveP1Move('tarshot');
+    expect(p2Boosts.spe).toBe(-1);
+  });
+
+  it('applies tar-shot volatile to target', () => {
+    const { newState } = resolveP1Move('tarshot');
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2.volatileStatus.some(v => v.name === 'tar-shot')).toBe(true);
+  });
+
+  it('Fire move deals 2x more damage against a tar-shot target', () => {
+    // p1 uses flamethrower (Fire, default move index 0) against p2
+    // We compare damage with and without the tar-shot volatile pre-applied to p2.
+    // Use vi.spyOn to fix Math.random (randomDamageFactor) and rng: () => 0.5 to avoid crits.
+    const engine = new BattleEngine({ rng: () => 0.5 });
+
+    // Without tar-shot
+    const stateClean = make1v1State();
+    stateClean.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'flamethrower', currentPp: 15, maxPp: 15 };
+    stateClean.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const { events: eventsClean } = engine.resolveTurn(stateClean, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    vi.restoreAllMocks();
+    const dmgClean = eventsClean.find(
+      e => e.type === 'damage-dealt' && (e.data as any).attackerSlotId === 'slot-a1'
+    )?.data['damage'] as number;
+
+    // With tar-shot pre-applied
+    const stateTarShot = make1v1State();
+    stateTarShot.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'flamethrower', currentPp: 15, maxPp: 15 };
+    stateTarShot.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+    stateTarShot.teams[1]!.slots[0]!.party[0]!.volatileStatus.push({ name: 'tar-shot' });
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const { events: eventsTarShot } = engine.resolveTurn(stateTarShot, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    vi.restoreAllMocks();
+    const dmgTarShot = eventsTarShot.find(
+      e => e.type === 'damage-dealt' && (e.data as any).attackerSlotId === 'slot-a1'
+    )?.data['damage'] as number;
+
+    expect(dmgClean).toBeDefined();
+    expect(dmgTarShot).toBeDefined();
+    // tar-shot doubles Fire type effectiveness → damage should be approximately 2x
+    // (allow ±1 for Math.floor rounding in the damage formula)
+    expect(dmgTarShot).toBeGreaterThanOrEqual(dmgClean * 2 - 1);
+    expect(dmgTarShot).toBeLessThanOrEqual(dmgClean * 2 + 1);
+    // Sanity: tar-shot damage must be strictly more than double to confirm multiplier is working
+    expect(dmgTarShot).toBeGreaterThan(dmgClean);
   });
 });

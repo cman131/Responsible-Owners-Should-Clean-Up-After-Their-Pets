@@ -638,6 +638,11 @@ export class BattleEngine {
         else if (effectiveness > 1) effectiveness = 1;
       }
 
+      // Tar Shot: Fire moves deal double damage against tar-shot targets
+      if (target.volatileStatus.some(v => v.name === 'tar-shot') && effectiveMoveType === 'Fire') {
+        effectiveness *= 2;
+      }
+
       // Magnet Rise: Ground immunity
       if (effectiveMoveType === 'Ground' && target.volatileStatus.some(v => v.name === 'magnet-rise')) {
         events.push({ type: 'move-used', data: { note: 'no-effect', targetSlotId, attackerName: attacker.nickname, moveName: move.name } });

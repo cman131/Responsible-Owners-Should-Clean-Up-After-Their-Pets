@@ -208,6 +208,16 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
   r.register('confide',      statModTarget('spa', -1));
   r.register('playnice',     statModTarget('atk', -1));
   r.register('spicyextract', multiStatModTarget({ spa: 2, def: -2 }));
+  r.register('tarshot', custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+    const events: TurnResolveEvent[] = [];
+    events.push(applyStatBoost(target, targetSlotId, { spe: -1 }));
+    target.volatileStatus.push({ name: 'tar-shot' });
+    events.push({ type: 'volatile-applied', data: { targetSlotId, volatile: 'tar-shot' } });
+    return { events };
+  }));
   r.register('venomdrench', custom((ctx) => {
     const target = ctx.targets[0];
     const targetSlotId = ctx.targetSlotIds[0];
