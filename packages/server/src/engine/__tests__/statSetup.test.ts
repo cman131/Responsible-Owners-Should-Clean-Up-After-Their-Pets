@@ -366,6 +366,103 @@ describe('takeheart', () => {
   });
 });
 
+describe('stockpile', () => {
+  it('adds stockpile volatile with counter=1 and raises def/spd by +1', () => {
+    const user = makePokemon({ maxHp: 100, currentHp: 100 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0] = user;
+    const { events } = invoke('stockpile', { battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 });
+    const stockpile = user.volatileStatus.find(v => v.name === 'stockpile');
+    expect(stockpile).toBeDefined();
+    expect(stockpile!.counter).toBe(1);
+    expect(user.statBoosts.def).toBe(1);
+    expect(user.statBoosts.spd).toBe(1);
+    expect(events.some(e => e.type === 'volatile-applied')).toBe(true);
+    expect(events.some(e => e.type === 'stat-change')).toBe(true);
+  });
+
+  it('increments counter on second use (counter=2)', () => {
+    const user = makePokemon({ maxHp: 100, currentHp: 100 });
+    user.volatileStatus.push({ name: 'stockpile', counter: 1 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0] = user;
+    invoke('stockpile', { battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 });
+    const stockpile = user.volatileStatus.find(v => v.name === 'stockpile');
+    expect(stockpile!.counter).toBe(2);
+  });
+
+  it('increments counter on third use (counter=3)', () => {
+    const user = makePokemon({ maxHp: 100, currentHp: 100 });
+    user.volatileStatus.push({ name: 'stockpile', counter: 2 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0] = user;
+    invoke('stockpile', { battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 });
+    const stockpile = user.volatileStatus.find(v => v.name === 'stockpile');
+    expect(stockpile!.counter).toBe(3);
+  });
+
+  it('fails on fourth use (already at 3)', () => {
+    const user = makePokemon({ maxHp: 100, currentHp: 100 });
+    user.volatileStatus.push({ name: 'stockpile', counter: 3 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0] = user;
+    const { events } = invoke('stockpile', { battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 });
+    expect(events[0]!.type).toBe('move-failed');
+    expect((events[0]! as any).data.reason).toBe('max-stockpile');
+    // counter should remain at 3
+    const stockpile = user.volatileStatus.find(v => v.name === 'stockpile');
+    expect(stockpile!.counter).toBe(3);
+  });
+});
+
+describe('swallow', () => {
+  it('heals floor(1/3 maxHp) at count=1 and removes stockpile', () => {
+    const user = makePokemon({ maxHp: 100, currentHp: 10 });
+    user.volatileStatus.push({ name: 'stockpile', counter: 1 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0] = user;
+    const { events } = invoke('swallow', { battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 });
+    expect(user.currentHp).toBe(10 + Math.floor(100 * 1 / 3)); // 10 + 33 = 43
+    expect(user.volatileStatus.find(v => v.name === 'stockpile')).toBeUndefined();
+    expect(events.some(e => e.type === 'heal')).toBe(true);
+    const healEvent = events.find(e => e.type === 'heal') as any;
+    expect(healEvent.data.amount).toBe(33);
+  });
+
+  it('heals floor(2/3 maxHp) at count=2 and removes stockpile', () => {
+    const user = makePokemon({ maxHp: 100, currentHp: 10 });
+    user.volatileStatus.push({ name: 'stockpile', counter: 2 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0] = user;
+    const { events } = invoke('swallow', { battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 });
+    expect(user.currentHp).toBe(10 + Math.floor(100 * 2 / 3)); // 10 + 66 = 76
+    expect(user.volatileStatus.find(v => v.name === 'stockpile')).toBeUndefined();
+    const healEvent = events.find(e => e.type === 'heal') as any;
+    expect(healEvent.data.amount).toBe(66);
+  });
+
+  it('heals 100% maxHp at count=3 and removes stockpile', () => {
+    const user = makePokemon({ maxHp: 100, currentHp: 10 });
+    user.volatileStatus.push({ name: 'stockpile', counter: 3 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0] = user;
+    const { events } = invoke('swallow', { battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 });
+    expect(user.currentHp).toBe(100);
+    expect(user.volatileStatus.find(v => v.name === 'stockpile')).toBeUndefined();
+    const healEvent = events.find(e => e.type === 'heal') as any;
+    expect(healEvent.data.amount).toBe(90); // heals from 10 to 100
+  });
+
+  it('fails with no stockpile', () => {
+    const user = makePokemon({ maxHp: 100, currentHp: 50 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0] = user;
+    const { events } = invoke('swallow', { battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 });
+    expect(events[0]!.type).toBe('move-failed');
+    expect((events[0]! as any).data.reason).toBe('no-stockpile');
+  });
+});
+
 describe('laserfocus', () => {
   it('guarantees a crit on the next attack', () => {
     const state = make1v1State();

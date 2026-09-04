@@ -406,6 +406,43 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
     return { events: [applyStatBoost(ctx.user, ctx.userSlotId, { [chosen]: 2 })] };
   }));
 
+  r.register('stockpile', custom((ctx) => {
+    const existing = ctx.user.volatileStatus.find(v => v.name === 'stockpile');
+    if (existing && (existing.counter ?? 0) >= 3) {
+      return { events: [{ type: 'move-failed', data: { moveId: 'stockpile', reason: 'max-stockpile' } }] };
+    }
+    const events: TurnResolveEvent[] = [];
+    if (existing) {
+      existing.counter = (existing.counter ?? 0) + 1;
+    } else {
+      ctx.user.volatileStatus.push({ name: 'stockpile', counter: 1 });
+    }
+    const newCounter = existing?.counter ?? 1;
+    events.push({ type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'stockpile', counter: newCounter } });
+    events.push(applyStatBoost(ctx.user, ctx.userSlotId, { def: 1, spd: 1 }));
+    return { events };
+  }));
+
+  r.register('swallow', custom((ctx) => {
+    const stockpile = ctx.user.volatileStatus.find(v => v.name === 'stockpile');
+    if (!stockpile) {
+      return { events: [{ type: 'move-failed', data: { moveId: 'swallow', reason: 'no-stockpile' } }] };
+    }
+    if (ctx.user.volatileStatus.some(v => v.name === 'heal-block')) {
+      return { events: [{ type: 'move-failed', data: { moveId: 'swallow', reason: 'heal-blocked' } }] };
+    }
+    const count = stockpile.counter ?? 1;
+    const fraction = count === 1 ? 1 / 3 : count === 2 ? 2 / 3 : 1;
+    const heal = Math.min(Math.floor(ctx.user.maxHp * fraction), ctx.user.maxHp - ctx.user.currentHp);
+    ctx.user.volatileStatus = ctx.user.volatileStatus.filter(v => v.name !== 'stockpile');
+    const events: TurnResolveEvent[] = [];
+    if (heal > 0) {
+      ctx.user.currentHp += heal;
+      events.push({ type: 'heal', data: { slotId: ctx.userSlotId, amount: heal, remainingHp: ctx.user.currentHp } });
+    }
+    return { events };
+  }));
+
   r.register('rest', custom((ctx) => {
     if (ctx.user.status === 'slp') {
       return { events: [{ type: 'move-failed', data: { moveId: 'rest', reason: 'already-asleep' } }] };
