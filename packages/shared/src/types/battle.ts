@@ -71,6 +71,7 @@ export interface SlotState {
   activePokemonIndex: number;
   wish?: { hp: number; turnsRemaining: number };
   pendingHeal?: 'healingwish' | 'lunardance';
+  batonPassData?: { volatiles: VolatileStatusEntry[]; statBoosts: StatBoosts };
 }
 
 export interface TeamState {

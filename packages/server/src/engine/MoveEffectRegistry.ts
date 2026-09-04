@@ -17,6 +17,7 @@ export interface MoveContext {
 
 export interface MoveEffectOutput {
   events: TurnResolveEvent[];
+  pivotSwitch?: boolean;
 }
 
 export type MoveEffectHandler = (ctx: MoveContext) => MoveEffectOutput;

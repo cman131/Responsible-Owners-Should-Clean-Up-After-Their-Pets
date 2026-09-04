@@ -1,7 +1,12 @@
-import type { StatusCondition, WeatherType, TerrainType, StatBoosts, SideConditions, TurnResolveEvent } from '@poke-fighter/shared';
+import type { StatusCondition, WeatherType, TerrainType, StatBoosts, SideConditions, TurnResolveEvent, VolatileStatusEntry } from '@poke-fighter/shared';
 import { applyStatus, applyStatBoost, applyVolatile } from './effects.js';
 import type { MoveEffectHandler } from './MoveEffectRegistry.js';
 import { getItemHooks } from './items.js';
+
+const BATON_PASS_VOLATILES = new Set([
+  'focusenergy', 'substitute', 'aqua-ring', 'ingrain', 'magnet-rise',
+  'power-trick', 'laser-focus',
+]);
 
 export function statModSelf(stat: keyof StatBoosts, stages: number): MoveEffectHandler {
   return (ctx) => ({
@@ -411,5 +416,24 @@ export function wish(): MoveEffectHandler {
     }
     userSlot.wish = { hp: Math.floor(ctx.user.maxHp / 2), turnsRemaining: 2 };
     return { events: [{ type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'wish' } }] };
+  };
+}
+
+export function batonPass(): MoveEffectHandler {
+  return (ctx) => {
+    // Capture carry-over volatiles and stat boosts BEFORE performSwitch clears them
+    const carriedVolatiles: VolatileStatusEntry[] = ctx.user.volatileStatus
+      .filter(v => BATON_PASS_VOLATILES.has(v.name))
+      .map(v => ({ ...v }));
+
+    const carriedStatBoosts: StatBoosts = { ...ctx.user.statBoosts };
+
+    // Store on the slot so performSwitch can apply them to the incoming Pokemon
+    const userSlot = ctx.battle.teams[ctx.userTeamIndex]!.slots.find(s => s.slotId === ctx.userSlotId);
+    if (userSlot) {
+      userSlot.batonPassData = { volatiles: carriedVolatiles, statBoosts: carriedStatBoosts };
+    }
+
+    return { events: [], pivotSwitch: true };
   };
 }

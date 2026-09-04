@@ -422,7 +422,19 @@ export class BattleEngine {
       const effectId = move.effectId ?? move.id;
       const handler = this.registry.get(effectId);
       if (handler) {
-        events.push(...handler(ctx).events);
+        const handlerResult = handler(ctx);
+        events.push(...handlerResult.events);
+        if (handlerResult.pivotSwitch) {
+          const attackerSlotForPivot = this.findSlot(s, attackerSlotId);
+          const hasBench = attackerSlotForPivot?.party.some(
+            (p, i) => i !== attackerSlotForPivot.activePokemonIndex && !p.fainted
+          ) ?? false;
+          if (hasBench) {
+            return { newState: s, events, pivotSwitch: true };
+          } else {
+            events.push({ type: 'pivot-skipped', data: { slotId: attackerSlotId } });
+          }
+        }
       } else {
         console.warn(`[MoveEffectRegistry] No handler for effectId="${effectId}" (moveId="${move.id}")`);
         events.push({ type: 'move-failed', data: { moveId: move.id, reason: 'unimplemented' } });
@@ -1581,6 +1593,19 @@ export class BattleEngine {
     // 3. Update active slot
     slot.activePokemonIndex = newIndex;
     const incoming = slot.party[slot.activePokemonIndex];
+
+    // 3b. Apply Baton Pass carry-over data if present
+    if (slot.batonPassData && incoming) {
+      for (const v of slot.batonPassData.volatiles) {
+        incoming.volatileStatus.push({ ...v });
+      }
+      const boosts = slot.batonPassData.statBoosts;
+      const statKeys = Object.keys(boosts) as Array<keyof StatBoosts>;
+      for (const stat of statKeys) {
+        incoming.statBoosts[stat] = Math.max(-6, Math.min(6, incoming.statBoosts[stat] + boosts[stat]));
+      }
+      delete slot.batonPassData;
+    }
 
     // 4. Entry hazards — before onSwitchIn (FR-6)
     if (incoming) {
