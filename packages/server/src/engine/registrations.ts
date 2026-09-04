@@ -264,6 +264,26 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
   r.register('endure',        endure());
   r.register('substitute',    substitute());
   r.register('disable',       disable());
+  r.register('spite', custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+
+    if (!target.lastMoveId) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'no-last-move' } }] };
+    }
+
+    const moveSlot = target.moves.find(m => m.moveId === target.lastMoveId);
+    if (!moveSlot || moveSlot.currentPp === 0) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'no-pp' } }] };
+    }
+
+    const oldPp = moveSlot.currentPp;
+    moveSlot.currentPp = Math.max(0, moveSlot.currentPp - 4);
+    const reduced = oldPp - moveSlot.currentPp;
+
+    return { events: [{ type: 'move-note', data: { slotId: targetSlotId, moveId: target.lastMoveId, note: `pp-reduced-by-${reduced}` } }] };
+  }));
   r.register('taunt',         taunt());
   r.register('encore',        encore());
   r.register('torment',       torment());

@@ -538,3 +538,81 @@ describe('topsyturvy', () => {
     expect(p2After.statBoosts.evasion).toBe(0);
   });
 });
+
+describe('spite', () => {
+  it('reduces target last move PP by 4', () => {
+    const engine = makeEngine();
+    const state = make1v1State();
+    // p2 has flamethrower as move 0 (15 PP by default)
+    // Set it to 15 PP and mark it as the last move used
+    // When p2 uses it, it will consume 1 PP normally, then Spite reduces by 4
+    // So: 15 - 1 (normal use) - 4 (Spite) = 10 PP remaining
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    p2.moves[0] = { moveId: 'flamethrower', currentPp: 15, maxPp: 15 };
+    p2.lastMoveId = 'flamethrower';
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'spite', currentPp: 20, maxPp: 20 };
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'flamethrower', currentPp: 15, maxPp: 15 };
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const p2After = newState.teams[1]!.slots[0]!.party[0]!;
+    // 15 - 1 (normal use) - 4 (Spite) = 10 PP remaining
+    expect(p2After.moves[0]!.currentPp).toBe(10);
+  });
+
+  it('emits move-failed when target has no lastMoveId', () => {
+    const engine = makeEngine();
+    const state = make1v1State();
+    // p2 has no lastMoveId (has not used a move yet)
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    expect(p2.lastMoveId).toBeUndefined();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'spite', currentPp: 20, maxPp: 20 };
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    // Should emit move-failed event
+    const moveFailedEvent = events.find(e => e.type === 'move-failed' && (e.data as any).moveId === 'spite');
+    expect(moveFailedEvent).toBeDefined();
+    expect((moveFailedEvent?.data as any).reason).toBe('no-last-move');
+  });
+
+  it('emits move-failed when target last move has 0 PP', () => {
+    const engine = makeEngine();
+    const state = make1v1State();
+    // p2 has flamethrower as last move with 0 PP
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    p2.moves[0] = { moveId: 'flamethrower', currentPp: 0, maxPp: 15 };
+    p2.lastMoveId = 'flamethrower';
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'spite', currentPp: 20, maxPp: 20 };
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'flamethrower', currentPp: 0, maxPp: 15 };
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    // Should emit move-failed event
+    const moveFailedEvent = events.find(e => e.type === 'move-failed' && (e.data as any).moveId === 'spite');
+    expect(moveFailedEvent).toBeDefined();
+    expect((moveFailedEvent?.data as any).reason).toBe('no-pp');
+  });
+
+  it('does not reduce PP below 0', () => {
+    const engine = makeEngine();
+    const state = make1v1State();
+    // p2 has flamethrower as last move with only 2 PP (less than 4)
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    p2.moves[0] = { moveId: 'flamethrower', currentPp: 2, maxPp: 15 };
+    p2.lastMoveId = 'flamethrower';
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'spite', currentPp: 20, maxPp: 20 };
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'flamethrower', currentPp: 2, maxPp: 15 };
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const p2After = newState.teams[1]!.slots[0]!.party[0]!;
+    // Should floor at 0, not go negative
+    expect(p2After.moves[0]!.currentPp).toBe(0);
+  });
+});
