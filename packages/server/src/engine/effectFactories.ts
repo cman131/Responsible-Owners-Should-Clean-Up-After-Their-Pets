@@ -457,6 +457,10 @@ export function partingShot(): MoveEffectHandler {
   };
 }
 
+export function teleport(): MoveEffectHandler {
+  return (_ctx) => ({ events: [], pivotSwitch: true });
+}
+
 export function shedTail(): MoveEffectHandler {
   return (ctx) => {
     const cost = Math.floor(ctx.user.maxHp / 2);

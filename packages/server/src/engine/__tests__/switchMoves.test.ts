@@ -498,3 +498,39 @@ describe('Parting Shot', () => {
     expect(incoming.statBoosts.atk).toBe(0);
   });
 });
+
+describe('Teleport', () => {
+  it('returns pivotSlots containing the user slot when user has a bench member', () => {
+    const engine = new BattleEngine();
+    const state = make1v1State();
+
+    // Give slot-a1 a bench member and Teleport
+    const bench = makePokemon({ instanceId: 'p1-bench' });
+    state.teams[0]!.slots[0]!.party.push(bench);
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'teleport', currentPp: 20, maxPp: 20 };
+
+    const result = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    expect(result.pivotSlots).toContain('slot-a1');
+  });
+
+  it('emits pivot-skipped and no pivotSlots when user has no bench member', () => {
+    const engine = new BattleEngine();
+    const state = make1v1State();
+
+    // No bench — only one Pokemon in party
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'teleport', currentPp: 20, maxPp: 20 };
+
+    const result = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    expect(result.pivotSlots).toBeUndefined();
+    const skippedEvent = result.events.find(e => e.type === 'pivot-skipped');
+    expect(skippedEvent).toBeDefined();
+  });
+});
