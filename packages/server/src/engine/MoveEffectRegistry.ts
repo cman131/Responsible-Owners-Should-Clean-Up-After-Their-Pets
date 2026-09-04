@@ -7,6 +7,7 @@ export interface MoveContext {
   user: PartyMember;
   userSlotId: string;
   userTeamIndex: number;
+  userTypes: PokemonType[];  // pre-resolved by BattleEngine
   targets: PartyMember[];
   targetSlotIds: string[];
   targetTypes: PokemonType[][];  // parallel to targets; pre-resolved by BattleEngine

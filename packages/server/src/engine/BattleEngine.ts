@@ -394,6 +394,7 @@ export class BattleEngine {
         user: attacker,
         userSlotId: attackerSlotId,
         userTeamIndex,
+        userTypes: this.resolveEffectiveTypes(attacker),
         targets: filteredTargets,
         targetSlotIds: filteredSlotIds,
         targetTypes: filteredTypes,

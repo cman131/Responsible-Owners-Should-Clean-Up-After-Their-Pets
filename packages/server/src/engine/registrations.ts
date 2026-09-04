@@ -57,6 +57,31 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
   r.register('miracleeye',  applyVolatileTarget('miracle-eye'));
   r.register('destinybond', destinyBond());
   r.register('nightmare',   applyVolatileTarget('nightmare'));
+  r.register('curse', custom((ctx) => {
+    const isGhost = ctx.userTypes.includes('Ghost');
+    if (isGhost) {
+      // Ghost variant: pay 50% max HP, apply curse volatile to target
+      const target = ctx.targets[0];
+      const targetSlotId = ctx.targetSlotIds[0];
+      if (!target || !targetSlotId) return { events: [] };
+      const cost = Math.floor(ctx.user.maxHp / 2);
+      const events: TurnResolveEvent[] = [];
+      const actual = Math.min(cost, ctx.user.currentHp);
+      ctx.user.currentHp -= actual;
+      events.push({ type: 'damage-dealt', data: { source: 'curse', slotId: ctx.userSlotId, damage: actual, remainingHp: ctx.user.currentHp } });
+      if (ctx.user.currentHp <= 0) {
+        ctx.user.fainted = true;
+        ctx.user.currentHp = 0;
+        events.push({ type: 'faint', data: { slotId: ctx.userSlotId, instanceId: ctx.user.instanceId } });
+      }
+      target.volatileStatus.push({ name: 'curse' });
+      events.push({ type: 'volatile-applied', data: { targetSlotId, volatile: 'curse' } });
+      return { events };
+    } else {
+      // Non-Ghost variant: +1 Atk, +1 Def, -1 Spe
+      return { events: [applyStatBoost(ctx.user, ctx.userSlotId, { atk: 1, def: 1, spe: -1 })] };
+    }
+  }));
 
   // ── Self stat boosts ───────────────────────────────────────────────
   r.register('swordsdance', statModSelf('atk', 2));

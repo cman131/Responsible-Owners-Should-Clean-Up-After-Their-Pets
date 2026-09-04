@@ -196,6 +196,13 @@ export class EffectEngine {
       }
     }
 
+    // Curse: 25% EOT damage
+    const curseEntry = pokemon.volatileStatus.find(v => v.name === 'curse');
+    if (curseEntry) {
+      this.applyDamage(pokemon, slotId, Math.floor(pokemon.maxHp / 4), 'curse', events);
+      if (pokemon.fainted) return { events };
+    }
+
     const leechEntry = pokemon.volatileStatus.find(v => v.name === 'leech-seed');
     if (leechEntry) {
       const drain = Math.max(1, Math.floor(pokemon.maxHp / 8));

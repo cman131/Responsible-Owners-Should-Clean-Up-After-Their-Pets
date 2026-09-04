@@ -300,3 +300,96 @@ describe('venomdrench', () => {
     expect(p2Boosts.spe).toBe(-1);
   });
 });
+
+describe('curse', () => {
+  it('Ghost user: pays 50% max HP and applies curse volatile to target', () => {
+    const engine = makeEngine();
+    const state = make1v1State();
+    // Make p1 a Ghost type (Gengar, id=94)
+    const p1 = state.teams[0]!.slots[0]!.party[0]!;
+    p1.speciesId = 94;
+    p1.speciesName = 'gengar';
+    p1.moves[0] = { moveId: 'curse', currentPp: 10, maxPp: 10 };
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const p1After = newState.teams[0]!.slots[0]!.party[0]!;
+    const p2After = newState.teams[1]!.slots[0]!.party[0]!;
+    // p1 should have paid 50% of maxHp (50 damage)
+    expect(p1After.currentHp).toBe(50);
+    // target should have curse volatile
+    expect(p2After.volatileStatus.some(v => v.name === 'curse')).toBe(true);
+  });
+
+  it('Non-Ghost user: gains +1 atk, +1 def, -1 spe (Charizard is Fire/Flying)', () => {
+    // Default makePokemon uses speciesId=6 (Charizard = Fire/Flying, not Ghost)
+    // Use toxic as p2's move so it doesn't interfere with p1's stat boosts
+    const engine = makeEngine();
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'curse', currentPp: 10, maxPp: 10 };
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'toxic', currentPp: 10, maxPp: 10 };
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const p1Boosts = newState.teams[0]!.slots[0]!.party[0]!.statBoosts;
+    expect(p1Boosts.atk).toBe(1);
+    expect(p1Boosts.def).toBe(1);
+    expect(p1Boosts.spe).toBe(-1);
+  });
+
+  it('Non-Ghost user: does not affect other stats', () => {
+    const engine = makeEngine();
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'curse', currentPp: 10, maxPp: 10 };
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'toxic', currentPp: 10, maxPp: 10 };
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const p1Boosts = newState.teams[0]!.slots[0]!.party[0]!.statBoosts;
+    expect(p1Boosts.spa).toBe(0);
+    expect(p1Boosts.spd).toBe(0);
+  });
+
+  it('EOT curse: target with curse volatile takes 25% max HP damage each turn', () => {
+    const engine = makeEngine();
+    const state = make1v1State();
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    // Pre-apply curse volatile to p2
+    p2.volatileStatus.push({ name: 'curse' });
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const p2After = newState.teams[1]!.slots[0]!.party[0]!;
+    // p2 has maxHp=100, so 25% = 25 damage
+    expect(p2After.currentHp).toBe(75);
+    // curse volatile should still be present
+    expect(p2After.volatileStatus.some(v => v.name === 'curse')).toBe(true);
+  });
+
+  it('EOT curse: damages every turn (cumulative)', () => {
+    const engine = makeEngine();
+    const state = make1v1State();
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    p2.volatileStatus.push({ name: 'curse' });
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+    const { newState: afterTurn1 } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const { newState: afterTurn2 } = engine.resolveTurn(afterTurn1, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const p2After = afterTurn2.teams[1]!.slots[0]!.party[0]!;
+    // 25 damage each turn, so 50 total after 2 turns
+    expect(p2After.currentHp).toBe(50);
+  });
+});
