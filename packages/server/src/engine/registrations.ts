@@ -6,7 +6,7 @@ import {
   setWeather, setTerrain, setSideCondition, trickRoom, gravity, custom,
   protect, endure, substitute, disable, taunt, encore, torment,
   aquaRing, ingrain, magnetRise, perishSong, destinyBond, roost,
-  embargoFactory, healBlockFactory, cureTeamStatus, wish, batonPass,
+  embargoFactory, healBlockFactory, cureTeamStatus, wish, batonPass, shedTail,
 } from './effectFactories.js';
 import { clearHazards, clearScreens } from './sideConditions.js';
 import { applyStatBoost, applyVolatile } from './effects.js';
@@ -717,6 +717,7 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
 
   // ── Pivot moves ────────────────────────────────────────────────────
   r.register('batonpass', batonPass());
+  r.register('shedtail',  shedTail());
 
   return r;
 }
