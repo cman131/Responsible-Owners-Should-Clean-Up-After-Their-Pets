@@ -74,7 +74,11 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
   r.register('coil',        multiStatModSelf({ atk: 1, def: 1, accuracy: 1 }));
   r.register('rockpolish',  statModSelf('spe', 2));
   r.register('tailglow',    statModSelf('spa', 3));
-  r.register('growth',      multiStatModSelf({ atk: 1, spa: 1 })); // placeholder; Task 12 will replace with weather-sensitive version
+  r.register('growth', custom((ctx) => {
+    const weather = ctx.battle.field.weather?.type;
+    const stages = (weather === 'sun' || weather === 'harsh-sun') ? 2 : 1;
+    return { events: [applyStatBoost(ctx.user, ctx.userSlotId, { atk: stages, spa: stages })] };
+  }));
   r.register('workup',      multiStatModSelf({ atk: 1, spa: 1 }));
   r.register('howl',        statModSelf('atk', 1));
   r.register('meditate',    statModSelf('atk', 1));

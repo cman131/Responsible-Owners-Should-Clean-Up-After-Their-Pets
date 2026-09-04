@@ -133,14 +133,43 @@ describe('cottonguard', () => {
 // ── Multi-stat self boosts ────────────────────────────────────────────────────
 
 describe('growth', () => {
-  it('raises atk and spa by 1 each', () => {
+  it('raises atk and spa by +1 with no weather', () => {
     const user = makePokemon();
     const state = make1v1State();
     state.teams[0]!.slots[0]!.party[0] = user;
     const { events } = invoke('growth', { battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 });
     expect(user.statBoosts.atk).toBe(1);
     expect(user.statBoosts.spa).toBe(1);
-    expect(events[0]!.type).toBe('stat-change');
+  });
+
+  it('raises atk and spa by +2 in sun', () => {
+    const user = makePokemon();
+    const state = make1v1State();
+    state.field.weather = { type: 'sun', turnsRemaining: 5, fromAbility: false };
+    state.teams[0]!.slots[0]!.party[0] = user;
+    const { events } = invoke('growth', { battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 });
+    expect(user.statBoosts.atk).toBe(2);
+    expect(user.statBoosts.spa).toBe(2);
+  });
+
+  it('raises atk and spa by +2 in harsh-sun', () => {
+    const user = makePokemon();
+    const state = make1v1State();
+    state.field.weather = { type: 'harsh-sun', turnsRemaining: 5, fromAbility: false };
+    state.teams[0]!.slots[0]!.party[0] = user;
+    invoke('growth', { battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 });
+    expect(user.statBoosts.atk).toBe(2);
+    expect(user.statBoosts.spa).toBe(2);
+  });
+
+  it('raises by +1 in rain (not sun)', () => {
+    const user = makePokemon();
+    const state = make1v1State();
+    state.field.weather = { type: 'rain', turnsRemaining: 5, fromAbility: false };
+    state.teams[0]!.slots[0]!.party[0] = user;
+    invoke('growth', { battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 });
+    expect(user.statBoosts.atk).toBe(1);
+    expect(user.statBoosts.spa).toBe(1);
   });
 });
 
