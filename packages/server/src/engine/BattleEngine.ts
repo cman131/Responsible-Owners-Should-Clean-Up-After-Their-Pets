@@ -433,6 +433,7 @@ export class BattleEngine {
             return { newState: s, events, pivotSwitch: true };
           } else {
             events.push({ type: 'pivot-skipped', data: { slotId: attackerSlotId } });
+            if (attackerSlotForPivot) delete attackerSlotForPivot.batonPassData;
           }
         }
       } else {

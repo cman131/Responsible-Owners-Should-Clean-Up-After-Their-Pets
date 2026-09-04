@@ -72,6 +72,8 @@ describe('Baton Pass', () => {
     expect(result.pivotSlots).toBeUndefined();
     const skippedEvent = result.events.find(e => e.type === 'pivot-skipped');
     expect(skippedEvent).toBeDefined();
+    // batonPassData must not linger on the slot when pivot was skipped
+    expect(result.newState.teams[0]!.slots[0]!.batonPassData).toBeUndefined();
   });
 
   it('transfers +2 Atk stat boost to incoming Pokemon', () => {
