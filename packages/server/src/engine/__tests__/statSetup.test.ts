@@ -487,6 +487,29 @@ describe('swallow', () => {
   });
 });
 
+describe('defendorder', () => {
+  it('raises def and spd by +1', () => {
+    const user = makePokemon();
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0] = user;
+    const { events } = invoke('defendorder', { battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 });
+    expect(user.statBoosts.def).toBe(1);
+    expect(user.statBoosts.spd).toBe(1);
+    expect(events[0]!.type).toBe('stat-change');
+  });
+});
+
+describe('healorder', () => {
+  it('heals 50% of max HP', () => {
+    const user = makePokemon({ maxHp: 200, currentHp: 100 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0] = user;
+    const { events } = invoke('healorder', { battle: state, user, userSlotId: 'slot-a1', userTeamIndex: 0 });
+    expect(user.currentHp).toBe(200);
+    expect(events[0]!.type).toBe('heal');
+  });
+});
+
 describe('laserfocus', () => {
   it('guarantees a crit on the next attack', () => {
     const state = make1v1State();

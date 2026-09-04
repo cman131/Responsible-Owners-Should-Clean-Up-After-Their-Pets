@@ -84,6 +84,7 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
   r.register('withdraw',    statModSelf('def', 1));
   r.register('cottonguard', statModSelf('def', 3));
   r.register('cosmicpower', multiStatModSelf({ def: 1, spd: 1 }));
+  r.register('defendorder', multiStatModSelf({ def: 1, spd: 1 }));
   r.register('shiftgear',   multiStatModSelf({ spe: 2, atk: 1 }));
   r.register('geomancy', custom((ctx) => {
     const events: TurnResolveEvent[] = [];
@@ -188,6 +189,7 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
   r.register('synthesis',  custom(sunBoostHeal));
 
   r.register('slackoff',    healPercent(0.5));
+  r.register('healorder',   healPercent(0.5));
 
   r.register('shoreup', custom((ctx) => {
     const weather = ctx.battle.field.weather?.type;
