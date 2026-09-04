@@ -448,6 +448,15 @@ export function shedTail(): MoveEffectHandler {
       };
     }
 
+    // Fail if no bench member available — move cannot switch without a target
+    const userSlot = ctx.battle.teams[ctx.userTeamIndex]!.slots.find(s => s.slotId === ctx.userSlotId);
+    const hasBench = userSlot?.party.some((p, i) => i !== userSlot.activePokemonIndex && !p.fainted) ?? false;
+    if (!hasBench) {
+      return {
+        events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'no-valid-switch-target' } }],
+      };
+    }
+
     // Deduct HP cost
     ctx.user.currentHp -= cost;
 
@@ -458,13 +467,10 @@ export function shedTail(): MoveEffectHandler {
     // Store substitute in batonPassData for the incoming Pokemon (not on the user itself)
     const subHp = Math.floor(ctx.user.maxHp / 4);
     const emptyStatBoosts: StatBoosts = { atk: 0, def: 0, spa: 0, spd: 0, spe: 0, accuracy: 0, evasion: 0 };
-    const userSlot = ctx.battle.teams[ctx.userTeamIndex]!.slots.find(s => s.slotId === ctx.userSlotId);
-    if (userSlot) {
-      userSlot.batonPassData = {
-        volatiles: [{ name: 'substitute', hp: subHp }],
-        statBoosts: emptyStatBoosts,
-      };
-    }
+    userSlot.batonPassData = {
+      volatiles: [{ name: 'substitute', hp: subHp }],
+      statBoosts: emptyStatBoosts,
+    };
 
     return { events, pivotSwitch: true };
   };

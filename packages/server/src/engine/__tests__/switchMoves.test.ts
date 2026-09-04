@@ -310,12 +310,16 @@ describe('Shed Tail', () => {
     expect(result.pivotSlots).toContain('slot-a1');
   });
 
-  it('does NOT trigger pivot switch when user has no bench member', () => {
+  it('fails and does NOT deduct HP when user has no bench member', () => {
     const engine = new BattleEngine();
     const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.currentHp = 100;
+    state.teams[0]!.slots[0]!.party[0]!.maxHp = 100;
 
     // No bench — only one Pokemon
     state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'shedtail', currentPp: 10, maxPp: 10 };
+    // Opponent uses non-damaging move so we can assert HP precisely
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
 
     const result = engine.resolveTurn(state, {
       'slot-a1': { type: 'move', moveIndex: 0 },
@@ -323,8 +327,9 @@ describe('Shed Tail', () => {
     });
 
     expect(result.pivotSlots).toBeUndefined();
-    const skippedEvent = result.events.find(e => e.type === 'pivot-skipped');
-    expect(skippedEvent).toBeDefined();
+    expect(result.events.some(e => e.type === 'move-failed')).toBe(true);
+    // HP must not be deducted when the move fails due to no bench
+    expect(result.newState.teams[0]!.slots[0]!.party[0]!.currentHp).toBe(100);
   });
 
   it('transfers substitute to the incoming Pokemon', () => {
