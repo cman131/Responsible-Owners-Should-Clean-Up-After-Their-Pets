@@ -242,7 +242,7 @@ export class BattleEngine {
     const attacker = attackerSlot.party[attackerSlot.activePokemonIndex];
     if (!attacker) return { newState: s, events };
 
-    const preMoveResult = this.effectEngine.runPreMove(attacker, attackerSlotId, s, this.getAllSlots(s));
+    const preMoveResult = this.effectEngine.runPreMove(attacker, attackerSlotId, s, this.getAllSlots(s), this.rng);
     events.push(...preMoveResult.events);
     if (preMoveResult.blocked) return { newState: s, events };
 

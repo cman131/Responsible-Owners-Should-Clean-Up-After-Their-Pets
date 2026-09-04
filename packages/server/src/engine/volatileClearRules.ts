@@ -11,6 +11,7 @@ export const SWITCH_CLEAR_NAMES = new Set([
   'sleep',
   'laser-focus',
   'geomancy-charge',
+  'infatuation',
 ]);
 
 export const SWITCH_CLEAR_PREFIXES = ['charging-'];

@@ -27,6 +27,7 @@ export class EffectEngine {
     slotId: string,
     _state: BattleState,
     allSlots: SlotContext[],
+    rng: () => number = Math.random,
   ): PreMoveResult {
     const events: TurnResolveEvent[] = [];
 
@@ -105,6 +106,14 @@ export class EffectEngine {
     if (pokemon.status === 'par') {
       if (Math.random() < PARALYSIS_FULL_PARALYSIS_CHANCE) {
         events.push({ type: 'move-blocked', data: { slotId, pokemonName: pokemon.nickname, reason: 'paralysis' } });
+        return { blocked: true, events };
+      }
+    }
+
+    const infatuationEntry = pokemon.volatileStatus.find(v => v.name === 'infatuation');
+    if (infatuationEntry) {
+      if (rng() < 0.5) {
+        events.push({ type: 'move-blocked', data: { slotId, pokemonName: pokemon.nickname, reason: 'infatuation' } });
         return { blocked: true, events };
       }
     }

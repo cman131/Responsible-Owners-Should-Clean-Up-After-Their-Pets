@@ -40,6 +40,7 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
   r.register('darkvoid',    applyStatusTarget('slp'));
 
   // ── Volatiles ──────────────────────────────────────────────────────
+  r.register('attract',     applyVolatileTarget('infatuation'));
   r.register('confuseray',  applyVolatileTarget('confusion'));
   r.register('supersonic',  applyVolatileTarget('confusion'));
   r.register('sweetkiss',   applyVolatileTarget('confusion'));
