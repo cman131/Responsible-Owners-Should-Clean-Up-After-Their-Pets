@@ -247,3 +247,56 @@ describe('nightmare', () => {
     expect(p2After.currentHp).toBe(94);
   });
 });
+
+describe('venomdrench', () => {
+  it('emits move-failed when target has no status', () => {
+    const engine = makeEngine();
+    const state = make1v1State();
+    // p2 has no status
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'venomdrench', currentPp: 20, maxPp: 20 };
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const p2Boosts = newState.teams[1]!.slots[0]!.party[0]!.statBoosts;
+    // No stat boosts should be applied
+    expect(p2Boosts.atk).toBe(0);
+    expect(p2Boosts.spa).toBe(0);
+    expect(p2Boosts.spe).toBe(0);
+  });
+
+  it('lowers target atk, spa, and spe by 1 when target has psn status', () => {
+    const engine = makeEngine();
+    const state = make1v1State();
+    // p2 is poisoned
+    state.teams[1]!.slots[0]!.party[0]!.status = 'psn';
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'venomdrench', currentPp: 20, maxPp: 20 };
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const p2Boosts = newState.teams[1]!.slots[0]!.party[0]!.statBoosts;
+    expect(p2Boosts.atk).toBe(-1);
+    expect(p2Boosts.spa).toBe(-1);
+    expect(p2Boosts.spe).toBe(-1);
+  });
+
+  it('lowers target atk, spa, and spe by 1 when target has tox status', () => {
+    const engine = makeEngine();
+    const state = make1v1State();
+    // p2 is badly poisoned
+    state.teams[1]!.slots[0]!.party[0]!.status = 'tox';
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'venomdrench', currentPp: 20, maxPp: 20 };
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const p2Boosts = newState.teams[1]!.slots[0]!.party[0]!.statBoosts;
+    expect(p2Boosts.atk).toBe(-1);
+    expect(p2Boosts.spa).toBe(-1);
+    expect(p2Boosts.spe).toBe(-1);
+  });
+});

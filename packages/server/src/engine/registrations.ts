@@ -183,7 +183,15 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
   r.register('confide',      statModTarget('spa', -1));
   r.register('playnice',     statModTarget('atk', -1));
   r.register('spicyextract', multiStatModTarget({ spa: 2, def: -2 }));
-  // venomdrench is Task 4 - skip here
+  r.register('venomdrench', custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+    if (target.status !== 'psn' && target.status !== 'tox') {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'not-poisoned' } }] };
+    }
+    return { events: [applyStatBoost(target, targetSlotId, { atk: -1, spa: -1, spe: -1 })] };
+  }));
 
   // ── Protect family ────────────────────────────────────────────────────
   r.register('protect',       protect('protect'));
