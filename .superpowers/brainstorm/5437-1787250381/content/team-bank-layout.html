@@ -1,0 +1,123 @@
+<h2>Team + Bank Layout</h2>
+<p class="subtitle">How should the active team and pokemon bank be arranged in the player editor?</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Side by Side</h3>
+      <p>Team (left) and Bank (right) shown simultaneously. Move buttons between them.</p>
+      <div style="margin-top:12px">
+        <div style="display:flex;gap:8px;font-size:11px">
+          <div style="flex:1;background:#0d1a2e;border:1px solid #2980b9;border-radius:4px;padding:8px">
+            <div style="color:#3498db;font-size:10px;letter-spacing:2px;margin-bottom:6px">ACTIVE TEAM (6)</div>
+            <div style="display:flex;flex-direction:column;gap:3px">
+              <div style="background:#1a2a3e;border-radius:3px;padding:4px 6px;color:#ccc;font-size:10px;display:flex;justify-content:space-between;align-items:center">
+                <span>🔴 Charizard</span>
+                <span style="color:#e74c3c;font-size:9px;cursor:pointer">→ bank</span>
+              </div>
+              <div style="background:#1a2a3e;border-radius:3px;padding:4px 6px;color:#ccc;font-size:10px;display:flex;justify-content:space-between;align-items:center">
+                <span>💧 Blastoise</span>
+                <span style="color:#e74c3c;font-size:9px;cursor:pointer">→ bank</span>
+              </div>
+              <div style="background:#1a2a3e;border-radius:3px;padding:4px 6px;color:#ccc;font-size:10px;display:flex;justify-content:space-between;align-items:center">
+                <span>🌿 Venusaur</span>
+                <span style="color:#e74c3c;font-size:9px;cursor:pointer">→ bank</span>
+              </div>
+              <div style="border:1px dashed #333;border-radius:3px;padding:4px 6px;color:#444;font-size:10px;text-align:center">empty slot</div>
+            </div>
+          </div>
+          <div style="flex:1;background:#0d1a0d;border:1px solid #27ae60;border-radius:4px;padding:8px">
+            <div style="color:#27ae60;font-size:10px;letter-spacing:2px;margin-bottom:6px">BANK (12)</div>
+            <div style="display:flex;flex-direction:column;gap:3px">
+              <div style="background:#1a2a1e;border-radius:3px;padding:4px 6px;color:#ccc;font-size:10px;display:flex;justify-content:space-between;align-items:center">
+                <span>⚡ Pikachu</span>
+                <span style="color:#27ae60;font-size:9px;cursor:pointer">→ team</span>
+              </div>
+              <div style="background:#1a2a1e;border-radius:3px;padding:4px 6px;color:#ccc;font-size:10px;display:flex;justify-content:space-between;align-items:center">
+                <span>🧊 Lapras</span>
+                <span style="color:#27ae60;font-size:9px;cursor:pointer">→ team</span>
+              </div>
+              <div style="background:#1a2a1e;border-radius:3px;padding:4px 6px;color:#ccc;font-size:10px;display:flex;justify-content:space-between;align-items:center">
+                <span>🌑 Gengar</span>
+                <span style="color:#27ae60;font-size:9px;cursor:pointer">→ team</span>
+              </div>
+              <div style="background:#1a1a0d;border-radius:3px;padding:4px 6px;color:#aaa;font-size:9px;display:flex;align-items:center;gap:4px;cursor:pointer;border:1px dashed #444">
+                <span>+</span> Add new to bank
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="pros-cons" style="margin-top:8px">
+        <div class="pros"><h4>Pros</h4><ul><li>Everything visible at once</li><li>Fastest to move between</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Less space for pokemon editor</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Team on Top, Bank Below</h3>
+      <p>Stacked vertically. Team slots (6) shown first, bank scrolls beneath.</p>
+      <div style="margin-top:12px;font-size:11px">
+        <div style="background:#0d0d1a;border:1px solid #3498db;border-radius:4px;padding:8px;margin-bottom:6px">
+          <div style="color:#3498db;font-size:10px;letter-spacing:2px;margin-bottom:6px">ACTIVE TEAM (3/6)</div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap">
+            <div style="background:#1a2a3e;border-radius:3px;padding:4px 8px;color:#ccc;font-size:10px">🔴 Charizard ↓</div>
+            <div style="background:#1a2a3e;border-radius:3px;padding:4px 8px;color:#ccc;font-size:10px">💧 Blastoise ↓</div>
+            <div style="background:#1a2a3e;border-radius:3px;padding:4px 8px;color:#ccc;font-size:10px">🌿 Venusaur ↓</div>
+            <div style="border:1px dashed #333;border-radius:3px;padding:4px 8px;color:#444;font-size:10px">slot</div>
+          </div>
+        </div>
+        <div style="color:#aaa;font-size:9px;text-align:center;margin:2px 0">▼ bank ▼</div>
+        <div style="background:#0d1a0d;border:1px solid #27ae60;border-radius:4px;padding:8px;max-height:80px;overflow:hidden">
+          <div style="color:#27ae60;font-size:10px;letter-spacing:2px;margin-bottom:6px">BANK (12) <span style="color:#555;font-size:9px">scroll to see more</span></div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap">
+            <div style="background:#1a2a1e;border-radius:3px;padding:4px 8px;color:#ccc;font-size:10px">⚡ Pikachu ↑</div>
+            <div style="background:#1a2a1e;border-radius:3px;padding:4px 8px;color:#ccc;font-size:10px">🧊 Lapras ↑</div>
+            <div style="background:#1a2a1e;border-radius:3px;padding:4px 8px;color:#ccc;font-size:10px">🌑 Gengar ↑</div>
+            <div style="background:#1a1a0d;border-radius:3px;padding:4px 8px;color:#aaa;font-size:10px;border:1px dashed #444">+ Add</div>
+          </div>
+        </div>
+      </div>
+      <div class="pros-cons" style="margin-top:8px">
+        <div class="pros"><h4>Pros</h4><ul><li>Familiar top-to-bottom flow</li><li>More horizontal space</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Bank may require scrolling</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Tabbed: Team / Bank</h3>
+      <p>Separate tabs switch between the active team and the bank. Move action sends to the other tab.</p>
+      <div style="margin-top:12px;font-size:11px">
+        <div style="display:flex;gap:0;margin-bottom:-1px">
+          <div style="background:#2980b9;color:#fff;padding:5px 12px;border-radius:3px 3px 0 0;font-size:10px;letter-spacing:1px">TEAM (3/6)</div>
+          <div style="background:#1a1a2e;color:#aaa;padding:5px 12px;border-radius:3px 3px 0 0;font-size:10px;letter-spacing:1px;border:1px solid #333;border-bottom:none">BANK (12)</div>
+        </div>
+        <div style="background:#0d0d1a;border:1px solid #333;border-radius:0 4px 4px 4px;padding:8px">
+          <div style="display:flex;flex-direction:column;gap:3px">
+            <div style="background:#1a2a3e;border-radius:3px;padding:4px 6px;color:#ccc;font-size:10px;display:flex;justify-content:space-between;align-items:center">
+              <span>🔴 Charizard</span>
+              <span style="background:#c0392b;color:#fff;font-size:9px;padding:1px 5px;border-radius:2px;cursor:pointer">Send to Bank</span>
+            </div>
+            <div style="background:#1a2a3e;border-radius:3px;padding:4px 6px;color:#ccc;font-size:10px;display:flex;justify-content:space-between;align-items:center">
+              <span>💧 Blastoise</span>
+              <span style="background:#c0392b;color:#fff;font-size:9px;padding:1px 5px;border-radius:2px;cursor:pointer">Send to Bank</span>
+            </div>
+            <div style="border:1px dashed #333;border-radius:3px;padding:4px 6px;color:#444;font-size:10px;text-align:center">empty slot</div>
+          </div>
+          <div style="color:#555;font-size:9px;margin-top:6px;text-align:right">Switch to Bank tab to add from there →</div>
+        </div>
+      </div>
+      <div class="pros-cons" style="margin-top:8px">
+        <div class="pros"><h4>Pros</h4><ul><li>Cleanest, most space per view</li><li>Works well at any screen size</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Can't see both at once</li><li>More clicks to move between</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>

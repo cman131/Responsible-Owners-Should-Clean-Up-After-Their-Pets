@@ -1,0 +1,105 @@
+<h2>Admin NPC tab layout</h2>
+<p class="subtitle">The current NPC panel (right sidebar) becomes a tabbed view. How much does each tab show?</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#0d0d1a;border:1px solid #444;border-radius:4px;padding:6px;font-family:monospace;font-size:10px">
+        <!-- Full admin layout: left = admin canvas, right = NPC tabs with mini canvas -->
+        <div style="display:flex;gap:6px">
+          <!-- Left: admin spectator view -->
+          <div style="flex:1.5">
+            <div style="color:#e74c3c;font-size:8px;letter-spacing:1px;margin-bottom:3px">ADMIN VIEW — Battle 1</div>
+            <div style="background:#87ceeb;height:80px;border-radius:2px;position:relative">
+              <div style="position:absolute;right:6px;top:6px;background:#e74c3c;width:18px;height:18px;border-radius:1px"></div>
+              <div style="position:absolute;left:6px;bottom:6px;background:#2980b9;width:22px;height:22px;border-radius:1px"></div>
+              <div style="position:absolute;left:30px;bottom:6px;background:#27ae60;width:16px;height:16px;border-radius:1px;opacity:0.7"></div>
+            </div>
+            <div style="background:#5a8a3a;height:30px;border-radius:0 0 2px 2px;margin-bottom:4px"></div>
+            <div style="background:#111;border:1px solid #333;border-radius:2px;padding:4px;font-size:8px;color:#555;height:30px">Turn log...</div>
+          </div>
+          <!-- Right: NPC tabs with mini canvas per NPC -->
+          <div style="width:140px">
+            <div style="display:flex;border-bottom:1px solid #555;margin-bottom:4px">
+              <div style="background:#e74c3c;color:#fff;padding:2px 6px;font-size:8px;border-radius:2px 2px 0 0">Blastoise</div>
+              <div style="color:#555;padding:2px 6px;font-size:8px">Snorlax</div>
+            </div>
+            <!-- NPC tab: mini canvas showing NPC's perspective -->
+            <div style="background:#0d0d1a;border:1px solid #e74c3c;border-radius:2px;padding:4px;margin-bottom:3px">
+              <div style="background:#87ceeb;height:40px;border-radius:1px;position:relative;margin-bottom:2px">
+                <div style="position:absolute;right:4px;top:4px;background:#2980b9;width:14px;height:14px;border-radius:1px"></div>
+                <div style="position:absolute;left:4px;bottom:4px;background:#e74c3c;width:18px;height:18px;border-radius:1px"></div>
+              </div>
+              <div style="color:#aaa;font-size:8px;margin-bottom:2px">Blastoise — choose move:</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px">
+                <div style="background:#1a1a2e;border:1px solid #e74c3c;padding:2px 3px;border-radius:1px;color:#fff;font-size:7px">Surf</div>
+                <div style="background:#1a1a2e;border:1px solid #e74c3c;padding:2px 3px;border-radius:1px;color:#fff;font-size:7px">Ice Beam</div>
+                <div style="background:#1a1a2e;border:1px solid #555;padding:2px 3px;border-radius:1px;color:#555;font-size:7px">Blizzard</div>
+                <div style="background:#1a1a2e;border:1px solid #e74c3c;padding:2px 3px;border-radius:1px;color:#fff;font-size:7px">Flash</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Mini canvas per NPC tab</h3>
+      <p>Right panel has tabs (one per NPC). Each tab shows a small canvas from that NPC's perspective + their move buttons. Admin sees the battlefield from the NPC's POV before choosing.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#0d0d1a;border:1px solid #444;border-radius:4px;padding:6px;font-family:monospace;font-size:10px">
+        <div style="display:flex;gap:6px">
+          <!-- Left: admin spectator view (same) -->
+          <div style="flex:1.5">
+            <div style="color:#e74c3c;font-size:8px;letter-spacing:1px;margin-bottom:3px">ADMIN VIEW — Battle 1</div>
+            <div style="background:#87ceeb;height:80px;border-radius:2px;position:relative">
+              <div style="position:absolute;right:6px;top:6px;background:#e74c3c;width:18px;height:18px;border-radius:1px"></div>
+              <div style="position:absolute;left:6px;bottom:6px;background:#2980b9;width:22px;height:22px;border-radius:1px"></div>
+              <div style="position:absolute;left:30px;bottom:6px;background:#27ae60;width:16px;height:16px;border-radius:1px;opacity:0.7"></div>
+            </div>
+            <div style="background:#5a8a3a;height:30px;border-radius:0 0 2px 2px;margin-bottom:4px"></div>
+            <div style="background:#111;border:1px solid #333;border-radius:2px;padding:4px;font-size:8px;color:#555;height:30px">Turn log...</div>
+          </div>
+          <!-- Right: NPC tabs - moves only, no mini canvas -->
+          <div style="width:140px">
+            <div style="display:flex;border-bottom:1px solid #555;margin-bottom:4px">
+              <div style="background:#e74c3c;color:#fff;padding:2px 6px;font-size:8px;border-radius:2px 2px 0 0">Blastoise</div>
+              <div style="color:#555;padding:2px 6px;font-size:8px">Snorlax</div>
+            </div>
+            <!-- NPC tab: moves + HP info, no canvas -->
+            <div style="background:#0d0d1a;border:1px solid #e74c3c;border-radius:2px;padding:6px">
+              <div style="color:#aaa;font-size:8px;margin-bottom:4px;letter-spacing:1px">BLASTOISE — CHOOSE MOVE</div>
+              <!-- Enemy HP quick view (text) -->
+              <div style="background:#111;border:1px solid #333;border-radius:2px;padding:3px;margin-bottom:4px">
+                <div style="color:#e74c3c;font-size:7px;margin-bottom:2px">VS</div>
+                <div style="color:#fff;font-size:7px">Pikachu <span style="color:#aaa">134/150 HP</span></div>
+                <div style="background:#333;height:3px;border-radius:1px"><div style="background:#27ae60;height:3px;border-radius:1px;width:89%"></div></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px">
+                <div style="background:#1a1a2e;border:1px solid #e74c3c;padding:3px 4px;border-radius:1px;color:#fff;font-size:8px">Surf</div>
+                <div style="background:#1a1a2e;border:1px solid #e74c3c;padding:3px 4px;border-radius:1px;color:#fff;font-size:8px">Ice Beam</div>
+                <div style="background:#1a1a2e;border:1px solid #555;padding:3px 4px;border-radius:1px;color:#555;font-size:8px">Blizzard</div>
+                <div style="background:#1a1a2e;border:1px solid #e74c3c;padding:3px 4px;border-radius:1px;color:#fff;font-size:8px">Flash</div>
+              </div>
+              <div style="margin-top:4px;padding-top:3px;border-top:1px solid #333">
+                <div style="color:#aaa;font-size:7px;margin-bottom:2px">TARGET</div>
+                <select style="background:#111;border:1px solid #555;color:#fff;font-size:7px;width:100%;padding:2px">
+                  <option>Pikachu (slot a1)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Move panel + HP summary, no mini canvas</h3>
+      <p>Right panel tabs show: NPC's move buttons + a compact "vs" HP readout for each enemy + target dropdown. Simpler and faster to interact with — no canvas needed since the admin already sees the main battle view.</p>
+    </div>
+  </div>
+
+</div>

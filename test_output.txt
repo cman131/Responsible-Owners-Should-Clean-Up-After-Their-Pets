@@ -1,0 +1,244 @@
+$ vitest run "ProfileEditor"
+
+[7m[1m[36m RUN [39m[22m[27m [36mv1.6.1[39m [90mC:/Users/conor/workbench/poke-fighter/packages/client[39m
+
+ [33m❯[39m src/admin/__tests__/ProfileEditor.test.tsx [2m ([22m[2m8 tests[22m [2m|[22m [31m8 failed[39m[2m)[22m[90m 38[2mms[22m[39m
+[31m   [33m❯[31m src/admin/__tests__/ProfileEditor.test.tsx[2m > [22mProfileEditor — NPC[2m > [22mshows EDIT NPC title and pre-fills name for existing profile[39m
+[31m     → Unable to find an element with the text: /edit npc/i. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div />[31m
+[36m</body>[31m[39m
+[31m   [33m❯[31m src/admin/__tests__/ProfileEditor.test.tsx[2m > [22mProfileEditor — NPC[2m > [22mshows NEW NPC title when profile is null[39m
+[31m     → Unable to find an element with the text: /new npc/i. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div />[31m
+[36m</body>[31m[39m
+[31m   [33m❯[31m src/admin/__tests__/ProfileEditor.test.tsx[2m > [22mProfileEditor — NPC[2m > [22mSAVE is disabled when name is empty[39m
+[31m     → Unable to find an element with the text: save-team. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div />[31m
+[36m</body>[31m[39m
+[31m   [33m❯[31m src/admin/__tests__/ProfileEditor.test.tsx[2m > [22mProfileEditor — NPC[2m > [22mSAVE is disabled when team is empty (no team save triggered)[39m
+[31m     → Unable to find an element with the placeholder text of: /e.g. gym/i
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div />[31m
+[36m</body>[31m[39m
+[31m   [33m❯[31m src/admin/__tests__/ProfileEditor.test.tsx[2m > [22mProfileEditor — NPC[2m > [22memits registry:save-npc with correct profile on SAVE[39m
+[31m     → Unable to find an element with the placeholder text of: /e.g. gym/i
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div />[31m
+[36m</body>[31m[39m
+[31m   [33m❯[31m src/admin/__tests__/ProfileEditor.test.tsx[2m > [22mProfileEditor — NPC[2m > [22mpreserves profileId and createdAt when editing existing NPC[39m
+[31m     → Unable to find an element with the text: save-team. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div />[31m
+[36m</body>[31m[39m
+[31m   [33m❯[31m src/admin/__tests__/ProfileEditor.test.tsx[2m > [22mProfileEditor — NPC[2m > [22mcalls onBack when DISCARD clicked[39m
+[31m     → Unable to find an accessible element with the role "button" and name `/discard/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div />[31m
+[36m</body>[31m[39m
+[31m   [33m❯[31m src/admin/__tests__/ProfileEditor.test.tsx[2m > [22mProfileEditor — Player[2m > [22mshows DISPLAY NAME label and emits registry:save-player on save[39m
+[31m     → Unable to find an element with the text: /display name/i. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div />[31m
+[36m</body>[31m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[1m[7m Failed Tests 8 [27m[22m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/admin/__tests__/ProfileEditor.test.tsx[2m > [22mProfileEditor — NPC[2m > [22mshows EDIT NPC title and pre-fills name for existing profile
+[31m[1mTestingLibraryElementError[22m: Unable to find an element with the text: /edit npc/i. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div />[31m
+[36m</body>[31m[39m
+[90m [2m❯[22m Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2m❯[22m ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m76:38[22m[39m
+[90m [2m❯[22m ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m52:17[22m[39m
+[90m [2m❯[22m ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m95:19[22m[39m
+[36m [2m❯[22m src/admin/__tests__/ProfileEditor.test.tsx:[2m44:19[22m[39m
+    [90m 42| [39m  [34mit[39m([32m'shows EDIT NPC title and pre-fills name for existing profile'[39m[33m,[39m (…
+    [90m 43| [39m    [34mrender[39m([33m<[39m[33mProfileEditor[39m [33mtype[39m[33m=[39m[32m"npc"[39m [33mprofile[39m[33m=[39m[33m{[39mexistingNpc[33m}[39m [33monBack[39m[33m=[39m[33m{[39mvi[33m.[39m…
+    [90m 44| [39m    [34mexpect[39m(screen[33m.[39m[34mgetByText[39m([36m/edit npc/i[39m))[33m.[39m[34mtoBeTruthy[39m()[33m;[39m
+    [90m   | [39m                  [31m^[39m
+    [90m 45| [39m    [34mexpect[39m(screen[33m.[39m[34mgetByDisplayValue[39m([32m'Gym Leader Misty'[39m))[33m.[39m[34mtoBeTruthy[39m()[33m;[39m
+    [90m 46| [39m  })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/admin/__tests__/ProfileEditor.test.tsx[2m > [22mProfileEditor — NPC[2m > [22mshows NEW NPC title when profile is null
+[31m[1mTestingLibraryElementError[22m: Unable to find an element with the text: /new npc/i. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div />[31m
+[36m</body>[31m[39m
+[90m [2m❯[22m Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2m❯[22m ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m76:38[22m[39m
+[90m [2m❯[22m ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m52:17[22m[39m
+[90m [2m❯[22m ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m95:19[22m[39m
+[36m [2m❯[22m src/admin/__tests__/ProfileEditor.test.tsx:[2m50:19[22m[39m
+    [90m 48| [39m  [34mit[39m([32m'shows NEW NPC title when profile is null'[39m[33m,[39m () [33m=>[39m {
+    [90m 49| [39m    [34mrender[39m([33m<[39m[33mProfileEditor[39m [33mtype[39m[33m=[39m[32m"npc"[39m [33mprofile[39m[33m=[39m[33m{[39m[35mnull[39m[33m}[39m [33monBack[39m[33m=[39m[33m{[39mvi[33m.[39m[34mfn[39m()[33m}[39m [33m/[39m…
+    [90m 50| [39m    [34mexpect[39m(screen[33m.[39m[34mgetByText[39m([36m/new npc/i[39m))[33m.[39m[34mtoBeTruthy[39m()[33m;[39m
+    [90m   | [39m                  [31m^[39m
+    [90m 51| [39m  })[33m;[39m
+    [90m 52| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/admin/__tests__/ProfileEditor.test.tsx[2m > [22mProfileEditor — NPC[2m > [22mSAVE is disabled when name is empty
+[31m[1mTestingLibraryElementError[22m: Unable to find an element with the text: save-team. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div />[31m
+[36m</body>[31m[39m
+[90m [2m❯[22m Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2m❯[22m ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m76:38[22m[39m
+[90m [2m❯[22m ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m52:17[22m[39m
+[90m [2m❯[22m ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m95:19[22m[39m
+[36m [2m❯[22m src/admin/__tests__/ProfileEditor.test.tsx:[2m55:28[22m[39m
+    [90m 53| [39m  [34mit[39m([32m'SAVE is disabled when name is empty'[39m[33m,[39m () [33m=>[39m {
+    [90m 54| [39m    [34mrender[39m([33m<[39m[33mProfileEditor[39m [33mtype[39m[33m=[39m[32m"npc"[39m [33mprofile[39m[33m=[39m[33m{[39m[35mnull[39m[33m}[39m [33monBack[39m[33m=[39m[33m{[39mvi[33m.[39m[34mfn[39m()[33m}[39m [33m/[39m…
+    [90m 55| [39m    fireEvent[33m.[39m[34mclick[39m(screen[33m.[39m[34mgetByText[39m([32m'save-team'[39m))[33m;[39m
+    [90m   | [39m                           [31m^[39m
+    [90m 56| [39m    [35mconst[39m saveBtn [33m=[39m screen[33m.[39m[34mgetByRole[39m([32m'button'[39m[33m,[39m { name[33m:[39m [36m/^save$/i[39m })[33m;[39m
+    [90m 57| [39m    [34mexpect[39m(saveBtn)[33m.[39m[34mtoBeDisabled[39m()[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/8]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/admin/__tests__/ProfileEditor.test.tsx[2m > [22mProfileEditor — NPC[2m > [22mSAVE is disabled when team is empty (no team save triggered)
+[31m[1mTestingLibraryElementError[22m: Unable to find an element with the placeholder text of: /e.g. gym/i
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div />[31m
+[36m</body>[31m[39m
+[90m [2m❯[22m Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2m❯[22m ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m76:38[22m[39m
+[90m [2m❯[22m ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m52:17[22m[39m
+[90m [2m❯[22m ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m95:19[22m[39m
+[36m [2m❯[22m src/admin/__tests__/ProfileEditor.test.tsx:[2m62:29[22m[39m
+    [90m 60| [39m  [34mit[39m([32m'SAVE is disabled when team is empty (no team save triggered)'[39m[33m,[39m (…
+    [90m 61| [39m    [34mrender[39m([33m<[39m[33mProfileEditor[39m [33mtype[39m[33m=[39m[32m"npc"[39m [33mprofile[39m[33m=[39m[33m{[39m[35mnull[39m[33m}[39m [33monBack[39m[33m=[39m[33m{[39mvi[33m.[39m[34mfn[39m()[33m}[39m [33m/[39m…
+    [90m 62| [39m    fireEvent[33m.[39m[34mchange[39m(screen[33m.[39m[34mgetByPlaceholderText[39m([36m/e.g. gym/i[39m)[33m,[39m { targe…
+    [90m   | [39m                            [31m^[39m
+    [90m 63| [39m    [35mconst[39m saveBtn [33m=[39m screen[33m.[39m[34mgetByRole[39m([32m'button'[39m[33m,[39m { name[33m:[39m [36m/^save$/i[39m })[33m;[39m
+    [90m 64| [39m    [34mexpect[39m(saveBtn)[33m.[39m[34mtoBeDisabled[39m()[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/8]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/admin/__tests__/ProfileEditor.test.tsx[2m > [22mProfileEditor — NPC[2m > [22memits registry:save-npc with correct profile on SAVE
+[31m[1mTestingLibraryElementError[22m: Unable to find an element with the placeholder text of: /e.g. gym/i
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div />[31m
+[36m</body>[31m[39m
+[90m [2m❯[22m Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2m❯[22m ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m76:38[22m[39m
+[90m [2m❯[22m ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m52:17[22m[39m
+[90m [2m❯[22m ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m95:19[22m[39m
+[36m [2m❯[22m src/admin/__tests__/ProfileEditor.test.tsx:[2m69:29[22m[39m
+    [90m 67| [39m  [34mit[39m([32m'emits registry:save-npc with correct profile on SAVE'[39m[33m,[39m () [33m=>[39m {
+    [90m 68| [39m    [34mrender[39m([33m<[39m[33mProfileEditor[39m [33mtype[39m[33m=[39m[32m"npc"[39m [33mprofile[39m[33m=[39m[33m{[39m[35mnull[39m[33m}[39m [33monBack[39m[33m=[39m[33m{[39mvi[33m.[39m[34mfn[39m()[33m}[39m [33m/[39m…
+    [90m 69| [39m    fireEvent[33m.[39m[34mchange[39m(screen[33m.[39m[34mgetByPlaceholderText[39m([36m/e.g. gym/i[39m)[33m,[39m { targe…
+    [90m   | [39m                            [31m^[39m
+    [90m 70| [39m    fireEvent[33m.[39m[34mclick[39m(screen[33m.[39m[34mgetByText[39m([32m'save-team'[39m))[33m;[39m
+    [90m 71| [39m    fireEvent[33m.[39m[34mclick[39m(screen[33m.[39m[34mgetByRole[39m([32m'button'[39m[33m,[39m { name[33m:[39m [36m/^save$/i[39m }))[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/8]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/admin/__tests__/ProfileEditor.test.tsx[2m > [22mProfileEditor — NPC[2m > [22mpreserves profileId and createdAt when editing existing NPC
+[31m[1mTestingLibraryElementError[22m: Unable to find an element with the text: save-team. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div />[31m
+[36m</body>[31m[39m
+[90m [2m❯[22m Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2m❯[22m ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m76:38[22m[39m
+[90m [2m❯[22m ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m52:17[22m[39m
+[90m [2m❯[22m ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m95:19[22m[39m
+[36m [2m❯[22m src/admin/__tests__/ProfileEditor.test.tsx:[2m82:28[22m[39m
+    [90m 80| [39m  [34mit[39m([32m'preserves profileId and createdAt when editing existing NPC'[39m[33m,[39m ()…
+    [90m 81| [39m    [34mrender[39m([33m<[39m[33mProfileEditor[39m [33mtype[39m[33m=[39m[32m"npc"[39m [33mprofile[39m[33m=[39m[33m{[39mexistingNpc[33m}[39m [33monBack[39m[33m=[39m[33m{[39mvi[33m.[39m…
+    [90m 82| [39m    fireEvent[33m.[39m[34mclick[39m(screen[33m.[39m[34mgetByText[39m([32m'save-team'[39m))[33m;[39m
+    [90m   | [39m                           [31m^[39m
+    [90m 83| [39m    fireEvent[33m.[39m[34mclick[39m(screen[33m.[39m[34mgetByRole[39m([32m'button'[39m[33m,[39m { name[33m:[39m [36m/^save$/i[39m }))[33m;[39m
+    [90m 84| [39m    [34mexpect[39m(mockSocket[33m.[39memit)[33m.[39m[34mtoHaveBeenCalledWith[39m([32m'admin:action'[39m[33m,[39m expec…
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/8]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/admin/__tests__/ProfileEditor.test.tsx[2m > [22mProfileEditor — NPC[2m > [22mcalls onBack when DISCARD clicked
+[31m[1mTestingLibraryElementError[22m: Unable to find an accessible element with the role "button" and name `/discard/i`
+
+There are no accessible roles. But there might be some inaccessible roles. If you wish to access them, then set the `hidden` option to `true`. Learn more about this here: https://testing-library.com/docs/dom-testing-library/api-queries#byrole
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div />[31m
+[36m</body>[31m[39m
+[90m [2m❯[22m Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2m❯[22m ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m76:38[22m[39m
+[90m [2m❯[22m ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m52:17[22m[39m
+[90m [2m❯[22m ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m95:19[22m[39m
+[36m [2m❯[22m src/admin/__tests__/ProfileEditor.test.tsx:[2m94:28[22m[39m
+    [90m 92| [39m    [35mconst[39m onBack [33m=[39m vi[33m.[39m[34mfn[39m()[33m;[39m
+    [90m 93| [39m    [34mrender[39m([33m<[39m[33mProfileEditor[39m [33mtype[39m[33m=[39m[32m"npc"[39m [33mprofile[39m[33m=[39m[33m{[39mexistingNpc[33m}[39m [33monBack[39m[33m=[39m[33m{[39monB…
+    [90m 94| [39m    fireEvent[33m.[39m[34mclick[39m(screen[33m.[39m[34mgetByRole[39m([32m'button'[39m[33m,[39m { name[33m:[39m [36m/discard/i[39m }))[33m;[39m
+    [90m   | [39m                           [31m^[39m
+    [90m 95| [39m    [34mexpect[39m(onBack)[33m.[39m[34mtoHaveBeenCalled[39m()[33m;[39m
+    [90m 96| [39m  })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/8]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/admin/__tests__/ProfileEditor.test.tsx[2m > [22mProfileEditor — Player[2m > [22mshows DISPLAY NAME label and emits registry:save-player on save
+[31m[1mTestingLibraryElementError[22m: Unable to find an element with the text: /display name/i. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[31m
+  [36m<div />[31m
+[36m</body>[31m[39m
+[90m [2m❯[22m Object.getElementError ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2m❯[22m ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m76:38[22m[39m
+[90m [2m❯[22m ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m52:17[22m[39m
+[90m [2m❯[22m ../../node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:[2m95:19[22m[39m
+[36m [2m❯[22m src/admin/__tests__/ProfileEditor.test.tsx:[2m102:19[22m[39m
+    [90m100| [39m  [34mit[39m([32m'shows DISPLAY NAME label and emits registry:save-player on save'[39m…
+    [90m101| [39m    [34mrender[39m([33m<[39m[33mProfileEditor[39m [33mtype[39m[33m=[39m[32m"player"[39m [33mprofile[39m[33m=[39m[33m{[39m[35mnull[39m[33m}[39m [33monBack[39m[33m=[39m[33m{[39mvi[33m.[39m[34mfn[39m()…
+    [90m102| [39m    [34mexpect[39m(screen[33m.[39m[34mgetByText[39m([36m/display name/i[39m))[33m.[39m[34mtoBeTruthy[39m()[33m;[39m
+    [90m   | [39m                  [31m^[39m
+    [90m103| [39m    fireEvent[33m.[39m[34mchange[39m(screen[33m.[39m[34mgetByPlaceholderText[39m([36m/ash/i[39m)[33m,[39m { target[33m:[39m { …
+    [90m104| [39m    fireEvent[33m.[39m[34mclick[39m(screen[33m.[39m[34mgetByText[39m([32m'save-team'[39m))[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/8]⎯[22m[39m
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m8 failed[39m[22m[90m (8)[39m
+[2m   Start at [22m 16:59:16
+[2m   Duration [22m 1.12s[2m (transform 43ms, setup 0ms, collect 182ms, tests 38ms, environment 529ms, prepare 140ms)[22m
+
+C:\Users\conor\workbench\poke-fighter\packages\client:
+[ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL] @poke-fighter/client@1.0.0 test: `vitest run "ProfileEditor"`
+Exit status 1

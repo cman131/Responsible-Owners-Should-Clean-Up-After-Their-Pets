@@ -1,0 +1,83 @@
+<h2>MoveSearchDropdown — Component States</h2>
+<p class="subtitle">How the move slot looks across its lifecycle</p>
+
+<div class="section">
+  <div class="label">STATE 1 — Empty slot (no move selected yet)</div>
+  <div style="max-width:380px;margin-top:8px">
+    <div style="font-size:11px;color:#aaa;margin-bottom:3px">Move 1</div>
+    <input class="mock-input" placeholder="Search moves..." style="width:100%;box-sizing:border-box" disabled>
+    <div style="margin-top:4px;display:flex;align-items:center;gap:6px">
+      <input type="checkbox" disabled>
+      <span style="font-size:11px;color:#666">Search all moves</span>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="label">STATE 2 — User is typing, dropdown open (learnset mode)</div>
+  <div style="max-width:380px;margin-top:8px;position:relative">
+    <div style="font-size:11px;color:#aaa;margin-bottom:3px">Move 1</div>
+    <input class="mock-input" value="fla" style="width:100%;box-sizing:border-box" disabled>
+    <div style="background:#111;border:1px solid #333;border-radius:4px;margin-top:2px;font-size:11px">
+      <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:#1a2a3a;color:#fff;border-bottom:1px solid #222">
+        <span style="flex:1;font-weight:bold">Flamethrower</span>
+        <span style="background:#f08030;color:#fff;padding:1px 5px;border-radius:3px;font-size:10px">Fire</span>
+        <span style="background:#c03028;color:#fff;padding:1px 5px;border-radius:3px;font-size:10px">Sp</span>
+        <span style="color:#aaa;min-width:24px;text-align:right">90</span>
+        <span style="color:#555;min-width:28px;text-align:right">15pp</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;color:#fff;border-bottom:1px solid #222">
+        <span style="flex:1">Flame Charge</span>
+        <span style="background:#f08030;color:#fff;padding:1px 5px;border-radius:3px;font-size:10px">Fire</span>
+        <span style="background:#c03028;color:#fff;padding:1px 5px;border-radius:3px;font-size:10px">Ph</span>
+        <span style="color:#aaa;min-width:24px;text-align:right">50</span>
+        <span style="color:#555;min-width:28px;text-align:right">20pp</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;color:#555;border-bottom:1px solid #222;cursor:not-allowed">
+        <span style="flex:1;text-decoration:line-through">Flame Wheel</span>
+        <span style="background:#f08030;color:#fff;padding:1px 5px;border-radius:3px;font-size:10px;opacity:0.4">Fire</span>
+        <span style="background:#c03028;color:#fff;padding:1px 5px;border-radius:3px;font-size:10px;opacity:0.4">Ph</span>
+        <span style="color:#555;min-width:24px;text-align:right">60</span>
+        <span style="color:#555;min-width:28px;text-align:right">25pp</span>
+        <span style="color:#555;font-size:9px;margin-left:2px">already picked</span>
+      </div>
+    </div>
+    <div style="margin-top:4px;display:flex;align-items:center;gap:6px">
+      <input type="checkbox" disabled>
+      <span style="font-size:11px;color:#666">Search all moves</span>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="label">STATE 3 — Move selected (locked state)</div>
+  <div style="max-width:380px;margin-top:8px">
+    <div style="font-size:11px;color:#aaa;margin-bottom:3px">Move 1</div>
+    <div style="background:#0d1a2e;border:1px solid #2980b9;border-radius:4px;padding:6px 10px;display:flex;align-items:center;gap:8px;font-size:12px">
+      <span style="color:#fff;flex:1">Flamethrower</span>
+      <span style="background:#f08030;color:#fff;padding:1px 5px;border-radius:3px;font-size:10px">Fire</span>
+      <span style="background:#c03028;color:#fff;padding:1px 5px;border-radius:3px;font-size:10px">Sp</span>
+      <span style="color:#aaa;font-size:10px">90</span>
+      <button style="background:none;border:none;color:#555;cursor:pointer;font-size:14px;line-height:1;padding:0 2px" disabled>✕</button>
+    </div>
+    <div style="margin-top:4px;display:flex;align-items:center;gap:6px">
+      <input type="checkbox" disabled>
+      <span style="font-size:11px;color:#666">Search all moves</span>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="label">STATE 4 — "Search all moves" checked (server text search mode)</div>
+  <div style="max-width:380px;margin-top:8px">
+    <div style="font-size:11px;color:#aaa;margin-bottom:3px">Move 3</div>
+    <input class="mock-input" value="steel" placeholder="Search all moves..." style="width:100%;box-sizing:border-box;border-color:#f0c040" disabled>
+    <div style="margin-top:4px;display:flex;align-items:center;gap:6px">
+      <input type="checkbox" checked disabled>
+      <span style="font-size:11px;color:#f0c040">Search all moves</span>
+    </div>
+    <div style="font-size:10px;color:#666;margin-top:2px;padding-left:18px">Results from full move list — type ≥ 2 chars to search</div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:16px">Key behaviors: duplicate moves show strikethrough + "already picked" label and are unselectable. Selected state shows a blue-bordered summary row with ✕ to clear. Escape key clears selection in search mode.</p>

@@ -1,0 +1,24 @@
+@keyframes lunge-right {
+  0%, 100% { transform: translateX(0); }
+  50%       { transform: translateX(20px); }
+}
+
+@keyframes lunge-left {
+  0%, 100% { transform: translateX(0); }
+  50%       { transform: translateX(-20px); }
+}
+
+@keyframes hit-flash {
+  0%, 100% { filter: none; }
+  25%, 75% { filter: brightness(10); }
+}
+
+@keyframes faint-drop {
+  0%   { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(60px); opacity: 0; }
+}
+
+.anim-attack-right { animation: lunge-right 350ms ease-in-out; }
+.anim-attack-left  { animation: lunge-left  350ms ease-in-out; }
+.anim-hit          { animation: hit-flash   300ms linear; }
+.anim-faint        { animation: faint-drop  400ms ease-in forwards; }

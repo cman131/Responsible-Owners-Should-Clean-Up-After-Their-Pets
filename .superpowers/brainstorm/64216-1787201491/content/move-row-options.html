@@ -1,0 +1,93 @@
+<h2>What info should each move row show in the dropdown?</h2>
+<p class="subtitle">Pick the layout that feels most useful when choosing moves</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0d0d1a;padding:8px;border-radius:4px">
+      <!-- Option A: Name + Type badge only -->
+      <div style="font-family:monospace;font-size:12px">
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#1a2a3a;border-bottom:1px solid #222;color:#fff">
+          <span style="flex:1">Flamethrower</span>
+          <span style="background:#f08030;color:#fff;padding:1px 6px;border-radius:3px;font-size:10px">Fire</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid #222;color:#fff">
+          <span style="flex:1">Ice Beam</span>
+          <span style="background:#98d8d8;color:#000;padding:1px 6px;border-radius:3px;font-size:10px">Ice</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid #222;color:#fff">
+          <span style="flex:1">Calm Mind</span>
+          <span style="background:#f85888;color:#fff;padding:1px 6px;border-radius:3px;font-size:10px">Psychic</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Name + Type</h3>
+      <p>Clean and minimal. Type badge gives quick context.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0d0d1a;padding:8px;border-radius:4px">
+      <!-- Option B: Name + Type + Category + Power -->
+      <div style="font-family:monospace;font-size:11px">
+        <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:#1a2a3a;border-bottom:1px solid #222;color:#fff">
+          <span style="flex:1">Flamethrower</span>
+          <span style="background:#f08030;color:#fff;padding:1px 5px;border-radius:3px;font-size:10px">Fire</span>
+          <span style="background:#c03028;color:#fff;padding:1px 5px;border-radius:3px;font-size:10px">Sp</span>
+          <span style="color:#aaa;font-size:10px;min-width:28px;text-align:right">90</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;border-bottom:1px solid #222;color:#fff">
+          <span style="flex:1">Ice Beam</span>
+          <span style="background:#98d8d8;color:#000;padding:1px 5px;border-radius:3px;font-size:10px">Ice</span>
+          <span style="background:#c03028;color:#fff;padding:1px 5px;border-radius:3px;font-size:10px">Sp</span>
+          <span style="color:#aaa;font-size:10px;min-width:28px;text-align:right">90</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;border-bottom:1px solid #222;color:#fff">
+          <span style="flex:1">Calm Mind</span>
+          <span style="background:#f85888;color:#fff;padding:1px 5px;border-radius:3px;font-size:10px">Psychic</span>
+          <span style="background:#6890f0;color:#fff;padding:1px 5px;border-radius:3px;font-size:10px">St</span>
+          <span style="color:#555;font-size:10px;min-width:28px;text-align:right">—</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Name + Type + Category + Power</h3>
+      <p>More info at a glance. Category badge (Sp/Ph/St) + base power. Status moves show —.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0d0d1a;padding:8px;border-radius:4px">
+      <!-- Option C: Name + Type + Category + Power + PP -->
+      <div style="font-family:monospace;font-size:11px">
+        <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:#1a2a3a;border-bottom:1px solid #222;color:#fff">
+          <span style="flex:1">Flamethrower</span>
+          <span style="background:#f08030;color:#fff;padding:1px 5px;border-radius:3px;font-size:10px">Fire</span>
+          <span style="background:#c03028;color:#fff;padding:1px 5px;border-radius:3px;font-size:10px">Sp</span>
+          <span style="color:#aaa;font-size:10px;min-width:28px;text-align:right">90</span>
+          <span style="color:#666;font-size:10px">15pp</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;border-bottom:1px solid #222;color:#fff">
+          <span style="flex:1">Ice Beam</span>
+          <span style="background:#98d8d8;color:#000;padding:1px 5px;border-radius:3px;font-size:10px">Ice</span>
+          <span style="background:#c03028;color:#fff;padding:1px 5px;border-radius:3px;font-size:10px">Sp</span>
+          <span style="color:#aaa;font-size:10px;min-width:28px;text-align:right">90</span>
+          <span style="color:#666;font-size:10px">10pp</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;border-bottom:1px solid #222;color:#fff">
+          <span style="flex:1">Calm Mind</span>
+          <span style="background:#f85888;color:#fff;padding:1px 5px;border-radius:3px;font-size:10px">Psychic</span>
+          <span style="background:#6890f0;color:#fff;padding:1px 5px;border-radius:3px;font-size:10px">St</span>
+          <span style="color:#555;font-size:10px;min-width:28px;text-align:right">—</span>
+          <span style="color:#666;font-size:10px">20pp</span>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Name + Type + Category + Power + PP</h3>
+      <p>Maximum info. PP shown as well — useful but the row gets busy.</p>
+    </div>
+  </div>
+
+</div>

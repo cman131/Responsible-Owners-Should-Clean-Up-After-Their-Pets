@@ -1,0 +1,79 @@
+<h2>Three targeting UI modes</h2>
+<p class="subtitle">After clicking a move, the targeting area below the move panel shows one of three states depending on the move's target type. All three use the same Confirm + Cancel buttons.</p>
+
+<div style="display:flex;flex-direction:column;gap:24px;max-width:700px;margin:0 auto;">
+
+  <!-- MODE 1: CHOOSE (dropdown) -->
+  <div>
+    <div class="label" style="margin-bottom:8px;">Mode 1 — CHOOSE (normal, any, adjacentFoe, adjacentAlly, adjacentAllyOrSelf)</div>
+    <div style="background:#0d0d1a;border:1px solid #3498db;border-radius:4px;padding:8px 12px;display:flex;align-items:center;gap:8px;font-family:monospace;">
+      <span style="color:#aaa;font-size:11px;">Target:</span>
+      <select style="flex:1;background:#111;border:1px solid #555;color:#fff;padding:4px 8px;border-radius:3px;font-size:12px;">
+        <option>Blaziken (Trainer A)</option>
+        <option>Lucario (Trainer B)</option>
+      </select>
+      <button style="background:#2980b9;color:#fff;border:none;padding:4px 14px;border-radius:3px;font-size:12px;cursor:pointer;">Confirm</button>
+      <button style="background:none;border:1px solid #555;color:#aaa;padding:4px 10px;border-radius:3px;font-size:12px;cursor:pointer;">✕</button>
+    </div>
+    <p style="color:#aaa;font-size:12px;margin-top:6px;">Dropdown is populated with <code>legalTargets</code> for this specific move (already adjacency-filtered by server). User picks one, then clicks Confirm.</p>
+  </div>
+
+  <!-- MODE 2: LISTED (allAdjacentFoes, allAdjacent, allies) -->
+  <div>
+    <div class="label" style="margin-bottom:8px;">Mode 2 — LISTED (allAdjacentFoes, allAdjacent, allies)</div>
+    <div style="background:#0d0d1a;border:1px solid #3498db;border-radius:4px;padding:8px 12px;display:flex;align-items:center;gap:8px;font-family:monospace;">
+      <span style="color:#aaa;font-size:11px;">Targets:</span>
+      <span style="color:#fff;font-size:12px;flex:1;">Blaziken, Lucario, Gardevoir...</span>
+      <button style="background:#2980b9;color:#fff;border:none;padding:4px 14px;border-radius:3px;font-size:12px;cursor:pointer;">Confirm</button>
+      <button style="background:none;border:1px solid #555;color:#aaa;padding:4px 10px;border-radius:3px;font-size:12px;cursor:pointer;">✕</button>
+    </div>
+    <p style="color:#aaa;font-size:12px;margin-top:6px;">Names from <code>legalTargets</code>, capped at 3 with trailing "…" if more. Read-only — no dropdown. Confirm submits.</p>
+  </div>
+
+  <!-- MODE 2b: LISTED (small, no ellipsis) -->
+  <div>
+    <div class="label" style="margin-bottom:8px;">Mode 2 — LISTED (≤ 3 targets, no ellipsis)</div>
+    <div style="background:#0d0d1a;border:1px solid #3498db;border-radius:4px;padding:8px 12px;display:flex;align-items:center;gap:8px;font-family:monospace;">
+      <span style="color:#aaa;font-size:11px;">Targets:</span>
+      <span style="color:#fff;font-size:12px;flex:1;">Blaziken, Lucario</span>
+      <button style="background:#2980b9;color:#fff;border:none;padding:4px 14px;border-radius:3px;font-size:12px;cursor:pointer;">Confirm</button>
+      <button style="background:none;border:1px solid #555;color:#aaa;padding:4px 10px;border-radius:3px;font-size:12px;cursor:pointer;">✕</button>
+    </div>
+  </div>
+
+  <!-- MODE 3: LABELED (all, allyTeam, allySide, foeSide, randomNormal, scripted) -->
+  <div>
+    <div class="label" style="margin-bottom:8px;">Mode 3 — LABELED (all → "All", allyTeam → "Ally team", randomNormal → "Random", etc.)</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="background:#0d0d1a;border:1px solid #3498db;border-radius:4px;padding:8px 12px;display:flex;align-items:center;gap:8px;font-family:monospace;">
+        <span style="color:#aaa;font-size:11px;">Targets:</span>
+        <span style="color:#fff;font-size:12px;flex:1;">All</span>
+        <button style="background:#2980b9;color:#fff;border:none;padding:4px 14px;border-radius:3px;font-size:12px;cursor:pointer;">Confirm</button>
+        <button style="background:none;border:1px solid #555;color:#aaa;padding:4px 10px;border-radius:3px;font-size:12px;cursor:pointer;">✕</button>
+      </div>
+      <div style="background:#0d0d1a;border:1px solid #3498db;border-radius:4px;padding:8px 12px;display:flex;align-items:center;gap:8px;font-family:monospace;">
+        <span style="color:#aaa;font-size:11px;">Targets:</span>
+        <span style="color:#fff;font-size:12px;flex:1;">Ally team</span>
+        <button style="background:#2980b9;color:#fff;border:none;padding:4px 14px;border-radius:3px;font-size:12px;cursor:pointer;">Confirm</button>
+        <button style="background:none;border:1px solid #555;color:#aaa;padding:4px 10px;border-radius:3px;font-size:12px;cursor:pointer;">✕</button>
+      </div>
+      <div style="background:#0d0d1a;border:1px solid #3498db;border-radius:4px;padding:8px 12px;display:flex;align-items:center;gap:8px;font-family:monospace;">
+        <span style="color:#aaa;font-size:11px;">Targets:</span>
+        <span style="color:#fff;font-size:12px;flex:1;">Random</span>
+        <button style="background:#2980b9;color:#fff;border:none;padding:4px 14px;border-radius:3px;font-size:12px;cursor:pointer;">Confirm</button>
+        <button style="background:none;border:1px solid #555;color:#aaa;padding:4px 10px;border-radius:3px;font-size:12px;cursor:pointer;">✕</button>
+      </div>
+    </div>
+    <p style="color:#aaa;font-size:12px;margin-top:6px;">Static label — no slot names, no dropdown. Confirm submits with no <code>targetSlotId</code> (server resolves the target).</p>
+  </div>
+
+  <!-- MODE AUTO: self -->
+  <div>
+    <div class="label" style="margin-bottom:8px;">Mode 4 — AUTO (self, scripted) — no UI shown</div>
+    <div style="background:#0d0d1a;border:1px solid #333;border-radius:4px;padding:8px 12px;font-family:monospace;">
+      <span style="color:#555;font-size:12px;font-style:italic;">No targeting UI — action submitted immediately on move click</span>
+    </div>
+    <p style="color:#aaa;font-size:12px;margin-top:6px;">Self-targeting moves (Swords Dance, Roost) and scripted moves (Counter) submit instantly — no targeting step, same as the current single-target fast path.</p>
+  </div>
+
+</div>

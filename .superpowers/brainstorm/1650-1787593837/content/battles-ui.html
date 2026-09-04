@@ -1,0 +1,106 @@
+<h2>Section 2 — Admin UI layout</h2>
+<p class="subtitle">Updated Hub (left) and the new Battles panel (right). Click to select the layout you prefer.</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">Updated Hub — 3 tiles</div>
+    <div class="mockup-body" style="display:flex;flex-direction:column;align-items:center;gap:24px;padding:32px">
+      <div style="font-size:22px;letter-spacing:4px;color:#e74c3c;font-weight:bold">ADMIN</div>
+      <div style="display:flex;gap:16px">
+        <div style="background:#111;border:2px solid #e74c3c;border-radius:8px;padding:24px 20px;display:flex;flex-direction:column;align-items:center;gap:6px;width:120px">
+          <div style="font-size:24px">⚔</div>
+          <div style="color:#e74c3c;font-size:11px;letter-spacing:2px">BATTLE SETUP</div>
+          <div style="color:#555;font-size:10px">Start a new battle</div>
+        </div>
+        <div style="background:#111;border:2px solid #3498db;border-radius:8px;padding:24px 20px;display:flex;flex-direction:column;align-items:center;gap:6px;width:120px">
+          <div style="font-size:24px">📋</div>
+          <div style="color:#3498db;font-size:11px;letter-spacing:2px">BATTLES</div>
+          <div style="color:#555;font-size:10px">Active &amp; history</div>
+        </div>
+        <div style="background:#111;border:2px solid #27ae60;border-radius:8px;padding:24px 20px;display:flex;flex-direction:column;align-items:center;gap:6px;width:120px">
+          <div style="font-size:24px">👤</div>
+          <div style="color:#27ae60;font-size:11px;letter-spacing:2px">REGISTRY</div>
+          <div style="color:#555;font-size:10px">Players &amp; NPCs</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">BattlesPanel</div>
+    <div class="mockup-body" style="display:flex;flex-direction:column;gap:0;padding:0">
+
+      <!-- Header bar -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #222">
+        <button class="mock-button" style="font-size:10px;padding:4px 10px">← HUB</button>
+        <div style="color:#3498db;font-size:16px;letter-spacing:3px;font-weight:bold">BATTLES</div>
+        <div style="width:60px"></div>
+      </div>
+
+      <!-- Active section -->
+      <div style="padding:16px 20px">
+        <div class="label" style="margin-bottom:10px">Active — 2</div>
+
+        <div style="background:#0d1a12;border:1px solid #27ae60;border-radius:4px;padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="color:#fff;font-size:13px;font-weight:bold">Friday Night Brawl</div>
+            <div style="color:#aaa;font-size:11px;margin-top:2px">Conor &amp; Kyle vs Ash NPC &amp; Misty NPC</div>
+            <div style="color:#27ae60;font-size:10px;margin-top:3px">● Turn 4</div>
+          </div>
+          <button class="mock-button" style="background:#27ae60;color:#000;font-size:11px;font-weight:bold;padding:6px 14px">WATCH</button>
+        </div>
+
+        <div style="background:#0d1a12;border:1px solid #27ae60;border-radius:4px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="color:#fff;font-size:13px;font-weight:bold">Practice Match</div>
+            <div style="color:#aaa;font-size:11px;margin-top:2px">Gary vs Red</div>
+            <div style="color:#27ae60;font-size:10px;margin-top:3px">● Turn 1</div>
+          </div>
+          <button class="mock-button" style="background:#27ae60;color:#000;font-size:11px;font-weight:bold;padding:6px 14px">WATCH</button>
+        </div>
+      </div>
+
+      <!-- Divider -->
+      <div style="border-top:1px solid #222;margin:0 20px"></div>
+
+      <!-- Past section -->
+      <div style="padding:16px 20px">
+        <div class="label" style="margin-bottom:10px">Past — 3</div>
+
+        <div style="background:#111;border:1px solid #333;border-radius:4px;padding:10px 14px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="color:#ccc;font-size:12px;font-weight:bold">Wednesday Warmup</div>
+            <div style="color:#777;font-size:11px;margin-top:2px">Conor vs Ash NPC</div>
+          </div>
+          <div style="text-align:right">
+            <div style="color:#f0c040;font-size:11px">Winner: Conor</div>
+            <div style="color:#555;font-size:10px;margin-top:2px">Aug 22 · 14 turns</div>
+          </div>
+        </div>
+
+        <div style="background:#111;border:1px solid #333;border-radius:4px;padding:10px 14px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="color:#ccc;font-size:12px;font-weight:bold">Team A vs Team B</div>
+            <div style="color:#777;font-size:11px;margin-top:2px">Kyle vs Misty NPC</div>
+          </div>
+          <div style="text-align:right">
+            <div style="color:#f0c040;font-size:11px">Winner: Misty NPC</div>
+            <div style="color:#555;font-size:10px;margin-top:2px">Aug 21 · 9 turns</div>
+          </div>
+        </div>
+
+        <div style="background:#111;border:1px solid #333;border-radius:4px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="color:#ccc;font-size:12px;font-weight:bold">Test Battle</div>
+            <div style="color:#777;font-size:11px;margin-top:2px">Conor vs Ash NPC</div>
+          </div>
+          <div style="text-align:right">
+            <div style="color:#e74c3c;font-size:11px">Forfeit</div>
+            <div style="color:#555;font-size:10px;margin-top:2px">Aug 20 · 2 turns</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

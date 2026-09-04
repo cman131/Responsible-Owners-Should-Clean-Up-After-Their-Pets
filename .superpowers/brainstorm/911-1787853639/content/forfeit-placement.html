@@ -1,0 +1,74 @@
+<h2>Where should the Forfeit buttons live?</h2>
+<p class="subtitle">The new admin layout matches the player view (centered 800px column). The NpcTabPanel replaces MovePanel in the bottom-left. Forfeit buttons need a home.</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="font-family:monospace;font-size:11px;background:#0d0d1a;color:#aaa;padding:10px;border-radius:4px;line-height:1.8">
+        <div style="color:#e74c3c;font-size:9px;letter-spacing:2px;margin-bottom:4px">← BATTLES &nbsp;&nbsp; ADMIN VIEW — battle123 &nbsp;&nbsp; <span style="background:#555;color:#fff;padding:2px 8px;border-radius:3px;font-size:9px">FORFEIT A</span> <span style="background:#555;color:#fff;padding:2px 8px;border-radius:3px;font-size:9px">FORFEIT B</span></div>
+        <div style="background:#333;height:16px;border-radius:2px;margin-bottom:4px;opacity:0.5">ENEMY HP BARS</div>
+        <div style="background:#87ceeb;height:40px;border-radius:2px;margin-bottom:4px">BATTLE SCENE</div>
+        <div style="background:#333;height:16px;border-radius:2px;margin-bottom:4px;opacity:0.5">MY TEAM HP BARS</div>
+        <div style="display:flex;gap:6px">
+          <div style="flex:1;background:#1a1a2e;border:1px solid #e74c3c;height:40px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#e74c3c">NPC TAB PANEL</div>
+          <div style="width:90px;background:#111;border:1px solid #555;height:40px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#aaa">TURN LOG</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Header row</h3>
+      <p>Forfeit buttons sit in the header next to the back button and battle ID label. Compact, admin-only feel, never in the way of gameplay.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="font-family:monospace;font-size:11px;background:#0d0d1a;color:#aaa;padding:10px;border-radius:4px;line-height:1.8">
+        <div style="color:#e74c3c;font-size:9px;letter-spacing:2px;margin-bottom:4px">← BATTLES &nbsp;&nbsp; ADMIN VIEW — battle123</div>
+        <div style="background:#333;height:16px;border-radius:2px;margin-bottom:4px;opacity:0.5">ENEMY HP BARS</div>
+        <div style="background:#87ceeb;height:40px;border-radius:2px;margin-bottom:4px">BATTLE SCENE</div>
+        <div style="background:#333;height:16px;border-radius:2px;margin-bottom:4px;opacity:0.5">MY TEAM HP BARS</div>
+        <div style="display:flex;gap:6px;margin-bottom:4px">
+          <div style="flex:1;background:#1a1a2e;border:1px solid #e74c3c;height:40px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#e74c3c">NPC TAB PANEL</div>
+          <div style="width:90px;background:#111;border:1px solid #555;height:40px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#aaa">TURN LOG</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <div style="flex:1;background:#555;color:#fff;border-radius:3px;padding:3px 6px;text-align:center;font-size:9px">FORFEIT TEAM A</div>
+          <div style="flex:1;background:#555;color:#fff;border-radius:3px;padding:3px 6px;text-align:center;font-size:9px">FORFEIT TEAM B</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Below action row</h3>
+      <p>Forfeit buttons appear as a row below the NpcTabPanel + TurnLog, matching the current admin layout's position. Slightly less integrated.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="font-family:monospace;font-size:11px;background:#0d0d1a;color:#aaa;padding:10px;border-radius:4px;line-height:1.8">
+        <div style="color:#e74c3c;font-size:9px;letter-spacing:2px;margin-bottom:4px">← BATTLES &nbsp;&nbsp; ADMIN VIEW — battle123</div>
+        <div style="background:#333;height:16px;border-radius:2px;margin-bottom:4px;opacity:0.5">ENEMY HP BARS</div>
+        <div style="background:#87ceeb;height:40px;border-radius:2px;margin-bottom:4px">BATTLE SCENE</div>
+        <div style="background:#333;height:16px;border-radius:2px;margin-bottom:4px;opacity:0.5">MY TEAM HP BARS</div>
+        <div style="display:flex;gap:6px">
+          <div style="flex:1;background:#1a1a2e;border:1px solid #e74c3c;border-radius:3px;padding:4px">
+            <div style="font-size:9px;color:#e74c3c;margin-bottom:3px">NPC ACTIONS</div>
+            <div style="font-size:8px;color:#aaa;margin-bottom:3px">[tabs] [move grid]</div>
+            <div style="display:flex;gap:4px">
+              <div style="flex:1;background:#555;color:#fff;border-radius:2px;padding:2px;text-align:center;font-size:8px">FORFEIT A</div>
+              <div style="flex:1;background:#555;color:#fff;border-radius:2px;padding:2px;text-align:center;font-size:8px">FORFEIT B</div>
+            </div>
+          </div>
+          <div style="width:90px;background:#111;border:1px solid #555;height:60px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#aaa">TURN LOG</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Inside NpcTabPanel</h3>
+      <p>Forfeit buttons are tucked at the bottom of the NpcTabPanel itself. All admin controls in one place; slightly harder to discover.</p>
+    </div>
+  </div>
+
+</div>

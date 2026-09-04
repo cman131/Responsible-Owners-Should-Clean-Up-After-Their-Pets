@@ -228,6 +228,30 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
     return { events: [applyStatBoost(target, targetSlotId, { atk: -1, spa: -1, spe: -1 })] };
   }));
 
+  r.register('topsyturvy', custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+
+    const boosts = target.statBoosts;
+    const allZero = Object.values(boosts).every(v => v === 0);
+    if (allZero) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'no-stages-to-invert' } }] };
+    }
+
+    const deltas: Partial<Record<keyof typeof boosts, number>> = {};
+    for (const stat of Object.keys(boosts) as Array<keyof typeof boosts>) {
+      if (boosts[stat] !== 0) {
+        const oldValue = boosts[stat];
+        const newValue = -oldValue;
+        const delta = newValue - oldValue;  // new - old = -old - old = -2*old
+        deltas[stat] = delta;
+      }
+    }
+
+    return { events: [applyStatBoost(target, targetSlotId, deltas)] };
+  }));
+
   // ── Protect family ────────────────────────────────────────────────────
   r.register('protect',       protect('protect'));
   r.register('detect',        protect('detect'));

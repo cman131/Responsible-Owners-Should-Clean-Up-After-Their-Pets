@@ -1,0 +1,63 @@
+<h2>Registry editor — full screen mockup</h2>
+<p class="subtitle">What you'd see after clicking "Edit" or "+ New NPC". Does this layout feel right?</p>
+
+<div class="mockup">
+  <div class="mockup-header">Edit NPC — Gym Leader Misty</div>
+  <div class="mockup-body" style="font-family:monospace;font-size:11px;background:#0d0d1a;padding:16px;">
+
+    <!-- top bar -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <button style="background:none;border:1px solid #555;color:#aaa;padding:4px 12px;border-radius:3px;font-size:10px;cursor:pointer;">← Back to NPCs</button>
+      <span style="color:#f0c040;font-size:11px;letter-spacing:2px;">EDIT NPC</span>
+      <div style="display:flex;gap:8px;">
+        <button style="background:#c0392b;border:none;color:#fff;padding:4px 12px;border-radius:3px;font-size:10px;">DISCARD</button>
+        <button style="background:#27ae60;border:none;color:#fff;padding:4px 14px;border-radius:3px;font-size:10px;">SAVE</button>
+      </div>
+    </div>
+
+    <!-- name row -->
+    <div style="background:#111;border:1px solid #333;border-radius:4px;padding:12px;margin-bottom:12px;">
+      <div style="color:#aaa;font-size:9px;letter-spacing:2px;margin-bottom:6px;">NAME</div>
+      <input disabled value="Gym Leader Misty" style="background:#1a1a2e;border:1px solid #555;color:#fff;padding:6px 10px;border-radius:3px;font-size:12px;width:260px;font-family:monospace;"/>
+    </div>
+
+    <!-- team builder -->
+    <div style="background:#111;border:1px solid #333;border-radius:4px;padding:12px;">
+      <div style="color:#f0c040;font-size:9px;letter-spacing:1px;margin-bottom:8px;">TEAM (3 / 6)</div>
+
+      <!-- slot tabs -->
+      <div style="display:flex;gap:4px;margin-bottom:8px;">
+        <div style="background:#2980b9;color:#fff;padding:3px 10px;border-radius:3px;font-size:9px;">#54</div>
+        <div style="background:#1a1a2e;color:#888;padding:3px 10px;border-radius:3px;font-size:9px;">#120</div>
+        <div style="background:#1a1a2e;color:#888;padding:3px 10px;border-radius:3px;font-size:9px;">#116</div>
+        <div style="background:#1a1a2e;color:#555;padding:3px 10px;border-radius:3px;font-size:9px;">Slot 4</div>
+        <div style="background:#1a1a2e;color:#555;padding:3px 10px;border-radius:3px;font-size:9px;">Slot 5</div>
+        <div style="background:#1a1a2e;color:#555;padding:3px 10px;border-radius:3px;font-size:9px;">Slot 6</div>
+      </div>
+
+      <!-- selected slot editor -->
+      <div style="background:#0d0d1a;border:1px solid #333;border-radius:3px;padding:8px;font-size:9px;color:#ccc;">
+        <div style="color:#aaa;font-size:8px;margin-bottom:4px;">Species #54 Psyduck — slot 1</div>
+        <div style="display:flex;gap:12px;margin-bottom:4px;">
+          <span>Level <input disabled value="50" style="background:#1a1a2e;border:1px solid #555;color:#fff;padding:1px 5px;width:36px;font-family:monospace;font-size:9px;"/></span>
+          <span>Nature <input disabled value="modest" style="background:#1a1a2e;border:1px solid #555;color:#fff;padding:1px 5px;width:60px;font-family:monospace;font-size:9px;"/></span>
+        </div>
+        <div style="color:#aaa;font-size:8px;margin-bottom:2px;">Moves</div>
+        <div style="display:flex;flex-direction:column;gap:2px;">
+          <input disabled value="surf" style="background:#1a1a2e;border:1px solid #555;color:#fff;padding:2px 5px;width:140px;font-family:monospace;font-size:9px;"/>
+          <input disabled value="psychic" style="background:#1a1a2e;border:1px solid #555;color:#fff;padding:2px 5px;width:140px;font-family:monospace;font-size:9px;"/>
+          <input disabled value="icebeam" style="background:#1a1a2e;border:1px solid #555;color:#fff;padding:2px 5px;width:140px;font-family:monospace;font-size:9px;"/>
+          <input disabled value="encore" style="background:#1a1a2e;border:1px solid #555;color:#fff;padding:2px 5px;width:140px;font-family:monospace;font-size:9px;"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- validation note -->
+    <div style="margin-top:8px;color:#27ae60;font-size:9px;">✓ Valid — 3 Pokémon, all moves filled</div>
+
+  </div>
+</div>
+
+<div style="margin-top:16px;" class="section">
+  <p>Players look identical but the header says "EDIT PLAYER" and the name field label says "DISPLAY NAME". Does this layout work?</p>
+</div>

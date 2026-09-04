@@ -451,3 +451,90 @@ describe('tarshot', () => {
     expect(dmgTarShot).toBeGreaterThan(dmgClean);
   });
 });
+
+describe('topsyturvy', () => {
+  it('inverts all stat boosts (positive to negative)', () => {
+    const engine = makeEngine();
+    const state = make1v1State();
+    // Set up target with some positive boosts
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    p2.statBoosts.atk = 2;
+    p2.statBoosts.def = 1;
+    p2.statBoosts.spa = 3;
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'topsyturvy', currentPp: 20, maxPp: 20 };
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const p2After = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2After.statBoosts.atk).toBe(-2);
+    expect(p2After.statBoosts.def).toBe(-1);
+    expect(p2After.statBoosts.spa).toBe(-3);
+  });
+
+  it('inverts all stat boosts (negative to positive)', () => {
+    const engine = makeEngine();
+    const state = make1v1State();
+    // Set up target with some negative boosts
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    p2.statBoosts.atk = -2;
+    p2.statBoosts.def = -1;
+    p2.statBoosts.spe = -3;
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'topsyturvy', currentPp: 20, maxPp: 20 };
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const p2After = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2After.statBoosts.atk).toBe(2);
+    expect(p2After.statBoosts.def).toBe(1);
+    expect(p2After.statBoosts.spe).toBe(3);
+  });
+
+  it('leaves zero stat boosts unchanged', () => {
+    const engine = makeEngine();
+    const state = make1v1State();
+    // Set up target with mixed boosts (some zero, some non-zero)
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    p2.statBoosts.atk = 2;
+    p2.statBoosts.def = 0;  // stays zero
+    p2.statBoosts.spa = 0;  // stays zero
+    p2.statBoosts.spd = -1;
+    p2.statBoosts.spe = 0;  // stays zero
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'topsyturvy', currentPp: 20, maxPp: 20 };
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const p2After = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2After.statBoosts.atk).toBe(-2);
+    expect(p2After.statBoosts.def).toBe(0);
+    expect(p2After.statBoosts.spa).toBe(0);
+    expect(p2After.statBoosts.spd).toBe(1);
+    expect(p2After.statBoosts.spe).toBe(0);
+  });
+
+  it('fails when target has no stat boosts', () => {
+    const engine = makeEngine();
+    const state = make1v1State();
+    // p2 has all stats at 0
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'topsyturvy', currentPp: 20, maxPp: 20 };
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const p2After = newState.teams[1]!.slots[0]!.party[0]!;
+    // All stats should remain at 0 (nothing changed)
+    expect(p2After.statBoosts.atk).toBe(0);
+    expect(p2After.statBoosts.def).toBe(0);
+    expect(p2After.statBoosts.spa).toBe(0);
+    expect(p2After.statBoosts.spd).toBe(0);
+    expect(p2After.statBoosts.spe).toBe(0);
+    expect(p2After.statBoosts.accuracy).toBe(0);
+    expect(p2After.statBoosts.evasion).toBe(0);
+  });
+});

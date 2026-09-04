@@ -1,0 +1,218 @@
+
+> @poke-fighter/server@1.0.0 test
+> vitest run
+
+
+[7m[1m[36m RUN [39m[22m[27m [36mv1.6.1[39m [90mC:/Users/conor/workbench/poke-fighter/packages/server[39m
+
+ [32m✓[39m src/socket/__tests__/lobbyHandlers.test.ts [2m ([22m[2m16 tests[22m[2m)[22m[90m 20[2mms[22m[39m
+ [32m✓[39m src/db/__tests__/Database.test.ts [2m ([22m[2m20 tests[22m[2m)[22m[90m 49[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/secondaries.test.ts [2m ([22m[2m29 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32m✓[39m src/socket/__tests__/adminHandlers.test.ts [2m ([22m[2m18 tests[22m[2m)[22m[90m 101[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/effects.test.ts [2m ([22m[2m26 tests[22m[2m)[22m[90m 23[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/EffectEngine.test.ts [2m ([22m[2m30 tests[22m[2m)[22m[90m 23[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/effectFactories.test.ts [2m ([22m[2m36 tests[22m[2m)[22m[90m 57[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/sideConditions.test.ts [2m ([22m[2m35 tests[22m[2m)[22m[90m 122[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/protect.test.ts [2m ([22m[2m12 tests[22m[2m)[22m[33m 314[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/switching.test.ts [2m ([22m[2m19 tests[22m[2m)[22m[33m 657[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/damage.test.ts [2m ([22m[2m12 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/constraints.test.ts [2m ([22m[2m14 tests[22m[2m)[22m[33m 817[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/fieldState.test.ts [2m ([22m[2m22 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/miscVolatiles.test.ts [2m ([22m[2m10 tests[22m[2m)[22m[33m 330[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/targeting.test.ts [2m ([22m[2m12 tests[22m[2m)[22m[90m 20[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/substitute.test.ts [2m ([22m[2m7 tests[22m[2m)[22m[90m 151[2mms[22m[39m
+stderr | src/engine/__tests__/items.test.ts > Focus Sash > survives OHKO at 1 HP when at full HP
+[MoveEffectRegistry] No handler for effectId="splash" (moveId="splash")
+
+stderr | src/engine/__tests__/items.test.ts > Sitrus Berry > heals floor(maxHp/4) when HP drops to ≤50%
+[MoveEffectRegistry] No handler for effectId="splash" (moveId="splash")
+
+stderr | src/engine/__tests__/items.test.ts > Sitrus Berry > does not trigger when HP stays above 50%
+[MoveEffectRegistry] No handler for effectId="splash" (moveId="splash")
+
+stderr | src/engine/__tests__/items.test.ts > Salac Berry > +1 Spe when HP drops to ≤25%
+[MoveEffectRegistry] No handler for effectId="splash" (moveId="splash")
+
+stderr | src/engine/__tests__/items.test.ts > Assault Vest > reduces special damage by 1/3
+[MoveEffectRegistry] No handler for effectId="splash" (moveId="splash")
+[MoveEffectRegistry] No handler for effectId="splash" (moveId="splash")
+
+stderr | src/engine/__tests__/items.test.ts > Shell Bell > heals attacker floor(damage/8) after dealing damage
+[MoveEffectRegistry] No handler for effectId="splash" (moveId="splash")
+
+stderr | src/engine/__tests__/items.test.ts > Shell Bell > does not heal beyond maxHp
+[MoveEffectRegistry] No handler for effectId="splash" (moveId="splash")
+
+ [32m✓[39m src/engine/__tests__/items.test.ts [2m ([22m[2m33 tests[22m[2m)[22m[33m 1219[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/exp.test.ts [2m ([22m[2m13 tests[22m[2m)[22m[90m 30[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/accuracy.test.ts [2m ([22m[2m25 tests[22m[2m)[22m[90m 33[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/MoveEffectRegistry.test.ts [2m ([22m[2m6 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m src/socket/__tests__/BattleRoom.test.ts [2m ([22m[2m20 tests[22m[2m)[22m[33m 1421[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/passiveVolatiles.test.ts [2m ([22m[2m7 tests[22m[2m)[22m[33m 393[2mms[22m[39m
+ [32m✓[39m src/socket/__tests__/LobbyManager.test.ts [2m ([22m[2m9 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/stats.test.ts [2m ([22m[2m6 tests[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/status.test.ts [2m ([22m[2m6 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m src/setup/__tests__/BattleConfigurator.test.ts [2m ([22m[2m2 tests[22m[2m)[22m[90m 54[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/tera.test.ts [2m ([22m[2m2 tests[22m[2m)[22m[90m 100[2mms[22m[39m
+ [33m❯[39m src/engine/__tests__/dynamicPower.test.ts [2m ([22m[2m7 tests[22m [2m|[22m [31m6 failed[39m[2m)[22m[90m 17[2mms[22m[39m
+[31m   [33m❯[31m src/engine/__tests__/dynamicPower.test.ts[2m > [22mresolvePower[2m > [22mfacade: doubles when user has status[39m
+[31m     → expected 70 to be 140 // Object.is equality[39m
+[31m   [33m❯[31m src/engine/__tests__/dynamicPower.test.ts[2m > [22mresolvePower[2m > [22mhex: doubles when target has status[39m
+[31m     → expected 65 to be 130 // Object.is equality[39m
+[31m   [33m❯[31m src/engine/__tests__/dynamicPower.test.ts[2m > [22mresolvePower[2m > [22mflail: 200 at ≤4% HP[39m
+[31m     → expected +0 to be 200 // Object.is equality[39m
+[31m   [33m❯[31m src/engine/__tests__/dynamicPower.test.ts[2m > [22mresolvePower[2m > [22mgyroball: capped at 150[39m
+[31m     → expected +0 to be 150 // Object.is equality[39m
+[31m   [33m❯[31m src/engine/__tests__/dynamicPower.test.ts[2m > [22mresolvePower[2m > [22mstoredpower: 20 + 20 per stage[39m
+[31m     → expected 20 to be 80 // Object.is equality[39m
+[31m   [33m❯[31m src/engine/__tests__/dynamicPower.test.ts[2m > [22mresolvePower[2m > [22macrobatics: doubled without item[39m
+[31m     → expected 55 to be 110 // Object.is equality[39m
+ [32m✓[39m src/engine/__tests__/abilities.test.ts [2m ([22m[2m56 tests[22m[2m)[22m[33m 2226[2mms[22m[39m
+ [32m✓[39m src/data/__tests__/loader.test.ts [2m ([22m[2m8 tests[22m[2m)[22m[90m 214[2mms[22m[39m
+ [33m❯[39m src/engine/__tests__/BattleEngine.test.ts [2m ([22m[2m97 tests[22m [2m|[22m [31m1 failed[39m[2m)[22m[33m 21536[2mms[22m[39m
+[31m   [33m❯[31m src/engine/__tests__/BattleEngine.test.ts[2m > [22mStatus moves[2m > [22mWill-O-Wisp applies burn to the target[39m
+[31m     → expected undefined to be 'brn' // Object.is equality[39m
+stderr | src/engine/__tests__/BattleEngine.test.ts > Previously-unimplemented status moves > emits move-failed with reason unimplemented for an unknown status move
+[MoveEffectRegistry] No handler for effectId="swordsdance" (moveId="swordsdance")
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/engine/__tests__/BattleEngine.test.ts > Status moves > Will-O-Wisp applies burn to the target
+AssertionError: expected undefined to be 'brn' // Object.is equality
+
+- Expected: 
+"brn"
+
++ Received: 
+undefined
+
+ ❯ src/engine/__tests__/BattleEngine.test.ts:96:23
+     94|     });
+     95|     const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+     96|     expect(p2.status).toBe('brn');
+       |                       ^
+     97|     expect(events.some(e => e.type === 'status-applied')).toBe(true);
+     98|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯
+
+ FAIL  src/engine/__tests__/dynamicPower.test.ts > resolvePower > facade: doubles when user has status
+AssertionError: expected 70 to be 140 // Object.is equality
+
+- Expected
++ Received
+
+- 140
++ 70
+
+ ❯ src/engine/__tests__/dynamicPower.test.ts:23:86
+     21| 
+     22|   it('facade: doubles when user has status', () => {
+     23|     expect(resolvePower(move('facade', 70), mon({ status: 'brn' }), mo…
+       |                                                                                      ^
+     24|     expect(resolvePower(move('facade', 70), mon(), mon(), field())).to…
+     25|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯
+
+ FAIL  src/engine/__tests__/dynamicPower.test.ts > resolvePower > hex: doubles when target has status
+AssertionError: expected 65 to be 130 // Object.is equality
+
+- Expected
++ Received
+
+- 130
++ 65
+
+ ❯ src/engine/__tests__/dynamicPower.test.ts:28:83
+     26| 
+     27|   it('hex: doubles when target has status', () => {
+     28|     expect(resolvePower(move('hex', 65), mon(), mon({ status: 'par' })…
+       |                                                                                   ^
+     29|     expect(resolvePower(move('hex', 65), mon(), mon(), field())).toBe(…
+     30|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯
+
+ FAIL  src/engine/__tests__/dynamicPower.test.ts > resolvePower > flail: 200 at ≤4% HP
+AssertionError: expected +0 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 0
+
+ ❯ src/engine/__tests__/dynamicPower.test.ts:34:65
+     32|   it('flail: 200 at ≤4% HP', () => {
+     33|     const low = mon({ currentHp: 2, maxHp: 100 });
+     34|     expect(resolvePower(move('flail', 0), low, mon(), field())).toBe(2…
+       |                                                                 ^
+     35|   });
+     36| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/7]⎯
+
+ FAIL  src/engine/__tests__/dynamicPower.test.ts > resolvePower > gyroball: capped at 150
+AssertionError: expected +0 to be 150 // Object.is equality
+
+- Expected
++ Received
+
+- 150
++ 0
+
+ ❯ src/engine/__tests__/dynamicPower.test.ts:40:68
+     38|     const fast = mon({ stats: { spe: 200 } as any });
+     39|     const slow = mon({ stats: { spe: 10 } as any });
+     40|     expect(resolvePower(move('gyroball', 0), slow, fast, field())).toB…
+       |                                                                    ^
+     41|   });
+     42| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/7]⎯
+
+ FAIL  src/engine/__tests__/dynamicPower.test.ts > resolvePower > storedpower: 20 + 20 per stage
+AssertionError: expected 20 to be 80 // Object.is equality
+
+- Expected
++ Received
+
+- 80
++ 20
+
+ ❯ src/engine/__tests__/dynamicPower.test.ts:45:76
+     43|   it('storedpower: 20 + 20 per stage', () => {
+     44|     const boosted = mon({ statBoosts: { atk: 2, def: 1, spa: 0, spd: 0…
+     45|     expect(resolvePower(move('storedpower', 20), boosted, mon(), field…
+       |                                                                            ^
+     46|   });
+     47| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/7]⎯
+
+ FAIL  src/engine/__tests__/dynamicPower.test.ts > resolvePower > acrobatics: doubled without item
+AssertionError: expected 55 to be 110 // Object.is equality
+
+- Expected
++ Received
+
+- 110
++ 55
+
+ ❯ src/engine/__tests__/dynamicPower.test.ts:49:96
+     47| 
+     48|   it('acrobatics: doubled without item', () => {
+     49|     expect(resolvePower(move('acrobatics', 55), mon({ heldItem: undefi…
+       |                                                                                                ^
+     50|     expect(resolvePower(move('acrobatics', 55), mon({ heldItem: 'oran-…
+     51|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/7]⎯
+
+[2m Test Files [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m29 passed[39m[22m[90m (31)[39m
+[2m      Tests [22m [1m[31m7 failed[39m[22m[2m | [22m[1m[32m608 passed[39m[22m[90m (615)[39m
+[2m   Start at [22m 20:26:18
+[2m   Duration [22m 22.81s[2m (transform 3.12s, setup 5ms, collect 9.01s, tests 29.98s, environment 12ms, prepare 13.41s)[22m
+

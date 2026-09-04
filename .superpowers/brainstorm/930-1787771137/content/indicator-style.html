@@ -1,0 +1,79 @@
+<h2>What does the status indicator look like?</h2>
+<p class="subtitle">This is the compact element that sits next to the HP bar when any effects are active. Hovering it opens the popover. The HP bar row currently looks like: <strong>[Name L50] [▓▓▓▓▓▓░░] [123/456]</strong></p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#1a1a2e;padding:12px 16px;border-radius:6px;font-family:monospace;">
+        <div style="display:flex;align-items:center;gap:8px;color:#fff;font-size:13px;">
+          <span style="color:#f0c040;width:14px">▶</span>
+          <span style="width:130px">Charizard L50</span>
+          <div style="flex:1;background:#333;height:6px;border-radius:3px;">
+            <div style="background:#27ae60;height:6px;border-radius:3px;width:72%"></div>
+          </div>
+          <span style="color:#aaa;font-size:9px;width:65px;text-align:right">240/334</span>
+          <!-- indicator: colored status dot with count badge -->
+          <div style="position:relative;cursor:pointer;">
+            <div style="width:14px;height:14px;border-radius:50%;background:#e67e22;border:1px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;">
+              <span style="font-size:7px;color:#fff;font-weight:bold">2</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Colored dot with count</h3>
+      <p>Small circle in the color of the primary status. A number badge shows how many total effects are active. Minimal footprint.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#1a1a2e;padding:12px 16px;border-radius:6px;font-family:monospace;">
+        <div style="display:flex;align-items:center;gap:8px;color:#fff;font-size:13px;">
+          <span style="color:#f0c040;width:14px">▶</span>
+          <span style="width:130px">Charizard L50</span>
+          <div style="flex:1;background:#333;height:6px;border-radius:3px;">
+            <div style="background:#27ae60;height:6px;border-radius:3px;width:72%"></div>
+          </div>
+          <span style="color:#aaa;font-size:9px;width:65px;text-align:right">240/334</span>
+          <!-- indicator: game-style status chip -->
+          <div style="cursor:pointer;">
+            <span style="background:#e67e22;color:#fff;font-size:9px;padding:1px 5px;border-radius:2px;font-weight:bold;letter-spacing:1px">BRN</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Status text chip (game-style)</h3>
+      <p>Same colored text badge the game uses (BRN, PAR, etc.) — familiar to Pokémon players. Shows primary status only; volatile effects and stat boosts are in the popover.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#1a1a2e;padding:12px 16px;border-radius:6px;font-family:monospace;">
+        <div style="display:flex;align-items:center;gap:8px;color:#fff;font-size:13px;">
+          <span style="color:#f0c040;width:14px">▶</span>
+          <span style="width:130px">Charizard L50</span>
+          <div style="flex:1;background:#333;height:6px;border-radius:3px;">
+            <div style="background:#27ae60;height:6px;border-radius:3px;width:72%"></div>
+          </div>
+          <span style="color:#aaa;font-size:9px;width:65px;text-align:right">240/334</span>
+          <!-- indicator: small icon row showing top 2-3 effects -->
+          <div style="display:flex;gap:2px;cursor:pointer;">
+            <span style="background:#e67e22;color:#fff;font-size:8px;padding:1px 4px;border-radius:2px;font-weight:bold">BRN</span>
+            <span style="background:#3498db;color:#fff;font-size:8px;padding:1px 4px;border-radius:2px;font-weight:bold">CNF</span>
+            <span style="color:#888;font-size:8px;align-self:center">+2</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Mini chip row (up to ~3 visible)</h3>
+      <p>Show the first 2–3 effects inline as mini chips. Overflow is "+N more". Most info visible at a glance, slightly wider.</p>
+    </div>
+  </div>
+
+</div>

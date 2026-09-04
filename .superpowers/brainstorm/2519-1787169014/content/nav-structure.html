@@ -1,0 +1,72 @@
+<h2>How should the admin area be organized?</h2>
+<p class="subtitle">Once connected, how do you navigate between Battle Setup and the new Registry (NPCs &amp; Players)?</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#0d0d1a;border:1px solid #333;border-radius:6px;padding:12px;font-family:monospace;font-size:11px;">
+        <div style="display:flex;gap:0;border-bottom:1px solid #333;margin-bottom:12px;">
+          <div style="padding:6px 16px;background:#e74c3c;color:#fff;font-size:10px;letter-spacing:1px;">BATTLE SETUP</div>
+          <div style="padding:6px 16px;background:#1a1a2e;color:#888;font-size:10px;letter-spacing:1px;">REGISTRY</div>
+        </div>
+        <div style="color:#f0c040;font-size:10px;margin-bottom:6px;">1/4 — Structure</div>
+        <div style="background:#111;border:1px solid #333;border-radius:4px;padding:8px;color:#ccc;font-size:10px;">
+          Team A slots: [1] &nbsp; Team B slots: [1]<br/>
+          <div style="margin-top:6px;background:#2980b9;color:#fff;padding:3px 8px;display:inline-block;border-radius:3px;font-size:9px;">NEXT →</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Tab bar at top</h3>
+      <p>Tabs switch between Battle Setup and Registry. Simple, always visible. Works well if you'll switch back and forth frequently.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#0d0d1a;border:1px solid #333;border-radius:6px;padding:12px;font-family:monospace;font-size:11px;">
+        <div style="color:#e74c3c;font-size:14px;letter-spacing:4px;text-align:center;margin-bottom:12px;">ADMIN</div>
+        <div style="display:flex;gap:8px;">
+          <div style="flex:1;background:#111;border:2px solid #e74c3c;border-radius:6px;padding:10px;text-align:center;">
+            <div style="font-size:18px;margin-bottom:4px;">⚔️</div>
+            <div style="color:#e74c3c;font-size:9px;letter-spacing:1px;">BATTLE SETUP</div>
+            <div style="color:#666;font-size:8px;margin-top:3px;">Start a new battle</div>
+          </div>
+          <div style="flex:1;background:#111;border:2px solid #27ae60;border-radius:6px;padding:10px;text-align:center;">
+            <div style="font-size:18px;margin-bottom:4px;">📋</div>
+            <div style="color:#27ae60;font-size:9px;letter-spacing:1px;">REGISTRY</div>
+            <div style="color:#666;font-size:8px;margin-top:3px;">Manage NPCs &amp; Players</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Hub landing page</h3>
+      <p>After connecting, a hub shows two large tiles. Click one to dive in. Clean separation — each section feels like its own mode.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#0d0d1a;border:1px solid #333;border-radius:6px;padding:12px;font-family:monospace;font-size:11px;display:flex;gap:8px;min-height:80px;">
+        <div style="width:90px;background:#0a0a14;border-right:1px solid #333;padding:8px;display:flex;flex-direction:column;gap:4px;">
+          <div style="color:#e74c3c;font-size:8px;letter-spacing:2px;margin-bottom:4px;">ADMIN</div>
+          <div style="background:#e74c3c;color:#fff;padding:3px 6px;border-radius:3px;font-size:8px;">⚔ Battle Setup</div>
+          <div style="color:#888;padding:3px 6px;font-size:8px;">📋 Registry</div>
+        </div>
+        <div style="flex:1;">
+          <div style="color:#f0c040;font-size:9px;margin-bottom:6px;">1/4 — Structure</div>
+          <div style="background:#111;border:1px solid #333;border-radius:3px;padding:6px;color:#ccc;font-size:9px;">
+            Team A: [1] Team B: [1]
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Persistent sidebar</h3>
+      <p>A left sidebar stays visible with nav items. More chrome, but navigation is always one click away without leaving context.</p>
+    </div>
+  </div>
+
+</div>

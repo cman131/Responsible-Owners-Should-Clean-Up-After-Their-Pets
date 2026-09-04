@@ -1,0 +1,142 @@
+<h2>Two-View Battle Screen</h2>
+<p class="subtitle">Left: the default focused view. Right: the zoomed-out targeting view when selecting a single-target move.</p>
+
+<div class="split">
+
+  <!-- FOCUSED VIEW -->
+  <div class="mockup">
+    <div class="mockup-header">Default View — Your turn, picking a move</div>
+    <div class="mockup-body" style="background:#5a8a3a;padding:0;overflow:hidden;position:relative;min-height:280px;font-family:monospace;">
+
+      <!-- Sky / background top half -->
+      <div style="background:linear-gradient(#87ceeb,#c8e6c9);height:140px;position:relative;">
+
+        <!-- Enemy sprites (small, top area) -->
+        <div style="position:absolute;top:10px;left:12px;display:flex;gap:8px;align-items:flex-end;">
+          <div style="text-align:center;opacity:0.6;font-size:9px;color:#333;">
+            <div style="background:#e74c3c;width:28px;height:28px;border-radius:50%;margin:0 auto 2px;border:2px solid #c0392b;"></div>
+            <span style="background:rgba(0,0,0,0.4);color:#fff;padding:1px 3px;border-radius:2px;font-size:8px;">Foe 2</span>
+          </div>
+          <div style="text-align:center;opacity:0.6;font-size:9px;color:#333;">
+            <div style="background:#e74c3c;width:28px;height:28px;border-radius:50%;margin:0 auto 2px;border:2px solid #c0392b;"></div>
+            <span style="background:rgba(0,0,0,0.4);color:#fff;padding:1px 3px;border-radius:2px;font-size:8px;">Foe 3</span>
+          </div>
+        </div>
+
+        <!-- MAIN ENEMY — large, top right -->
+        <div style="position:absolute;top:8px;right:18px;text-align:center;">
+          <div style="background:#c0392b;width:64px;height:64px;border-radius:50%;border:3px solid #e74c3c;margin:0 auto 4px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:bold;">FOE 1</div>
+          <div style="background:rgba(0,0,0,0.65);color:#fff;padding:2px 6px;border-radius:3px;font-size:9px;white-space:nowrap;">Charizard L50<br/><span style="color:#2ecc71;">HP ████████░░</span></div>
+        </div>
+
+        <!-- Ally sprites (small, bottom-left of top section) -->
+        <div style="position:absolute;bottom:8px;left:10px;display:flex;gap:6px;align-items:flex-end;">
+          <div style="text-align:center;opacity:0.65;font-size:9px;">
+            <div style="background:#3498db;width:24px;height:24px;border-radius:50%;margin:0 auto 2px;border:2px solid #2980b9;"></div>
+            <span style="background:rgba(0,0,0,0.4);color:#fff;padding:1px 3px;border-radius:2px;font-size:8px;">Ally 2</span>
+          </div>
+          <div style="text-align:center;opacity:0.65;font-size:9px;">
+            <div style="background:#3498db;width:24px;height:24px;border-radius:50%;margin:0 auto 2px;border:2px solid #2980b9;"></div>
+            <span style="background:rgba(0,0,0,0.4);color:#fff;padding:1px 3px;border-radius:2px;font-size:8px;">Ally 3</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ground / bottom half -->
+      <div style="background:linear-gradient(#6aa84f,#4a7c3a);height:60px;position:relative;">
+        <!-- YOUR Pokemon — large, bottom left -->
+        <div style="position:absolute;bottom:4px;left:18px;text-align:center;">
+          <div style="background:#2980b9;width:64px;height:64px;border-radius:50%;border:3px solid #3498db;margin:0 auto 0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:bold;transform:translateY(-20px);">YOU</div>
+        </div>
+      </div>
+
+      <!-- YOUR status bar -->
+      <div style="background:#1a1a2e;padding:4px 8px;display:flex;align-items:center;gap:8px;">
+        <div style="color:#fff;font-size:9px;flex:1;">Blastoise L45 &nbsp;<span style="color:#2ecc71;">HP ██████████</span></div>
+        <div style="color:#888;font-size:8px;">Status: OK</div>
+      </div>
+
+      <!-- Move panel -->
+      <div style="background:#0d0d1a;padding:6px 8px;">
+        <div style="color:#aaa;font-size:8px;margin-bottom:4px;">CHOOSE A MOVE</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+          <div style="background:#1a3a5c;color:#fff;padding:4px 6px;border-radius:3px;font-size:9px;border:1px solid #2980b9;">Surf <span style="color:#3498db;float:right;">Water</span></div>
+          <div style="background:#1a3a5c;color:#fff;padding:4px 6px;border-radius:3px;font-size:9px;border:1px solid #2980b9;">Ice Beam <span style="color:#a8d8ea;float:right;">Ice</span></div>
+          <div style="background:#1a3a5c;color:#fff;padding:4px 6px;border-radius:3px;font-size:9px;border:1px solid #2980b9;">Earthquake <span style="color:#a0522d;float:right;">Ground</span></div>
+          <div style="background:#1a3a5c;color:#fff;padding:4px 6px;border-radius:3px;font-size:9px;border:1px solid #2980b9;">Flash Cannon <span style="color:#ccc;float:right;">Steel</span></div>
+        </div>
+        <div style="color:#555;font-size:8px;margin-top:4px;text-align:right;">PP 12/16 &nbsp;|&nbsp; → select target after</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TARGETING VIEW -->
+  <div class="mockup">
+    <div class="mockup-header">Targeting View — "Ice Beam" selected, pick a target</div>
+    <div class="mockup-body" style="background:#0d1117;padding:8px;min-height:280px;font-family:monospace;">
+
+      <div style="color:#f0c040;font-size:10px;text-align:center;margin-bottom:8px;letter-spacing:1px;">SELECT TARGET FOR ICE BEAM</div>
+
+      <!-- Enemy team row -->
+      <div style="margin-bottom:6px;">
+        <div style="color:#e74c3c;font-size:8px;margin-bottom:4px;letter-spacing:1px;">── ENEMY TEAM ──</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <div style="background:#3a0a0a;border:2px solid #e74c3c;border-radius:4px;padding:6px 8px;cursor:pointer;flex:1;text-align:center;transition:all 0.1s;" onmouseover="this.style.background='#5a1a1a'" onmouseout="this.style.background='#3a0a0a'">
+            <div style="background:#e74c3c;width:32px;height:32px;border-radius:50%;margin:0 auto 4px;"></div>
+            <div style="color:#fff;font-size:9px;">Charizard</div>
+            <div style="color:#2ecc71;font-size:8px;">HP ████████░░</div>
+            <div style="color:#e74c3c;font-size:8px;margin-top:2px;">← CLICK</div>
+          </div>
+          <div style="background:#3a0a0a;border:2px solid #e74c3c;border-radius:4px;padding:6px 8px;cursor:pointer;flex:1;text-align:center;" onmouseover="this.style.background='#5a1a1a'" onmouseout="this.style.background='#3a0a0a'">
+            <div style="background:#e74c3c;width:32px;height:32px;border-radius:50%;margin:0 auto 4px;"></div>
+            <div style="color:#fff;font-size:9px;">Venusaur</div>
+            <div style="color:#f39c12;font-size:8px;">HP █████░░░░░</div>
+            <div style="color:#e74c3c;font-size:8px;margin-top:2px;">← CLICK</div>
+          </div>
+          <div style="background:#3a0a0a;border:2px solid #e74c3c;border-radius:4px;padding:6px 8px;cursor:pointer;flex:1;text-align:center;" onmouseover="this.style.background='#5a1a1a'" onmouseout="this.style.background='#3a0a0a'">
+            <div style="background:#e74c3c;width:32px;height:32px;border-radius:50%;margin:0 auto 4px;"></div>
+            <div style="color:#fff;font-size:9px;">Gengar</div>
+            <div style="color:#2ecc71;font-size:8px;">HP █████████░</div>
+            <div style="color:#e74c3c;font-size:8px;margin-top:2px;">← CLICK</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="border-top:1px solid #333;margin:8px 0;"></div>
+
+      <!-- Ally team row -->
+      <div style="margin-bottom:6px;">
+        <div style="color:#3498db;font-size:8px;margin-bottom:4px;letter-spacing:1px;">── YOUR TEAM ──</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <div style="background:#0a1a3a;border:2px solid #27ae60;border-radius:4px;padding:6px 8px;flex:1;text-align:center;position:relative;">
+            <div style="background:#27ae60;width:32px;height:32px;border-radius:50%;margin:0 auto 4px;"></div>
+            <div style="color:#fff;font-size:9px;">Blastoise</div>
+            <div style="color:#2ecc71;font-size:8px;">HP ██████████</div>
+            <div style="color:#27ae60;font-size:8px;margin-top:2px;">YOU (no target)</div>
+          </div>
+          <div style="background:#0a1a2a;border:2px dashed #3498db;border-radius:4px;padding:6px 8px;flex:1;text-align:center;opacity:0.6;">
+            <div style="background:#3498db;width:32px;height:32px;border-radius:50%;margin:0 auto 4px;"></div>
+            <div style="color:#fff;font-size:9px;">Raichu</div>
+            <div style="color:#2ecc71;font-size:8px;">HP ████████░░</div>
+            <div style="color:#3498db;font-size:8px;margin-top:2px;">Ally (untargetable)</div>
+          </div>
+          <div style="background:#0a1a2a;border:2px dashed #3498db;border-radius:4px;padding:6px 8px;flex:1;text-align:center;opacity:0.6;">
+            <div style="background:#3498db;width:32px;height:32px;border-radius:50%;margin:0 auto 4px;"></div>
+            <div style="color:#fff;font-size:9px;">Gengar</div>
+            <div style="color:#e74c3c;font-size:8px;">HP ████░░░░░░</div>
+            <div style="color:#3498db;font-size:8px;margin-top:2px;">Ally (untargetable)</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:#1a1a00;border:1px solid #f0c040;border-radius:3px;padding:4px 8px;margin-top:6px;color:#f0c040;font-size:8px;text-align:center;">
+        Ice Beam — single target, cannot hit allies &nbsp;|&nbsp; [ESC] Cancel
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:12px;">Does this two-view model match what you had in mind? Any adjustments to either state?</p>

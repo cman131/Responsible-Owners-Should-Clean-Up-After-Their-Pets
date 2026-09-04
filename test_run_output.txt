@@ -1,0 +1,40 @@
+$ vitest run
+
+[7m[1m[36m RUN [39m[22m[27m [36mv1.6.1[39m [90mC:/Users/conor/workbench/poke-fighter/packages/server[39m
+
+ [32m✓[39m src/socket/__tests__/lobbyHandlers.test.ts [2m ([22m[2m13 tests[22m[2m)[22m[90m 16[2mms[22m[39m
+ [32m✓[39m src/socket/__tests__/adminHandlers.test.ts [2m ([22m[2m13 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m src/db/__tests__/Database.test.ts [2m ([22m[2m20 tests[22m[2m)[22m[90m 29[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/effects.test.ts [2m ([22m[2m26 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/secondaries.test.ts [2m ([22m[2m29 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/effectFactories.test.ts [2m ([22m[2m36 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/EffectEngine.test.ts [2m ([22m[2m30 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/sideConditions.test.ts [2m ([22m[2m35 tests[22m[2m)[22m[90m 36[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/substitute.test.ts [2m ([22m[2m7 tests[22m[2m)[22m[90m 138[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/passiveVolatiles.test.ts [2m ([22m[2m7 tests[22m[2m)[22m[90m 260[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/protect.test.ts [2m ([22m[2m12 tests[22m[2m)[22m[90m 281[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/miscVolatiles.test.ts [2m ([22m[2m10 tests[22m[2m)[22m[33m 361[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/constraints.test.ts [2m ([22m[2m11 tests[22m[2m)[22m[33m 399[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/targeting.test.ts [2m ([22m[2m12 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/exp.test.ts [2m ([22m[2m13 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/fieldState.test.ts [2m ([22m[2m16 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/damage.test.ts [2m ([22m[2m10 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/accuracy.test.ts [2m ([22m[2m25 tests[22m[2m)[22m[90m 8[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/MoveEffectRegistry.test.ts [2m ([22m[2m6 tests[22m[2m)[22m[90m 11[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/tera.test.ts [2m ([22m[2m2 tests[22m[2m)[22m[90m 64[2mms[22m[39m
+ [32m✓[39m src/socket/__tests__/LobbyManager.test.ts [2m ([22m[2m6 tests[22m[2m)[22m[90m 5[2mms[22m[39m
+ [32m✓[39m src/socket/__tests__/BattleRoom.test.ts [2m ([22m[2m12 tests[22m[2m)[22m[33m 754[2mms[22m[39m
+ [32m✓[39m src/setup/__tests__/BattleConfigurator.test.ts [2m ([22m[2m2 tests[22m[2m)[22m[90m 46[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/status.test.ts [2m ([22m[2m6 tests[22m[2m)[22m[90m 3[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/stats.test.ts [2m ([22m[2m6 tests[22m[2m)[22m[90m 3[2mms[22m[39m
+ [32m✓[39m src/data/__tests__/loader.test.ts [2m ([22m[2m7 tests[22m[2m)[22m[90m 123[2mms[22m[39m
+stderr | src/engine/__tests__/BattleEngine.test.ts > Previously-unimplemented status moves > emits move-failed with reason unimplemented for an unknown status move
+[MoveEffectRegistry] No handler for effectId="swordsdance" (moveId="swordsdance")
+
+ [32m✓[39m src/engine/__tests__/BattleEngine.test.ts [2m ([22m[2m91 tests[22m[2m)[22m[33m 13672[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m27 passed[39m[22m[90m (27)[39m
+[2m      Tests [22m [1m[32m463 passed[39m[22m[90m (463)[39m
+[2m   Start at [22m 00:57:15
+[2m   Duration [22m 14.53s[2m (transform 1.57s, setup 3ms, collect 4.79s, tests 16.30s, environment 5ms, prepare 7.31s)[22m
+

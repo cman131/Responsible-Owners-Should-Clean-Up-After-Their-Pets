@@ -1,0 +1,82 @@
+<h2>Battle Screen Layout</h2>
+<p class="subtitle">How should multiple Pokémon be arranged on the field? Each box represents one player's active Pokémon.</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#1a1a2e;padding:12px;border-radius:6px;font-family:monospace;font-size:11px;">
+      <div style="color:#aaa;margin-bottom:6px;text-align:center;font-size:10px;">── ENEMY TEAM ──</div>
+      <div style="display:flex;justify-content:space-around;margin-bottom:8px;">
+        <div style="background:#c0392b;color:#fff;padding:4px 8px;border-radius:4px;text-align:center;font-size:10px;">Foe 1<br/>HP ████░</div>
+        <div style="background:#c0392b;color:#fff;padding:4px 8px;border-radius:4px;text-align:center;font-size:10px;">Foe 2<br/>HP ████░</div>
+        <div style="background:#c0392b;color:#fff;padding:4px 8px;border-radius:4px;text-align:center;font-size:10px;">Foe 3<br/>HP ██░░░</div>
+      </div>
+      <div style="color:#aaa;text-align:center;font-size:18px;letter-spacing:4px;margin:6px 0;">· · ·</div>
+      <div style="display:flex;justify-content:space-around;margin-bottom:6px;">
+        <div style="background:#2980b9;color:#fff;padding:4px 8px;border-radius:4px;text-align:center;font-size:10px;">You<br/>HP █████</div>
+        <div style="background:#2980b9;color:#fff;padding:4px 8px;border-radius:4px;text-align:center;font-size:10px;">Ally 2<br/>HP ████░</div>
+        <div style="background:#2980b9;color:#fff;padding:4px 8px;border-radius:4px;text-align:center;font-size:10px;">Ally 3<br/>HP ███░░</div>
+      </div>
+      <div style="color:#aaa;margin-top:6px;text-align:center;font-size:10px;">── YOUR TEAM ──</div>
+    </div>
+    <div class="card-body">
+      <h3>A — Horizontal rows</h3>
+      <p>All Pokémon line up in rows across the field, enemies on top, allies on bottom. Scales naturally as players are added or removed.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#1a1a2e;padding:12px;border-radius:6px;font-family:monospace;font-size:11px;">
+      <div style="display:flex;gap:8px;">
+        <div style="flex:1;">
+          <div style="color:#c0392b;text-align:center;font-size:10px;margin-bottom:4px;">ENEMIES</div>
+          <div style="background:#c0392b;color:#fff;padding:3px 6px;border-radius:3px;text-align:center;font-size:9px;margin-bottom:3px;">Foe 1 HP ████░</div>
+          <div style="background:#c0392b;color:#fff;padding:3px 6px;border-radius:3px;text-align:center;font-size:9px;margin-bottom:3px;">Foe 2 HP ████░</div>
+          <div style="background:#c0392b;color:#fff;padding:3px 6px;border-radius:3px;text-align:center;font-size:9px;">Foe 3 HP ██░░░</div>
+        </div>
+        <div style="width:2px;background:#444;"></div>
+        <div style="flex:1;">
+          <div style="color:#2980b9;text-align:center;font-size:10px;margin-bottom:4px;">YOUR TEAM</div>
+          <div style="background:#27ae60;color:#fff;padding:3px 6px;border-radius:3px;text-align:center;font-size:9px;margin-bottom:3px;">You HP █████</div>
+          <div style="background:#2980b9;color:#fff;padding:3px 6px;border-radius:3px;text-align:center;font-size:9px;margin-bottom:3px;">Ally 2 HP ████░</div>
+          <div style="background:#2980b9;color:#fff;padding:3px 6px;border-radius:3px;text-align:center;font-size:9px;">Ally 3 HP ███░░</div>
+        </div>
+      </div>
+      <div style="margin-top:8px;background:#111;padding:4px;border-radius:3px;font-size:9px;color:#888;text-align:center;">[ Move panel appears here when it's your turn ]</div>
+    </div>
+    <div class="card-body">
+      <h3>B — Side by side columns</h3>
+      <p>Teams face each other in vertical lists. Feels more like a roster view. Good when team sizes differ (x≠y).</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#1a1a2e;padding:12px;border-radius:6px;font-family:monospace;font-size:11px;">
+      <div style="background:#0d0d1a;border:1px solid #333;border-radius:4px;padding:6px;margin-bottom:6px;">
+        <div style="color:#aaa;font-size:9px;margin-bottom:4px;">FIELD (Fire Red style)</div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;min-height:60px;">
+          <div style="display:flex;gap:4px;align-items:flex-end;">
+            <div style="background:#2980b9;width:24px;height:28px;border-radius:2px;font-size:7px;color:#fff;display:flex;align-items:center;justify-content:center;">P1</div>
+            <div style="background:#2980b9;width:24px;height:24px;border-radius:2px;font-size:7px;color:#fff;display:flex;align-items:center;justify-content:center;">P2</div>
+          </div>
+          <div style="display:flex;gap:4px;align-items:flex-start;">
+            <div style="background:#c0392b;width:22px;height:22px;border-radius:2px;font-size:7px;color:#fff;display:flex;align-items:center;justify-content:center;">E1</div>
+            <div style="background:#c0392b;width:22px;height:24px;border-radius:2px;font-size:7px;color:#fff;display:flex;align-items:center;justify-content:center;">E2</div>
+            <div style="background:#c0392b;width:22px;height:20px;border-radius:2px;font-size:7px;color:#fff;display:flex;align-items:center;justify-content:center;">E3</div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:4px;font-size:9px;">
+        <div style="flex:1;background:#1a3a1a;border-radius:3px;padding:3px;color:#aaa;text-align:center;">HP bars<br/>below</div>
+        <div style="flex:2;background:#111;border-radius:3px;padding:3px;color:#555;text-align:center;">Move panel<br/>(your turn)</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Fire Red field + HP bar panel</h3>
+      <p>Sprite-based field like the GBA games — Pokémon positioned on a background. HP bars and move selection rendered below the field. Most faithful to the source aesthetic.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px;">Click your preferred layout, then reply in the terminal.</p>

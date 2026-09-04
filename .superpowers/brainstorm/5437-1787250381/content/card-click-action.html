@@ -1,0 +1,95 @@
+<h2>Card Click — Interaction Pattern</h2>
+<p class="subtitle">What happens when you click a pokemon card in the bank?</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Quick Action Popup</h3>
+      <p>Clicking a card shows a small overlay with three buttons. Edit opens the full modal separately. Move to Team and Delete work in one click.</p>
+      <div style="margin-top:12px;position:relative;display:inline-block">
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <!-- Normal card -->
+          <div style="background:#111;border:1px solid #333;border-radius:6px;padding:8px;width:72px;text-align:center">
+            <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png" style="width:48px;height:48px;image-rendering:pixelated" alt="" />
+            <div style="color:#fff;font-size:9px;margin-top:2px">Pikachu</div>
+            <div style="color:#aaa;font-size:8px">Lv.36</div>
+          </div>
+          <!-- Selected card with popup -->
+          <div style="position:relative">
+            <div style="background:#111;border:2px solid #3498db;border-radius:6px;padding:8px;width:72px;text-align:center">
+              <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/6.png" style="width:48px;height:48px;image-rendering:pixelated" alt="" />
+              <div style="color:#fff;font-size:9px;margin-top:2px">Charizard</div>
+              <div style="color:#aaa;font-size:8px">Lv.50</div>
+            </div>
+            <!-- Popup -->
+            <div style="position:absolute;top:0;left:84px;background:#1a1a2e;border:1px solid #3498db;border-radius:5px;padding:6px;width:110px;z-index:10;box-shadow:0 4px 12px rgba(0,0,0,0.5)">
+              <div style="color:#3498db;font-size:9px;letter-spacing:1px;margin-bottom:5px">CHARIZARD</div>
+              <button style="display:block;width:100%;background:#2980b9;border:none;color:#fff;padding:4px 0;border-radius:3px;font-size:9px;cursor:pointer;margin-bottom:3px;letter-spacing:1px">✏ EDIT</button>
+              <button style="display:block;width:100%;background:#27ae60;border:none;color:#fff;padding:4px 0;border-radius:3px;font-size:9px;cursor:pointer;margin-bottom:3px;letter-spacing:1px">→ MOVE TO TEAM</button>
+              <button style="display:block;width:100%;background:#c0392b;border:none;color:#fff;padding:4px 0;border-radius:3px;font-size:9px;cursor:pointer;letter-spacing:1px">✕ REMOVE</button>
+            </div>
+          </div>
+          <!-- Normal card -->
+          <div style="background:#111;border:1px solid #333;border-radius:6px;padding:8px;width:72px;text-align:center">
+            <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/131.png" style="width:48px;height:48px;image-rendering:pixelated" alt="" />
+            <div style="color:#fff;font-size:9px;margin-top:2px">Lapras</div>
+            <div style="color:#aaa;font-size:8px">Lv.45</div>
+          </div>
+        </div>
+      </div>
+      <div class="pros-cons" style="margin-top:12px">
+        <div class="pros"><h4>Pros</h4><ul><li>Move to team in one click</li><li>No modal for simple actions</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Popup may feel cramped</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Full Editor Modal</h3>
+      <p>Clicking any card opens the full pokemon editor in a modal. Move to Team and Delete are buttons in the modal header. One consistent interaction for everything.</p>
+      <div style="margin-top:12px">
+        <!-- Modal mockup -->
+        <div style="background:#0d0d1a;border:2px solid #3498db;border-radius:8px;padding:0;overflow:hidden;font-size:11px">
+          <!-- Modal header -->
+          <div style="background:#111;border-bottom:1px solid #333;padding:10px 14px;display:flex;align-items:center;justify-content:space-between">
+            <span style="color:#3498db;font-size:11px;letter-spacing:2px">EDIT — CHARIZARD</span>
+            <div style="display:flex;gap:6px">
+              <button style="background:#27ae60;border:none;color:#fff;padding:3px 8px;border-radius:3px;font-size:9px;cursor:pointer;letter-spacing:1px">→ MOVE TO TEAM</button>
+              <button style="background:#c0392b;border:none;color:#fff;padding:3px 8px;border-radius:3px;font-size:9px;cursor:pointer;letter-spacing:1px">✕ REMOVE</button>
+              <button style="background:#333;border:none;color:#aaa;padding:3px 8px;border-radius:3px;font-size:9px;cursor:pointer">✕</button>
+            </div>
+          </div>
+          <!-- Modal body (editor preview) -->
+          <div style="padding:12px;display:flex;gap:12px;align-items:flex-start">
+            <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/6.png" style="width:64px;height:64px;image-rendering:pixelated" alt="" />
+            <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;gap:8px;align-items:center">
+                <span style="color:#aaa;font-size:10px;min-width:48px">Name</span>
+                <div style="background:#1a1a2e;border:1px solid #555;color:#fff;padding:3px 6px;border-radius:3px;font-size:10px;flex:1">Charizard</div>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <span style="color:#aaa;font-size:10px;min-width:48px">Level</span>
+                <div style="background:#1a1a2e;border:1px solid #555;color:#fff;padding:3px 6px;border-radius:3px;font-size:10px;width:40px">50</div>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <span style="color:#aaa;font-size:10px;min-width:48px">Nature</span>
+                <div style="background:#1a1a2e;border:1px solid #555;color:#fff;padding:3px 6px;border-radius:3px;font-size:10px;flex:1">Timid (+Spe / -Atk)</div>
+              </div>
+              <div style="color:#aaa;font-size:9px;margin-top:2px">Moves: Flamethrower, Air Slash, Dragon Pulse, Focus Blast</div>
+            </div>
+          </div>
+          <div style="padding:0 12px 10px;display:flex;justify-content:flex-end">
+            <button style="background:#2980b9;border:none;color:#fff;padding:5px 16px;border-radius:3px;font-size:10px;letter-spacing:1px;cursor:pointer">SAVE</button>
+          </div>
+        </div>
+      </div>
+      <div class="pros-cons" style="margin-top:10px">
+        <div class="pros"><h4>Pros</h4><ul><li>One consistent interaction</li><li>All actions in one place</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Extra click to just move to team</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>
