@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { BattleEngine } from '../BattleEngine.js';
 import { make1v1State } from './fixtures.js';
+import { effectiveAbilityId } from '../abilities.js';
 
 describe('Soak', () => {
   it('changes target type to Water, making Water moves deal 0.5× instead of 2×', () => {
@@ -303,5 +304,22 @@ describe('Electrify', () => {
     // Electrify volatile must be cleared after the turn
     const p2After = elecResult.newState.teams[1]!.slots[0]!.party[0]!;
     expect(p2After.volatileStatus.some(v => v.name === 'electrify')).toBe(false);
+  });
+});
+
+describe('Gastro Acid', () => {
+  it('suppresses the target\'s ability (effectiveAbilityId returns none)', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'gastroacid', currentPp: 10, maxPp: 10 };
+    state.teams[1]!.slots[0]!.party[0]!.ability = 'intimidate';
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const target = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(target.volatileStatus.some(v => v.name === 'gastro-acid')).toBe(true);
+    expect(effectiveAbilityId(target)).toBe('none');
   });
 });

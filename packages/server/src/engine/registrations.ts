@@ -793,6 +793,7 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
   }));
 
   // ── Ability manipulation ───────────────────────────────────────────
+  r.register('gastroacid', applyVolatileTarget('gastro-acid'));
   r.register('skillswap', custom((ctx) => {
     const target = ctx.targets[0];
     const targetSlotId = ctx.targetSlotIds[0];

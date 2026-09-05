@@ -399,5 +399,6 @@ export function getAbilityHooks(abilityId: string): AbilityHooks {
 }
 
 export function effectiveAbilityId(pokemon: PartyMember): string {
+  if (pokemon.volatileStatus.some(v => v.name === 'gastro-acid')) return 'none';
   return pokemon.tracedAbilityId ?? pokemon.ability;
 }
