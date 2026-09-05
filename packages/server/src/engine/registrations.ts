@@ -50,6 +50,8 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
   r.register('focusenergy', applyVolatileSelf('focusenergy'));
   r.register('laserfocus',  applyVolatileSelf('laser-focus'));
   r.register('imprison',    applyVolatileSelf('imprison'));
+  r.register('magiccoat',   applyVolatileSelf('magic-coat'));
+  r.register('snatch',      applyVolatileSelf('snatch'));
   r.register('aquaring',    aquaRing());
   r.register('ingrain',     ingrain());
   r.register('magnetrise',  magnetRise());
@@ -83,6 +85,25 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
       // Non-Ghost variant: +1 Atk, +1 Def, -1 Spe
       return { events: [applyStatBoost(ctx.user, ctx.userSlotId, { atk: 1, def: 1, spe: -1 })] };
     }
+  }));
+
+  // ── Type manipulation ──────────────────────────────────────────────
+  r.register('soak', custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+    target.typeOverride = ['Water'];
+    return { events: [{ type: 'volatile-applied', data: { targetSlotId, volatile: 'type-changed' } }] };
+  }));
+
+  r.register('reflecttype', custom((ctx) => {
+    const target = ctx.targets[0];
+    if (!target) return { events: [] };
+    // Use targetTypes[0] which BattleEngine pre-resolved (respects typeOverride, tera, species)
+    const targetTypes = ctx.targetTypes[0];
+    if (!targetTypes) return { events: [] };
+    ctx.user.typeOverride = [...targetTypes];
+    return { events: [{ type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'type-changed' } }] };
   }));
 
   // ── Self stat boosts ───────────────────────────────────────────────
@@ -629,6 +650,10 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
   r.register('reflect',     setSideCondition('reflect',     5,    'ally', { failIfActive: true }));
   r.register('lightscreen', setSideCondition('lightScreen', 5,    'ally', { failIfActive: true }));
   r.register('auroraveil',  setSideCondition('auroraVeil',  5,    'ally', { failIfActive: true, weatherRequired: ['snow'] }));
+  r.register('tailwind',    setSideCondition('tailwind',    4,    'ally', { failIfActive: true }));
+  r.register('safeguard',   setSideCondition('safeguard',   5,    'ally', { failIfActive: true }));
+  r.register('mist',        setSideCondition('mist',        5,    'ally', { failIfActive: true }));
+  r.register('luckychant',  setSideCondition('luckychant',  5,    'ally', { failIfActive: true }));
   r.register('stealthrock', setSideCondition('stealthRock', true, 'foe', { failIfActive: true }));
   r.register('stickyweb',   setSideCondition('stickyWeb',   true, 'foe', { failIfActive: true }));
 
