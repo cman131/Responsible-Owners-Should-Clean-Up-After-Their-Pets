@@ -92,3 +92,41 @@ describe('Reflect Type', () => {
     expect(dmgWithReflect).toBeGreaterThan(dmgNoReflect);
   });
 });
+
+describe('Trick / Switcheroo', () => {
+  it('swaps held items between user and target', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+
+    const p1 = state.teams[0]!.slots[0]!.party[0]!;
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    p1.heldItem = 'life-orb';
+    p2.heldItem = 'leftovers';
+    p1.moves[0] = { moveId: 'trick', currentPp: 10, maxPp: 10 };
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    expect(newState.teams[0]!.slots[0]!.party[0]!.heldItem).toBe('leftovers');
+    expect(newState.teams[1]!.slots[0]!.party[0]!.heldItem).toBe('life-orb');
+  });
+
+  it('swaps when user has no item (target loses item)', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+
+    const p1 = state.teams[0]!.slots[0]!.party[0]!;
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    delete p1.heldItem; // user has no item
+    p2.heldItem = 'leftovers';
+    p1.moves[0] = { moveId: 'switcheroo', currentPp: 10, maxPp: 10 };
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    expect(newState.teams[0]!.slots[0]!.party[0]!.heldItem).toBe('leftovers');
+    expect(newState.teams[1]!.slots[0]!.party[0]!.heldItem).toBeUndefined();
+  });
+});

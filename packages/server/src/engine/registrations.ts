@@ -7,7 +7,7 @@ import {
   protect, endure, substitute, disable, taunt, encore, torment,
   aquaRing, ingrain, magnetRise, perishSong, destinyBond, roost,
   embargoFactory, healBlockFactory, cureTeamStatus, wish, batonPass, shedTail, partingShot, teleport,
-  forceSwitch,
+  forceSwitch, itemSwap,
 } from './effectFactories.js';
 import { clearHazards, clearScreens } from './sideConditions.js';
 import { applyStatBoost, applyVolatile } from './effects.js';
@@ -750,6 +750,10 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
   // ── Phazing moves ──────────────────────────────────────────────────
   r.register('roar',        forceSwitch());
   r.register('whirlwind',   forceSwitch());
+
+  // ── Item manipulation ──────────────────────────────────────────────
+  r.register('trick',      itemSwap());
+  r.register('switcheroo', itemSwap());
 
   return r;
 }

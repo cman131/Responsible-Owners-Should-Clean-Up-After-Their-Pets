@@ -16,6 +16,10 @@ export function statModSelf(stat: keyof StatBoosts, stages: number): MoveEffectH
 
 export function statModTarget(stat: keyof StatBoosts, stages: number): MoveEffectHandler {
   return (ctx) => {
+    const targetTeamIdx = (1 - ctx.userTeamIndex) as 0 | 1;
+    if (stages < 0 && (ctx.battle?.field?.sideConditions[targetTeamIdx]?.mist ?? 0) > 0) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'mist' } }] };
+    }
     const events: TurnResolveEvent[] = [];
     for (let i = 0; i < ctx.targets.length; i++) {
       events.push(applyStatBoost(ctx.targets[i]!, ctx.targetSlotIds[i]!, { [stat]: stages } as Partial<Record<keyof StatBoosts, number>>));
@@ -30,6 +34,11 @@ export function multiStatModSelf(boosts: Partial<Record<keyof StatBoosts, number
 
 export function multiStatModTarget(boosts: Partial<Record<keyof StatBoosts, number>>): MoveEffectHandler {
   return (ctx) => {
+    const targetTeamIdx = (1 - ctx.userTeamIndex) as 0 | 1;
+    const hasNegativeDrop = Object.values(boosts).some((v) => v !== undefined && v < 0);
+    if (hasNegativeDrop && (ctx.battle?.field?.sideConditions[targetTeamIdx]?.mist ?? 0) > 0) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'mist' } }] };
+    }
     const events: TurnResolveEvent[] = [];
     for (let i = 0; i < ctx.targets.length; i++) {
       events.push(applyStatBoost(ctx.targets[i]!, ctx.targetSlotIds[i]!, boosts));
@@ -42,6 +51,10 @@ export function applyStatusTarget(status: StatusCondition): MoveEffectHandler {
   return (ctx) => {
     const events: TurnResolveEvent[] = [];
     const bypassSub = ctx.move.soundMove === true;
+    const targetTeamIdx = (1 - ctx.userTeamIndex) as 0 | 1;
+    if ((ctx.battle?.field?.sideConditions[targetTeamIdx]?.safeguard ?? 0) > 0) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'safeguard' } }] };
+    }
     for (let i = 0; i < ctx.targets.length; i++) {
       const target = ctx.targets[i]!;
       const targetSlotId = ctx.targetSlotIds[i]!;
@@ -536,5 +549,34 @@ export function shedTail(): MoveEffectHandler {
     };
 
     return { events, pivotSwitch: true };
+  };
+}
+
+export function itemSwap(): MoveEffectHandler {
+  return (ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+
+    const userItem = ctx.user.heldItem;
+    const targetItem = target.heldItem;
+
+    // Swap
+    if (userItem !== undefined) {
+      target.heldItem = userItem;
+    } else {
+      delete target.heldItem;
+    }
+    if (targetItem !== undefined) {
+      ctx.user.heldItem = targetItem;
+    } else {
+      delete ctx.user.heldItem;
+    }
+
+    return {
+      events: [
+        { type: 'move-note', data: { slotId: ctx.userSlotId, note: 'items-swapped' } },
+      ],
+    };
   };
 }
