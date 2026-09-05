@@ -14,6 +14,7 @@ import { applyStatBoost, applyVolatile } from './effects.js';
 import { canApplyStatus } from './status.js';
 import { getEffectiveStat } from './stats.js';
 import type { TurnResolveEvent, PokemonType } from '@poke-fighter/shared';
+import { DataLoader } from '../data/loader.js';
 
 function sunBoostHeal(ctx: MoveContext): { events: TurnResolveEvent[] } {
   const weather = ctx.battle.field.weather?.type;
@@ -38,7 +39,12 @@ function addTypeToTarget(type: PokemonType): MoveEffectHandler {
   });
 }
 
-export function buildDefaultRegistry(): MoveEffectRegistry {
+const ALL_TYPES: PokemonType[] = [
+  'Normal', 'Fire', 'Water', 'Electric', 'Grass', 'Ice', 'Fighting', 'Poison',
+  'Ground', 'Flying', 'Psychic', 'Bug', 'Rock', 'Ghost', 'Dragon', 'Dark', 'Steel', 'Fairy',
+];
+
+export function buildDefaultRegistry(data: DataLoader): MoveEffectRegistry {
   const r = new MoveEffectRegistry();
 
   // ── Status conditions ──────────────────────────────────────────────
@@ -122,6 +128,57 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
 
   r.register('trickortreat', addTypeToTarget('Ghost'));
   r.register('forestscurse', addTypeToTarget('Grass'));
+
+  r.register('camouflage', custom((ctx) => {
+    const terrain = ctx.battle.field.terrain?.type;
+    const typeMap: Record<string, PokemonType> = {
+      electric: 'Electric',
+      grassy: 'Grass',
+      misty: 'Fairy',
+      psychic: 'Psychic',
+    };
+    const newType: PokemonType = (terrain && typeMap[terrain]) ? typeMap[terrain]! : 'Normal';
+    ctx.user.typeOverride = [newType];
+    return { events: [{ type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'type-changed' } }] };
+  }));
+
+  r.register('conversion', custom((ctx) => {
+    const firstMoveId = ctx.user.moves[0]?.moveId;
+    if (!firstMoveId) return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'no-moves' } }] };
+    const moveData = data.getMove(firstMoveId);
+    if (!moveData) return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'unknown-move' } }] };
+    ctx.user.typeOverride = [moveData.type as PokemonType];
+    return { events: [{ type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'type-changed' } }] };
+  }));
+
+  r.register('conversion2', custom((ctx) => {
+    const target = ctx.targets[0];
+    if (!target?.lastMoveId) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'no-last-move' } }] };
+    }
+    const lastMove = data.getMove(target.lastMoveId);
+    if (!lastMove) return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'unknown-move' } }] };
+    const lastMoveType = lastMove.type as PokemonType;
+
+    // Find types that resist the last move type (effectiveness < 1)
+    const resistors = ALL_TYPES.filter(t => data.getTypeEffectiveness(lastMoveType, t) < 1);
+
+    if (resistors.length === 0) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'no-resistors' } }] };
+    }
+
+    // Exclude types the user already has
+    const userTypes = ctx.userTypes;
+    const eligible = resistors.filter(t => !userTypes.includes(t));
+
+    if (eligible.length === 0) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'no-new-resistors' } }] };
+    }
+
+    // Pick first eligible type (deterministic)
+    ctx.user.typeOverride = [eligible[0]!];
+    return { events: [{ type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'type-changed' } }] };
+  }));
 
   // ── Self stat boosts ───────────────────────────────────────────────
   r.register('minimize', custom((ctx) => {

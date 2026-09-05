@@ -341,3 +341,81 @@ describe('Role Play', () => {
     expect(newState.teams[1]!.slots[0]!.party[0]!.ability).toBe('intimidate');
   });
 });
+
+describe('Camouflage', () => {
+  it('changes user type to Normal when no terrain', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'camouflage', currentPp: 20, maxPp: 20 };
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    expect(newState.teams[0]!.slots[0]!.party[0]!.typeOverride).toEqual(['Normal']);
+  });
+
+  it('changes user type to Electric in Electric Terrain', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.field.terrain = { type: 'electric', turnsRemaining: 5 };
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'camouflage', currentPp: 20, maxPp: 20 };
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    expect(newState.teams[0]!.slots[0]!.party[0]!.typeOverride).toEqual(['Electric']);
+  });
+});
+
+describe('Conversion', () => {
+  it('changes user type to the type of their first move', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    // moves[0] = flamethrower (Fire type), moves[1] = conversion
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'flamethrower', currentPp: 15, maxPp: 15 };
+    state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'conversion', currentPp: 30, maxPp: 30 };
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-a1' },
+    });
+
+    // Flamethrower is Fire type, so user's type should become Fire
+    expect(newState.teams[0]!.slots[0]!.party[0]!.typeOverride).toEqual(['Fire']);
+  });
+});
+
+describe('Conversion 2', () => {
+  it('changes user type to something that resists the target\'s last move type', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'conversion2', currentPp: 30, maxPp: 30 };
+    // Target's last move was 'flamethrower' (Fire type). Types that resist Fire include Water, Rock, etc.
+    state.teams[1]!.slots[0]!.party[0]!.lastMoveId = 'flamethrower';
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const userAfter = newState.teams[0]!.slots[0]!.party[0]!;
+    expect(userAfter.typeOverride).toBeDefined();
+    // The chosen type should resist Fire (effectiveness < 1)
+    // Types that resist Fire: Fire, Water, Rock, Dragon
+    const resistsFire = new Set(['Fire', 'Water', 'Rock', 'Dragon']);
+    expect(resistsFire.has(userAfter.typeOverride![0]!)).toBe(true);
+  });
+
+  it('fails if target has no last move', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'conversion2', currentPp: 30, maxPp: 30 };
+    // No lastMoveId set on target
+
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    expect(events.some(e => e.type === 'move-failed')).toBe(true);
+  });
+});

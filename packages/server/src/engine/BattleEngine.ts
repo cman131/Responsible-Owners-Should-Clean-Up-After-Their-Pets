@@ -152,7 +152,7 @@ export class BattleEngine {
 
   constructor({ registry, rng }: { registry?: MoveEffectRegistry; rng?: () => number } = {}) {
     this.rng = rng ?? Math.random;
-    this.registry = registry ?? buildDefaultRegistry();
+    this.registry = registry ?? buildDefaultRegistry(this.data);
   }
 
   resolveTurn(state: BattleState, actions: Record<string, Action>): TurnResult {
