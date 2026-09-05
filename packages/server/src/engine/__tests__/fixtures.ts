@@ -2,7 +2,7 @@ import type { BattleState, PartyMember, TeamState, SlotState, FieldState, SideCo
 import { v4 as uuidv4 } from 'uuid';
 
 function defaultSideConditions(): SideConditions {
-  return { stealthRock: false, spikes: 0, toxicSpikes: 0, stickyWeb: false, reflect: 0, lightScreen: 0, auroraVeil: 0 };
+  return { stealthRock: false, spikes: 0, toxicSpikes: 0, stickyWeb: false, reflect: 0, lightScreen: 0, auroraVeil: 0, tailwind: 0, safeguard: 0, mist: 0, luckychant: 0 };
 }
 
 function defaultField(): FieldState {

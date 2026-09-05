@@ -152,7 +152,7 @@ describe('registerAdminHandlers – battles:connect', () => {
         { teamId: 'team-a', slots: [{ slotId: 'a1', displayName: 'A', isNpc: false, isSpectator: false, party: [], activePokemonIndex: 0 }] },
         { teamId: 'team-b', slots: [{ slotId: 'b1', displayName: 'B', isNpc: true,  isSpectator: false, party: [], activePokemonIndex: 0 }] },
       ],
-      field: { sideConditions: [{stealthRock:false,spikes:0,toxicSpikes:0,stickyWeb:false,reflect:0,lightScreen:0,auroraVeil:0},{stealthRock:false,spikes:0,toxicSpikes:0,stickyWeb:false,reflect:0,lightScreen:0,auroraVeil:0}], trickroom: 0, gravity: 0 },
+      field: { sideConditions: [{stealthRock:false,spikes:0,toxicSpikes:0,stickyWeb:false,reflect:0,lightScreen:0,auroraVeil:0,tailwind:0,safeguard:0,mist:0,luckychant:0},{stealthRock:false,spikes:0,toxicSpikes:0,stickyWeb:false,reflect:0,lightScreen:0,auroraVeil:0,tailwind:0,safeguard:0,mist:0,luckychant:0}], trickroom: 0, gravity: 0 },
     });
     db.battles.insert(makeBattleState());
     socket.trigger('admin:action', { type: 'battles:connect', data: { battleId: 'b1' } });
@@ -166,7 +166,7 @@ describe('registerAdminHandlers – battles:connect', () => {
         { teamId: 'team-a', slots: [{ slotId: 'a1', displayName: 'A', isNpc: false, isSpectator: false, party: [], activePokemonIndex: 0 }] },
         { teamId: 'team-b', slots: [{ slotId: 'b1', displayName: 'B', isNpc: true,  isSpectator: false, party: [], activePokemonIndex: 0 }] },
       ],
-      field: { sideConditions: [{stealthRock:false,spikes:0,toxicSpikes:0,stickyWeb:false,reflect:0,lightScreen:0,auroraVeil:0},{stealthRock:false,spikes:0,toxicSpikes:0,stickyWeb:false,reflect:0,lightScreen:0,auroraVeil:0}], trickroom: 0, gravity: 0 },
+      field: { sideConditions: [{stealthRock:false,spikes:0,toxicSpikes:0,stickyWeb:false,reflect:0,lightScreen:0,auroraVeil:0,tailwind:0,safeguard:0,mist:0,luckychant:0},{stealthRock:false,spikes:0,toxicSpikes:0,stickyWeb:false,reflect:0,lightScreen:0,auroraVeil:0,tailwind:0,safeguard:0,mist:0,luckychant:0}], trickroom: 0, gravity: 0 },
     });
     db.battles.insert(makeBattleState());
     const turn = { turnNumber: 1, events: [{ type: 'faint' as const, data: { slotId: 'a1', instanceId: 'i1' } }] };

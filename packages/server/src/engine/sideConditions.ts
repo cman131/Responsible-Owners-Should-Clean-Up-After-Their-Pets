@@ -16,6 +16,16 @@ export function decrementScreens(
       }
     }
   }
+
+  const sideConditionCounters = ['tailwind', 'safeguard', 'mist', 'luckychant'] as const;
+  for (const cond of sideConditionCounters) {
+    if (side[cond] > 0) {
+      side[cond] -= 1;
+      if (side[cond] === 0) {
+        events.push({ type: 'side-condition-ended', data: { condition: cond, side: sideIdx } });
+      }
+    }
+  }
 }
 
 export function getScreenMultiplier(

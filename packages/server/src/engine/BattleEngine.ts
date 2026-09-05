@@ -22,6 +22,36 @@ import { resolvePower } from './dynamicPower.js';
 
 const ALWAYS_THAW_MOVES = new Set(['scald', 'steameruption', 'sparklingaria']);
 
+const MAGIC_COAT_BOUNCED_EFFECTS = new Set([
+  // Status-applying moves
+  'willowisp', 'thunderwave', 'glare', 'stunspore', 'toxic', 'spore', 'sleeppowder', 'hypnosis', 'darkvoid',
+  // Confusion/volatile targeting opponent
+  'attract', 'confuseray', 'supersonic', 'sweetkiss', 'leechseed', 'yawn',
+  'nightmare', 'foresight', 'odorsleuth', 'miracleeye',
+  // Stat-drop moves on opponent
+  'leer', 'growl', 'screech', 'charm', 'faketears', 'flash', 'sandattack',
+  'tickle', 'scaryface', 'tearfullook', 'nobleroar', 'featherdance', 'captivate',
+  'babydolleyes', 'eerieimpulse', 'stringshot', 'cottonspore', 'smokescreen',
+  'kinesis', 'sweetscent', 'confide', 'playnice', 'spicyextract',
+  // Entry hazards
+  'stealthrock', 'stickyweb', 'spikes', 'toxicspikes',
+  // Other debuffs
+  'taunt', 'torment', 'embargo', 'healblock', 'spite', 'venomdrench', 'tarshot', 'topsyturvy',
+]);
+
+const SNATCH_STEALABLE_EFFECTS = new Set([
+  // Self-targeting heals
+  'recover', 'softboiled', 'roost', 'slackoff', 'healorder', 'milkdrink', 'moonlight', 'synthesis',
+  'shoreup', 'morningsun', 'rest', 'wish',
+  // Self-targeting stat boosts
+  'swordsdance', 'nastyplot', 'calmmind', 'bulkup', 'quiverdance', 'dragondance',
+  'agility', 'rockpolish', 'acupressure', 'shellsmash', 'stockpile', 'swallow',
+  'growth', 'geomancy', 'filletaway', 'clangoroussoul', 'bellydrum',
+  // Other self-targeting effects
+  'substitute', 'focusenergy', 'ingrain', 'aquaring', 'magnetrise',
+  'tailwind', 'safeguard', 'mist', 'luckychant',
+]);
+
 const MINIMIZE_DOUBLES = new Set(['stomp', 'steamroller', 'bodyslam', 'dragonrush', 'phantomforce', 'shadowforce', 'flyingpress']);
 
 const COUNTER_MOVES = new Set(['counter', 'mirrorcoat', 'metalburst', 'comeuppance']);
@@ -200,7 +230,8 @@ export class BattleEngine {
         priority = this.data.getMove(moveId)?.priority ?? 0;
       }
 
-      const effectiveSpe = this.getEffectiveSpeed(active, state);
+      const teamIdx = state.teams.findIndex((t) => t.slots.some((sl) => sl.slotId === slotId)) as 0 | 1;
+      const effectiveSpe = this.getEffectiveSpeed(active, state, teamIdx);
       return { slotId, priority, spe: effectiveSpe };
     });
 
@@ -214,7 +245,7 @@ export class BattleEngine {
       .map((e) => e.slotId);
   }
 
-  private getEffectiveSpeed(pokemon: PartyMember, state: BattleState): number {
+  private getEffectiveSpeed(pokemon: PartyMember, state: BattleState, teamIdx: 0 | 1 = 0): number {
     let spe = getEffectiveStat(pokemon.stats.spe, pokemon.statBoosts.spe, 'spe');
     if (pokemon.status === 'par') spe = Math.floor(spe * PARALYSIS_SPEED_MOD);
 
@@ -226,6 +257,7 @@ export class BattleEngine {
     if (itemHooks.onSpeedModifier) {
       spe = Math.floor(spe * itemHooks.onSpeedModifier({ holder: pokemon, state }));
     }
+    if (state.field.sideConditions[teamIdx]!.tailwind > 0) spe *= 2;
     return spe;
   }
 
@@ -421,6 +453,53 @@ export class BattleEngine {
 
       const effectId = move.effectId ?? move.id;
       const handler = this.registry.get(effectId);
+
+      // ── Magic Coat: bounce opponent-targeting status moves back to attacker ──
+      const magicCoatIdx = MAGIC_COAT_BOUNCED_EFFECTS.has(effectId)
+        ? ctx.targets.findIndex((t) => t.volatileStatus.some((v) => v.name === 'magic-coat'))
+        : -1;
+      if (magicCoatIdx >= 0 && handler) {
+        const bouncer = ctx.targets[magicCoatIdx]!;
+        const bouncerSlotId = ctx.targetSlotIds[magicCoatIdx]!;
+        const bouncerTeamIdx = s.teams.findIndex((t) => t.slots.some((sl) => sl.slotId === bouncerSlotId)) as 0 | 1;
+        bouncer.volatileStatus = bouncer.volatileStatus.filter((v) => v.name !== 'magic-coat');
+        const bounceCtx: MoveContext = {
+          ...ctx,
+          user: bouncer,
+          userSlotId: bouncerSlotId,
+          userTeamIndex: bouncerTeamIdx,
+          userTypes: this.resolveEffectiveTypes(bouncer),
+          targets: [attacker],
+          targetSlotIds: [attackerSlotId],
+          targetTypes: [this.resolveEffectiveTypes(attacker)],
+        };
+        events.push(...handler(bounceCtx).events);
+        return { newState: s, events };
+      }
+
+      // ── Snatch: steal self-targeting beneficial status moves from opponent ──
+      const snatcherTeamIdx = (1 - userTeamIndex) as 0 | 1;
+      const snatcherSlot = s.teams[snatcherTeamIdx]?.slots.find(
+        (sl) => sl.party[sl.activePokemonIndex]?.volatileStatus.some((v) => v.name === 'snatch'),
+      );
+      if (SNATCH_STEALABLE_EFFECTS.has(effectId) && snatcherSlot) {
+        const snatcher = snatcherSlot.party[snatcherSlot.activePokemonIndex]!;
+        const snatcherSlotId = snatcherSlot.slotId;
+        snatcher.volatileStatus = snatcher.volatileStatus.filter((v) => v.name !== 'snatch');
+        const snatchCtx: MoveContext = {
+          ...ctx,
+          user: snatcher,
+          userSlotId: snatcherSlotId,
+          userTeamIndex: snatcherTeamIdx,
+          userTypes: this.resolveEffectiveTypes(snatcher),
+          targets: [snatcher],
+          targetSlotIds: [snatcherSlotId],
+          targetTypes: [this.resolveEffectiveTypes(snatcher)],
+        };
+        events.push(...handler!(snatchCtx).events);
+        return { newState: s, events };
+      }
+
       if (handler) {
         const handlerResult = handler(ctx);
         events.push(...handlerResult.events);
@@ -631,7 +710,8 @@ export class BattleEngine {
             const attackerSpecies = this.data.getSpecies(attacker.speciesId);
             const attackerTypes = attacker.hasTerastallized && attacker.teraType
               ? [attacker.teraType] as PokemonType[]
-              : (attackerSpecies?.types ?? ['Normal']) as PokemonType[];
+              : attacker.typeOverride
+              ?? (attackerSpecies?.types ?? ['Normal']) as PokemonType[];
             const evt = applyStatus(attacker, attackerSlotId, variantEffects.status as StatusCondition, attackerTypes, undefined, s);
             if (evt) events.push(evt);
           }
@@ -651,7 +731,8 @@ export class BattleEngine {
       const targetSpecies = this.data.getSpecies(target.speciesId);
       const defTypes = target.hasTerastallized && target.teraType
         ? [target.teraType] as PokemonType[]
-        : (targetSpecies?.types ?? ['Normal']) as PokemonType[];
+        : target.typeOverride
+        ?? (targetSpecies?.types ?? ['Normal']) as PokemonType[];
 
       // Foresight/Odor Sleuth: Normal/Fighting hits Ghost
       let effectiveDefTypes = defTypes;
@@ -967,7 +1048,8 @@ export class BattleEngine {
         const presentAttackerSpecies = this.data.getSpecies(attacker.speciesId);
         const presentAttackerTypes = attacker.hasTerastallized && attacker.teraType
           ? [attacker.teraType] as PokemonType[]
-          : (presentAttackerSpecies?.types ?? ['Normal']) as PokemonType[];
+          : attacker.typeOverride
+          ?? (presentAttackerSpecies?.types ?? ['Normal']) as PokemonType[];
         const presentStab = presentAttackerTypes.includes('Normal' as PokemonType);
         const { damage: presentDmg } = calcDamage({
           level: attacker.level,
@@ -1063,7 +1145,8 @@ export class BattleEngine {
         const attackerSpecies = this.data.getSpecies(attacker.speciesId);
         const attackerTypes = attacker.hasTerastallized && attacker.teraType
           ? [attacker.teraType] as PokemonType[]
-          : (attackerSpecies?.types ?? ['Normal']) as PokemonType[];
+          : attacker.typeOverride
+          ?? (attackerSpecies?.types ?? ['Normal']) as PokemonType[];
         const stab = attackerTypes.includes(effectiveMoveType);
 
         let rawAtkStat = isPhysical ? attacker.stats.atk : attacker.stats.spa;
@@ -1076,7 +1159,9 @@ export class BattleEngine {
         if (move.id === 'bodypress') { rawAtkStat = attacker.stats.def; boostKey = 'def'; }
 
         const critStage = computeCritStage(move.critRatio, attacker.volatileStatus, getItemHooks(attacker.heldItem).critStageBonus ?? 0);
-        const isCritical = this.rng() < critProbability(critStage);
+        let isCritical = this.rng() < critProbability(critStage);
+        const defenderTeamIndexForCrit = s.teams.findIndex((t) => t.slots.some((sl) => sl.slotId === targetSlotId)) as 0 | 1;
+        if (isCritical && s.field.sideConditions[defenderTeamIndexForCrit]!.luckychant > 0) isCritical = false;
         // For Foul Play, use target's atk boost; otherwise use attacker's boost
         const boostSource = move.id === 'foulplay' ? target : attacker;
         const atkBoost = isCritical ? Math.max(0, boostSource.statBoosts[boostKey as keyof StatBoosts]) : boostSource.statBoosts[boostKey as keyof StatBoosts];
@@ -1315,7 +1400,8 @@ export class BattleEngine {
             const attackerSpecies = this.data.getSpecies(attacker.speciesId);
             const attackerTypes = attacker.hasTerastallized && attacker.teraType
               ? [attacker.teraType] as PokemonType[]
-              : (attackerSpecies?.types ?? ['Normal']) as PokemonType[];
+              : attacker.typeOverride
+              ?? (attackerSpecies?.types ?? ['Normal']) as PokemonType[];
             const evt = applyStatus(attacker, attackerSlotId, afterHitResult.statusToApply as StatusCondition, attackerTypes, undefined, s);
             if (evt) events.push(evt);
           }
@@ -1911,6 +1997,7 @@ export class BattleEngine {
 
   private resolveEffectiveTypes(member: PartyMember): PokemonType[] {
     if (member.hasTerastallized && member.teraType) return [member.teraType];
+    if (member.typeOverride) return member.typeOverride;
     const species = this.data.getSpecies(member.speciesId);
     return (species?.types ?? ['Normal']) as PokemonType[];
   }

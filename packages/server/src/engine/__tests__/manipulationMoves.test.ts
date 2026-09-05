@@ -93,6 +93,64 @@ describe('Reflect Type', () => {
   });
 });
 
+describe('Trick-or-Treat', () => {
+  it('adds Ghost type to target, making them vulnerable to Ghost moves', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+
+    // p2 is Charizard (Fire/Flying, speciesId=6). Normal-type is immune to Ghost (0×).
+    // Set p2 to a Normal-type Pokemon instead.
+    state.teams[1]!.slots[0]!.party[0]!.speciesId = 143; // Snorlax (Normal)
+    state.teams[1]!.slots[0]!.party[0]!.speciesName = 'snorlax';
+
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'trickortreat', currentPp: 20, maxPp: 20 };
+    state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'shadowball', currentPp: 15, maxPp: 15 };
+
+    // Without Trick-or-Treat, Ghost vs Normal = 0× (immune)
+    const stateNoTrick = make1v1State();
+    stateNoTrick.teams[1]!.slots[0]!.party[0]!.speciesId = 143;
+    stateNoTrick.teams[1]!.slots[0]!.party[0]!.speciesName = 'snorlax';
+    stateNoTrick.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'shadowball', currentPp: 15, maxPp: 15 };
+    const noTrickResult = engine.resolveTurn(stateNoTrick, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+    const dmgNoTrick = 100 - noTrickResult.newState.teams[1]!.slots[0]!.party[0]!.currentHp;
+    expect(dmgNoTrick).toBe(0); // Ghost is immune to Normal
+
+    // Apply Trick-or-Treat, then use Ghost move
+    const afterTrick = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+    const p2 = afterTrick.newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2.typeOverride).toContain('Ghost');
+    expect(p2.typeOverride).toContain('Normal'); // original type preserved
+
+    const afterGhost = engine.resolveTurn(afterTrick.newState, {
+      'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },
+    });
+    const dmgWithTrick = p2.currentHp - afterGhost.newState.teams[1]!.slots[0]!.party[0]!.currentHp;
+    expect(dmgWithTrick).toBeGreaterThan(0); // Ghost now hits
+  });
+});
+
+describe("Forest's Curse", () => {
+  it('adds Grass type to target', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'forestscurse', currentPp: 20, maxPp: 20 };
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2.typeOverride).toContain('Grass');
+    // Original types preserved (Charizard = Fire/Flying)
+    expect(p2.typeOverride).toContain('Fire');
+    expect(p2.typeOverride).toContain('Flying');
+  });
+});
+
 describe('Trick / Switcheroo', () => {
   it('swaps held items between user and target', () => {
     const engine = new BattleEngine({ rng: () => 0.5 });
@@ -128,5 +186,107 @@ describe('Trick / Switcheroo', () => {
 
     expect(newState.teams[0]!.slots[0]!.party[0]!.heldItem).toBe('leftovers');
     expect(newState.teams[1]!.slots[0]!.party[0]!.heldItem).toBeUndefined();
+  });
+});
+
+describe('Bestow', () => {
+  it('gives user\'s item to itemless target', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'leftovers';
+    delete state.teams[1]!.slots[0]!.party[0]!.heldItem;
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'bestow', currentPp: 15, maxPp: 15 };
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    expect(newState.teams[0]!.slots[0]!.party[0]!.heldItem).toBeUndefined();
+    expect(newState.teams[1]!.slots[0]!.party[0]!.heldItem).toBe('leftovers');
+  });
+
+  it('fails if user has no item', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    delete state.teams[0]!.slots[0]!.party[0]!.heldItem;
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'bestow', currentPp: 15, maxPp: 15 };
+
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    expect(events.some(e => e.type === 'move-failed' && (e.data as any).reason === 'no-item')).toBe(true);
+  });
+
+  it('fails if target already holds an item', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'leftovers';
+    state.teams[1]!.slots[0]!.party[0]!.heldItem = 'life-orb';
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'bestow', currentPp: 15, maxPp: 15 };
+
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    expect(events.some(e => e.type === 'move-failed' && (e.data as any).reason === 'target-has-item')).toBe(true);
+  });
+});
+
+describe('Skill Swap', () => {
+  it('exchanges abilities between user and target', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.ability = 'blaze';
+    state.teams[1]!.slots[0]!.party[0]!.ability = 'intimidate';
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'skillswap', currentPp: 10, maxPp: 10 };
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    expect(newState.teams[0]!.slots[0]!.party[0]!.ability).toBe('intimidate');
+    expect(newState.teams[1]!.slots[0]!.party[0]!.ability).toBe('blaze');
+  });
+});
+
+describe('Electrify', () => {
+  it('makes the attacker\'s move Electric-type for the turn and clears the volatile', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+
+    // p2 is Dratini (Dragon-type, speciesId=147). p1 is Charizard (Fire/Flying).
+    // Without Electrify: p2 uses Tackle (Normal) on p1 (Charizard Fire/Flying) = 1× effectiveness.
+    // With Electrify on p2: p2's Tackle becomes Electric → 2× (Electric is super-effective vs Flying).
+    // So damage with Electrify should be greater than without.
+
+    // Baseline: p2 (Dratini) uses Tackle on p1 (Charizard) without Electrify
+    const stateNoElec = make1v1State();
+    stateNoElec.teams[1]!.slots[0]!.party[0]!.speciesId = 147;
+    stateNoElec.teams[1]!.slots[0]!.party[0]!.speciesName = 'dratini';
+    stateNoElec.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'tackle', currentPp: 35, maxPp: 35 };
+    const noElecResult = engine.resolveTurn(stateNoElec, {
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const dmgNoElec = 100 - noElecResult.newState.teams[0]!.slots[0]!.party[0]!.currentHp;
+
+    // With Electrify: p1 uses Electrify on p2 (p1 is faster), p2 uses Tackle (now Electric) on p1
+    const stateElec = make1v1State();
+    stateElec.teams[1]!.slots[0]!.party[0]!.speciesId = 147;
+    stateElec.teams[1]!.slots[0]!.party[0]!.speciesName = 'dratini';
+    stateElec.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'electrify', currentPp: 20, maxPp: 20 };
+    stateElec.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'tackle', currentPp: 35, maxPp: 35 };
+
+    const elecResult = engine.resolveTurn(stateElec, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const dmgElec = 100 - elecResult.newState.teams[0]!.slots[0]!.party[0]!.currentHp;
+
+    // Electric vs Flying (Charizard) = 2×; Normal vs Fire/Flying = 1×; so dmgElec > dmgNoElec
+    expect(dmgElec).toBeGreaterThan(dmgNoElec);
+
+    // Electrify volatile must be cleared after the turn
+    const p2After = elecResult.newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2After.volatileStatus.some(v => v.name === 'electrify')).toBe(false);
   });
 });

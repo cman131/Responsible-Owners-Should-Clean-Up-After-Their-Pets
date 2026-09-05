@@ -51,6 +51,7 @@ export interface PartyMember {
   volatileStatus: VolatileStatusEntry[]; // e.g. 'confusion', 'leechseed', 'encore'
   statBoosts: StatBoosts;
   teraType?: PokemonType;
+  typeOverride?: PokemonType[];
   hasTerastallized: boolean;
   lastMoveId?: string;
   lastDamageTaken?: { amount: number; category: 'physical' | 'special'; fromSlotId: string };
@@ -87,6 +88,10 @@ export interface SideConditions {
   reflect: number;     // turns remaining, 0 = not active
   lightScreen: number;
   auroraVeil: number;
+  tailwind: number;    // turns remaining, 0 = inactive
+  safeguard: number;   // turns remaining
+  mist: number;        // turns remaining
+  luckychant: number;  // turns remaining
 }
 
 export interface FieldState {

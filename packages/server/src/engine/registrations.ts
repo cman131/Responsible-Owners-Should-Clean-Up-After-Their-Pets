@@ -1,5 +1,5 @@
 import { MoveEffectRegistry } from './MoveEffectRegistry.js';
-import type { MoveContext } from './MoveEffectRegistry.js';
+import type { MoveContext, MoveEffectHandler } from './MoveEffectRegistry.js';
 import {
   statModSelf, statModTarget, multiStatModSelf, multiStatModTarget,
   applyStatusTarget, applyVolatileTarget, applyVolatileSelf, healPercent,
@@ -13,7 +13,7 @@ import { clearHazards, clearScreens } from './sideConditions.js';
 import { applyStatBoost, applyVolatile } from './effects.js';
 import { canApplyStatus } from './status.js';
 import { getEffectiveStat } from './stats.js';
-import type { TurnResolveEvent } from '@poke-fighter/shared';
+import type { TurnResolveEvent, PokemonType } from '@poke-fighter/shared';
 
 function sunBoostHeal(ctx: MoveContext): { events: TurnResolveEvent[] } {
   const weather = ctx.battle.field.weather?.type;
@@ -754,6 +754,45 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
   // ── Item manipulation ──────────────────────────────────────────────
   r.register('trick',      itemSwap());
   r.register('switcheroo', itemSwap());
+  r.register('bestow', custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+
+    if (!ctx.user.heldItem) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'no-item' } }] };
+    }
+    if (target.heldItem) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'target-has-item' } }] };
+    }
+
+    const item = ctx.user.heldItem;
+    target.heldItem = item;
+    delete ctx.user.heldItem;
+
+    return {
+      events: [{ type: 'move-note', data: { slotId: ctx.userSlotId, note: 'item-bestowed' } }],
+    };
+  }));
+
+  // ── Ability manipulation ───────────────────────────────────────────
+  r.register('skillswap', custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+
+    const userAbility = ctx.user.ability;
+    const targetAbility = target.ability;
+    ctx.user.ability = targetAbility;
+    target.ability = userAbility;
+    // Clear tracedAbilityId since we're directly swapping the base ability
+    delete ctx.user.tracedAbilityId;
+    delete target.tracedAbilityId;
+
+    return {
+      events: [{ type: 'move-note', data: { slotId: ctx.userSlotId, note: 'ability-swapped' } }],
+    };
+  }));
 
   return r;
 }
