@@ -544,7 +544,7 @@ export function shedTail(): MoveEffectHandler {
     // Store substitute in batonPassData for the incoming Pokemon (not on the user itself)
     const subHp = Math.floor(ctx.user.maxHp / 4);
     const emptyStatBoosts: StatBoosts = { atk: 0, def: 0, spa: 0, spd: 0, spe: 0, accuracy: 0, evasion: 0 };
-    userSlot.batonPassData = {
+    userSlot!.batonPassData = {
       volatiles: [{ name: 'substitute', hp: subHp }],
       statBoosts: emptyStatBoosts,
     };

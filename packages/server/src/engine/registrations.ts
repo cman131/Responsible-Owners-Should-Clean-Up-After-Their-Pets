@@ -44,7 +44,7 @@ const ALL_TYPES: PokemonType[] = [
   'Ground', 'Flying', 'Psychic', 'Bug', 'Rock', 'Ghost', 'Dragon', 'Dark', 'Steel', 'Fairy',
 ];
 
-export function buildDefaultRegistry(data: DataLoader): MoveEffectRegistry {
+export function buildDefaultRegistry(data: DataLoader = new DataLoader()): MoveEffectRegistry {
   const r = new MoveEffectRegistry();
 
   // ── Status conditions ──────────────────────────────────────────────
@@ -239,7 +239,7 @@ export function buildDefaultRegistry(data: DataLoader): MoveEffectRegistry {
     ctx.user.volatileStatus = ctx.user.volatileStatus.filter(v => v.name !== 'geomancy-charge');
 
     if (hasPowerHerb) {
-      ctx.user.lastConsumedItem = ctx.user.heldItem;
+      if (ctx.user.heldItem) ctx.user.lastConsumedItem = ctx.user.heldItem;
       delete ctx.user.heldItem;
       events.push({ type: 'item-consumed', data: { slotId: ctx.userSlotId, item: 'power-herb', reason: 'power-herb' } });
     }
