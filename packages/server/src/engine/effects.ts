@@ -3,7 +3,7 @@ import type {
 } from '@poke-fighter/shared';
 import { canApplyStatus } from './status.js';
 import { isGrounded } from './fieldState.js';
-import { getAbilityHooks } from './abilities.js';
+import { getAbilityHooks, effectiveAbilityId } from './abilities.js';
 import { getItemHooks } from './items.js';
 
 export function applyStatus(
@@ -38,11 +38,12 @@ export function applyStatBoost(
   slotId: string,
   deltas: Partial<Record<keyof StatBoosts, number>>,
 ): TurnResolveEvent {
+  const multiplier = effectiveAbilityId(member) === 'simple' ? 2 : 1;
   const changes: Record<string, number> = {};
   for (const [key, delta] of Object.entries(deltas) as [keyof StatBoosts, number][]) {
     if (delta === undefined) continue;
     const current = member.statBoosts[key];
-    const next = Math.max(-6, Math.min(6, current + delta));
+    const next = Math.max(-6, Math.min(6, current + delta * multiplier));
     const actual = next - current;
     if (actual === 0) continue;
     member.statBoosts[key] = next;

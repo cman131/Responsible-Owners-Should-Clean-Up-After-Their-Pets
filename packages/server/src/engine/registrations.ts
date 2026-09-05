@@ -893,6 +893,33 @@ export function buildDefaultRegistry(data: DataLoader): MoveEffectRegistry {
       events: [{ type: 'move-note', data: { slotId: ctx.userSlotId, note: 'ability-copied' } }],
     };
   }));
+  r.register('entrainment', custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+    target.ability = ctx.user.ability;
+    delete target.tracedAbilityId;
+    return { events: [{ type: 'move-note', data: { slotId: ctx.userSlotId, note: 'ability-entrained' } }] };
+  }));
+  r.register('simplebeam', custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+    target.ability = 'simple';
+    delete target.tracedAbilityId;
+    return { events: [{ type: 'move-note', data: { slotId: targetSlotId, note: 'ability-changed-simple' } }] };
+  }));
+  r.register('worryseed', custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+    target.ability = 'insomnia';
+    delete target.tracedAbilityId;
+    return { events: [{ type: 'move-note', data: { slotId: targetSlotId, note: 'ability-changed-insomnia' } }] };
+  }));
+  r.register('doodle', custom((ctx) => {
+    return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'not-implemented' } }] };
+  }));
 
   return r;
 }

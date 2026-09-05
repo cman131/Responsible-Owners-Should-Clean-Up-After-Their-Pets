@@ -324,6 +324,81 @@ describe('Gastro Acid', () => {
   });
 });
 
+describe('Entrainment', () => {
+  it('copies user ability to target', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.ability = 'blaze';
+    state.teams[1]!.slots[0]!.party[0]!.ability = 'intimidate';
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'entrainment', currentPp: 15, maxPp: 15 };
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    expect(newState.teams[1]!.slots[0]!.party[0]!.ability).toBe('blaze');
+    expect(newState.teams[0]!.slots[0]!.party[0]!.ability).toBe('blaze'); // user unchanged
+  });
+});
+
+describe('Simple Beam', () => {
+  it('sets target ability to simple', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'simplebeam', currentPp: 15, maxPp: 15 };
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    expect(newState.teams[1]!.slots[0]!.party[0]!.ability).toBe('simple');
+  });
+});
+
+describe('Worry Seed', () => {
+  it('sets target ability to insomnia', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'worryseed', currentPp: 15, maxPp: 15 };
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    expect(newState.teams[1]!.slots[0]!.party[0]!.ability).toBe('insomnia');
+  });
+});
+
+describe('Simple ability (stat stage doubling)', () => {
+  it('doubles stat boosts for a Pokemon with Simple', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.ability = 'simple';
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    // Sword's Dance normally gives +2 Atk. With Simple, it gives +4.
+    expect(newState.teams[0]!.slots[0]!.party[0]!.statBoosts.atk).toBe(4);
+  });
+
+  it('doubles stat drops for a Pokemon with Simple', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[1]!.slots[0]!.party[0]!.ability = 'simple';
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'growl', currentPp: 40, maxPp: 40 };
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    // Growl gives -1 Atk normally. With Simple, target gets -2 Atk.
+    expect(newState.teams[1]!.slots[0]!.party[0]!.statBoosts.atk).toBe(-2);
+  });
+});
+
 describe('Role Play', () => {
   it('copies the target\'s ability to the user', () => {
     const engine = new BattleEngine({ rng: () => 0.5 });
