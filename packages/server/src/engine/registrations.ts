@@ -811,6 +811,15 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
       events: [{ type: 'move-note', data: { slotId: ctx.userSlotId, note: 'ability-swapped' } }],
     };
   }));
+  r.register('roleplay', custom((ctx) => {
+    const target = ctx.targets[0];
+    if (!target) return { events: [] };
+    ctx.user.ability = target.ability;
+    delete ctx.user.tracedAbilityId;
+    return {
+      events: [{ type: 'move-note', data: { slotId: ctx.userSlotId, note: 'ability-copied' } }],
+    };
+  }));
 
   return r;
 }

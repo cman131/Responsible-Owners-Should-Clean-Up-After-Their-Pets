@@ -323,3 +323,21 @@ describe('Gastro Acid', () => {
     expect(effectiveAbilityId(target)).toBe('none');
   });
 });
+
+describe('Role Play', () => {
+  it('copies the target\'s ability to the user', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.ability = 'blaze';
+    state.teams[1]!.slots[0]!.party[0]!.ability = 'intimidate';
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'roleplay', currentPp: 10, maxPp: 10 };
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    expect(newState.teams[0]!.slots[0]!.party[0]!.ability).toBe('intimidate');
+    // Target's ability unchanged
+    expect(newState.teams[1]!.slots[0]!.party[0]!.ability).toBe('intimidate');
+  });
+});
