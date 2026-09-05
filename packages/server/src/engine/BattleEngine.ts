@@ -659,6 +659,13 @@ export class BattleEngine {
       delete attacker.heldItem;
     }
 
+    // Electrify: force the attacker's move to Electric type
+    const electrifyIdx = attacker.volatileStatus.findIndex(v => v.name === 'electrify');
+    if (electrifyIdx !== -1) {
+      effectiveMoveType = 'Electric';
+      attacker.volatileStatus.splice(electrifyIdx, 1);
+    }
+
     // Extreme-weather move nullification (must come after effectiveMoveType is resolved)
     if (s.field.weather) {
       const wt = s.field.weather.type;

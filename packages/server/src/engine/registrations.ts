@@ -26,6 +26,18 @@ function sunBoostHeal(ctx: MoveContext): { events: TurnResolveEvent[] } {
   return { events: [{ type: 'heal', data: { slotId: ctx.userSlotId, amount: heal, remainingHp: ctx.user.currentHp } }] };
 }
 
+function addTypeToTarget(type: PokemonType): MoveEffectHandler {
+  return custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+    const currentTypes = ctx.targetTypes[0] ?? [];
+    if (currentTypes.includes(type)) return { events: [] }; // already has this type
+    target.typeOverride = [...currentTypes, type];
+    return { events: [{ type: 'volatile-applied', data: { targetSlotId, volatile: 'type-changed' } }] };
+  });
+}
+
 export function buildDefaultRegistry(): MoveEffectRegistry {
   const r = new MoveEffectRegistry();
 
@@ -88,6 +100,8 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
   }));
 
   // ── Type manipulation ──────────────────────────────────────────────
+  r.register('electrify', applyVolatileTarget('electrify'));
+
   r.register('soak', custom((ctx) => {
     const target = ctx.targets[0];
     const targetSlotId = ctx.targetSlotIds[0];
@@ -105,6 +119,9 @@ export function buildDefaultRegistry(): MoveEffectRegistry {
     ctx.user.typeOverride = [...targetTypes];
     return { events: [{ type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'type-changed' } }] };
   }));
+
+  r.register('trickortreat', addTypeToTarget('Ghost'));
+  r.register('forestscurse', addTypeToTarget('Grass'));
 
   // ── Self stat boosts ───────────────────────────────────────────────
   r.register('minimize', custom((ctx) => {
