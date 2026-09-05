@@ -454,3 +454,73 @@ describe('Knock Off', () => {
     expect(newState.teams[1]!.slots[0]!.party[0]!.currentHp).toBeLessThan(100);
   });
 });
+
+describe('Recycle', () => {
+  it('restores the last consumed item', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+
+    const p1 = state.teams[0]!.slots[0]!.party[0]!;
+    delete p1.heldItem;                          // no current item
+    p1.lastConsumedItem = 'sitrus-berry';        // was consumed previously
+    p1.moves[0] = { moveId: 'recycle', currentPp: 10, maxPp: 10 };
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    const p1After = newState.teams[0]!.slots[0]!.party[0]!;
+    expect(p1After.heldItem).toBe('sitrus-berry');
+    expect(p1After.lastConsumedItem).toBeUndefined();
+  });
+
+  it('fails if no item was previously consumed', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'recycle', currentPp: 10, maxPp: 10 };
+    // No lastConsumedItem set
+
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    expect(events.some(e => e.type === 'move-failed')).toBe(true);
+  });
+
+  it('fails if user is already holding an item', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    const p1 = state.teams[0]!.slots[0]!.party[0]!;
+    p1.heldItem = 'leftovers';
+    p1.lastConsumedItem = 'sitrus-berry';
+    p1.moves[0] = { moveId: 'recycle', currentPp: 10, maxPp: 10 };
+
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    expect(events.some(e => e.type === 'move-failed')).toBe(true);
+  });
+
+  it('lastConsumedItem is set when Focus Sash triggers', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    const p1 = state.teams[0]!.slots[0]!.party[0]!;
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    // p2 has focus sash and takes a killing blow
+    p2.heldItem = 'focus-sash';
+    p2.currentHp = p2.maxHp; // at full HP so focus sash can trigger
+    // p1 uses a very powerful move — set p1's spa very high so it OHKOs
+    p1.stats = { ...p1.stats, spa: 9999 };
+    p1.moves[0] = { moveId: 'flamethrower', currentPp: 15, maxPp: 15 };
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const p2After = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2After.heldItem).toBeUndefined();           // sash consumed
+    expect(p2After.lastConsumedItem).toBe('focus-sash');
+    expect(p2After.currentHp).toBe(1);                 // survived with 1 HP
+  });
+});

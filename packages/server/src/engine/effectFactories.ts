@@ -74,6 +74,7 @@ export function applyStatusTarget(status: StatusCondition): MoveEffectHandler {
             events.push({ type: 'status-cured', data: { slotId: targetSlotId, status: curedStatus, reason: 'lum-berry' } });
             if (lumResult.consume && target.heldItem) {
               const itemName = target.heldItem;
+              target.lastConsumedItem = itemName;
               delete target.heldItem;
               events.push({ type: 'item-consumed', data: { slotId: targetSlotId, item: itemName, reason: 'triggered' } });
             }

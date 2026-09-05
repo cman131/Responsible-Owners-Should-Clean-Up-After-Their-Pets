@@ -239,6 +239,7 @@ export function buildDefaultRegistry(data: DataLoader): MoveEffectRegistry {
     ctx.user.volatileStatus = ctx.user.volatileStatus.filter(v => v.name !== 'geomancy-charge');
 
     if (hasPowerHerb) {
+      ctx.user.lastConsumedItem = ctx.user.heldItem;
       delete ctx.user.heldItem;
       events.push({ type: 'item-consumed', data: { slotId: ctx.userSlotId, item: 'power-herb', reason: 'power-herb' } });
     }
@@ -846,6 +847,21 @@ export function buildDefaultRegistry(data: DataLoader): MoveEffectRegistry {
 
     return {
       events: [{ type: 'move-note', data: { slotId: ctx.userSlotId, note: 'item-bestowed' } }],
+    };
+  }));
+
+  r.register('recycle', custom((ctx) => {
+    if (!ctx.user.lastConsumedItem) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'no-consumed-item' } }] };
+    }
+    if (ctx.user.heldItem) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'already-holding-item' } }] };
+    }
+    const item = ctx.user.lastConsumedItem;
+    ctx.user.heldItem = item;
+    delete ctx.user.lastConsumedItem;
+    return {
+      events: [{ type: 'move-note', data: { slotId: ctx.userSlotId, note: 'item-recycled' } }],
     };
   }));
 

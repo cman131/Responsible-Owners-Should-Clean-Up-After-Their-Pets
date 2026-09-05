@@ -1290,6 +1290,7 @@ export class BattleEngine {
             target.currentHp - cappedDamage <= 0
           ) {
             cappedDamage = target.currentHp - 1;
+            target.lastConsumedItem = target.heldItem;
             delete target.heldItem;
             events.push({ type: 'focus-sash', data: { slotId: targetSlotId } });
             events.push({ type: 'item-consumed', data: { slotId: targetSlotId, item: 'focus-sash', reason: 'triggered' } });
@@ -1381,6 +1382,7 @@ export class BattleEngine {
               events.push({ type: 'status-cured', data: { slotId: targetSlotId, status: curedStatus, reason: 'lum-berry' } });
               if (lumResult.consume && target.heldItem) {
                 const itemName = target.heldItem;
+                target.lastConsumedItem = itemName;
                 delete target.heldItem;
                 events.push({ type: 'item-consumed', data: { slotId: targetSlotId, item: itemName, reason: 'triggered' } });
               }
@@ -1392,6 +1394,7 @@ export class BattleEngine {
       // Knock Off: remove target's held item after dealing damage
       if (move.id === 'knockoff' && totalDamage > 0 && !target.fainted && target.heldItem) {
         const knockedItem = target.heldItem;
+        target.lastConsumedItem = knockedItem;
         delete target.heldItem;
         events.push({ type: 'item-consumed', data: { slotId: targetSlotId, item: knockedItem, reason: 'knocked-off' } });
       }
@@ -1498,6 +1501,7 @@ export class BattleEngine {
 
       // Air Balloon pop (any damaging hit bursts the balloon)
       if (totalDamage > 0 && target.heldItem === 'air-balloon') {
+        target.lastConsumedItem = target.heldItem;
         delete target.heldItem;
         events.push({ type: 'item-consumed', data: { slotId: targetSlotId, item: 'air-balloon', reason: 'popped' } });
       }
@@ -1505,6 +1509,7 @@ export class BattleEngine {
       // Weakness Policy
       if (effectiveness > 1 && totalDamage > 0 && !target.fainted && target.heldItem === 'weakness-policy') {
         const policyItem = target.heldItem;
+        target.lastConsumedItem = policyItem;
         delete target.heldItem;
         events.push(applyStatBoost(target, targetSlotId, { atk: 2, spa: 2 }));
         events.push({ type: 'item-consumed', data: { slotId: targetSlotId, item: policyItem, reason: 'triggered' } });
@@ -1532,6 +1537,7 @@ export class BattleEngine {
           }
           if (berryResult.consume) {
             const itemName = target.heldItem!;
+            target.lastConsumedItem = itemName;
             delete target.heldItem;
             events.push({ type: 'item-consumed', data: { slotId: targetSlotId, item: itemName, reason: 'triggered' } });
           }

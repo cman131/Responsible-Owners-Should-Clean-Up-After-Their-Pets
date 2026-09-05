@@ -58,6 +58,7 @@ export interface PartyMember {
   friendship?: number;
   tracedAbilityId?: string;
   lockedMoveId?: string;
+  lastConsumedItem?: string;
   isEvioliteEligible?: boolean;
   fainted: boolean;
   expTotal: number;
