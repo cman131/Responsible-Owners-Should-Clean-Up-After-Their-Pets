@@ -419,3 +419,38 @@ describe('Conversion 2', () => {
     expect(events.some(e => e.type === 'move-failed')).toBe(true);
   });
 });
+
+describe('Knock Off', () => {
+  it('removes the target\'s held item after dealing damage', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[1]!.slots[0]!.party[0]!.heldItem = 'leftovers';
+    // p1 uses knockoff on p2
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'knockoff', currentPp: 20, maxPp: 20 };
+
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    // Item should be removed from target
+    expect(newState.teams[1]!.slots[0]!.party[0]!.heldItem).toBeUndefined();
+    // item-consumed event should be emitted
+    expect(events.some(e => e.type === 'item-consumed' && (e.data as any).reason === 'knocked-off')).toBe(true);
+  });
+
+  it('does not remove item if target has no held item', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    delete state.teams[1]!.slots[0]!.party[0]!.heldItem;
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'knockoff', currentPp: 20, maxPp: 20 };
+
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    // Should complete without error, no item-consumed event
+    expect(events.filter(e => e.type === 'item-consumed').length).toBe(0);
+    // Damage still dealt
+    expect(newState.teams[1]!.slots[0]!.party[0]!.currentHp).toBeLessThan(100);
+  });
+});

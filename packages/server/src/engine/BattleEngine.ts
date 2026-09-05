@@ -1389,6 +1389,13 @@ export class BattleEngine {
         }
       }
 
+      // Knock Off: remove target's held item after dealing damage
+      if (move.id === 'knockoff' && totalDamage > 0 && !target.fainted && target.heldItem) {
+        const knockedItem = target.heldItem;
+        delete target.heldItem;
+        events.push({ type: 'item-consumed', data: { slotId: targetSlotId, item: knockedItem, reason: 'knocked-off' } });
+      }
+
       // Defender's ability triggers (e.g. Static, Flame Body, Rough Skin, Iron Barbs)
       if (totalDamage > 0 && !target.fainted) {
         const afterHitCtx = {
