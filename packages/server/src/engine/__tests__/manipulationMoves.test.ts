@@ -94,42 +94,57 @@ describe('Reflect Type', () => {
 });
 
 describe('Trick-or-Treat', () => {
-  it('adds Ghost type to target, making them vulnerable to Ghost moves', () => {
+  it('adds Ghost type to target, making Ghost moves super-effective', () => {
     const engine = new BattleEngine({ rng: () => 0.5 });
-    const state = make1v1State();
 
-    // p2 is Charizard (Fire/Flying, speciesId=6). Normal-type is immune to Ghost (0×).
-    // Set p2 to a Normal-type Pokemon instead.
-    state.teams[1]!.slots[0]!.party[0]!.speciesId = 143; // Snorlax (Normal)
-    state.teams[1]!.slots[0]!.party[0]!.speciesName = 'snorlax';
+    // p2 is Charizard (Fire/Flying, speciesId=6).
+    // Ghost vs Fire/Flying = 1×. After Trick-or-Treat, Ghost vs Fire/Flying/Ghost = 2×.
 
-    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'trickortreat', currentPp: 20, maxPp: 20 };
-    state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'shadowball', currentPp: 15, maxPp: 15 };
-
-    // Without Trick-or-Treat, Ghost vs Normal = 0× (immune)
+    // Without Trick-or-Treat: Ghost move on Charizard (baseline damage)
     const stateNoTrick = make1v1State();
-    stateNoTrick.teams[1]!.slots[0]!.party[0]!.speciesId = 143;
-    stateNoTrick.teams[1]!.slots[0]!.party[0]!.speciesName = 'snorlax';
     stateNoTrick.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'shadowball', currentPp: 15, maxPp: 15 };
     const noTrickResult = engine.resolveTurn(stateNoTrick, {
       'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
     });
     const dmgNoTrick = 100 - noTrickResult.newState.teams[1]!.slots[0]!.party[0]!.currentHp;
-    expect(dmgNoTrick).toBe(0); // Ghost is immune to Normal
+    expect(dmgNoTrick).toBeGreaterThan(0); // Ghost hits Fire/Flying normally
 
-    // Apply Trick-or-Treat, then use Ghost move
+    // Apply Trick-or-Treat to Charizard, then use Ghost move
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'trickortreat', currentPp: 20, maxPp: 20 };
+    state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'shadowball', currentPp: 15, maxPp: 15 };
+
     const afterTrick = engine.resolveTurn(state, {
       'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
     });
     const p2 = afterTrick.newState.teams[1]!.slots[0]!.party[0]!;
     expect(p2.typeOverride).toContain('Ghost');
-    expect(p2.typeOverride).toContain('Normal'); // original type preserved
+    expect(p2.typeOverride).toContain('Fire');   // original types preserved
+    expect(p2.typeOverride).toContain('Flying'); // original types preserved
 
     const afterGhost = engine.resolveTurn(afterTrick.newState, {
       'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },
     });
     const dmgWithTrick = p2.currentHp - afterGhost.newState.teams[1]!.slots[0]!.party[0]!.currentHp;
-    expect(dmgWithTrick).toBeGreaterThan(0); // Ghost now hits
+    // Ghost vs Fire/Flying/Ghost = 2× (super-effective), more damage than without Trick-or-Treat
+    expect(dmgWithTrick).toBeGreaterThan(dmgNoTrick);
+  });
+
+  it('preserves original type and appends Ghost (type not replaced)', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    // Use Snorlax (Normal) to verify type-append behavior
+    const state = make1v1State();
+    state.teams[1]!.slots[0]!.party[0]!.speciesId = 143; // Snorlax (Normal)
+    state.teams[1]!.slots[0]!.party[0]!.speciesName = 'snorlax';
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'trickortreat', currentPp: 20, maxPp: 20 };
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2.typeOverride).toContain('Ghost');
+    expect(p2.typeOverride).toContain('Normal'); // original type preserved
   });
 });
 
