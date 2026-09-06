@@ -31,6 +31,13 @@ export class EffectEngine {
   ): PreMoveResult {
     const events: TurnResolveEvent[] = [];
 
+    // Sub-move bypass: skip all pre-move checks
+    const subMoveBypass = pokemon.volatileStatus.find(v => v.name === '__submove-bypass');
+    if (subMoveBypass) {
+      pokemon.volatileStatus = pokemon.volatileStatus.filter(v => v.name !== '__submove-bypass');
+      return { blocked: false, events: [] };
+    }
+
     // Bide: decrement counter; release on counter reaching 0
     const bideEntry = pokemon.volatileStatus.find(v => v.name === 'bide');
     if (bideEntry) {
@@ -81,6 +88,12 @@ export class EffectEngine {
     }
 
     if (pokemon.status === 'slp') {
+      // Allow Sleep Talk to execute while asleep
+      const sleepTalkBypass = pokemon.volatileStatus.find(v => v.name === '__sleeptalk-bypass');
+      if (sleepTalkBypass) {
+        pokemon.volatileStatus = pokemon.volatileStatus.filter(v => v.name !== '__sleeptalk-bypass');
+        return { blocked: false, events: [] };
+      }
       const entry = pokemon.volatileStatus.find(v => v.name === 'sleep');
       if (!entry || (entry.counter ?? 0) === 0) {
         pokemon.volatileStatus = pokemon.volatileStatus.filter(v => v.name !== 'sleep');

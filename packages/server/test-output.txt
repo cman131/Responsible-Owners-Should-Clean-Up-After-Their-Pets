@@ -1,0 +1,107 @@
+
+> @poke-fighter/server@1.0.0 test
+> vitest run
+
+
+[7m[1m[36m RUN [39m[22m[27m [36mv1.6.1[39m [90mC:/Users/conor/workbench/poke-fighter/packages/server[39m
+
+ [32m✓[39m src/engine/__tests__/secondaries.test.ts [2m ([22m[2m29 tests[22m[2m)[22m[90m 22[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/EffectEngine.test.ts [2m ([22m[2m30 tests[22m[2m)[22m[90m 29[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/sideConditions.test.ts [2m ([22m[2m35 tests[22m[2m)[22m[90m 57[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/statSetup.test.ts [2m ([22m[2m44 tests[22m[2m)[22m[90m 96[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/healingMoves.test.ts [2m ([22m[2m63 tests[22m[2m)[22m[90m 270[2mms[22m[39m
+ [32m✓[39m src/socket/__tests__/lobbyHandlers.test.ts [2m ([22m[2m16 tests[22m[2m)[22m[90m 42[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/switching.test.ts [2m ([22m[2m19 tests[22m[2m)[22m[33m 998[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/effectFactories.test.ts [2m ([22m[2m36 tests[22m[2m)[22m[90m 42[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/teamSupport.test.ts [2m ([22m[2m18 tests[22m[2m)[22m[33m 1045[2mms[22m[39m
+ [32m✓[39m src/socket/__tests__/adminHandlers.test.ts [2m ([22m[2m18 tests[22m[2m)[22m[90m 168[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/effects.test.ts [2m ([22m[2m26 tests[22m[2m)[22m[90m 44[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/manipulationMoves.test.ts [2m ([22m[2m31 tests[22m[2m)[22m[33m 1726[2mms[22m[39m
+ [33m❯[39m src/engine/__tests__/metaMoves.test.ts [2m ([22m[2m28 tests[22m [2m|[22m [31m1 failed[39m[2m)[22m[33m 1879[2mms[22m[39m
+[31m   [33m❯[31m src/engine/__tests__/metaMoves.test.ts[2m > [22mSketch[2m > [22msketches any move including otherwise restricted moves[39m
+[31m     → expected 'sketch' to be 'protect' // Object.is equality[39m
+[90mstderr[2m | src/engine/__tests__/metaMoves.test.ts[2m > [22m[2mTransform[2m > [22m[2mcopies target stats, ability, and moves with pp capped at 5[22m[39m
+[MoveEffectRegistry] No handler for effectId="splash" (moveId="splash")
+
+[90mstderr[2m | src/engine/__tests__/metaMoves.test.ts[2m > [22m[2mTransform[2m > [22m[2mcopies target typeOverride if present[22m[39m
+[MoveEffectRegistry] No handler for effectId="splash" (moveId="splash")
+
+[90mstderr[2m | src/engine/__tests__/items.test.ts[2m > [22m[2mFocus Sash[2m > [22m[2msurvives OHKO at 1 HP when at full HP[22m[39m
+[MoveEffectRegistry] No handler for effectId="splash" (moveId="splash")
+
+[90mstderr[2m | src/engine/__tests__/items.test.ts[2m > [22m[2mSitrus Berry[2m > [22m[2mheals floor(maxHp/4) when HP drops to ≤50%[22m[39m
+[MoveEffectRegistry] No handler for effectId="splash" (moveId="splash")
+
+[90mstderr[2m | src/engine/__tests__/items.test.ts[2m > [22m[2mSitrus Berry[2m > [22m[2mdoes not trigger when HP stays above 50%[22m[39m
+[MoveEffectRegistry] No handler for effectId="splash" (moveId="splash")
+
+[90mstderr[2m | src/engine/__tests__/items.test.ts[2m > [22m[2mSalac Berry[2m > [22m[2m+1 Spe when HP drops to ≤25%[22m[39m
+[MoveEffectRegistry] No handler for effectId="splash" (moveId="splash")
+
+[90mstderr[2m | src/engine/__tests__/items.test.ts[2m > [22m[2mAssault Vest[2m > [22m[2mreduces special damage by 1/3[22m[39m
+[MoveEffectRegistry] No handler for effectId="splash" (moveId="splash")
+[MoveEffectRegistry] No handler for effectId="splash" (moveId="splash")
+
+[90mstderr[2m | src/engine/__tests__/items.test.ts[2m > [22m[2mShell Bell[2m > [22m[2mheals attacker floor(damage/8) after dealing damage[22m[39m
+[MoveEffectRegistry] No handler for effectId="splash" (moveId="splash")
+
+[90mstderr[2m | src/engine/__tests__/items.test.ts[2m > [22m[2mShell Bell[2m > [22m[2mdoes not heal beyond maxHp[22m[39m
+[MoveEffectRegistry] No handler for effectId="splash" (moveId="splash")
+
+ [32m✓[39m src/engine/__tests__/items.test.ts [2m ([22m[2m33 tests[22m[2m)[22m[33m 1904[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/switchMoves.test.ts [2m ([22m[2m30 tests[22m [2m|[22m [33m1 skipped[39m[2m)[22m[33m 2039[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/abilities.test.ts [2m ([22m[2m56 tests[22m[2m)[22m[33m 2571[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/damage.test.ts [2m ([22m[2m12 tests[22m[2m)[22m[90m 15[2mms[22m[39m
+ [32m✓[39m src/db/__tests__/Database.test.ts [2m ([22m[2m20 tests[22m[2m)[22m[90m 105[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/protect.test.ts [2m ([22m[2m12 tests[22m[2m)[22m[33m 478[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/constraints.test.ts [2m ([22m[2m14 tests[22m[2m)[22m[33m 798[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/specialDamage.test.ts [2m ([22m[2m48 tests[22m[2m)[22m[33m 3346[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/substitute.test.ts [2m ([22m[2m7 tests[22m[2m)[22m[90m 243[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/passiveVolatiles.test.ts [2m ([22m[2m7 tests[22m[2m)[22m[33m 399[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/targeting.test.ts [2m ([22m[2m12 tests[22m[2m)[22m[90m 29[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/miscVolatiles.test.ts [2m ([22m[2m10 tests[22m[2m)[22m[33m 698[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/fieldState.test.ts [2m ([22m[2m22 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/opponentManipulation.test.ts [2m ([22m[2m68 tests[22m[2m)[22m[33m 3593[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/exp.test.ts [2m ([22m[2m13 tests[22m[2m)[22m[90m 18[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/accuracy.test.ts [2m ([22m[2m25 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/dynamicPower.integration.test.ts [2m ([22m[2m3 tests[22m[2m)[22m[90m 275[2mms[22m[39m
+ [32m✓[39m src/socket/__tests__/LobbyManager.test.ts [2m ([22m[2m9 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m src/socket/__tests__/BattleRoom.test.ts [2m ([22m[2m20 tests[22m[2m)[22m[33m 2966[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/MoveEffectRegistry.test.ts [2m ([22m[2m6 tests[22m[2m)[22m[90m 157[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/tera.test.ts [2m ([22m[2m2 tests[22m[2m)[22m[90m 136[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/dynamicPower.test.ts [2m ([22m[2m7 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/stats.test.ts [2m ([22m[2m6 tests[22m[2m)[22m[90m 14[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/status.test.ts [2m ([22m[2m6 tests[22m[2m)[22m[90m 6[2mms[22m[39m
+ [32m✓[39m src/setup/__tests__/BattleConfigurator.test.ts [2m ([22m[2m2 tests[22m[2m)[22m[90m 95[2mms[22m[39m
+ [32m✓[39m src/data/__tests__/loader.test.ts [2m ([22m[2m8 tests[22m[2m)[22m[33m 329[2mms[22m[39m
+ [32m✓[39m src/engine/__tests__/BattleEngine.test.ts [2m ([22m[2m97 tests[22m[2m)[22m[33m 41621[2mms[22m[39m
+[90mstderr[2m | src/engine/__tests__/BattleEngine.test.ts[2m > [22m[2mPreviously-unimplemented status moves[2m > [22m[2memits move-failed with reason unimplemented for an unknown status move[22m[39m
+[MoveEffectRegistry] No handler for effectId="swordsdance" (moveId="swordsdance")
+
+
+[31m⎯⎯⎯⎯⎯⎯⎯[1m[7m Failed Tests 1 [27m[22m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[31m[1m[7m FAIL [27m[22m[39m src/engine/__tests__/metaMoves.test.ts[2m > [22mSketch[2m > [22msketches any move including otherwise restricted moves
+[31m[1mAssertionError[22m: expected 'sketch' to be 'protect' // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- protect[39m
+[31m+ sketch[39m
+
+[36m [2m❯[22m src/engine/__tests__/metaMoves.test.ts:[2m644:38[22m[39m
+    [90m642| [39m
+    [90m643| [39m    [35mconst[39m p1After [33m=[39m result[33m.[39mnewState[33m.[39mteams[[34m0[39m][33m![39m[33m.[39mslots[[34m0[39m][33m![39m[33m.[39mparty[[34m0[39m][33m![39m[33m;[39m
+    [90m644| [39m    [34mexpect[39m(p1After[33m.[39mmoves[[34m0[39m][33m![39m[33m.[39mmoveId)[33m.[39m[34mtoBe[39m([32m'protect'[39m)[33m;[39m
+    [90m   | [39m                                     [31m^[39m
+    [90m645| [39m    [34mexpect[39m(p1After[33m.[39mmoves[[34m0[39m][33m![39m[33m.[39mcurrentPp)[33m.[39m[34mtoBe[39m([34m5[39m)[33m;[39m [90m// PP is normalized t[39m…
+    [90m646| [39m  })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m39 passed[39m[22m[90m (40)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m946 passed[39m[22m[2m | [22m[90m1 todo[39m[90m (948)[39m
+[2m   Start at [22m 19:26:38
+[2m   Duration [22m 43.21s[2m (transform 3.86s, setup 6ms, collect 14.81s, tests 68.30s, environment 15ms, prepare 20.82s)[22m
+

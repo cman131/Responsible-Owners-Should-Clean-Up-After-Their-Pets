@@ -276,6 +276,12 @@ export class BattleEngine {
     const attacker = attackerSlot.party[attackerSlot.activePokemonIndex];
     if (!attacker) return { newState: s, events };
 
+    // Allow Sleep Talk to fire while asleep
+    const moveSlotForSleepTalkCheck = attacker.moves[action.moveIndex];
+    if (moveSlotForSleepTalkCheck?.moveId === 'sleeptalk' && attacker.status === 'slp') {
+      attacker.volatileStatus.push({ name: '__sleeptalk-bypass' });
+    }
+
     const preMoveResult = this.effectEngine.runPreMove(attacker, attackerSlotId, s, this.getAllSlots(s), this.rng);
     events.push(...preMoveResult.events);
     if (preMoveResult.blocked) return { newState: s, events };
@@ -380,6 +386,7 @@ export class BattleEngine {
         events.push({ type: 'volatile-applied', data: { targetSlotId: attackerSlotId, volatile: 'bide' } });
       }
       attacker.lastMoveId = move.id;
+      s.lastUsedMoveId = move.id;
       return { newState: s, events };
     }
 
@@ -449,6 +456,14 @@ export class BattleEngine {
         targetTypes: filteredTypes,
         move,
         rng: this.rng,
+        executeSubMove: (moveId: string, depth = 0, attackerSlotOverride?: string, targetSlotOverride?: string) =>
+          this._runSubMove(
+            moveId,
+            attackerSlotOverride ?? attackerSlotId,
+            targetSlotOverride ?? filteredSlotIds[0],
+            s,
+            depth,
+          ),
       };
 
       const effectId = move.effectId ?? move.id;
@@ -533,6 +548,7 @@ export class BattleEngine {
         console.warn(`[MoveEffectRegistry] No handler for effectId="${effectId}" (moveId="${move.id}")`);
         events.push({ type: 'move-failed', data: { moveId: move.id, reason: 'unimplemented' } });
       }
+      s.lastUsedMoveId = move.id;
       return { newState: s, events };
     }
 
@@ -1560,6 +1576,7 @@ export class BattleEngine {
       }
 
       attacker.lastMoveId = move.id;
+      s.lastUsedMoveId = move.id;
 
       // Dragon Tail / Circle Throw — force-switch after dealing damage
       if (PHASING_MOVES.has(move.id) && !target.fainted && totalDamage > 0) {
@@ -1995,6 +2012,52 @@ export class BattleEngine {
       if (allFainted) return i === 0 ? 1 : 0;
     }
     return null;
+  }
+
+  private _runSubMove(
+    moveId: string,
+    attackerSlotId: string,
+    defaultTargetSlotId: string | undefined,
+    s: BattleState,
+    depth: number,
+  ): TurnResolveEvent[] {
+    if (depth > 1) return [];
+
+    const move = this.data.getMove(moveId);
+    if (!move) return [];
+
+    const slot = this.findSlot(s, attackerSlotId);
+    if (!slot) return [];
+    const attacker = slot.party[slot.activePokemonIndex];
+    if (!attacker) return [];
+
+    // Mark attacker to bypass pre-move checks in EffectEngine
+    attacker.volatileStatus.push({ name: '__submove-bypass' });
+
+    // Temporarily replace move slot 3 with the sub-move
+    const savedMove3 = { ...attacker.moves[3]! };
+    attacker.moves[3] = { moveId, currentPp: 5, maxPp: 5 };
+
+    const action: MoveAction = defaultTargetSlotId
+      ? { type: 'move', moveIndex: 3, targetSlotId: defaultTargetSlotId }
+      : { type: 'move', moveIndex: 3 };
+    const order = defaultTargetSlotId ? [attackerSlotId, defaultTargetSlotId] : [attackerSlotId];
+
+    // executeMove clones `s` internally and works on the clone
+    const result = this.executeMove(s, attackerSlotId, action, new Set(), order);
+
+    // Merge the clone's changes back into the live `s`
+    // (s is the mutable state ctx.battle in the outer handler — Object.assign replaces its properties)
+    Object.assign(s, result.newState);
+
+    // Restore move slot 3 on the merged state (undo the temp patch)
+    const mergedSlot = this.findSlot(s, attackerSlotId);
+    const mergedAttacker = mergedSlot?.party[mergedSlot.activePokemonIndex];
+    if (mergedAttacker) {
+      mergedAttacker.moves[3] = savedMove3;
+    }
+
+    return result.events;
   }
 
   private findSlot(state: BattleState, slotId: string): SlotState | null {
