@@ -188,6 +188,16 @@ export class EffectEngine {
       }
     }
 
+    // Powder expires after 1 turn if not consumed by a Fire move
+    const powderEntry = pokemon.volatileStatus.find(v => v.name === 'powder');
+    if (powderEntry) {
+      powderEntry.turnsRemaining = (powderEntry.turnsRemaining ?? 1) - 1;
+      if ((powderEntry.turnsRemaining ?? 0) <= 0) {
+        pokemon.volatileStatus = pokemon.volatileStatus.filter(v => v.name !== 'powder');
+        events.push({ type: 'volatile-cured', data: { slotId, volatile: 'powder' } });
+      }
+    }
+
     if (pokemon.status === 'brn') {
       this.applyDamage(pokemon, slotId, getBurnDamage(pokemon.maxHp), 'status', events);
       if (pokemon.fainted) return { events };
