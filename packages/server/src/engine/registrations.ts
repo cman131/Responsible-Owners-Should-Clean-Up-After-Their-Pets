@@ -13,6 +13,8 @@ import { clearHazards, clearScreens } from './sideConditions.js';
 import { applyStatBoost, applyVolatile } from './effects.js';
 import { canApplyStatus } from './status.js';
 import { getEffectiveStat } from './stats.js';
+import { METRONOME_EXCLUDED, COPYCAT_EXCLUDED, SLEEP_TALK_EXCLUDED } from './metaMoveExclusions.js';
+import { executeSubMove } from './subMoveExecutor.js';
 import type { TurnResolveEvent, PokemonType } from '@poke-fighter/shared';
 import { DataLoader } from '../data/loader.js';
 
@@ -816,6 +818,19 @@ export function buildDefaultRegistry(data: DataLoader = new DataLoader()): MoveE
     return { events };
   }));
 
+  r.register('psychup', custom((ctx) => {
+    const target = ctx.targets[0];
+    if (!target) {
+      return { events: [{ type: 'move-failed', data: { moveId: 'psychup', reason: 'no-target' } }] };
+    }
+
+    ctx.user.statBoosts = { ...target.statBoosts };
+
+    return {
+      events: [{ type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'psych-up' } }],
+    };
+  }));
+
   // ── Pivot moves ────────────────────────────────────────────────────
   r.register('batonpass',    batonPass());
   r.register('shedtail',    shedTail());
@@ -920,6 +935,206 @@ export function buildDefaultRegistry(data: DataLoader = new DataLoader()): MoveE
   r.register('doodle', custom((ctx) => {
     return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'not-implemented' } }] };
   }));
+
+  // ── Priority manipulation (stubbed) ────────────────────────────────
+  // Me First requires knowing opponent's pending action before execution,
+  // which is not accessible in the current handler architecture.
+  r.register('mefirst', (ctx) => ({
+    events: [{ type: 'move-failed', data: { moveId: 'mefirst', reason: 'not-implemented' } }],
+  }));
+
+  // ── Meta moves ────────────────────────────────────────────────────
+  r.register('copycat', (ctx) => {
+    const lastMove = ctx.battle.lastUsedMoveId;
+    if (!lastMove) {
+      return { events: [{ type: 'move-failed', data: { moveId: 'copycat', reason: 'no-last-move' } }] };
+    }
+    if (COPYCAT_EXCLUDED.has(lastMove)) {
+      return { events: [{ type: 'move-failed', data: { moveId: 'copycat', reason: 'excluded' } }] };
+    }
+    const events = executeSubMove(lastMove, ctx);
+    return { events };
+  });
+
+  r.register('metronome', (ctx) => {
+    const candidates = data.getAllMoves().filter(m => !METRONOME_EXCLUDED.has(m.id));
+    if (candidates.length === 0) return { events: [{ type: 'move-failed', data: { moveId: 'metronome', reason: 'no-candidates' } }] };
+    const pickedMove = candidates[Math.floor(ctx.rng() * candidates.length)]!;
+    const events = executeSubMove(pickedMove.id, ctx);
+    return { events };
+  });
+
+  r.register('mirrormove', (ctx) => {
+    const target = ctx.targets[0];
+    if (!target) return { events: [{ type: 'move-failed', data: { moveId: 'mirrormove', reason: 'no-target' } }] };
+
+    const targetLastMove = target.lastMoveId;
+    if (!targetLastMove) {
+      return { events: [{ type: 'move-failed', data: { moveId: 'mirrormove', reason: 'no-last-move' } }] };
+    }
+    if (COPYCAT_EXCLUDED.has(targetLastMove)) {
+      return { events: [{ type: 'move-failed', data: { moveId: 'mirrormove', reason: 'excluded' } }] };
+    }
+
+    const events = executeSubMove(targetLastMove, ctx);
+    return { events };
+  });
+
+  r.register('sleeptalk', (ctx) => {
+    if (ctx.user.status !== 'slp') {
+      return { events: [{ type: 'move-failed', data: { moveId: 'sleeptalk', reason: 'not-asleep' } }] };
+    }
+
+    const eligible = ctx.user.moves.filter(slot =>
+      !SLEEP_TALK_EXCLUDED.has(slot.moveId)
+    );
+
+    if (eligible.length === 0) {
+      return { events: [{ type: 'move-failed', data: { moveId: 'sleeptalk', reason: 'no-eligible-moves' } }] };
+    }
+
+    const picked = eligible[Math.floor(ctx.rng() * eligible.length)]!;
+    const events = executeSubMove(picked.moveId, ctx);
+    return { events };
+  });
+
+  r.register('assist', (ctx) => {
+    const eligible: string[] = [];
+    const userTeam = ctx.battle.teams[ctx.userTeamIndex]!;
+    for (const slot of userTeam.slots) {
+      for (let i = 0; i < slot.party.length; i++) {
+        if (slot.slotId === ctx.userSlotId && i === slot.activePokemonIndex) continue;
+        const member = slot.party[i]!;
+        if (member.fainted) continue;
+        for (const moveSlot of member.moves) {
+          if (!COPYCAT_EXCLUDED.has(moveSlot.moveId)) {
+            eligible.push(moveSlot.moveId);
+          }
+        }
+      }
+    }
+
+    if (eligible.length === 0) {
+      return { events: [{ type: 'move-failed', data: { moveId: 'assist', reason: 'no-eligible-moves' } }] };
+    }
+
+    const picked = eligible[Math.floor(ctx.rng() * eligible.length)]!;
+    const events = executeSubMove(picked, ctx);
+    return { events };
+  });
+
+  r.register('instruct', (ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) {
+      return { events: [{ type: 'move-failed', data: { moveId: 'instruct', reason: 'no-target' } }] };
+    }
+
+    const lastMove = target.lastMoveId;
+    if (!lastMove) {
+      return { events: [{ type: 'move-failed', data: { moveId: 'instruct', reason: 'no-last-move' } }] };
+    }
+    if (COPYCAT_EXCLUDED.has(lastMove)) {
+      return { events: [{ type: 'move-failed', data: { moveId: 'instruct', reason: 'excluded' } }] };
+    }
+
+    // Check PP > 0 in target's actual move slots
+    const targetMoveSlot = target.moves.find(m => m.moveId === lastMove);
+    if (!targetMoveSlot || targetMoveSlot.currentPp <= 0) {
+      return { events: [{ type: 'move-failed', data: { moveId: 'instruct', reason: 'no-pp' } }] };
+    }
+
+    // Execute with target as attacker, user as target
+    const events = executeSubMove(lastMove, ctx, 0, targetSlotId, ctx.userSlotId);
+    return { events };
+  });
+
+  r.register('transform', (ctx) => {
+    const target = ctx.targets[0];
+    if (!target) {
+      return { events: [{ type: 'move-failed', data: { moveId: 'transform', reason: 'no-target' } }] };
+    }
+
+    // Copy stats (not HP)
+    ctx.user.stats = { ...target.stats, hp: ctx.user.stats.hp };
+
+    // Copy stat boosts
+    ctx.user.statBoosts = { ...target.statBoosts };
+
+    // Copy ability
+    ctx.user.ability = target.ability;
+
+    // Copy effective types (using pre-resolved ctx.targetTypes[0])
+    if (ctx.targetTypes[0]) {
+      ctx.user.typeOverride = [...ctx.targetTypes[0]];
+    } else {
+      delete ctx.user.typeOverride;
+    }
+
+    // Copy moves with PP capped at 5
+    ctx.user.moves = target.moves.map(slot => ({
+      moveId: slot.moveId,
+      currentPp: Math.min(slot.currentPp, 5),
+      maxPp: 5,
+    })) as [any, any, any, any]; // TypeScript tuple assertion
+
+    // Mark as transformed
+    if (!ctx.user.volatileStatus.some(v => v.name === 'transformed')) {
+      ctx.user.volatileStatus.push({ name: 'transformed' });
+    }
+
+    return {
+      events: [{ type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'transformed' } }],
+    };
+  });
+
+  r.register('mimic', (ctx) => {
+    const target = ctx.targets[0];
+    if (!target?.lastMoveId) {
+      return { events: [{ type: 'move-failed', data: { moveId: 'mimic', reason: 'no-last-move' } }] };
+    }
+
+    // Find the Mimic slot
+    const mimicSlotIndex = ctx.user.moves.findIndex(m => m.moveId === 'mimic');
+    if (mimicSlotIndex === -1) {
+      return { events: [{ type: 'move-failed', data: { moveId: 'mimic', reason: 'slot-not-found' } }] };
+    }
+
+    // Replace with target's last move (pp=5, temporary)
+    ctx.user.moves[mimicSlotIndex] = {
+      moveId: target.lastMoveId,
+      currentPp: 5,
+      maxPp: 5,
+    };
+
+    return {
+      events: [{ type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'mimic', moveId: target.lastMoveId } }],
+    };
+  });
+
+  r.register('sketch', (ctx) => {
+    const target = ctx.targets[0];
+    if (!target?.lastMoveId) {
+      return { events: [{ type: 'move-failed', data: { moveId: 'sketch', reason: 'no-last-move' } }] };
+    }
+
+    // Find the Sketch slot
+    const sketchSlotIndex = ctx.user.moves.findIndex(m => m.moveId === 'sketch');
+    if (sketchSlotIndex === -1) {
+      return { events: [{ type: 'move-failed', data: { moveId: 'sketch', reason: 'slot-not-found' } }] };
+    }
+
+    // Permanently replace (use pp=5)
+    ctx.user.moves[sketchSlotIndex] = {
+      moveId: target.lastMoveId,
+      currentPp: 5,
+      maxPp: 5,
+    };
+
+    return {
+      events: [{ type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'sketch', moveId: target.lastMoveId } }],
+    };
+  });
 
   return r;
 }
