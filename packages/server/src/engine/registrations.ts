@@ -1,5 +1,6 @@
 import { MoveEffectRegistry } from './MoveEffectRegistry.js';
 import type { MoveContext, MoveEffectHandler } from './MoveEffectRegistry.js';
+import { isGrounded } from './fieldState.js';
 import {
   statModSelf, statModTarget, multiStatModSelf, multiStatModTarget,
   applyStatusTarget, applyVolatileTarget, applyVolatileSelf, healPercent,
@@ -1514,6 +1515,214 @@ export function buildDefaultRegistry(data: DataLoader = new DataLoader()): MoveE
       { type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'charge' } },
     ];
     events.push(applyStatBoost(ctx.user, ctx.userSlotId, { spd: 1 }));
+    return { events };
+  }));
+
+  // ── Field / Team manipulation moves ──────────────────────────────────
+
+  // Rototiller: boost ATK and SPA of all grounded Grass-type active Pokémon
+  r.register('rototiller', custom((ctx) => {
+    const events: TurnResolveEvent[] = [];
+    const gravityActive = ctx.battle.field.gravity > 0;
+    for (const team of ctx.battle.teams) {
+      for (const slot of team.slots) {
+        const active = slot.party[slot.activePokemonIndex];
+        if (!active || active.fainted) continue;
+        const monTypes = active.hasTerastallized && active.teraType
+          ? [active.teraType]
+          : (active.typeOverride ?? []);
+        if (!monTypes.includes('Grass')) continue;
+        if (!isGrounded(active, monTypes as import('@poke-fighter/shared').PokemonType[], gravityActive)) continue;
+        events.push(applyStatBoost(active, slot.slotId, { atk: 1, spa: 1 }));
+      }
+    }
+    if (events.length === 0) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'no-targets' } }] };
+    }
+    return { events };
+  }));
+
+  // Flower Shield: boost DEF of all Grass-type active Pokémon (not just grounded)
+  r.register('flowershield', custom((ctx) => {
+    const events: TurnResolveEvent[] = [];
+    for (const team of ctx.battle.teams) {
+      for (const slot of team.slots) {
+        const active = slot.party[slot.activePokemonIndex];
+        if (!active || active.fainted) continue;
+        const monTypes = active.hasTerastallized && active.teraType
+          ? [active.teraType]
+          : (active.typeOverride ?? []);
+        if (!monTypes.includes('Grass')) continue;
+        events.push(applyStatBoost(active, slot.slotId, { def: 1 }));
+      }
+    }
+    if (events.length === 0) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'no-targets' } }] };
+    }
+    return { events };
+  }));
+
+  // Teatime: forces all active Pokémon to consume their held berries
+  r.register('teatime', custom((ctx) => {
+    const events: TurnResolveEvent[] = [];
+    for (const team of ctx.battle.teams) {
+      for (const slot of team.slots) {
+        const active = slot.party[slot.activePokemonIndex];
+        if (!active || active.fainted || !active.heldItem) continue;
+        if (!active.heldItem.endsWith('-berry')) continue;
+        const item = active.heldItem;
+        active.lastConsumedItem = item;
+        delete active.heldItem;
+        events.push({ type: 'item-consumed', data: { slotId: slot.slotId, item, reason: 'teatime' } });
+      }
+    }
+    return { events };
+  }));
+
+  // Helping Hand: boosts ally's next move damage by 1.5×
+  r.register('helpinghand', custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'no-ally' } }] };
+    }
+    if (target.volatileStatus.some(v => v.name === 'helping-hand')) return { events: [] };
+    target.volatileStatus.push({ name: 'helping-hand' });
+    return { events: [{ type: 'volatile-applied', data: { targetSlotId, volatile: 'helping-hand' } }] };
+  }));
+
+  // Follow Me / Rage Powder / Spotlight: center of attention
+  r.register('followme', custom((ctx) => {
+    if (ctx.user.volatileStatus.some(v => v.name === 'center-of-attention')) return { events: [] };
+    ctx.user.volatileStatus.push({ name: 'center-of-attention' });
+    return { events: [{ type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'center-of-attention' } }] };
+  }));
+
+  r.register('ragepowder', custom((ctx) => {
+    if (ctx.user.volatileStatus.some(v => v.name === 'center-of-attention')) return { events: [] };
+    ctx.user.volatileStatus.push({ name: 'center-of-attention' });
+    return { events: [{ type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'center-of-attention' } }] };
+  }));
+
+  r.register('spotlight', custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+    if (target.volatileStatus.some(v => v.name === 'center-of-attention')) return { events: [] };
+    target.volatileStatus.push({ name: 'center-of-attention' });
+    return { events: [{ type: 'volatile-applied', data: { targetSlotId, volatile: 'center-of-attention' } }] };
+  }));
+
+  // Wide Guard / Quick Guard / Crafty Shield: team-wide protect variants
+  function teamProtect(variant: string): MoveEffectHandler {
+    return (ctx) => {
+      const streakEntry = ctx.user.volatileStatus.find(v => v.name === 'protect-streak');
+      const n = streakEntry?.counter ?? 0;
+      const chance = n === 0 ? 1 : 1 / Math.pow(3, n);
+      if (ctx.rng() >= chance) {
+        ctx.user.volatileStatus = ctx.user.volatileStatus.filter(v => v.name !== 'protect-streak');
+        return { events: [{ type: 'move-failed', data: { moveId: variant, reason: 'protect-failed' } }] };
+      }
+      if (streakEntry) { streakEntry.counter = n + 1; }
+      else { ctx.user.volatileStatus.push({ name: 'protect-streak', counter: 1 }); }
+      const events: TurnResolveEvent[] = [];
+      const userTeam = ctx.battle.teams[ctx.userTeamIndex]!;
+      for (const slot of userTeam.slots) {
+        const active = slot.party[slot.activePokemonIndex];
+        if (!active || active.fainted) continue;
+        if (!active.volatileStatus.some(v => v.name === variant)) {
+          active.volatileStatus.push({ name: variant });
+          events.push({ type: 'volatile-applied', data: { targetSlotId: slot.slotId, volatile: variant } });
+        }
+      }
+      return { events };
+    };
+  }
+
+  r.register('wideguard',    teamProtect('wide-guard'));
+  r.register('quickguard',   teamProtect('quick-guard'));
+  r.register('craftyshield', teamProtect('crafty-shield'));
+
+  // Gear Up: boosts SPA and SPD of Plus/Minus ability Pokémon on user's team
+  r.register('gearup', custom((ctx) => {
+    const events: TurnResolveEvent[] = [];
+    const userTeam = ctx.battle.teams[ctx.userTeamIndex]!;
+    for (const slot of userTeam.slots) {
+      const active = slot.party[slot.activePokemonIndex];
+      if (!active || active.fainted) continue;
+      if (active.ability === 'plus' || active.ability === 'minus') {
+        events.push(applyStatBoost(active, slot.slotId, { spa: 1, spd: 1 }));
+      }
+    }
+    return { events };
+  }));
+
+  // Magnetic Flux: boosts DEF and SPD of Plus/Minus ability Pokémon on user's team
+  r.register('magneticflux', custom((ctx) => {
+    const events: TurnResolveEvent[] = [];
+    const userTeam = ctx.battle.teams[ctx.userTeamIndex]!;
+    for (const slot of userTeam.slots) {
+      const active = slot.party[slot.activePokemonIndex];
+      if (!active || active.fainted) continue;
+      if (active.ability === 'plus' || active.ability === 'minus') {
+        events.push(applyStatBoost(active, slot.slotId, { def: 1, spd: 1 }));
+      }
+    }
+    return { events };
+  }));
+
+  // Ally Switch: swap user with an ally
+  r.register('allyswitch', custom((ctx) => {
+    const userTeam = ctx.battle.teams[ctx.userTeamIndex]!;
+    const userSlotIdx = userTeam.slots.findIndex(s => s.slotId === ctx.userSlotId);
+    const allySlot = userTeam.slots.find((s, i) => {
+      if (i === userSlotIdx) return false;
+      const active = s.party[s.activePokemonIndex];
+      return active && !active.fainted;
+    });
+    if (!allySlot) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'no-ally' } }] };
+    }
+    const userSlot = userTeam.slots[userSlotIdx]!;
+    const tempIdx = userSlot.activePokemonIndex;
+    userSlot.activePokemonIndex = allySlot.activePokemonIndex;
+    allySlot.activePokemonIndex = tempIdx;
+    return { events: [{ type: 'move-note', data: { slotId: ctx.userSlotId, note: 'ally-switched' } }] };
+  }));
+
+  // After You: simplified — note that the target moves next
+  r.register('afteryou', custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+    return { events: [{ type: 'move-note', data: { slotId: targetSlotId, note: 'after-you' } }] };
+  }));
+
+  // Tidy Up: removes entry hazards + substitutes, boosts ATK and SPE
+  r.register('tidyup', custom((ctx) => {
+    const events: TurnResolveEvent[] = [];
+    const userSideConditions = ctx.battle.field.sideConditions[ctx.userTeamIndex as 0 | 1]!;
+    if (userSideConditions.spikes > 0 || userSideConditions.toxicSpikes > 0 ||
+        userSideConditions.stealthRock || userSideConditions.stickyWeb) {
+      userSideConditions.spikes = 0;
+      userSideConditions.toxicSpikes = 0;
+      userSideConditions.stealthRock = false;
+      userSideConditions.stickyWeb = false;
+      events.push({ type: 'hazard-cleared', data: { side: ctx.userTeamIndex, reason: 'tidy-up' } });
+    }
+    // Remove substitutes from all user team slots
+    const userTeam = ctx.battle.teams[ctx.userTeamIndex]!;
+    for (const slot of userTeam.slots) {
+      const active = slot.party[slot.activePokemonIndex];
+      if (!active || active.fainted) continue;
+      const subIdx = active.volatileStatus.findIndex(v => v.name === 'substitute');
+      if (subIdx !== -1) {
+        active.volatileStatus.splice(subIdx, 1);
+        events.push({ type: 'volatile-cured', data: { slotId: slot.slotId, volatile: 'substitute' } });
+      }
+    }
+    // Boost user ATK and SPE by +1 each
+    events.push(applyStatBoost(ctx.user, ctx.userSlotId, { atk: 1, spe: 1 }));
     return { events };
   }));
 

@@ -406,8 +406,11 @@ export class BattleEngine {
           team => team !== s.teams[userTeamIndex] && team.slots.some(sl => sl.slotId === tSlotId)
         );
         const protectEntry = tgt.volatileStatus.find(v => v.name === 'protect');
+        const craftyShieldBlocks = isOpponent && tgt.volatileStatus.some(v => v.name === 'crafty-shield');
         if (isOpponent && protectEntry) {
           events.push({ type: 'move-blocked', data: { attackerSlotId, targetSlotId: tSlotId, reason: 'protect', variant: protectEntry.variant } });
+        } else if (craftyShieldBlocks) {
+          events.push({ type: 'move-blocked', data: { attackerSlotId, targetSlotId: tSlotId, reason: 'crafty-shield' } });
         } else {
           filteredTargets.push(tgt);
           filteredSlotIds.push(tSlotId);
@@ -568,9 +571,22 @@ export class BattleEngine {
     }
 
     // Determine targets
-    const targetSlotIds = action.targetSlotId
+    let targetSlotIds = action.targetSlotId
       ? [action.targetSlotId]
       : this.getSpreadTargets(s, attackerSlotId, move.target);
+
+    // Center of Attention (Follow Me / Rage Powder / Spotlight): redirect foe-targeting moves
+    // to the slot with center-of-attention volatile (only for moves targeting foes)
+    if (!['self', 'allyTeam', 'allySide', 'allyOrSelf'].includes(move.target ?? '')) {
+      const attackerTeamIdx = s.teams.findIndex((t) => t.slots.some((sl) => sl.slotId === attackerSlotId));
+      const foeTeamIdx = attackerTeamIdx === 0 ? 1 : 0;
+      const foeTeam = s.teams[foeTeamIdx];
+      const cotSlot = foeTeam?.slots.find((sl) => {
+        const active = sl.party[sl.activePokemonIndex];
+        return active && !active.fainted && active.volatileStatus.some(v => v.name === 'center-of-attention');
+      });
+      if (cotSlot) targetSlotIds = [cotSlot.slotId];
+    }
 
     const secs = move.secondaries ?? [];
     const isOhko = secs.some(sec => sec.kind === 'ohko');
@@ -775,6 +791,19 @@ export class BattleEngine {
             if (evt) events.push(evt);
           }
         }
+        continue;
+      }
+
+      // Wide Guard: blocks spread moves
+      const isSpreadTarget = ['allAdjacent', 'allAdjacentFoes'].includes(move.target ?? '');
+      if (isSpreadTarget && target.volatileStatus.some(v => v.name === 'wide-guard')) {
+        events.push({ type: 'move-blocked', data: { attackerSlotId, targetSlotId, reason: 'wide-guard' } });
+        continue;
+      }
+
+      // Quick Guard: blocks priority moves
+      if ((move.priority ?? 0) > 0 && target.volatileStatus.some(v => v.name === 'quick-guard')) {
+        events.push({ type: 'move-blocked', data: { attackerSlotId, targetSlotId, reason: 'quick-guard' } });
         continue;
       }
 
@@ -1275,6 +1304,13 @@ export class BattleEngine {
         if (chargeIdx !== -1 && effectiveMoveType === 'Electric') {
           otherModifiers *= 2;
           attacker.volatileStatus.splice(chargeIdx, 1);
+        }
+
+        // Helping Hand: boosts ally's move by 1.5×, consumed after use
+        const hhIdx = attacker.volatileStatus.findIndex(v => v.name === 'helping-hand');
+        if (hhIdx !== -1) {
+          otherModifiers *= 1.5;
+          attacker.volatileStatus.splice(hhIdx, 1);
         }
 
         // Screen damage halving — crits bypass screens
