@@ -10,7 +10,7 @@ import {
   forceSwitch, itemSwap,
 } from './effectFactories.js';
 import { clearHazards, clearScreens } from './sideConditions.js';
-import { applyStatBoost, applyVolatile } from './effects.js';
+import { applyStatBoost, applyVolatile, applyStatus } from './effects.js';
 import { canApplyStatus } from './status.js';
 import { getEffectiveStat } from './stats.js';
 import { METRONOME_EXCLUDED, COPYCAT_EXCLUDED, SLEEP_TALK_EXCLUDED } from './metaMoveExclusions.js';
@@ -1350,6 +1350,131 @@ export function buildDefaultRegistry(data: DataLoader = new DataLoader()): MoveE
       events: [{ type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'sketch', moveId: target.lastMoveId } }],
     };
   });
+
+  // ── Status-effect combos ───────────────────────────────────────────
+  r.register('swagger', custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+    const targetTeamIdx = (1 - ctx.userTeamIndex) as 0 | 1;
+    if ((ctx.battle.field.sideConditions[targetTeamIdx]?.safeguard ?? 0) > 0) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'safeguard' } }] };
+    }
+    const events: TurnResolveEvent[] = [];
+    events.push(applyStatBoost(target, targetSlotId, { atk: 2 }));
+    const confuseEvent = applyVolatile(target, targetSlotId, ctx.userSlotId, 'confusion');
+    if (confuseEvent) events.push(confuseEvent);
+    return { events };
+  }));
+
+  r.register('flatter', custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+    const targetTeamIdx = (1 - ctx.userTeamIndex) as 0 | 1;
+    if ((ctx.battle.field.sideConditions[targetTeamIdx]?.safeguard ?? 0) > 0) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'safeguard' } }] };
+    }
+    const events: TurnResolveEvent[] = [];
+    events.push(applyStatBoost(target, targetSlotId, { spa: 1 }));
+    const confuseEvent = applyVolatile(target, targetSlotId, ctx.userSlotId, 'confusion');
+    if (confuseEvent) events.push(confuseEvent);
+    return { events };
+  }));
+
+  r.register('toxicthread', custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+    const targetTeamIdx = (1 - ctx.userTeamIndex) as 0 | 1;
+    if ((ctx.battle.field.sideConditions[targetTeamIdx]?.safeguard ?? 0) > 0) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'safeguard' } }] };
+    }
+    const events: TurnResolveEvent[] = [];
+    const statusEvent = applyStatus(target, targetSlotId, 'psn', ctx.targetTypes[0] ?? [], undefined, ctx.battle);
+    if (statusEvent) events.push(statusEvent);
+    events.push(applyStatBoost(target, targetSlotId, { spe: -1 }));
+    return { events };
+  }));
+
+  r.register('memento', custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+    const canDrop = target.statBoosts.atk > -6 || target.statBoosts.spa > -6;
+    if (!canDrop) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'stat-cannot-drop' } }] };
+    }
+    const events: TurnResolveEvent[] = [];
+    events.push(applyStatBoost(target, targetSlotId, { atk: -2, spa: -2 }));
+    ctx.user.currentHp = 0;
+    ctx.user.fainted = true;
+    events.push({ type: 'faint', data: { slotId: ctx.userSlotId, instanceId: ctx.user.instanceId } });
+    return { events };
+  }));
+
+  r.register('revivalblessing', custom((ctx) => {
+    const userTeam = ctx.battle.teams[ctx.userTeamIndex]!;
+    let faintedMember: { p: import('@poke-fighter/shared').PartyMember; slotId: string } | undefined;
+    let found = false;
+    for (const slot of userTeam.slots) {
+      if (found) break;
+      for (let i = 0; i < slot.party.length; i++) {
+        const p = slot.party[i]!;
+        if (slot.slotId === ctx.userSlotId && i === slot.activePokemonIndex) continue;
+        if (p.fainted) {
+          faintedMember = { p, slotId: slot.slotId };
+          found = true;
+          break;
+        }
+      }
+    }
+    if (!faintedMember) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'no-fainted-ally' } }] };
+    }
+    const { p, slotId } = faintedMember;
+    p.fainted = false;
+    p.currentHp = Math.floor(p.maxHp / 2);
+    delete p.status;
+    p.volatileStatus = [];
+    return {
+      events: [{ type: 'heal', data: { slotId, amount: p.currentHp, remainingHp: p.currentHp } }],
+    };
+  }));
+
+  r.register('stuffcheeks', custom((ctx) => {
+    const item = ctx.user.heldItem;
+    if (!item || !item.endsWith('-berry')) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'no-berry' } }] };
+    }
+    const events: TurnResolveEvent[] = [];
+    ctx.user.lastConsumedItem = item;
+    delete ctx.user.heldItem;
+    events.push({ type: 'item-consumed', data: { slotId: ctx.userSlotId, item, reason: 'stuff-cheeks' } });
+    events.push(applyStatBoost(ctx.user, ctx.userSlotId, { def: 2 }));
+    return { events };
+  }));
+
+  r.register('corrosivegas', custom((ctx) => {
+    const events: TurnResolveEvent[] = [];
+    for (let i = 0; i < ctx.targets.length; i++) {
+      const target = ctx.targets[i]!;
+      const targetSlotId = ctx.targetSlotIds[i]!;
+      if (!target.heldItem) continue;
+      const item = target.heldItem;
+      delete target.heldItem;
+      events.push({ type: 'item-consumed', data: { slotId: targetSlotId, item, reason: 'corrosive-gas' } });
+    }
+    return { events };
+  }));
+
+  r.register('chillyreception', custom((ctx) => {
+    ctx.battle.field.weather = { type: 'snow', turnsRemaining: 5, fromAbility: false };
+    return {
+      events: [{ type: 'weather-started', data: { weather: 'snow', turnsRemaining: 5 } }],
+      pivotSwitch: true,
+    };
+  }));
 
   return r;
 }
