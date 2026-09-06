@@ -1714,6 +1714,59 @@ export function buildDefaultRegistry(data: DataLoader = new DataLoader()): MoveE
     return { events: [{ type: 'move-note', data: { slotId: targetSlotId, note: 'after-you' } }] };
   }));
 
+  // Powder: apply volatile to target; if target uses Fire move, it takes 1/4 max HP damage and move fails
+  r.register('powder', custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+    if (target.volatileStatus.some(v => v.name === 'powder')) return { events: [] };
+    target.volatileStatus.push({ name: 'powder', turnsRemaining: 1 });
+    return { events: [{ type: 'volatile-applied', data: { targetSlotId, volatile: 'powder' } }] };
+  }));
+
+  // Quash: applies volatile to target (turn order manipulation is a future enhancement)
+  r.register('quash', custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+    target.volatileStatus.push({ name: 'quash' });
+    return { events: [{ type: 'volatile-applied', data: { targetSlotId, volatile: 'quash' } }] };
+  }));
+
+  // Grudge: if user faints from a direct attack, the attacker's PP for that move is drained to 0
+  r.register('grudge', custom((ctx) => {
+    ctx.user.volatileStatus = ctx.user.volatileStatus.filter(v => v.name !== 'grudge');
+    ctx.user.volatileStatus.push({ name: 'grudge' });
+    return { events: [{ type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'grudge' } }] };
+  }));
+
+  // Mat Block: blocks all damaging moves against the whole team this turn (only works on first turn out)
+  r.register('matblock', custom((ctx) => {
+    if (!ctx.user.volatileStatus.some(v => v.name === 'fresh-switcher')) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'not-first-turn' } }] };
+    }
+    const streakEntry = ctx.user.volatileStatus.find(v => v.name === 'protect-streak');
+    const n = streakEntry?.counter ?? 0;
+    const chance = n === 0 ? 1 : 1 / Math.pow(3, n);
+    if (ctx.rng() >= chance) {
+      ctx.user.volatileStatus = ctx.user.volatileStatus.filter(v => v.name !== 'protect-streak');
+      return { events: [{ type: 'move-failed', data: { moveId: 'matblock', reason: 'protect-failed' } }] };
+    }
+    if (streakEntry) { streakEntry.counter = (n + 1); }
+    else { ctx.user.volatileStatus.push({ name: 'protect-streak', counter: 1 }); }
+    const events: TurnResolveEvent[] = [];
+    const userTeam = ctx.battle.teams[ctx.userTeamIndex]!;
+    for (const slot of userTeam.slots) {
+      const active = slot.party[slot.activePokemonIndex];
+      if (!active || active.fainted) continue;
+      if (!active.volatileStatus.some(v => v.name === 'mat-block')) {
+        active.volatileStatus.push({ name: 'mat-block' });
+        events.push({ type: 'volatile-applied', data: { targetSlotId: slot.slotId, volatile: 'mat-block' } });
+      }
+    }
+    return { events };
+  }));
+
   // Tidy Up: removes entry hazards + substitutes, boosts ATK and SPE
   r.register('tidyup', custom((ctx) => {
     const events: TurnResolveEvent[] = [];

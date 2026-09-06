@@ -176,8 +176,17 @@ export class EffectEngine {
   ): EndOfTurnResult {
     const events: TurnResolveEvent[] = [];
 
-    // Remove protect at EoT (streak persists)
-    pokemon.volatileStatus = pokemon.volatileStatus.filter(v => v.name !== 'protect' && v.name !== 'roost');
+    // Remove protect, roost, mat-block at EoT (streak persists)
+    pokemon.volatileStatus = pokemon.volatileStatus.filter(v => v.name !== 'protect' && v.name !== 'roost' && v.name !== 'mat-block');
+
+    // Decrement fresh-switcher (Mat Block eligibility) and remove when expired
+    const freshSwitcherEntry = pokemon.volatileStatus.find(v => v.name === 'fresh-switcher');
+    if (freshSwitcherEntry) {
+      freshSwitcherEntry.turnsRemaining = (freshSwitcherEntry.turnsRemaining ?? 1) - 1;
+      if ((freshSwitcherEntry.turnsRemaining ?? 0) <= 0) {
+        pokemon.volatileStatus = pokemon.volatileStatus.filter(v => v.name !== 'fresh-switcher');
+      }
+    }
 
     if (pokemon.status === 'brn') {
       this.applyDamage(pokemon, slotId, getBurnDamage(pokemon.maxHp), 'status', events);

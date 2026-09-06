@@ -734,6 +734,24 @@ export class BattleEngine {
       effectiveMoveType = 'Electric';
     }
 
+    // Powder: if attacker has powder volatile and uses a Fire move, cancel move and self-damage
+    const powderIdx = attacker.volatileStatus.findIndex(v => v.name === 'powder');
+    if (powderIdx !== -1) {
+      attacker.volatileStatus.splice(powderIdx, 1);
+      if (effectiveMoveType === 'Fire') {
+        const selfDmg = Math.floor(attacker.maxHp / 4);
+        const taken = Math.min(selfDmg, attacker.currentHp);
+        attacker.currentHp -= taken;
+        events.push({ type: 'damage-dealt', data: { source: 'powder', slotId: attackerSlotId, damage: taken, remainingHp: attacker.currentHp } });
+        if (attacker.currentHp <= 0) {
+          attacker.fainted = true;
+          events.push({ type: 'faint', data: { slotId: attackerSlotId, instanceId: attacker.instanceId } });
+        }
+        events.push({ type: 'move-failed', data: { moveId: move.id, reason: 'powder' } });
+        return { newState: s, events };
+      }
+    }
+
     // Extreme-weather move nullification (must come after effectiveMoveType is resolved)
     if (s.field.weather) {
       const wt = s.field.weather.type;
@@ -804,6 +822,12 @@ export class BattleEngine {
       // Quick Guard: blocks priority moves
       if ((move.priority ?? 0) > 0 && target.volatileStatus.some(v => v.name === 'quick-guard')) {
         events.push({ type: 'move-blocked', data: { attackerSlotId, targetSlotId, reason: 'quick-guard' } });
+        continue;
+      }
+
+      // Mat Block: blocks physical/special moves (status moves are already handled in a separate branch)
+      if (target.volatileStatus.some(v => v.name === 'mat-block')) {
+        events.push({ type: 'move-blocked', data: { attackerSlotId, targetSlotId, reason: 'mat-block' } });
         continue;
       }
 
@@ -1425,6 +1449,14 @@ export class BattleEngine {
             target.fainted = true;
             target.currentHp = 0;
             events.push({ type: 'faint', data: { slotId: targetSlotId, instanceId: target.instanceId } });
+            // Grudge: drain attacker's current move PP to 0
+            if (target.volatileStatus.some(v => v.name === 'grudge')) {
+              const attackerMoveSlot = attacker.moves.find(m => m.moveId === move.id);
+              if (attackerMoveSlot) {
+                attackerMoveSlot.currentPp = 0;
+                events.push({ type: 'move-note', data: { slotId: attackerSlotId, moveId: move.id, note: 'pp-grudge-drained' } });
+              }
+            }
             // Destiny Bond: if the target had destiny-bond, the attacker also faints
             const dbEntry = target.volatileStatus.find(v => v.name === 'destiny-bond');
             if (dbEntry && !attacker.fainted) {
@@ -1836,6 +1868,12 @@ export class BattleEngine {
         incoming.statBoosts[stat] = Math.max(-6, Math.min(6, incoming.statBoosts[stat] + boosts[stat]));
       }
       delete slot.batonPassData;
+    }
+
+    // Mat Block eligibility: mark fresh switch-ins
+    if (incoming) {
+      incoming.volatileStatus = incoming.volatileStatus.filter(v => v.name !== 'fresh-switcher');
+      incoming.volatileStatus.push({ name: 'fresh-switcher', turnsRemaining: 1 });
     }
 
     // 4. Entry hazards — before onSwitchIn (FR-6)
