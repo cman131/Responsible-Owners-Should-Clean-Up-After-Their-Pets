@@ -59,6 +59,11 @@ export function buildDefaultRegistry(data: DataLoader = new DataLoader()): MoveE
   r.register('sleeppowder', applyStatusTarget('slp'));
   r.register('hypnosis',    applyStatusTarget('slp'));
   r.register('darkvoid',    applyStatusTarget('slp'));
+  r.register('sing',         applyStatusTarget('slp'));
+  r.register('grasswhistle', applyStatusTarget('slp'));
+  r.register('lovelykiss',   applyStatusTarget('slp'));
+  r.register('poisongas',    applyStatusTarget('psn'));
+  r.register('poisonpowder', applyStatusTarget('psn'));
 
   // ── Volatiles ──────────────────────────────────────────────────────
   r.register('attract',     applyVolatileTarget('infatuation'));
@@ -81,6 +86,8 @@ export function buildDefaultRegistry(data: DataLoader = new DataLoader()): MoveE
   r.register('miracleeye',  applyVolatileTarget('miracle-eye'));
   r.register('destinybond', destinyBond());
   r.register('nightmare',   applyVolatileTarget('nightmare'));
+  r.register('teeterdance', applyVolatileTarget('confusion'));
+  r.register('dragoncheer', applyVolatileTarget('dragon-cheer'));
   r.register('curse', custom((ctx) => {
     const isGhost = ctx.userTypes.includes('Ghost');
     if (isGhost) {
@@ -151,6 +158,14 @@ export function buildDefaultRegistry(data: DataLoader = new DataLoader()): MoveE
     if (!moveData) return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'unknown-move' } }] };
     ctx.user.typeOverride = [moveData.type as PokemonType];
     return { events: [{ type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'type-changed' } }] };
+  }));
+
+  r.register('magicpowder', custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+    target.typeOverride = ['Psychic'];
+    return { events: [{ type: 'volatile-applied', data: { targetSlotId, volatile: 'type-changed' } }] };
   }));
 
   r.register('conversion2', custom((ctx) => {
@@ -250,10 +265,13 @@ export function buildDefaultRegistry(data: DataLoader = new DataLoader()): MoveE
     return { events };
   }));
   r.register('victorydance',multiStatModSelf({ atk: 1, def: 1, spe: 1 }));
+  r.register('extremeevoboost', multiStatModSelf({ atk: 2, def: 2, spa: 2, spd: 2, spe: 2 }));
   // TODO: autotomize also reduces user weight by 100 kg (min 0.1 kg), but PartyMember
   // does not carry a weightkg field (that lives on PokemonSpecies). Weight reduction
   // is omitted until the battle state is extended to track per-instance weight.
   r.register('autotomize',  statModSelf('spe', 2));
+  r.register('honeclaws', multiStatModSelf({ atk: 1, accuracy: 1 }));
+  r.register('shelter',   statModSelf('def', 2));
 
   r.register('filletaway', custom((ctx) => {
     if (ctx.user.currentHp <= 1) {
@@ -297,6 +315,11 @@ export function buildDefaultRegistry(data: DataLoader = new DataLoader()): MoveE
   r.register('leer',       statModTarget('def', -1));
   r.register('growl',      statModTarget('atk', -1));
   r.register('screech',    statModTarget('def', -2));
+  r.register('tailwhip',    statModTarget('def', -1));
+  r.register('metalsound',  statModTarget('spd', -2));
+  r.register('decorate',     multiStatModTarget({ atk: 2, spa: 2 }));
+  r.register('coaching',     multiStatModTarget({ atk: 1, def: 1 }));
+  r.register('aromaticmist', statModTarget('spd', 1));
   r.register('charm',      statModTarget('atk', -2));
   r.register('faketears',  statModTarget('spd', -2));
   r.register('flash',      statModTarget('accuracy', -1));
@@ -370,6 +393,7 @@ export function buildDefaultRegistry(data: DataLoader = new DataLoader()): MoveE
   r.register('obstruct',      protect('obstruct'));
   r.register('silktrap',      protect('silktrap'));
   r.register('burningbulwark',protect('burningbulwark'));
+  r.register('maxguard',      protect('maxguard'));
   r.register('endure',        endure());
   r.register('substitute',    substitute());
   r.register('disable',       disable());
@@ -1111,6 +1135,12 @@ export function buildDefaultRegistry(data: DataLoader = new DataLoader()): MoveE
       events: [{ type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'mimic', moveId: target.lastMoveId } }],
     };
   });
+
+  // ── No-op flavor moves ─────────────────────────────────────────────
+  r.register('celebrate', custom(() => ({ events: [] })));
+  r.register('splash',    custom(() => ({ events: [] })));
+  r.register('happyhour', custom(() => ({ events: [] })));
+  r.register('holdhands', custom(() => ({ events: [] })));
 
   r.register('sketch', (ctx) => {
     const target = ctx.targets[0];
