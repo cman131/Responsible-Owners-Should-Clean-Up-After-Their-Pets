@@ -1252,7 +1252,7 @@ export function buildDefaultRegistry(data: DataLoader = new DataLoader()): MoveE
     const oldAtk = ctx.user.stats.atk;
     ctx.user.stats.atk = ctx.user.stats.def;
     ctx.user.stats.def = oldAtk;
-    return { events: [{ type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'power-shift' } }] };
+    return { events: [{ type: 'move-note', data: { slotId: ctx.userSlotId, note: 'power-shift' } }] };
   }));
 
   // ── Haze ──────────────────────────────────────────────────────────
