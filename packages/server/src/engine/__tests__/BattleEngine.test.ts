@@ -392,12 +392,14 @@ describe('Previously-unimplemented status moves', () => {
   });
 
   it('Screech lowers target Defense by 2', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0); // forces accuracy roll to hit (screech is 85%)
     const state = make1v1State();
     state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'screech', currentPp: 40, maxPp: 40 };
     const { newState } = new BattleEngine().resolveTurn(state, {
       'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },
       'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
     });
+    vi.restoreAllMocks();
     expect(newState.teams[1]!.slots[0]!.party[0]!.statBoosts.def).toBe(-2);
   });
 
