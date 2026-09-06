@@ -1528,11 +1528,19 @@ export function buildDefaultRegistry(data: DataLoader = new DataLoader()): MoveE
       for (const slot of team.slots) {
         const active = slot.party[slot.activePokemonIndex];
         if (!active || active.fainted) continue;
-        const monTypes = active.hasTerastallized && active.teraType
-          ? [active.teraType]
-          : (active.typeOverride ?? []);
+        // Determine the Pokémon's actual types
+        let monTypes: PokemonType[];
+        if (active.hasTerastallized && active.teraType) {
+          monTypes = [active.teraType];
+        } else if (active.typeOverride) {
+          monTypes = active.typeOverride;
+        } else {
+          // Look up species types from data loader
+          const species = data.getSpecies(active.speciesId);
+          monTypes = (species?.types ?? ['Normal']) as PokemonType[];
+        }
         if (!monTypes.includes('Grass')) continue;
-        if (!isGrounded(active, monTypes as import('@poke-fighter/shared').PokemonType[], gravityActive)) continue;
+        if (!isGrounded(active, monTypes, gravityActive)) continue;
         events.push(applyStatBoost(active, slot.slotId, { atk: 1, spa: 1 }));
       }
     }
@@ -1549,9 +1557,17 @@ export function buildDefaultRegistry(data: DataLoader = new DataLoader()): MoveE
       for (const slot of team.slots) {
         const active = slot.party[slot.activePokemonIndex];
         if (!active || active.fainted) continue;
-        const monTypes = active.hasTerastallized && active.teraType
-          ? [active.teraType]
-          : (active.typeOverride ?? []);
+        // Determine the Pokémon's actual types
+        let monTypes: PokemonType[];
+        if (active.hasTerastallized && active.teraType) {
+          monTypes = [active.teraType];
+        } else if (active.typeOverride) {
+          monTypes = active.typeOverride;
+        } else {
+          // Look up species types from data loader
+          const species = data.getSpecies(active.speciesId);
+          monTypes = (species?.types ?? ['Normal']) as PokemonType[];
+        }
         if (!monTypes.includes('Grass')) continue;
         events.push(applyStatBoost(active, slot.slotId, { def: 1 }));
       }
