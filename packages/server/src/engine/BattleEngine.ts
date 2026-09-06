@@ -596,6 +596,22 @@ export class BattleEngine {
           }
         }
       }
+      // Lock-On / Mind Reader: bypass accuracy check
+      if (targetSlotIds.length === 1) {
+        const primarySlot = this.findSlot(s, targetSlotIds[0]!);
+        const primaryTarget = primarySlot?.party[primarySlot.activePokemonIndex];
+        if (primaryTarget) {
+          const lockOnEntry = primaryTarget.volatileStatus.find(v => v.name === 'lock-on' && v.sourceSlotId === attackerSlotId);
+          if (lockOnEntry) {
+            primaryTarget.volatileStatus = primaryTarget.volatileStatus.filter(v => v !== lockOnEntry);
+            hitChance = 'always';
+          }
+          // Telekinesis: non-OHKO moves always hit a telekinesis target
+          if (!isOhko && primaryTarget.volatileStatus.some(v => v.name === 'telekinesis')) {
+            hitChance = 'always';
+          }
+        }
+      }
       if (hitChance !== 'always' && this.rng() * 100 >= hitChance) {
         events.push({ type: 'miss', data: { attackerSlotId, moveId: move.id } });
         return { newState: s, events };
@@ -836,6 +852,12 @@ export class BattleEngine {
 
       // Air Balloon Ground immunity (item-based, inline)
       if (target.heldItem === 'air-balloon' && effectiveMoveType === 'Ground') {
+        events.push({ type: 'move-used', data: { note: 'no-effect', targetSlotId, attackerName: attacker.nickname, moveName: move.name } });
+        continue;
+      }
+
+      // Telekinesis: target is lifted — immune to Ground-type moves
+      if (effectiveMoveType === 'Ground' && target.volatileStatus.some(v => v.name === 'telekinesis')) {
         events.push({ type: 'move-used', data: { note: 'no-effect', targetSlotId, attackerName: attacker.nickname, moveName: move.name } });
         continue;
       }
@@ -1232,6 +1254,13 @@ export class BattleEngine {
         // Mud Sport / Water Sport damage reduction
         if (s.field.mudSport   > 0 && effectiveMoveType === 'Electric') otherModifiers *= 0.5;
         if (s.field.waterSport > 0 && effectiveMoveType === 'Fire')     otherModifiers *= 0.5;
+
+        // Charge: doubles Electric move base power (consumed on use)
+        const chargeIdx = attacker.volatileStatus.findIndex(v => v.name === 'charge');
+        if (chargeIdx !== -1 && effectiveMoveType === 'Electric') {
+          otherModifiers *= 2;
+          attacker.volatileStatus.splice(chargeIdx, 1);
+        }
 
         // Screen damage halving — crits bypass screens
         const defenderTeamIndex = s.teams.findIndex(t =>

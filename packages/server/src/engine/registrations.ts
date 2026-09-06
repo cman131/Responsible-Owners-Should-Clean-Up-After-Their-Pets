@@ -1476,5 +1476,46 @@ export function buildDefaultRegistry(data: DataLoader = new DataLoader()): MoveE
     };
   }));
 
+  // ── Accuracy/targeting volatiles ──────────────────────────────────────
+  r.register('lockon', custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+    target.volatileStatus = target.volatileStatus.filter(v => v.name !== 'lock-on');
+    target.volatileStatus.push({ name: 'lock-on', turnsRemaining: 2, sourceSlotId: ctx.userSlotId });
+    return { events: [{ type: 'volatile-applied', data: { targetSlotId, volatile: 'lock-on' } }] };
+  }));
+
+  r.register('mindreader', custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+    target.volatileStatus = target.volatileStatus.filter(v => v.name !== 'lock-on');
+    target.volatileStatus.push({ name: 'lock-on', turnsRemaining: 2, sourceSlotId: ctx.userSlotId });
+    return { events: [{ type: 'volatile-applied', data: { targetSlotId, volatile: 'lock-on' } }] };
+  }));
+
+  r.register('telekinesis', custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+    if (target.volatileStatus.some(v => v.name === 'ingrain')) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'ingrain' } }] };
+    }
+    if (target.volatileStatus.some(v => v.name === 'telekinesis')) return { events: [] };
+    target.volatileStatus.push({ name: 'telekinesis', turnsRemaining: 3 });
+    return { events: [{ type: 'volatile-applied', data: { targetSlotId, volatile: 'telekinesis' } }] };
+  }));
+
+  r.register('charge', custom((ctx) => {
+    ctx.user.volatileStatus = ctx.user.volatileStatus.filter(v => v.name !== 'charge');
+    ctx.user.volatileStatus.push({ name: 'charge' });
+    const events: TurnResolveEvent[] = [
+      { type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'charge' } },
+    ];
+    events.push(applyStatBoost(ctx.user, ctx.userSlotId, { spd: 1 }));
+    return { events };
+  }));
+
   return r;
 }
