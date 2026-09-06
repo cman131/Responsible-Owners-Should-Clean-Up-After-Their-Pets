@@ -1136,6 +1136,146 @@ export function buildDefaultRegistry(data: DataLoader = new DataLoader()): MoveE
     };
   });
 
+  // ── Stat stage swaps ──────────────────────────────────────────────
+  r.register('guardswap', custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+    const events: TurnResolveEvent[] = [];
+    const uDef = ctx.user.statBoosts.def, uSpd = ctx.user.statBoosts.spd;
+    const tDef = target.statBoosts.def,   tSpd = target.statBoosts.spd;
+    ctx.user.statBoosts.def = tDef; ctx.user.statBoosts.spd = tSpd;
+    target.statBoosts.def = uDef;  target.statBoosts.spd = uSpd;
+    const uChg: Record<string, number> = {};
+    if (tDef !== uDef) uChg['def'] = tDef - uDef;
+    if (tSpd !== uSpd) uChg['spd'] = tSpd - uSpd;
+    if (Object.keys(uChg).length) events.push({ type: 'stat-change', data: { slotId: ctx.userSlotId, changes: uChg } });
+    const tChg: Record<string, number> = {};
+    if (uDef !== tDef) tChg['def'] = uDef - tDef;
+    if (uSpd !== tSpd) tChg['spd'] = uSpd - tSpd;
+    if (Object.keys(tChg).length) events.push({ type: 'stat-change', data: { slotId: targetSlotId, changes: tChg } });
+    return { events };
+  }));
+
+  r.register('powerswap', custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+    const events: TurnResolveEvent[] = [];
+    const uAtk = ctx.user.statBoosts.atk, uSpa = ctx.user.statBoosts.spa;
+    const tAtk = target.statBoosts.atk,   tSpa = target.statBoosts.spa;
+    ctx.user.statBoosts.atk = tAtk; ctx.user.statBoosts.spa = tSpa;
+    target.statBoosts.atk = uAtk;  target.statBoosts.spa = uSpa;
+    const uChg: Record<string, number> = {};
+    if (tAtk !== uAtk) uChg['atk'] = tAtk - uAtk;
+    if (tSpa !== uSpa) uChg['spa'] = tSpa - uSpa;
+    if (Object.keys(uChg).length) events.push({ type: 'stat-change', data: { slotId: ctx.userSlotId, changes: uChg } });
+    const tChg: Record<string, number> = {};
+    if (uAtk !== tAtk) tChg['atk'] = uAtk - tAtk;
+    if (uSpa !== tSpa) tChg['spa'] = uSpa - tSpa;
+    if (Object.keys(tChg).length) events.push({ type: 'stat-change', data: { slotId: targetSlotId, changes: tChg } });
+    return { events };
+  }));
+
+  r.register('heartswap', custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+    const events: TurnResolveEvent[] = [];
+    const stats = ['atk', 'def', 'spa', 'spd', 'spe', 'accuracy', 'evasion'] as const;
+    const uOld = { ...ctx.user.statBoosts };
+    const tOld = { ...target.statBoosts };
+    for (const s of stats) {
+      ctx.user.statBoosts[s] = tOld[s];
+      target.statBoosts[s] = uOld[s];
+    }
+    const uChg: Record<string, number> = {};
+    const tChg: Record<string, number> = {};
+    for (const s of stats) {
+      if (tOld[s] !== uOld[s]) { uChg[s] = tOld[s] - uOld[s]; tChg[s] = uOld[s] - tOld[s]; }
+    }
+    if (Object.keys(uChg).length) events.push({ type: 'stat-change', data: { slotId: ctx.userSlotId, changes: uChg } });
+    if (Object.keys(tChg).length) events.push({ type: 'stat-change', data: { slotId: targetSlotId, changes: tChg } });
+    return { events };
+  }));
+
+  r.register('speedswap', custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+    const events: TurnResolveEvent[] = [];
+    const uSpe = ctx.user.statBoosts.spe, tSpe = target.statBoosts.spe;
+    ctx.user.statBoosts.spe = tSpe; target.statBoosts.spe = uSpe;
+    if (tSpe !== uSpe) events.push({ type: 'stat-change', data: { slotId: ctx.userSlotId, changes: { spe: tSpe - uSpe } } });
+    if (uSpe !== tSpe) events.push({ type: 'stat-change', data: { slotId: targetSlotId, changes: { spe: uSpe - tSpe } } });
+    return { events };
+  }));
+
+  // ── Stat base-value splits ─────────────────────────────────────────
+  r.register('guardsplit', custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+    const newDef = Math.floor((ctx.user.stats.def + target.stats.def) / 2);
+    const newSpd = Math.floor((ctx.user.stats.spd + target.stats.spd) / 2);
+    ctx.user.stats.def = newDef; ctx.user.stats.spd = newSpd;
+    target.stats.def = newDef;  target.stats.spd = newSpd;
+    return { events: [{ type: 'move-note', data: { slotId: ctx.userSlotId, note: 'guard-split' } }] };
+  }));
+
+  r.register('powersplit', custom((ctx) => {
+    const target = ctx.targets[0];
+    const targetSlotId = ctx.targetSlotIds[0];
+    if (!target || !targetSlotId) return { events: [] };
+    const newAtk = Math.floor((ctx.user.stats.atk + target.stats.atk) / 2);
+    const newSpa = Math.floor((ctx.user.stats.spa + target.stats.spa) / 2);
+    ctx.user.stats.atk = newAtk; ctx.user.stats.spa = newSpa;
+    target.stats.atk = newAtk;  target.stats.spa = newSpa;
+    return { events: [{ type: 'move-note', data: { slotId: ctx.userSlotId, note: 'power-split' } }] };
+  }));
+
+  // ── Stat value swap (self) ─────────────────────────────────────────
+  r.register('powertrick', custom((ctx) => {
+    const hasTrick = ctx.user.volatileStatus.some(v => v.name === 'power-trick');
+    const oldAtk = ctx.user.stats.atk;
+    ctx.user.stats.atk = ctx.user.stats.def;
+    ctx.user.stats.def = oldAtk;
+    if (hasTrick) {
+      ctx.user.volatileStatus = ctx.user.volatileStatus.filter(v => v.name !== 'power-trick');
+      return { events: [{ type: 'volatile-cured', data: { slotId: ctx.userSlotId, volatile: 'power-trick' } }] };
+    }
+    ctx.user.volatileStatus.push({ name: 'power-trick' });
+    return { events: [{ type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'power-trick' } }] };
+  }));
+
+  r.register('powershift', custom((ctx) => {
+    const oldAtk = ctx.user.stats.atk;
+    ctx.user.stats.atk = ctx.user.stats.def;
+    ctx.user.stats.def = oldAtk;
+    return { events: [{ type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'power-shift' } }] };
+  }));
+
+  // ── Haze ──────────────────────────────────────────────────────────
+  r.register('haze', custom((ctx) => {
+    const events: TurnResolveEvent[] = [];
+    const statKeys = ['atk', 'def', 'spa', 'spd', 'spe', 'accuracy', 'evasion'] as const;
+    for (const team of ctx.battle.teams) {
+      for (const slot of team.slots) {
+        const active = slot.party[slot.activePokemonIndex];
+        if (!active || active.fainted) continue;
+        const boosts = active.statBoosts;
+        const hasNonZero = statKeys.some(k => boosts[k] !== 0);
+        if (!hasNonZero) continue;
+        const changes: Record<string, number> = {};
+        for (const k of statKeys) {
+          if (boosts[k] !== 0) { changes[k] = -boosts[k]; boosts[k] = 0; }
+        }
+        events.push({ type: 'stat-change', data: { slotId: slot.slotId, changes } });
+      }
+    }
+    return { events };
+  }));
+
   // ── No-op flavor moves ─────────────────────────────────────────────
   r.register('celebrate', custom(() => ({ events: [] })));
   r.register('splash',    custom(() => ({ events: [] })));
