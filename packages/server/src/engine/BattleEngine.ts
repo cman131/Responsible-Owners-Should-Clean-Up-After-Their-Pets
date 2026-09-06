@@ -682,6 +682,11 @@ export class BattleEngine {
       attacker.volatileStatus.splice(electrifyIdx, 1);
     }
 
+    // Ion Deluge: this-turn field flag makes Normal moves Electric
+    if (s.field.ionDeluge && effectiveMoveType === 'Normal') {
+      effectiveMoveType = 'Electric';
+    }
+
     // Extreme-weather move nullification (must come after effectiveMoveType is resolved)
     if (s.field.weather) {
       const wt = s.field.weather.type;
@@ -1174,7 +1179,11 @@ export class BattleEngine {
 
         let rawAtkStat = isPhysical ? attacker.stats.atk : attacker.stats.spa;
         let boostKey: keyof StatBoosts = isPhysical ? 'atk' : 'spa';
-        const rawDefStat = isPhysical ? target.stats.def : target.stats.spd;
+        let rawDefStat = isPhysical ? target.stats.def : target.stats.spd;
+        // Wonder Room: swap Def and SpD for damage calculation
+        if (s.field.wonderroom > 0) {
+          rawDefStat = isPhysical ? target.stats.spd : target.stats.def;
+        }
         const defBoostKey = isPhysical ? 'def' as const : 'spd' as const;
 
         // Stat-override moves
@@ -1219,6 +1228,10 @@ export class BattleEngine {
           if (terrain === 'misty'    && effectiveMoveType === 'Dragon'   && defGrounded) otherModifiers *= 0.5;
           if (terrain === 'psychic'  && effectiveMoveType === 'Psychic'  && atkGrounded) otherModifiers *= 1.5;
         }
+
+        // Mud Sport / Water Sport damage reduction
+        if (s.field.mudSport   > 0 && effectiveMoveType === 'Electric') otherModifiers *= 0.5;
+        if (s.field.waterSport > 0 && effectiveMoveType === 'Fire')     otherModifiers *= 0.5;
 
         // Screen damage halving — crits bypass screens
         const defenderTeamIndex = s.teams.findIndex(t =>
@@ -1982,6 +1995,27 @@ export class BattleEngine {
         events.push({ type: 'gravity-ended', data: {} });
       }
     }
+    if (s.field.wonderroom > 0) {
+      s.field.wonderroom -= 1;
+      if (s.field.wonderroom === 0) events.push({ type: 'wonderroom-ended', data: {} });
+    }
+    if (s.field.magicroom > 0) {
+      s.field.magicroom -= 1;
+      if (s.field.magicroom === 0) events.push({ type: 'magicroom-ended', data: {} });
+    }
+    if (s.field.mudSport > 0) {
+      s.field.mudSport -= 1;
+      if (s.field.mudSport === 0) events.push({ type: 'move-note', data: { note: 'mud-sport-ended' } });
+    }
+    if (s.field.waterSport > 0) {
+      s.field.waterSport -= 1;
+      if (s.field.waterSport === 0) events.push({ type: 'move-note', data: { note: 'water-sport-ended' } });
+    }
+    if (s.field.fairyLock > 0) {
+      s.field.fairyLock -= 1;
+    }
+    // Ion Deluge is a single-turn effect; clear it each end-of-turn
+    if (s.field.ionDeluge) s.field.ionDeluge = false;
 
     // Screen turn counter decrements
     for (let i = 0; i < 2; i++) {

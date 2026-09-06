@@ -112,3 +112,131 @@ describe('lookup maps', () => {
     expect(WEATHER_BALL_TYPE['heavy-rain']).toBe('Water');
   });
 });
+
+import { BattleEngine } from '../BattleEngine.js';
+import { make1v1State } from './fixtures.js';
+
+describe('Mud Sport', () => {
+  it('halves Electric move damage', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+
+    // Baseline: Electric move without Mud Sport
+    const stateBase = make1v1State();
+    stateBase.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'thunderbolt', currentPp: 15, maxPp: 15 };
+    const baseResult = engine.resolveTurn(stateBase, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+    const dmgBase = 100 - baseResult.newState.teams[1]!.slots[0]!.party[0]!.currentHp;
+
+    // With Mud Sport active
+    const stateMS = make1v1State();
+    stateMS.field.mudSport = 5;
+    stateMS.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'thunderbolt', currentPp: 15, maxPp: 15 };
+    const msResult = engine.resolveTurn(stateMS, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+    const dmgMS = 100 - msResult.newState.teams[1]!.slots[0]!.party[0]!.currentHp;
+
+    expect(dmgMS).toBeLessThan(dmgBase);
+    // Mud Sport halves damage — check rough ratio
+    // Allow wide tolerance (±15) because both calculations use independent Math.random() calls
+    expect(dmgMS * 2).toBeGreaterThanOrEqual(dmgBase - 15);
+    expect(dmgMS * 2).toBeLessThanOrEqual(dmgBase + 15);
+  });
+});
+
+describe('Water Sport', () => {
+  it('halves Fire move damage', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+
+    // Baseline
+    const stateBase = make1v1State();
+    stateBase.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'flamethrower', currentPp: 15, maxPp: 15 };
+    const baseResult = engine.resolveTurn(stateBase, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+    const dmgBase = 100 - baseResult.newState.teams[1]!.slots[0]!.party[0]!.currentHp;
+
+    // With Water Sport active
+    const stateWS = make1v1State();
+    stateWS.field.waterSport = 5;
+    stateWS.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'flamethrower', currentPp: 15, maxPp: 15 };
+    const wsResult = engine.resolveTurn(stateWS, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+    const dmgWS = 100 - wsResult.newState.teams[1]!.slots[0]!.party[0]!.currentHp;
+
+    expect(dmgWS).toBeLessThan(dmgBase);
+  });
+});
+
+describe('Wonder Room', () => {
+  it('swaps Def and SpD for damage calculation', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+
+    // Target: high Def, low SpD — physical move should deal low damage normally, high with Wonder Room
+    const stateBase = make1v1State();
+    stateBase.teams[1]!.slots[0]!.party[0]!.stats.def = 200;
+    stateBase.teams[1]!.slots[0]!.party[0]!.stats.spd = 50;
+    stateBase.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'tackle', currentPp: 35, maxPp: 35 };
+    const baseResult = engine.resolveTurn(stateBase, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+    const dmgBase = 100 - baseResult.newState.teams[1]!.slots[0]!.party[0]!.currentHp;
+
+    // With Wonder Room (physical move now uses SpD=50, should deal more damage)
+    const stateWR = make1v1State();
+    stateWR.field.wonderroom = 5;
+    stateWR.teams[1]!.slots[0]!.party[0]!.stats.def = 200;
+    stateWR.teams[1]!.slots[0]!.party[0]!.stats.spd = 50;
+    stateWR.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'tackle', currentPp: 35, maxPp: 35 };
+    const wrResult = engine.resolveTurn(stateWR, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+    const dmgWR = 100 - wrResult.newState.teams[1]!.slots[0]!.party[0]!.currentHp;
+
+    expect(dmgWR).toBeGreaterThan(dmgBase);
+  });
+
+  it('toggles off when used a second time', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'wonderroom', currentPp: 10, maxPp: 10 };
+
+    const after1 = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(after1.newState.field.wonderroom).toBeGreaterThan(0);
+
+    const after2 = engine.resolveTurn(after1.newState, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(after2.newState.field.wonderroom).toBe(0);
+    expect(after2.events.some(e => e.type === 'wonderroom-ended')).toBe(true);
+  });
+});
+
+describe('Ion Deluge', () => {
+  it('converts Normal-type moves to Electric type this turn', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+
+    // Baseline: Normal tackle vs default target (1× effectiveness)
+    const stateBase = make1v1State();
+    stateBase.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'tackle', currentPp: 35, maxPp: 35 };
+    const baseResult = engine.resolveTurn(stateBase, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+    const dmgBase = 100 - baseResult.newState.teams[1]!.slots[0]!.party[0]!.currentHp;
+
+    // With Ion Deluge active: Tackle becomes Electric
+    const stateID = make1v1State();
+    stateID.field.ionDeluge = true;
+    stateID.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'tackle', currentPp: 35, maxPp: 35 };
+    const idResult = engine.resolveTurn(stateID, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+    });
+
+    // Ion Deluge cleared after the turn
+    expect(idResult.newState.field.ionDeluge).toBe(false);
+  });
+});

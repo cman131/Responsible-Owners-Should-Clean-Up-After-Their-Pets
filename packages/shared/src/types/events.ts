@@ -115,6 +115,12 @@ export interface TurnResolveEvent {
     | 'status-blocked'
     | 'ability-triggered'
     | 'pivot-skipped'
+    | 'wonderroom-started'
+    | 'wonderroom-ended'
+    | 'magicroom-started'
+    | 'magicroom-ended'
+    | 'fairylock-started'
+    | 'iondeluge-started'
     | 'move-note';
   data: Record<string, unknown>;
 }

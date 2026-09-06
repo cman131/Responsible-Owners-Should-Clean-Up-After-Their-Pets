@@ -26,7 +26,12 @@ function defaultSideConditions(): SideConditions {
 }
 
 function defaultField(): FieldState {
-  return { trickroom: 0, gravity: 0, sideConditions: [defaultSideConditions(), defaultSideConditions()] };
+  return {
+    trickroom: 0, gravity: 0,
+    wonderroom: 0, magicroom: 0, mudSport: 0, waterSport: 0,
+    ionDeluge: false, fairyLock: 0,
+    sideConditions: [defaultSideConditions(), defaultSideConditions()],
+  };
 }
 
 export class BattleConfigurator {

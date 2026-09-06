@@ -778,6 +778,51 @@ export function buildDefaultRegistry(data: DataLoader = new DataLoader()): MoveE
   r.register('trickroom', trickRoom());
   r.register('gravity',   gravity());
 
+  // ── Field-state toggles ────────────────────────────────────────────
+  r.register('wonderroom', custom((ctx) => {
+    if (ctx.battle.field.wonderroom > 0) {
+      ctx.battle.field.wonderroom = 0;
+      return { events: [{ type: 'wonderroom-ended', data: {} }] };
+    }
+    ctx.battle.field.wonderroom = 5;
+    return { events: [{ type: 'wonderroom-started', data: { turnsRemaining: 5 } }] };
+  }));
+
+  r.register('magicroom', custom((ctx) => {
+    if (ctx.battle.field.magicroom > 0) {
+      ctx.battle.field.magicroom = 0;
+      return { events: [{ type: 'magicroom-ended', data: {} }] };
+    }
+    ctx.battle.field.magicroom = 5;
+    return { events: [{ type: 'magicroom-started', data: { turnsRemaining: 5 } }] };
+  }));
+
+  r.register('mudsport', custom((ctx) => {
+    if (ctx.battle.field.mudSport > 0) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'already-active' } }] };
+    }
+    ctx.battle.field.mudSport = 5;
+    return { events: [{ type: 'move-note', data: { note: 'mud-sport-started', turnsRemaining: 5 } }] };
+  }));
+
+  r.register('watersport', custom((ctx) => {
+    if (ctx.battle.field.waterSport > 0) {
+      return { events: [{ type: 'move-failed', data: { moveId: ctx.move.id, reason: 'already-active' } }] };
+    }
+    ctx.battle.field.waterSport = 5;
+    return { events: [{ type: 'move-note', data: { note: 'water-sport-started', turnsRemaining: 5 } }] };
+  }));
+
+  r.register('iondeluge', custom((ctx) => {
+    ctx.battle.field.ionDeluge = true;
+    return { events: [{ type: 'iondeluge-started', data: {} }] };
+  }));
+
+  r.register('fairylock', custom((ctx) => {
+    ctx.battle.field.fairyLock = 2;
+    return { events: [{ type: 'fairylock-started', data: { turnsRemaining: 2 } }] };
+  }));
+
   // ── Defog ──────────────────────────────────────────────────────────
   r.register('defog', custom((ctx) => {
     const events: TurnResolveEvent[] = [];

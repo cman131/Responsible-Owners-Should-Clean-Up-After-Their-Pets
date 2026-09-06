@@ -98,8 +98,14 @@ export interface SideConditions {
 export interface FieldState {
   weather?: { type: WeatherType; turnsRemaining: number; fromAbility: boolean; permanent?: boolean };
   terrain?: { type: TerrainType; turnsRemaining: number };
-  trickroom: number;  // turns remaining
-  gravity: number;    // turns remaining
+  trickroom: number;
+  gravity: number;
+  wonderroom: number;   // turns remaining (0 = inactive); swaps Def/SpD in damage calc
+  magicroom: number;    // turns remaining (0 = inactive); suppresses held items
+  mudSport: number;     // turns remaining; Electric moves do 0.5× damage
+  waterSport: number;   // turns remaining; Fire moves do 0.5× damage
+  ionDeluge: boolean;   // single-turn; Normal-type moves become Electric
+  fairyLock: number;    // turns remaining (0 = inactive); prevents switching
   sideConditions: [SideConditions, SideConditions];
 }
 
