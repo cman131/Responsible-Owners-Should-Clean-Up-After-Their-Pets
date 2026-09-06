@@ -1393,8 +1393,10 @@ export function buildDefaultRegistry(data: DataLoader = new DataLoader()): MoveE
     }
     const events: TurnResolveEvent[] = [];
     const statusEvent = applyStatus(target, targetSlotId, 'psn', ctx.targetTypes[0] ?? [], undefined, ctx.battle);
-    if (statusEvent) events.push(statusEvent);
-    events.push(applyStatBoost(target, targetSlotId, { spe: -1 }));
+    if (statusEvent) {
+      events.push(statusEvent);
+      events.push(applyStatBoost(target, targetSlotId, { spe: -1 }));
+    }
     return { events };
   }));
 

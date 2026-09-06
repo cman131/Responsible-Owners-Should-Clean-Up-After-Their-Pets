@@ -12,7 +12,8 @@ function actions(a = 'slot-a1', b = 'slot-b1'): Record<string, MoveAction> {
 
 describe('dynamicPower integration', () => {
   it('Facade deals more damage when user has a status condition', () => {
-    const engine = new BattleEngine();
+    // rng: () => 0.5 prevents crits (threshold ~0.0625) and guarantees hits
+    const engine = new BattleEngine({ rng: () => 0.5 });
 
     // Without status
     const stateClean = make1v1State();

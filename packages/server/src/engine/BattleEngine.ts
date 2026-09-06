@@ -407,10 +407,13 @@ export class BattleEngine {
         );
         const protectEntry = tgt.volatileStatus.find(v => v.name === 'protect');
         const craftyShieldBlocks = isOpponent && tgt.volatileStatus.some(v => v.name === 'crafty-shield');
+        const matBlockBlocks = isOpponent && tgt.volatileStatus.some(v => v.name === 'mat-block');
         if (isOpponent && protectEntry) {
           events.push({ type: 'move-blocked', data: { attackerSlotId, targetSlotId: tSlotId, reason: 'protect', variant: protectEntry.variant } });
         } else if (craftyShieldBlocks) {
           events.push({ type: 'move-blocked', data: { attackerSlotId, targetSlotId: tSlotId, reason: 'crafty-shield' } });
+        } else if (matBlockBlocks) {
+          events.push({ type: 'move-blocked', data: { attackerSlotId, targetSlotId: tSlotId, reason: 'mat-block' } });
         } else {
           filteredTargets.push(tgt);
           filteredSlotIds.push(tSlotId);
@@ -1274,7 +1277,9 @@ export class BattleEngine {
         if (s.field.wonderroom > 0) {
           rawDefStat = isPhysical ? target.stats.spd : target.stats.def;
         }
-        const defBoostKey = isPhysical ? 'def' as const : 'spd' as const;
+        const defBoostKey = (s.field.wonderroom > 0)
+          ? (isPhysical ? 'spd' as const : 'def' as const)
+          : (isPhysical ? 'def' as const : 'spd' as const);
 
         // Stat-override moves
         if (move.id === 'foulplay') rawAtkStat = target.stats.atk;

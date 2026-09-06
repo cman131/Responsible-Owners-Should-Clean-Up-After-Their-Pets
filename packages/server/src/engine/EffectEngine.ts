@@ -176,8 +176,13 @@ export class EffectEngine {
   ): EndOfTurnResult {
     const events: TurnResolveEvent[] = [];
 
-    // Remove protect, roost, mat-block at EoT (streak persists)
-    pokemon.volatileStatus = pokemon.volatileStatus.filter(v => v.name !== 'protect' && v.name !== 'roost' && v.name !== 'mat-block');
+    // Remove single-turn volatiles at EoT
+    const ONE_TURN_VOLATILES = new Set([
+      'protect', 'roost', 'mat-block',
+      'wide-guard', 'quick-guard', 'crafty-shield',
+      'center-of-attention', 'helping-hand', 'quash',
+    ]);
+    pokemon.volatileStatus = pokemon.volatileStatus.filter(v => !ONE_TURN_VOLATILES.has(v.name));
 
     // Decrement fresh-switcher (Mat Block eligibility) and remove when expired
     const freshSwitcherEntry = pokemon.volatileStatus.find(v => v.name === 'fresh-switcher');
@@ -364,6 +369,26 @@ export class EffectEngine {
       if ((healBlockEntry.turnsRemaining ?? 0) <= 0) {
         pokemon.volatileStatus = pokemon.volatileStatus.filter(v => v.name !== 'heal-block');
         events.push({ type: 'volatile-cured', data: { slotId, volatile: 'heal-block' } });
+      }
+    }
+
+    // Lock-On / Mind Reader decrement (turnsRemaining: 2 on apply, consumed when accuracy check fires)
+    const lockOnEntry = pokemon.volatileStatus.find(v => v.name === 'lock-on');
+    if (lockOnEntry) {
+      lockOnEntry.turnsRemaining = (lockOnEntry.turnsRemaining ?? 1) - 1;
+      if ((lockOnEntry.turnsRemaining ?? 0) <= 0) {
+        pokemon.volatileStatus = pokemon.volatileStatus.filter(v => v.name !== 'lock-on');
+        events.push({ type: 'volatile-cured', data: { slotId, volatile: 'lock-on' } });
+      }
+    }
+
+    // Telekinesis decrement (turnsRemaining: 3 on apply)
+    const telekinesisEntry = pokemon.volatileStatus.find(v => v.name === 'telekinesis');
+    if (telekinesisEntry) {
+      telekinesisEntry.turnsRemaining = (telekinesisEntry.turnsRemaining ?? 1) - 1;
+      if ((telekinesisEntry.turnsRemaining ?? 0) <= 0) {
+        pokemon.volatileStatus = pokemon.volatileStatus.filter(v => v.name !== 'telekinesis');
+        events.push({ type: 'volatile-cured', data: { slotId, volatile: 'telekinesis' } });
       }
     }
 
