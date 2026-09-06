@@ -438,7 +438,17 @@ export class BattleEngine {
               if (defItemMod !== undefined) statusHitChance = Math.min(100, Math.floor(statusHitChance * defItemMod));
             }
           }
-          if (this.rng() * 100 >= statusHitChance) {
+          // Lock-On / Mind Reader: bypass accuracy check for status moves too
+          const lockOnEntry = filteredTargets[0]?.volatileStatus.find(v => v.name === 'lock-on' && v.sourceSlotId === attackerSlotId);
+          if (lockOnEntry && filteredTargets[0]) {
+            filteredTargets[0].volatileStatus = filteredTargets[0].volatileStatus.filter(v => v !== lockOnEntry);
+            statusHitChance = 'always';
+          }
+          // Telekinesis: status moves always hit a telekinesis target
+          if (filteredTargets[0]?.volatileStatus.some(v => v.name === 'telekinesis')) {
+            statusHitChance = 'always';
+          }
+          if (statusHitChance !== 'always' && this.rng() * 100 >= statusHitChance) {
             events.push({ type: 'miss', data: { attackerSlotId, moveId: move.id } });
             return { newState: s, events };
           }
