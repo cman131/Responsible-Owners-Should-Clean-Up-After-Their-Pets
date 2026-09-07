@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { classifyTarget, getTargetLabel, formatTargetNames } from '../targeting.js';
+import { classifyTarget, getTargetLabel, formatTargetNames, sortLegalTargets } from '../targeting.js';
 import type { BattleState } from '@poke-fighter/shared';
 
 describe('classifyTarget', () => {
@@ -112,5 +112,74 @@ describe('formatTargetNames', () => {
       { slotId: 's3', displayName: 'Brock' },
     ]);
     expect(formatTargetNames(['s1', 's2', 's3'], state)).toBe('Ash, Misty, Brock');
+  });
+});
+
+describe('sortLegalTargets', () => {
+  function makeState(
+    team0SlotIds: string[],
+    team1SlotIds: string[],
+  ): BattleState {
+    function makeSlot(slotId: string) {
+      return {
+        slotId,
+        displayName: slotId,
+        isNpc: false,
+        isSpectator: false,
+        party: [],
+        activePokemonIndex: 0,
+      };
+    }
+    return {
+      battleId: 'test', label: 'Test', turnNumber: 1, phase: 'action',
+      teams: [
+        { teamId: 'a', slots: team0SlotIds.map(makeSlot) },
+        { teamId: 'b', slots: team1SlotIds.map(makeSlot) },
+      ],
+      field: {
+        trickroom: 0, gravity: 0, wonderroom: 0, magicroom: 0, mudSport: 0, waterSport: 0, ionDeluge: false, fairyLock: 0,
+        sideConditions: [
+          { stealthRock: false, spikes: 0, toxicSpikes: 0, stickyWeb: false, reflect: 0, lightScreen: 0, auroraVeil: 0, tailwind: 0, safeguard: 0, mist: 0, luckychant: 0 },
+          { stealthRock: false, spikes: 0, toxicSpikes: 0, stickyWeb: false, reflect: 0, lightScreen: 0, auroraVeil: 0, tailwind: 0, safeguard: 0, mist: 0, luckychant: 0 },
+        ],
+      },
+    };
+  }
+
+  it('places enemies before allies before self', () => {
+    const state = makeState(['a1', 'a2'], ['b1', 'b2']);
+    const result = sortLegalTargets(['a1', 'a2', 'b1', 'b2'], 'a1', state);
+    expect(result).toEqual(['b1', 'b2', 'a2', 'a1']);
+  });
+
+  it('works when targets contain only enemies', () => {
+    const state = makeState(['a1'], ['b1', 'b2']);
+    const result = sortLegalTargets(['b1', 'b2'], 'a1', state);
+    expect(result).toEqual(['b1', 'b2']);
+  });
+
+  it('works when targets contain only allies', () => {
+    const state = makeState(['a1', 'a2'], ['b1']);
+    const result = sortLegalTargets(['a2'], 'a1', state);
+    expect(result).toEqual(['a2']);
+  });
+
+  it('works when targets contain only self', () => {
+    const state = makeState(['a1'], ['b1']);
+    const result = sortLegalTargets(['a1'], 'a1', state);
+    expect(result).toEqual(['a1']);
+  });
+
+  it('preserves relative order within each bucket', () => {
+    // b2, b1 both go to enemies bucket — their relative order must be preserved
+    const state = makeState(['a1', 'a2'], ['b1', 'b2']);
+    const result = sortLegalTargets(['b2', 'b1', 'a2', 'a1'], 'a1', state);
+    expect(result).toEqual(['b2', 'b1', 'a2', 'a1']);
+  });
+
+  it('puts unresolvable slot ids at the end', () => {
+    const state = makeState(['a1'], ['b1']);
+    const result = sortLegalTargets(['unknown', 'b1', 'a1'], 'a1', state);
+    expect(result).toEqual(['b1', 'a1', 'unknown']);
   });
 });

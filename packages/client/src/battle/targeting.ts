@@ -50,3 +50,35 @@ export function formatTargetNames(legalTargets: string[], state: BattleState): s
   const suffix = legalTargets.length > 3 ? '…' : '';
   return names.join(', ') + suffix;
 }
+
+export function sortLegalTargets(
+  targets: string[],
+  selfSlotId: string,
+  state: BattleState,
+): string[] {
+  const allyTeamIdx = state.teams.findIndex((t) =>
+    t.slots.some((s) => s.slotId === selfSlotId),
+  );
+
+  const enemies: string[] = [];
+  const allies: string[] = [];
+  const self: string[] = [];
+  const unresolved: string[] = [];
+
+  for (const targetId of targets) {
+    if (targetId === selfSlotId) {
+      self.push(targetId);
+    } else if (
+      allyTeamIdx !== -1 &&
+      state.teams[allyTeamIdx]!.slots.some((s) => s.slotId === targetId)
+    ) {
+      allies.push(targetId);
+    } else if (state.teams.some((t) => t.slots.some((s) => s.slotId === targetId))) {
+      enemies.push(targetId);
+    } else {
+      unresolved.push(targetId);
+    }
+  }
+
+  return [...enemies, ...allies, ...self, ...unresolved];
+}
