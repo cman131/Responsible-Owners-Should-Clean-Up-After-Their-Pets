@@ -8,7 +8,7 @@ import { SwitchPanel } from '../battle/overlays/SwitchPanel.js';
 import { TurnLog } from '../battle/overlays/TurnLog.js';
 import { ExpBar } from '../battle/overlays/ExpBar.js';
 import { HpBarsRow } from '../battle/overlays/HpBarsRow.js';
-import { classifyTarget, getTargetLabel, getSlotDisplayName, formatTargetNames } from '../battle/targeting.js';
+import { classifyTarget, getTargetLabel, getSlotDisplayName, formatTargetNames, sortLegalTargets } from '../battle/targeting.js';
 import type { BattleState, ActionRequestPayload } from '@poke-fighter/shared';
 
 type ValidMove = ActionRequestPayload['validMoves'][number];
@@ -90,7 +90,8 @@ function BattleView() {
 
     setTargetingMove(move);
     if (mode === 'choose') {
-      setSelectedTarget(move.legalTargets[0] ?? '');
+      const sorted = sortLegalTargets(move.legalTargets, mySlotId, state);
+      setSelectedTarget(sorted[0] ?? '');
     }
   }
 
@@ -178,7 +179,7 @@ function BattleView() {
                         onChange={(e) => setSelectedTarget(e.target.value)}
                         style={{ flex: 1, background: '#111', border: '1px solid #555', color: '#fff', padding: '4px 8px', borderRadius: 3, fontFamily: 'inherit', fontSize: 12 }}
                       >
-                        {targetingMove.legalTargets.map((t) => (
+                        {sortLegalTargets(targetingMove.legalTargets, mySlotId, state).map((t) => (
                           <option key={t} value={t}>{getSlotDisplayName(state, t)}</option>
                         ))}
                       </select>
