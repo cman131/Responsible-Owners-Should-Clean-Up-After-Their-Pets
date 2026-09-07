@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getSocket } from '../socket.js';
-import { classifyTarget } from '../battle/targeting.js';
+import { classifyTarget, sortLegalTargets } from '../battle/targeting.js';
 import type { ActionRequestPayload, BattleState } from '@poke-fighter/shared';
 
 interface NpcSlotRequest {
@@ -81,7 +81,8 @@ export function NpcTabPanel({ battleId, npcRequests, state }: Props) {
       submitNpcAction(slotId, mv.index, mv.legalTargets[0]);
     } else if (mode === 'choose') {
       setPendingMove({ slotId, moveIndex: mv.index });
-      setSelectedTarget(mv.legalTargets[0] ?? '');
+      const sorted = state ? sortLegalTargets(mv.legalTargets, slotId, state) : mv.legalTargets;
+      setSelectedTarget(sorted[0] ?? '');
     } else {
       submitNpcAction(slotId, mv.index);
     }
@@ -214,7 +215,8 @@ export function NpcTabPanel({ battleId, npcRequests, state }: Props) {
 
               {/* Target selector — multi-target only */}
               {pendingMove?.slotId === activeRequest.slotId && (() => {
-                const pendingMoveLegalTargets = activeRequest.request.validMoves.find((m) => m.index === pendingMove.moveIndex)?.legalTargets ?? [];
+                const rawTargets = activeRequest.request.validMoves.find((m) => m.index === pendingMove.moveIndex)?.legalTargets ?? [];
+                const pendingMoveLegalTargets = state ? sortLegalTargets(rawTargets, pendingMove.slotId, state) : rawTargets;
                 return (
                   <div style={styles.targetRow}>
                     <span style={{ color: '#aaa', fontSize: 10 }}>Target:</span>
