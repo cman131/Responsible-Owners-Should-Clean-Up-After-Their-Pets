@@ -140,3 +140,65 @@ describe('ActionPanel — move grid', () => {
     expect(screen.queryByText('SWITCH POKÉMON')).toBeNull();
   });
 });
+
+describe('ActionPanel — target selector', () => {
+  const multiTargetRequest: ActionRequestPayload = {
+    ...baseRequest,
+    validMoves: [
+      { index: 0, moveId: 'earthquake', pp: 10, disabled: false, targetType: 'normal', legalTargets: ['b1', 'b2'] },
+      ...baseRequest.validMoves.slice(1),
+    ],
+  };
+
+  it('shows target dropdown when choose move has multiple legal targets', () => {
+    render(<ActionPanel request={multiTargetRequest} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={vi.fn()} />);
+    fireEvent.click(screen.getByText('earthquake'));
+    expect(screen.getByRole('combobox')).toBeTruthy();
+  });
+
+  it('clicking Confirm submits with the selected target', () => {
+    const onSubmitMove = vi.fn();
+    render(<ActionPanel request={multiTargetRequest} slotId="a1" state={mockState} onSubmitMove={onSubmitMove} onSubmitSwitch={vi.fn()} />);
+    fireEvent.click(screen.getByText('earthquake'));
+    fireEvent.click(screen.getByText('Confirm'));
+    expect(onSubmitMove).toHaveBeenCalledWith(0, 'b1', undefined);
+  });
+
+  it('clicking ✕ cancels target selection and returns to move grid', () => {
+    render(<ActionPanel request={multiTargetRequest} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={vi.fn()} />);
+    fireEvent.click(screen.getByText('earthquake'));
+    fireEvent.click(screen.getByText('✕'));
+    expect(screen.queryByRole('combobox')).toBeNull();
+    expect(screen.getByText('earthquake')).toBeTruthy();
+  });
+
+  it('shows formatted names display (not dropdown) for listed moves', () => {
+    const listedRequest: ActionRequestPayload = {
+      ...baseRequest,
+      validMoves: [
+        { index: 0, moveId: 'surf', pp: 15, disabled: false, targetType: 'allAdjacentFoes', legalTargets: ['b1'] },
+        ...baseRequest.validMoves.slice(1),
+      ],
+    };
+    render(<ActionPanel request={listedRequest} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={vi.fn()} />);
+    fireEvent.click(screen.getByText('surf'));
+    expect(screen.queryByRole('combobox')).toBeNull();
+    expect(screen.getByText('Confirm')).toBeTruthy();
+    expect(screen.getByText('Bob')).toBeTruthy();
+  });
+
+  it('Confirm on listed move calls onSubmitMove without targetSlotId', () => {
+    const onSubmitMove = vi.fn();
+    const listedRequest: ActionRequestPayload = {
+      ...baseRequest,
+      validMoves: [
+        { index: 0, moveId: 'surf', pp: 15, disabled: false, targetType: 'allAdjacentFoes', legalTargets: ['b1'] },
+        ...baseRequest.validMoves.slice(1),
+      ],
+    };
+    render(<ActionPanel request={listedRequest} slotId="a1" state={mockState} onSubmitMove={onSubmitMove} onSubmitSwitch={vi.fn()} />);
+    fireEvent.click(screen.getByText('surf'));
+    fireEvent.click(screen.getByText('Confirm'));
+    expect(onSubmitMove).toHaveBeenCalledWith(0, undefined, undefined);
+  });
+});

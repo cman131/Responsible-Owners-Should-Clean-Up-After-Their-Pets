@@ -128,6 +128,50 @@ export function ActionPanel({
         })}
       </div>
 
+      {targetingMove && (() => {
+        const mode = classifyTarget(targetingMove.targetType);
+        return (
+          <div style={{ marginTop: 8, background: '#0d0d1a', border: `1px solid ${accent}`, borderRadius: 4, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ color: '#aaa', fontSize: 11 }}>
+              {mode === 'choose' ? 'Target:' : 'Targets:'}
+            </span>
+            {mode === 'choose' ? (
+              <select
+                value={selectedTarget}
+                onChange={(e) => setSelectedTarget(e.target.value)}
+                style={{ flex: 1, background: '#111', border: '1px solid #555', color: '#fff', padding: '4px 8px', borderRadius: 3, fontFamily: 'inherit', fontSize: 12 }}
+              >
+                {sortLegalTargets(targetingMove.legalTargets, slotId, state).map((t) => (
+                  <option key={t} value={t}>{getSlotDisplayName(state, t)}</option>
+                ))}
+              </select>
+            ) : (
+              <span style={{ flex: 1, color: '#fff', fontSize: 12 }}>
+                {formatTargetNames(targetingMove.legalTargets, state)}
+              </span>
+            )}
+            <button
+              onClick={() => {
+                const m = classifyTarget(targetingMove.targetType);
+                onSubmitMove(targetingMove.index, m === 'choose' ? selectedTarget : undefined, terastallize || undefined);
+                setTargetingMove(null);
+                setSelectedTarget('');
+                setTerastallize(false);
+              }}
+              style={{ background: accent, color: '#fff', border: 'none', padding: '4px 14px', borderRadius: 3, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12 }}
+            >
+              Confirm
+            </button>
+            <button
+              onClick={() => { setTargetingMove(null); setSelectedTarget(''); }}
+              style={{ background: 'none', border: '1px solid #555', color: '#aaa', padding: '4px 10px', borderRadius: 3, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12 }}
+            >
+              ✕
+            </button>
+          </div>
+        );
+      })()}
+
       {request.canSwitch && !submitted && (
         <button
           onClick={() => setShowSwitch(true)}
