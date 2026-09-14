@@ -123,6 +123,21 @@ describe('BattlePage', () => {
     expect(screen.getByText('Waiting for others...')).toBeTruthy();
   });
 
+  it('shows MUST RECHARGE panel when action request has lockedReason recharge', () => {
+    renderBattlePage(makeState());
+    const onCall = mockSocket.on.mock.calls.find((c) => c[0] === 'action:request');
+    act(() => {
+      onCall![1]({
+        slotId: 'a1',
+        validMoves: [{ index: 0, moveId: 'hyperbeam', pp: 5, disabled: false, targetType: 'normal', legalTargets: ['b1'] }],
+        canSwitch: false, switchTargets: [], canTerastallize: false,
+        lockedReason: 'recharge',
+      });
+    });
+    expect(screen.getByText('MUST RECHARGE')).toBeTruthy();
+    expect(screen.queryByText('hyperbeam')).toBeNull();
+  });
+
   it('gates action panel behind turn:resolve playback queue', async () => {
     vi.useFakeTimers();
     renderBattlePage(makeState());
