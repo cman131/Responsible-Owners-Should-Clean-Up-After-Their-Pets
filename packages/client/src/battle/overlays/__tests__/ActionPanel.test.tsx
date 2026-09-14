@@ -96,3 +96,47 @@ describe('ActionPanel — locked state', () => {
     expect(onSubmitMove).toHaveBeenCalledWith(0);
   });
 });
+
+describe('ActionPanel — move grid', () => {
+  it('renders all 4 move buttons', () => {
+    render(<ActionPanel request={baseRequest} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={vi.fn()} />);
+    expect(screen.getByText('flamethrower')).toBeTruthy();
+    expect(screen.getByText('airslash')).toBeTruthy();
+    expect(screen.getByText('roost')).toBeTruthy();
+    expect(screen.getByText('willowisp')).toBeTruthy();
+  });
+
+  it('disables a move with pp=0', () => {
+    const req = { ...baseRequest, validMoves: [{ ...baseRequest.validMoves[0]!, pp: 0 }, ...baseRequest.validMoves.slice(1)] };
+    render(<ActionPanel request={req} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={vi.fn()} />);
+    const buttons = screen.getAllByRole('button');
+    expect((buttons[0] as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('disables a move with disabled=true', () => {
+    const req = { ...baseRequest, validMoves: [{ ...baseRequest.validMoves[0]!, disabled: true }, ...baseRequest.validMoves.slice(1)] };
+    render(<ActionPanel request={req} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={vi.fn()} />);
+    const buttons = screen.getAllByRole('button');
+    expect((buttons[0] as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('auto-submits a self-targeting move immediately on click', () => {
+    const onSubmitMove = vi.fn();
+    render(<ActionPanel request={baseRequest} slotId="a1" state={mockState} onSubmitMove={onSubmitMove} onSubmitSwitch={vi.fn()} />);
+    fireEvent.click(screen.getByText('roost'));
+    expect(onSubmitMove).toHaveBeenCalledWith(2, 'a1', undefined);
+    expect(screen.queryByRole('combobox')).toBeNull();
+  });
+
+  it('auto-submits a choose move with exactly one legal target immediately on click', () => {
+    const onSubmitMove = vi.fn();
+    render(<ActionPanel request={baseRequest} slotId="a1" state={mockState} onSubmitMove={onSubmitMove} onSubmitSwitch={vi.fn()} />);
+    fireEvent.click(screen.getByText('flamethrower'));
+    expect(onSubmitMove).toHaveBeenCalledWith(0, 'b1', undefined);
+  });
+
+  it('does not show SWITCH POKÉMON button when canSwitch is false', () => {
+    render(<ActionPanel request={baseRequest} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={vi.fn()} />);
+    expect(screen.queryByText('SWITCH POKÉMON')).toBeNull();
+  });
+});
