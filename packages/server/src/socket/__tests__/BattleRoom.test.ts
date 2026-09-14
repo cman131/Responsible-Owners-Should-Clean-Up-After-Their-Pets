@@ -298,3 +298,35 @@ describe('Bug 3 — pivot move integration', () => {
     expect(room.getState().turnNumber).toBe(2);
   });
 });
+
+describe('getPendingActionRequest — lockedReason', () => {
+  function makeHumanRoom(overrides: Partial<import('@poke-fighter/shared').PartyMember> = {}) {
+    const state = make1v1State();
+    Object.assign(state.teams[0]!.slots[0]!.party[0]!, overrides);
+    return new BattleRoom({ initialState: state });
+  }
+
+  it('returns lockedReason "recharge" when active pokemon has recharge volatile', () => {
+    const room = makeHumanRoom({ volatileStatus: [{ name: 'recharge' }] });
+    const req = room.getPendingActionRequest('slot-a1');
+    expect(req!.lockedReason).toBe('recharge');
+  });
+
+  it('returns lockedReason "sleep" when active pokemon status is slp', () => {
+    const room = makeHumanRoom({ status: 'slp', volatileStatus: [{ name: 'sleep', counter: 2 }] });
+    const req = room.getPendingActionRequest('slot-a1');
+    expect(req!.lockedReason).toBe('sleep');
+  });
+
+  it('returns lockedReason "freeze" when active pokemon status is frz', () => {
+    const room = makeHumanRoom({ status: 'frz' });
+    const req = room.getPendingActionRequest('slot-a1');
+    expect(req!.lockedReason).toBe('freeze');
+  });
+
+  it('returns no lockedReason for a healthy pokemon', () => {
+    const room = makeHumanRoom();
+    const req = room.getPendingActionRequest('slot-a1');
+    expect(req!.lockedReason).toBeUndefined();
+  });
+});

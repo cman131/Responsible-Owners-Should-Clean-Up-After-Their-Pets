@@ -161,6 +161,7 @@ export class BattleRoom {
         .filter((p, i) => i !== slot.activePokemonIndex && !p.fainted)
         .map((p) => p.instanceId),
       canTerastallize: !active.hasTerastallized && !!active.teraType,
+      lockedReason: this.getLockedReason(active),
     };
   }
 
@@ -327,6 +328,12 @@ export class BattleRoom {
     return undefined;
   }
 
+  private getLockedReason(active: PartyMember): 'recharge' | 'sleep' | 'freeze' | undefined {
+    if (active.volatileStatus.some(v => v.name === 'recharge')) return 'recharge';
+    if (active.status === 'slp') return 'sleep';
+    if (active.status === 'frz') return 'freeze';
+  }
+
   private buildValidMoves(slotId: string, active: PartyMember): ActionRequestPayload['validMoves'] {
     const disableEntry = active.volatileStatus.find(v => v.name === 'disable');
     const tauntActive = active.volatileStatus.some(v => v.name === 'taunt');
@@ -391,6 +398,7 @@ export class BattleRoom {
               .filter((p, i) => i !== slot.activePokemonIndex && !p.fainted)
               .map((p) => p.instanceId),
             canTerastallize: !active.hasTerastallized && !!active.teraType,
+            lockedReason: this.getLockedReason(active),
           },
         });
       }
@@ -416,6 +424,7 @@ export class BattleRoom {
               .filter((p, i) => i !== slot.activePokemonIndex && !p.fainted)
               .map((p) => p.instanceId),
             canTerastallize: !active.hasTerastallized && !!active.teraType,
+            lockedReason: this.getLockedReason(active),
           },
         });
       }
