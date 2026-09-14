@@ -1,0 +1,98 @@
+import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { ActionPanel } from '../ActionPanel.js';
+import type { ActionRequestPayload, BattleState, PartyMember } from '@poke-fighter/shared';
+
+const activeMon: PartyMember = {
+  instanceId: 'active-1', speciesId: 6, speciesName: 'charizard', nickname: 'Charizard',
+  level: 50, currentHp: 180, maxHp: 200,
+  stats: { hp: 200, atk: 120, def: 100, spa: 130, spd: 100, spe: 110 },
+  ability: 'blaze',
+  moves: [
+    { moveId: 'flamethrower', currentPp: 15, maxPp: 15 },
+    { moveId: 'airslash', currentPp: 15, maxPp: 15 },
+    { moveId: 'roost', currentPp: 10, maxPp: 10 },
+    { moveId: 'willowisp', currentPp: 15, maxPp: 15 },
+  ],
+  volatileStatus: [], statBoosts: { atk: 0, def: 0, spa: 0, spd: 0, spe: 0, accuracy: 0, evasion: 0 },
+  hasTerastallized: false, fainted: false, expTotal: 0,
+};
+
+const benchMon: PartyMember = {
+  instanceId: 'bench-1', speciesId: 9, speciesName: 'blastoise', nickname: 'Blastoise',
+  level: 45, currentHp: 140, maxHp: 180,
+  stats: { hp: 180, atk: 90, def: 110, spa: 90, spd: 100, spe: 80 },
+  ability: 'torrent',
+  moves: [
+    { moveId: 'surf', currentPp: 15, maxPp: 15 },
+    { moveId: 'icebeam', currentPp: 10, maxPp: 10 },
+    { moveId: 'flashcannon', currentPp: 10, maxPp: 10 },
+    { moveId: 'protect', currentPp: 10, maxPp: 10 },
+  ],
+  volatileStatus: [], statBoosts: { atk: 0, def: 0, spa: 0, spd: 0, spe: 0, accuracy: 0, evasion: 0 },
+  hasTerastallized: false, fainted: false, expTotal: 0,
+};
+
+const mockState: BattleState = {
+  battleId: 'test', label: 'Test', turnNumber: 1, phase: 'action',
+  teams: [
+    {
+      teamId: 'team-a',
+      slots: [{ slotId: 'a1', displayName: 'Alice', isNpc: false, isSpectator: false, party: [activeMon, benchMon], activePokemonIndex: 0 }],
+    },
+    {
+      teamId: 'team-b',
+      slots: [{ slotId: 'b1', displayName: 'Bob', isNpc: true, isSpectator: false, party: [{ ...activeMon, instanceId: 'foe-1' }], activePokemonIndex: 0 }],
+    },
+  ],
+  field: {
+    trickroom: 0, gravity: 0, wonderroom: 0, magicroom: 0,
+    mudSport: 0, waterSport: 0, ionDeluge: false, fairyLock: 0,
+    sideConditions: [
+      { stealthRock: false, spikes: 0, toxicSpikes: 0, stickyWeb: false, reflect: 0, lightScreen: 0, auroraVeil: 0, tailwind: 0, safeguard: 0, mist: 0, luckychant: 0 },
+      { stealthRock: false, spikes: 0, toxicSpikes: 0, stickyWeb: false, reflect: 0, lightScreen: 0, auroraVeil: 0, tailwind: 0, safeguard: 0, mist: 0, luckychant: 0 },
+    ],
+  },
+};
+
+const baseRequest: ActionRequestPayload = {
+  slotId: 'a1',
+  validMoves: [
+    { index: 0, moveId: 'flamethrower', pp: 15, disabled: false, targetType: 'normal', legalTargets: ['b1'] },
+    { index: 1, moveId: 'airslash', pp: 15, disabled: false, targetType: 'normal', legalTargets: ['b1'] },
+    { index: 2, moveId: 'roost', pp: 10, disabled: false, targetType: 'self', legalTargets: ['a1'] },
+    { index: 3, moveId: 'willowisp', pp: 15, disabled: false, targetType: 'normal', legalTargets: ['b1'] },
+  ],
+  canSwitch: false,
+  switchTargets: [],
+  canTerastallize: false,
+};
+
+describe('ActionPanel — locked state', () => {
+  it('shows MUST RECHARGE label when lockedReason is recharge', () => {
+    render(<ActionPanel request={{ ...baseRequest, lockedReason: 'recharge' }} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={vi.fn()} />);
+    expect(screen.getByText('MUST RECHARGE')).toBeTruthy();
+  });
+
+  it('shows FAST ASLEEP label when lockedReason is sleep', () => {
+    render(<ActionPanel request={{ ...baseRequest, lockedReason: 'sleep' }} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={vi.fn()} />);
+    expect(screen.getByText('FAST ASLEEP')).toBeTruthy();
+  });
+
+  it('shows FROZEN SOLID label when lockedReason is freeze', () => {
+    render(<ActionPanel request={{ ...baseRequest, lockedReason: 'freeze' }} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={vi.fn()} />);
+    expect(screen.getByText('FROZEN SOLID')).toBeTruthy();
+  });
+
+  it('does not render move buttons when locked', () => {
+    render(<ActionPanel request={{ ...baseRequest, lockedReason: 'recharge' }} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={vi.fn()} />);
+    expect(screen.queryByText('flamethrower')).toBeNull();
+  });
+
+  it('Confirm on locked panel calls onSubmitMove(0)', () => {
+    const onSubmitMove = vi.fn();
+    render(<ActionPanel request={{ ...baseRequest, lockedReason: 'recharge' }} slotId="a1" state={mockState} onSubmitMove={onSubmitMove} onSubmitSwitch={vi.fn()} />);
+    fireEvent.click(screen.getByText('Confirm'));
+    expect(onSubmitMove).toHaveBeenCalledWith(0);
+  });
+});
