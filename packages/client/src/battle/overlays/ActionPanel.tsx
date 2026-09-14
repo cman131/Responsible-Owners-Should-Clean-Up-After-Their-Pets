@@ -51,8 +51,9 @@ export function ActionPanel({
           {LOCKED_LABELS[request.lockedReason]}
         </div>
         <button
+          disabled={submitted}
           onClick={() => onSubmitMove(0)}
-          style={{ background: accent, color: '#fff', border: 'none', padding: '8px 20px', borderRadius: 4, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12 }}
+          style={{ background: accent, color: '#fff', border: 'none', padding: '8px 20px', borderRadius: 4, cursor: submitted ? 'not-allowed' : 'pointer', opacity: submitted ? 0.4 : 1, fontFamily: 'inherit', fontSize: 12 }}
         >
           Confirm
         </button>
