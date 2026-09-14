@@ -76,6 +76,7 @@ export interface ActionRequestPayload {
   canSwitch: boolean;
   switchTargets: string[];
   canTerastallize: boolean;
+  lockedReason?: 'recharge' | 'sleep' | 'freeze';
 }
 
 export interface TurnResolveEvent {
