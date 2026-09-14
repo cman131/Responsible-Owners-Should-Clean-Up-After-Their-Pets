@@ -202,3 +202,81 @@ describe('ActionPanel — target selector', () => {
     expect(onSubmitMove).toHaveBeenCalledWith(0, undefined, undefined);
   });
 });
+
+const switchableRequest: ActionRequestPayload = {
+  ...baseRequest,
+  canSwitch: true,
+  switchTargets: ['bench-1'],
+};
+
+describe('ActionPanel — switch mode', () => {
+  it('shows SWITCH POKÉMON button when canSwitch is true', () => {
+    render(<ActionPanel request={switchableRequest} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={vi.fn()} />);
+    expect(screen.getByText('SWITCH POKÉMON')).toBeTruthy();
+  });
+
+  it('clicking SWITCH POKÉMON shows SwitchPanel with bench members and [Cancel]', () => {
+    render(<ActionPanel request={switchableRequest} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={vi.fn()} />);
+    fireEvent.click(screen.getByText('SWITCH POKÉMON'));
+    expect(screen.getByText('Blastoise L45')).toBeTruthy();
+    expect(screen.getByText('[Cancel]')).toBeTruthy();
+    expect(screen.queryByText('flamethrower')).toBeNull();
+  });
+
+  it('clicking [Cancel] returns to move grid without submitting', () => {
+    const onSubmitSwitch = vi.fn();
+    render(<ActionPanel request={switchableRequest} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={onSubmitSwitch} />);
+    fireEvent.click(screen.getByText('SWITCH POKÉMON'));
+    fireEvent.click(screen.getByText('[Cancel]'));
+    expect(screen.getByText('flamethrower')).toBeTruthy();
+    expect(onSubmitSwitch).not.toHaveBeenCalled();
+  });
+
+  it('selecting a bench Pokémon calls onSubmitSwitch and returns to grid', () => {
+    const onSubmitSwitch = vi.fn();
+    render(<ActionPanel request={switchableRequest} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={onSubmitSwitch} />);
+    fireEvent.click(screen.getByText('SWITCH POKÉMON'));
+    fireEvent.click(screen.getByText('Blastoise L45'));
+    expect(onSubmitSwitch).toHaveBeenCalledWith('bench-1');
+  });
+
+  it('forced switch (no validMoves, canSwitch true) shows SwitchPanel without [Cancel]', () => {
+    const forcedRequest: ActionRequestPayload = { ...baseRequest, validMoves: [], canSwitch: true, switchTargets: ['bench-1'] };
+    render(<ActionPanel request={forcedRequest} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={vi.fn()} />);
+    expect(screen.getByText('Blastoise L45')).toBeTruthy();
+    expect(screen.queryByText('[Cancel]')).toBeNull();
+  });
+});
+
+describe('ActionPanel — tera checkbox', () => {
+  it('does not show tera checkbox when canTerastallize is false', () => {
+    render(<ActionPanel request={baseRequest} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={vi.fn()} />);
+    expect(screen.queryByText('Terastallize this turn')).toBeNull();
+  });
+
+  it('shows tera checkbox when canTerastallize is true', () => {
+    render(<ActionPanel request={{ ...baseRequest, canTerastallize: true }} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={vi.fn()} />);
+    expect(screen.getByText('Terastallize this turn')).toBeTruthy();
+  });
+
+  it('passes terastallize=true through to onSubmitMove when checked before clicking auto-submit move', () => {
+    const onSubmitMove = vi.fn();
+    render(<ActionPanel request={{ ...baseRequest, canTerastallize: true }} slotId="a1" state={mockState} onSubmitMove={onSubmitMove} onSubmitSwitch={vi.fn()} />);
+    fireEvent.click(screen.getByLabelText('Terastallize this turn'));
+    fireEvent.click(screen.getByText('roost'));
+    expect(onSubmitMove).toHaveBeenCalledWith(2, 'a1', true);
+  });
+});
+
+describe('ActionPanel — submitted prop', () => {
+  it('disables all move buttons when submitted=true', () => {
+    render(<ActionPanel request={baseRequest} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={vi.fn()} submitted={true} />);
+    const buttons = screen.getAllByRole('button');
+    buttons.forEach(btn => expect((btn as HTMLButtonElement).disabled).toBe(true));
+  });
+
+  it('hides SWITCH POKÉMON button when submitted=true', () => {
+    render(<ActionPanel request={switchableRequest} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={vi.fn()} submitted={true} />);
+    expect(screen.queryByText('SWITCH POKÉMON')).toBeNull();
+  });
+});
