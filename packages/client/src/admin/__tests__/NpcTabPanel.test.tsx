@@ -151,8 +151,8 @@ describe('NpcTabPanel — voluntary switch', () => {
     const requests = [{ slotId: 'b1', displayName: 'Blastoise', request: makeSwitchableRequest('b1', ['a1'], ['bench1']) }];
     render(<NpcTabPanel battleId="test" npcRequests={requests} state={stateWithBench} />);
     fireEvent.click(screen.getByText('SWITCH POKÉMON'));
-    expect(screen.getByText('Squirtle')).toBeTruthy();
-    expect(screen.getByText('Cancel')).toBeTruthy();
+    expect(screen.getByText(/Squirtle/)).toBeTruthy();
+    expect(screen.getByText('[Cancel]')).toBeTruthy();
     expect(screen.queryByText('surf')).toBeNull();
   });
 
@@ -160,7 +160,7 @@ describe('NpcTabPanel — voluntary switch', () => {
     const requests = [{ slotId: 'b1', displayName: 'Blastoise', request: makeSwitchableRequest('b1', ['a1'], ['bench1']) }];
     render(<NpcTabPanel battleId="test" npcRequests={requests} state={stateWithBench} />);
     fireEvent.click(screen.getByText('SWITCH POKÉMON'));
-    fireEvent.click(screen.getByText('Squirtle'));
+    fireEvent.click(screen.getByText(/Squirtle/));
     expect(mockSocket.emit).toHaveBeenCalledWith('admin:action', {
       type: 'npc-action',
       data: { battleId: 'test', slotId: 'b1', action: { type: 'switch', targetInstanceId: 'bench1' } },
@@ -172,7 +172,7 @@ describe('NpcTabPanel — voluntary switch', () => {
     const requests = [{ slotId: 'b1', displayName: 'Blastoise', request: makeSwitchableRequest('b1', ['a1'], ['bench1']) }];
     render(<NpcTabPanel battleId="test" npcRequests={requests} state={stateWithBench} />);
     fireEvent.click(screen.getByText('SWITCH POKÉMON'));
-    fireEvent.click(screen.getByText('Cancel'));
+    fireEvent.click(screen.getByText('[Cancel]'));
     expect(screen.getByText('surf')).toBeTruthy();
     expect(mockSocket.emit).not.toHaveBeenCalled();
   });
@@ -183,7 +183,7 @@ describe('NpcTabPanel — voluntary switch', () => {
     };
     const requests = [{ slotId: 'b1', displayName: 'Blastoise', request: forcedRequest }];
     render(<NpcTabPanel battleId="test" npcRequests={requests} state={stateWithBench} />);
-    expect(screen.getByText('Squirtle')).toBeTruthy();
-    expect(screen.queryByText('Cancel')).toBeNull();
+    expect(screen.getByText(/Squirtle/)).toBeTruthy();
+    expect(screen.queryByText('[Cancel]')).toBeNull();
   });
 });
