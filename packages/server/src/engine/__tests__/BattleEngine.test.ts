@@ -2493,3 +2493,59 @@ describe("King's Rock and Razor Fang", () => {
     expect(newState.teams[1]!.slots[0]!.party[0]!.volatileStatus.some(v => v.name === 'flinch')).toBe(true);
   });
 });
+
+describe('Eject Button, Eject Pack, Red Card', () => {
+  it('Eject Button forces the holder to switch when it takes direct damage', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    const extraMon = makePokemon({ instanceId: 'p2-mon2' });
+    state.teams[1]!.slots[0]!.party.push(extraMon);
+    state.teams[1]!.slots[0]!.party[0]!.heldItem = 'eject-button';
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    expect(events.some(e => e.type === 'pokemon-switched' && e.data['slotId'] === 'slot-b1')).toBe(true);
+    expect(events.some(e => e.type === 'item-consumed' && e.data['item'] === 'eject-button')).toBe(true);
+  });
+
+  it('Eject Button does nothing when bench is empty', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.teams[1]!.slots[0]!.party[0]!.heldItem = 'eject-button';
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    expect(events.some(e => e.type === 'pokemon-switched')).toBe(false);
+  });
+
+  it('Eject Pack forces the holder to switch when its stats are lowered', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    const extraMon = makePokemon({ instanceId: 'p2-mon2' });
+    state.teams[1]!.slots[0]!.party.push(extraMon);
+    state.teams[1]!.slots[0]!.party[0]!.heldItem = 'eject-pack';
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'screech', currentPp: 40, maxPp: 40 };
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    expect(events.some(e => e.type === 'pokemon-switched' && e.data['slotId'] === 'slot-b1')).toBe(true);
+    expect(events.some(e => e.type === 'item-consumed' && e.data['item'] === 'eject-pack')).toBe(true);
+  });
+
+  it('Red Card forces the attacker to switch out', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    const extraMon = makePokemon({ instanceId: 'p1-mon2' });
+    state.teams[0]!.slots[0]!.party.push(extraMon);
+    state.teams[1]!.slots[0]!.party[0]!.heldItem = 'red-card';
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    expect(events.some(e => e.type === 'pokemon-switched' && e.data['slotId'] === 'slot-a1')).toBe(true);
+    expect(events.some(e => e.type === 'item-consumed' && e.data['item'] === 'red-card')).toBe(true);
+  });
+});

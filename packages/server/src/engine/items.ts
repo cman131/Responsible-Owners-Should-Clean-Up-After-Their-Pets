@@ -294,6 +294,15 @@ const ITEM_HOOKS: Record<string, ItemHooks> = {
   'white-herb': {
     onStatDropped: (ctx) => ({ restoreStats: true, consume: true }),
   },
+  'eject-button': {
+    onAfterDamageTakenForceSwitch: ({ damageTaken }) => damageTaken > 0,
+  },
+  'eject-pack': {
+    onStatDropped: () => ({ forceSwitch: true, consume: true }),
+  },
+  'red-card': {
+    onAfterHit: ({ totalDamage }) => totalDamage > 0 ? { forceAttackerSwitch: true, consume: true } : null,
+  },
   'kings-rock': {
     onAfterHit: ({ totalDamage, rng }) =>
       totalDamage > 0 && (rng?.() ?? Math.random()) < 0.1

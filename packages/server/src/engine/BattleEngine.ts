@@ -641,6 +641,19 @@ export class BattleEngine {
                     events.push({ type: 'stat-change', data: { slotId: tSlotId, changes: Object.fromEntries(toRestore.map(k => [k, 0])) } });
                   }
                 }
+                if (dropResult.forceSwitch && !t.fainted) {
+                  const defTeam = s.teams.find(tm => tm.slots.some(sl => sl.slotId === tSlotId));
+                  const defSlot = defTeam?.slots.find(sl => sl.slotId === tSlotId);
+                  if (defSlot) {
+                    const bench = defSlot.party.filter((m, i) => i !== defSlot.activePokemonIndex && !m.fainted);
+                    if (bench.length > 0) {
+                      const pick = bench[Math.floor(this.rng() * bench.length)]!;
+                      const packResult = this.performSwitch(s, tSlotId, pick.instanceId, 'phased');
+                      events.push(...packResult.events);
+                      s = packResult.newState;
+                    }
+                  }
+                }
                 if (dropResult.consume && t.heldItem) {
                   const consumed = t.heldItem;
                   t.lastConsumedItem = consumed;
