@@ -7,6 +7,7 @@ import { SwitchPanel } from '../battle/overlays/SwitchPanel.js';
 import { TurnLog } from '../battle/overlays/TurnLog.js';
 import { ExpBar } from '../battle/overlays/ExpBar.js';
 import { HpBarsRow } from '../battle/overlays/HpBarsRow.js';
+import { BattleResultPanel } from '../battle/overlays/BattleResultPanel.js';
 import type { BattleState } from '@poke-fighter/shared';
 
 export function BattlePage() {
@@ -22,7 +23,7 @@ export function BattlePage() {
 
 function BattleView() {
   const navigate = useNavigate();
-  const { state, mySlotId, actionRequest, switchRequest, turnLog, displayHp, animatingSlots, submitAction } = useBattle();
+  const { state, mySlotId, actionRequest, switchRequest, turnLog, displayHp, animatingSlots, submitAction, battleResult } = useBattle();
 
   function handleGoHome() {
     getSocket().emit('player:leave');
@@ -88,7 +89,14 @@ function BattleView() {
 
       <div style={{ display: 'flex', gap: 16, width: 800 }}>
         <div style={{ flex: 1 }}>
-          {switchRequest !== null ? (
+          {battleResult ? (
+            <BattleResultPanel
+              winningTeamId={battleResult.winningTeamId}
+              finalState={battleResult.finalState}
+              mySlotId={mySlotId}
+              onGoHome={handleGoHome}
+            />
+          ) : switchRequest !== null ? (
             <SwitchPanel
               party={switchableParty}
               onSwitch={handleSwitch}
