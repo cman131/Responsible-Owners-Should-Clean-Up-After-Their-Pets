@@ -11,6 +11,7 @@ export interface ItemAttackContext extends ItemContext {
   target: PartyMember;
   isPhysical: boolean;
   effectiveness?: number;
+  rng?: () => number;
 }
 
 export interface ItemHooks {
@@ -292,6 +293,18 @@ const ITEM_HOOKS: Record<string, ItemHooks> = {
   },
   'white-herb': {
     onStatDropped: (ctx) => ({ restoreStats: true, consume: true }),
+  },
+  'kings-rock': {
+    onAfterHit: ({ totalDamage, rng }) =>
+      totalDamage > 0 && (rng?.() ?? Math.random()) < 0.1
+        ? { flinchTarget: true }
+        : null,
+  },
+  'razor-fang': {
+    onAfterHit: ({ totalDamage, rng }) =>
+      totalDamage > 0 && (rng?.() ?? Math.random()) < 0.1
+        ? { flinchTarget: true }
+        : null,
   },
 };
 

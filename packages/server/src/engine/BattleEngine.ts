@@ -1876,6 +1876,7 @@ export class BattleEngine {
           isPhysical,
           makesContact: move.makesContact === true,
           totalDamage,
+          rng: this.rng,
         });
         if (helmetResult) {
           if (helmetResult.directDamageToAttacker && !attacker.fainted) {
