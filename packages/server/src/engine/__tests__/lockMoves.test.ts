@@ -76,3 +76,91 @@ describe('Outrage / Petaldance / Thrash lock mechanics', () => {
     }
   });
 });
+
+describe('Rollout / Iceball lock mechanics', () => {
+  it('sets rollout-active counter to 1 on first use', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'rollout', currentPp: 20, maxPp: 20 };
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const p1 = newState.teams[0]!.slots[0]!.party[0]!;
+    const v = p1.volatileStatus.find((v: any) => v.name === 'rollout-active');
+    expect(v?.counter).toBe(1);
+  });
+
+  it('increments rollout counter on subsequent uses', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'rollout', currentPp: 20, maxPp: 20 };
+    (state.teams[0]!.slots[0]!.party[0]!.volatileStatus as any[]).push({ name: 'rollout-active', moveId: 'rollout', counter: 2 });
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const v = newState.teams[0]!.slots[0]!.party[0]!.volatileStatus.find((v: any) => v.name === 'rollout-active');
+    expect(v?.counter).toBe(3);
+  });
+
+  it('clears rollout-active after 5 uses without confusion', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'rollout', currentPp: 20, maxPp: 20 };
+    (state.teams[0]!.slots[0]!.party[0]!.volatileStatus as any[]).push({ name: 'rollout-active', moveId: 'rollout', counter: 5 });
+
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const p1 = newState.teams[0]!.slots[0]!.party[0]!;
+    expect(p1.volatileStatus.some((v: any) => v.name === 'rollout-active')).toBe(false);
+    expect(p1.volatileStatus.some((v: any) => v.name === 'confusion')).toBe(false); // no confusion for rollout
+    expect(events.some(e => e.type === 'volatile-cured' && (e.data as any)['volatile'] === 'rollout-active')).toBe(true);
+  });
+});
+
+describe('Echoed Voice counter management', () => {
+  it('sets echoedvoice-active counter to 1 on first use', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'echoedvoice', currentPp: 15, maxPp: 15 };
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const v = newState.teams[0]!.slots[0]!.party[0]!.volatileStatus.find((v: any) => v.name === 'echoedvoice-active');
+    expect(v?.counter).toBe(1);
+  });
+
+  it('increments echoedvoice counter (cap 5)', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'echoedvoice', currentPp: 15, maxPp: 15 };
+    (state.teams[0]!.slots[0]!.party[0]!.volatileStatus as any[]).push({ name: 'echoedvoice-active', counter: 5 });
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const v = newState.teams[0]!.slots[0]!.party[0]!.volatileStatus.find((v: any) => v.name === 'echoedvoice-active');
+    expect(v?.counter).toBe(5); // capped
+  });
+
+  it('clears echoedvoice-active when a different move is used', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'flamethrower', currentPp: 15, maxPp: 15 };
+    (state.teams[0]!.slots[0]!.party[0]!.volatileStatus as any[]).push({ name: 'echoedvoice-active', counter: 3 });
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(newState.teams[0]!.slots[0]!.party[0]!.volatileStatus.some((v: any) => v.name === 'echoedvoice-active')).toBe(false);
+  });
+});

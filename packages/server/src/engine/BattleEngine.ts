@@ -2027,6 +2027,38 @@ export class BattleEngine {
       }
     }
 
+    // Rollout / Iceball: manage scaling lock volatile
+    if (ROLLOUT_LOCK_MOVES.has(move.id) && !attacker.fainted) {
+      const volatileName = `${move.id}-active`;
+      let lockV = attacker.volatileStatus.find((v: any) => v.name === volatileName) as any;
+      if (!lockV) {
+        lockV = { name: volatileName, moveId: move.id, counter: 1 };
+        attacker.volatileStatus.push(lockV);
+      } else {
+        lockV.counter = (lockV.counter ?? 1) + 1;
+      }
+      if (lockV.counter >= 5) {
+        attacker.volatileStatus = attacker.volatileStatus.filter((v: any) => v !== lockV);
+        events.push({ type: 'volatile-cured', data: { slotId: attackerSlotId, volatile: volatileName } });
+        // No confusion for rollout/iceball
+      }
+    }
+
+    // Echoed Voice: increment consecutive counter
+    if (move.id === 'echoedvoice') {
+      let evV = attacker.volatileStatus.find((v: any) => v.name === 'echoedvoice-active') as any;
+      if (!evV) {
+        attacker.volatileStatus.push({ name: 'echoedvoice-active', counter: 1 });
+      } else {
+        evV.counter = Math.min(5, (evV.counter ?? 1) + 1);
+      }
+    }
+
+    // Echoed Voice: clear counter when a different move is used
+    if (move.id !== 'echoedvoice') {
+      attacker.volatileStatus = attacker.volatileStatus.filter((v: any) => v.name !== 'echoedvoice-active');
+    }
+
     const hasPivot = secs.some(sec => sec.kind === 'pivot');
     if (hasPivot && !attacker.fainted) {
       const attackerSlotForPivot = this.findSlot(s, attackerSlotId);
