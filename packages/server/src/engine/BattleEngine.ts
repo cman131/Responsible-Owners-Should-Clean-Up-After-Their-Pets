@@ -67,6 +67,11 @@ const HP_HALVING_MOVES = new Set(['superfang', 'naturesmadness', 'ruination']);
 
 const PHASING_MOVES = new Set(['dragontail', 'circlethrow']);
 
+const TYPE_STRIPPING_MOVES: Record<string, string> = {
+  burnup: 'Fire',
+  doubleshock: 'Electric',
+};
+
 const FLING_POWER: Record<string, number> = {
   'iron-ball': 130,
   'hard-stone': 100,
@@ -796,6 +801,16 @@ export class BattleEngine {
         (wt === 'harsh-sun'  && effectiveMoveType === 'Water')
       ) {
         events.push({ type: 'move-failed', data: { moveId: move.id, reason: wt } });
+        return { newState: s, events };
+      }
+    }
+
+    // Burnup / Doubleshock: fail if user lacks the required type
+    const typeToStrip = TYPE_STRIPPING_MOVES[move.id];
+    if (typeToStrip) {
+      const userTypes = this.resolveEffectiveTypes(attacker);
+      if (!userTypes.includes(typeToStrip as any)) {
+        events.push({ type: 'move-failed', data: { moveId: move.id, reason: 'wrong-type' } });
         return { newState: s, events };
       }
     }
@@ -1772,7 +1787,7 @@ export class BattleEngine {
                 s = redCardResult.newState;
               }
             }
-            if (target.heldItem) {
+            if (helmetResult.consume && target.heldItem) {
               const consumed = target.heldItem;
               target.lastConsumedItem = consumed;
               delete target.heldItem;
@@ -1907,6 +1922,16 @@ export class BattleEngine {
         return { newState: s, events, pivotSwitch: true };
       } else {
         events.push({ type: 'pivot-skipped', data: { slotId: attackerSlotId } });
+      }
+    }
+
+    // Burnup / Doubleshock: strip type from attacker after dealing damage
+    if (typeToStrip && !attacker.fainted) {
+      const currentTypes = this.resolveEffectiveTypes(attacker);
+      if (currentTypes.includes(typeToStrip as any)) {
+        const stripped = currentTypes.filter(t => t !== typeToStrip);
+        attacker.typeOverride = stripped.length > 0 ? stripped : ['Normal'];
+        events.push({ type: 'volatile-applied', data: { targetSlotId: attackerSlotId, volatile: 'type-changed' } });
       }
     }
 
