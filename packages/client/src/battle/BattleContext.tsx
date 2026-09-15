@@ -549,6 +549,8 @@ export function BattleProvider({ mySlotId, initialState, children }: Props) {
       setTurnLog(prev => [...prev, { type: 'normal', text: `Battle over! Winner: ${winnerNames}` }].slice(-50));
       setBattleResult(pendingBattleEnd!);
       setPendingBattleEnd(null);
+      setPendingActionRequest(null);
+      setPendingSwitchRequest(null);
       return;
     }
 
