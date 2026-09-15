@@ -1780,3 +1780,96 @@ describe('BattleEngine.getSpreadTargets — randomNormal picks one foe in double
     expect(targets).toHaveLength(2);
   });
 });
+
+describe('burnup / doubleshock — type stripping', () => {
+  it('burnup strips Fire type from user after landing', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'burnup', currentPp: 5, maxPp: 5 };
+    state.teams[0]!.slots[0]!.party[0]!.typeOverride = ['Fire', 'Flying'];
+
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    const p1 = newState.teams[0]!.slots[0]!.party[0]!;
+    expect(p1.typeOverride).toEqual(['Flying']); // Fire stripped, Flying remains
+    expect(events.some(e => e.type === 'volatile-applied' && (e.data as any)['volatile'] === 'type-changed')).toBe(true);
+  });
+
+  it('burnup fails if user has no Fire type', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'burnup', currentPp: 5, maxPp: 5 };
+    state.teams[0]!.slots[0]!.party[0]!.typeOverride = ['Water']; // not Fire
+
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    expect(events.some(e => e.type === 'move-failed' && (e.data as any)['reason'] === 'wrong-type')).toBe(true);
+  });
+
+  it('doubleshock strips Electric type', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'doubleshock', currentPp: 5, maxPp: 5 };
+    state.teams[0]!.slots[0]!.party[0]!.typeOverride = ['Electric', 'Normal'];
+
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    const p1 = newState.teams[0]!.slots[0]!.party[0]!;
+    expect(p1.typeOverride).toEqual(['Normal']);
+  });
+});
+
+describe('Status-cure berries', () => {
+  it('Cheri Berry cures paralysis when inflicted', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'cheri-berry';
+    state.teams[1]!.slots[0]!.party[0]!.moves[1] = { moveId: 'thunderwave', currentPp: 20, maxPp: 20 };
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 3 },
+      'slot-b1': { type: 'move', moveIndex: 1 },
+    });
+    const p1 = newState.teams[0]!.slots[0]!.party[0]!;
+    expect(p1.status).toBeUndefined();
+    expect(p1.heldItem).toBeUndefined();
+    expect(events.some(e => e.type === 'item-consumed' && (e.data as any)['item'] === 'cheri-berry')).toBe(true);
+  });
+
+  it('Rawst Berry cures burn when inflicted', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    // Make p1 a Water type so Will-O-Wisp can burn it (Charizard/Fire type is immune)
+    state.teams[0]!.slots[0]!.party[0]!.speciesId = 9; // Blastoise (Water)
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'rawst-berry';
+    state.teams[1]!.slots[0]!.party[0]!.moves[3] = { moveId: 'willowisp', currentPp: 15, maxPp: 15 };
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 3 },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    expect(newState.teams[0]!.slots[0]!.party[0]!.status).toBeUndefined();
+    expect(newState.teams[0]!.slots[0]!.party[0]!.heldItem).toBeUndefined();
+  });
+
+  it('Persim Berry cures confusion when inflicted', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'persim-berry';
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'confuseray', currentPp: 10, maxPp: 10 };
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 3 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const p1 = newState.teams[0]!.slots[0]!.party[0]!;
+    expect(p1.volatileStatus.find(v => v.name === 'confusion')).toBeUndefined();
+    expect(p1.heldItem).toBeUndefined();
+  });
+});
