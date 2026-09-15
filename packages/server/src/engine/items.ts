@@ -224,6 +224,12 @@ const ITEM_HOOKS: Record<string, ItemHooks> = {
   'babiri-berry': { onDefenderModifier: ({ moveType, effectiveness }) => moveType === 'Steel'    && (effectiveness ?? 1) > 1 ? { multiplier: 0.5, consume: true } : 1 },
   'chilan-berry': { onDefenderModifier: ({ moveType }) => moveType === 'Normal' ? { multiplier: 0.5, consume: true } : 1 },
   'roseli-berry': { onDefenderModifier: ({ moveType, effectiveness }) => moveType === 'Fairy'    && (effectiveness ?? 1) > 1 ? { multiplier: 0.5, consume: true } : 1 },
+  // Confusion berries — heal floor(maxHp/3) at ≤33% HP
+  'figy-berry':  { onAfterDamageTaken: ({ holder, damageTaken }) => holder.currentHp <= Math.floor(holder.maxHp / 3) && damageTaken > 0 ? { hpDelta: Math.floor(holder.maxHp / 3), consume: true } : { hpDelta: 0 } },
+  'wiki-berry':  { onAfterDamageTaken: ({ holder, damageTaken }) => holder.currentHp <= Math.floor(holder.maxHp / 3) && damageTaken > 0 ? { hpDelta: Math.floor(holder.maxHp / 3), consume: true } : { hpDelta: 0 } },
+  'mago-berry':  { onAfterDamageTaken: ({ holder, damageTaken }) => holder.currentHp <= Math.floor(holder.maxHp / 3) && damageTaken > 0 ? { hpDelta: Math.floor(holder.maxHp / 3), consume: true } : { hpDelta: 0 } },
+  'aguav-berry': { onAfterDamageTaken: ({ holder, damageTaken }) => holder.currentHp <= Math.floor(holder.maxHp / 3) && damageTaken > 0 ? { hpDelta: Math.floor(holder.maxHp / 3), consume: true } : { hpDelta: 0 } },
+  'iapapa-berry':{ onAfterDamageTaken: ({ holder, damageTaken }) => holder.currentHp <= Math.floor(holder.maxHp / 3) && damageTaken > 0 ? { hpDelta: Math.floor(holder.maxHp / 3), consume: true } : { hpDelta: 0 } },
 };
 
 export const IMPLEMENTED_ITEM_IDS: ReadonlySet<string> = new Set(Object.keys(ITEM_HOOKS));
