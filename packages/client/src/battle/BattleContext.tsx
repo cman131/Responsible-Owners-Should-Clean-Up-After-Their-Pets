@@ -439,6 +439,7 @@ interface BattleContextValue {
   displayHp: Map<string, number>;
   animatingSlots: Map<string, 'attack' | 'hit' | 'faint'>;
   submitAction: (payload: import('@poke-fighter/shared').ActionSubmitPayload) => void;
+  battleResult: { winningTeamId: string; finalState: BattleState } | null;
 }
 
 const BattleContext = createContext<BattleContextValue | null>(null);
@@ -469,6 +470,8 @@ export function BattleProvider({ mySlotId, initialState, children }: Props) {
   const [pendingState, setPendingState] = useState<BattleState | null>(null);
   const [pendingActionRequest, setPendingActionRequest] = useState<ActionRequestPayload | null>(null);
   const [pendingSwitchRequest, setPendingSwitchRequest] = useState<SwitchRequestPayload | null>(null);
+  const [pendingBattleEnd, setPendingBattleEnd] = useState<{ winningTeamId: string; finalState: BattleState } | null>(null);
+  const [battleResult, setBattleResult] = useState<{ winningTeamId: string; finalState: BattleState } | null>(null);
 
   function setEventQueue(value: PlaybackEntry[]) {
     eventQueueRef.current = value;
@@ -519,11 +522,30 @@ export function BattleProvider({ mySlotId, initialState, children }: Props) {
 
   // When queue empties, apply pending state and release pending requests
   useEffect(() => {
-    if (eventQueue.length > 0 || pendingState === null) return;
-    setState(pendingState);
-    stateRef.current = pendingState;
-    setPendingState(null);
-    setDisplayHp(new Map());
+    if (eventQueue.length > 0) return;
+
+    const hasPendingState = pendingState !== null;
+    const hasPendingBattleEnd = pendingBattleEnd !== null;
+
+    if (!hasPendingState && !hasPendingBattleEnd) return;
+
+    if (hasPendingState) {
+      setState(pendingState!);
+      stateRef.current = pendingState!;
+      setPendingState(null);
+      setDisplayHp(new Map());
+    }
+
+    if (hasPendingBattleEnd) {
+      const { winningTeamId, finalState } = pendingBattleEnd!;
+      const winnerTeam = finalState.teams.find(t => t.teamId === winningTeamId);
+      const winnerNames = winnerTeam?.slots.filter(s => !s.isSpectator).map(s => s.displayName).join(', ') ?? winningTeamId;
+      setTurnLog(prev => [...prev, { type: 'normal', text: `Battle over! Winner: ${winnerNames}` }].slice(-50));
+      setBattleResult(pendingBattleEnd!);
+      setPendingBattleEnd(null);
+      return;
+    }
+
     if (pendingActionRequest !== null) {
       setActionRequest(pendingActionRequest);
       setPendingActionRequest(null);
@@ -532,7 +554,7 @@ export function BattleProvider({ mySlotId, initialState, children }: Props) {
       setSwitchRequest(pendingSwitchRequest);
       setPendingSwitchRequest(null);
     }
-  }, [eventQueue, pendingState, pendingActionRequest, pendingSwitchRequest]);
+  }, [eventQueue, pendingState, pendingActionRequest, pendingSwitchRequest, pendingBattleEnd]);
 
   useEffect(() => {
     const socket = getSocket();
@@ -604,18 +626,12 @@ export function BattleProvider({ mySlotId, initialState, children }: Props) {
       }
     });
 
-    socket.on('battle:end', ({ winningTeamId }) => {
-      setTurnLog((prev) => [...prev, { type: 'normal', text: `Battle over! Winner: ${winningTeamId}` }]);
+    socket.on('battle:end', ({ winningTeamId, state: finalState }: { winningTeamId: string; state: BattleState }) => {
+      setPendingBattleEnd({ winningTeamId, finalState });
       setActionRequest(null);
-      setEventQueue([]);
-      setPendingState(null);
       setPendingActionRequest(null);
+      setSwitchRequest(null);
       setPendingSwitchRequest(null);
-      setDisplayHp(new Map());
-      // Cancel any in-flight animation clear timers before resetting state
-      for (const t of animClearTimersRef.current) clearTimeout(t);
-      animClearTimersRef.current.clear();
-      setAnimatingSlots(new Map());
     });
 
     return () => {
@@ -636,7 +652,7 @@ export function BattleProvider({ mySlotId, initialState, children }: Props) {
   }
 
   return (
-    <BattleContext.Provider value={{ state, mySlotId, actionRequest, switchRequest, turnLog, displayHp, animatingSlots, submitAction }}>
+    <BattleContext.Provider value={{ state, mySlotId, actionRequest, switchRequest, turnLog, displayHp, animatingSlots, submitAction, battleResult }}>
       {children}
     </BattleContext.Provider>
   );

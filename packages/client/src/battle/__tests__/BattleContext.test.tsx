@@ -308,3 +308,109 @@ describe('animatingSlots', () => {
     expect(result.current.animatingSlots.get('b1')).toBeUndefined();
   });
 });
+
+describe('battle:end buffering', () => {
+  beforeEach(() => { vi.useFakeTimers(); });
+  afterEach(() => { vi.useRealTimers(); });
+
+  function makeFinalState(winningTeamId: string) {
+    return {
+      battleId: 'b1', label: 'Test', turnNumber: 3, phase: 'ended' as const,
+      teams: [
+        { teamId: 'team-a', slots: [{ slotId: 's1', displayName: 'Ash', isNpc: false, isSpectator: false, party: [], activePokemonIndex: 0 }] },
+        { teamId: 'team-b', slots: [{ slotId: 's2', displayName: 'Brock', isNpc: true, isSpectator: false, party: [], activePokemonIndex: 0 }] },
+      ],
+      field: {} as import('@poke-fighter/shared').BattleState['field'],
+      winner: winningTeamId === 'team-a' ? 0 as const : 1 as const,
+    };
+  }
+
+  it('battleResult is null while event queue is draining', async () => {
+    const { result } = renderHook(() => useBattle(), { wrapper });
+
+    act(() => {
+      socketListeners['turn:resolve']?.({
+        turnNumber: 2,
+        events: [{ type: 'faint', data: { slotId: 's2', instanceId: 'i1' } }],
+        state: makeFinalState('team-a'),
+      });
+    });
+    act(() => {
+      socketListeners['battle:end']?.({ winningTeamId: 'team-a', state: makeFinalState('team-a') });
+    });
+
+    expect(result.current.battleResult).toBeNull();
+  });
+
+  it('battleResult is set after the event queue drains', async () => {
+    const { result } = renderHook(() => useBattle(), { wrapper });
+
+    act(() => {
+      socketListeners['turn:resolve']?.({
+        turnNumber: 2,
+        events: [{ type: 'faint', data: { slotId: 's2', instanceId: 'i1' } }],
+        state: makeFinalState('team-a'),
+      });
+    });
+    act(() => {
+      socketListeners['battle:end']?.({ winningTeamId: 'team-a', state: makeFinalState('team-a') });
+    });
+
+    for (let i = 0; i < 10; i++) {
+      await act(async () => { vi.advanceTimersByTime(1000); });
+    }
+
+    expect(result.current.battleResult?.winningTeamId).toBe('team-a');
+  });
+
+  it('battleResult is set immediately when queue is already empty', async () => {
+    const { result } = renderHook(() => useBattle(), { wrapper });
+
+    await act(async () => {
+      socketListeners['battle:end']?.({ winningTeamId: 'team-a', state: makeFinalState('team-a') });
+    });
+
+    expect(result.current.battleResult?.winningTeamId).toBe('team-a');
+  });
+
+  it('appends "Battle over! Winner: <names>" to log after queue drains', async () => {
+    const { result } = renderHook(() => useBattle(), { wrapper });
+
+    await fireTurnResolveAndDrain(
+      [{ type: 'faint', data: { slotId: 's2', instanceId: 'i1' } }],
+      makeFinalState('team-a'),
+    );
+    await act(async () => {
+      socketListeners['battle:end']?.({ winningTeamId: 'team-a', state: makeFinalState('team-a') });
+    });
+
+    const log = result.current.turnLog;
+    expect(log[log.length - 1]?.text).toBe('Battle over! Winner: Ash');
+  });
+
+  it('does not release actionRequest after battle:end arrives', async () => {
+    const { result } = renderHook(() => useBattle(), { wrapper });
+
+    act(() => {
+      socketListeners['turn:resolve']?.({
+        turnNumber: 2,
+        events: [{ type: 'faint', data: { slotId: 's2', instanceId: 'i1' } }],
+        state: makeFinalState('team-a'),
+      });
+    });
+    act(() => {
+      socketListeners['battle:end']?.({ winningTeamId: 'team-a', state: makeFinalState('team-a') });
+    });
+    act(() => {
+      socketListeners['action:request']?.({
+        slotId: 's1', validMoves: [], canSwitch: false, switchTargets: [], canTerastallize: false,
+      });
+    });
+
+    for (let i = 0; i < 10; i++) {
+      await act(async () => { vi.advanceTimersByTime(1000); });
+    }
+
+    expect(result.current.actionRequest).toBeNull();
+  });
+});
