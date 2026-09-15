@@ -2549,3 +2549,71 @@ describe('Eject Button, Eject Pack, Red Card', () => {
     expect(events.some(e => e.type === 'item-consumed' && e.data['item'] === 'red-card')).toBe(true);
   });
 });
+
+describe('Terrain Seeds', () => {
+  it('Electric Seed gives +1 Defense when Electric Terrain is active', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.field.terrain = { type: 'electric', turnsRemaining: 3 };
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'electric-seed';
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 3 },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    const p1 = newState.teams[0]!.slots[0]!.party[0]!;
+    expect(p1.statBoosts.def).toBe(1);
+    expect(p1.heldItem).toBeUndefined();
+    expect(events.some(e => e.type === 'item-consumed' && e.data['item'] === 'electric-seed')).toBe(true);
+  });
+
+  it('Grassy Seed gives +1 Defense when Grassy Terrain is active', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.field.terrain = { type: 'grassy', turnsRemaining: 3 };
+    state.teams[1]!.slots[0]!.party[0]!.heldItem = 'grassy-seed';
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 3 },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.statBoosts.def).toBe(1);
+    expect(newState.teams[1]!.slots[0]!.party[0]!.heldItem).toBeUndefined();
+  });
+
+  it('Misty Seed gives +1 Sp.Def when Misty Terrain is active', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.field.terrain = { type: 'misty', turnsRemaining: 3 };
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'misty-seed';
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 3 },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    expect(newState.teams[0]!.slots[0]!.party[0]!.statBoosts.spd).toBe(1);
+    expect(newState.teams[0]!.slots[0]!.party[0]!.heldItem).toBeUndefined();
+  });
+
+  it('Psychic Seed gives +1 Sp.Def when Psychic Terrain is active', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.field.terrain = { type: 'psychic', turnsRemaining: 3 };
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'psychic-seed';
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 3 },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    expect(newState.teams[0]!.slots[0]!.party[0]!.statBoosts.spd).toBe(1);
+    expect(newState.teams[0]!.slots[0]!.party[0]!.heldItem).toBeUndefined();
+  });
+
+  it('Electric Seed does not activate when terrain does not match', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.field.terrain = { type: 'grassy', turnsRemaining: 3 };
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'electric-seed';
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 3 },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    expect(newState.teams[0]!.slots[0]!.party[0]!.heldItem).toBe('electric-seed');
+  });
+});

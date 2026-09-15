@@ -315,6 +315,18 @@ const ITEM_HOOKS: Record<string, ItemHooks> = {
         ? { flinchTarget: true }
         : null,
   },
+  'electric-seed': {
+    onSwitchIn: ({ terrain }) => terrain === 'electric' ? { statBoostDeltas: { def: 1 }, consume: true } : undefined,
+  },
+  'grassy-seed': {
+    onSwitchIn: ({ terrain }) => terrain === 'grassy' ? { statBoostDeltas: { def: 1 }, consume: true } : undefined,
+  },
+  'misty-seed': {
+    onSwitchIn: ({ terrain }) => terrain === 'misty' ? { statBoostDeltas: { spd: 1 }, consume: true } : undefined,
+  },
+  'psychic-seed': {
+    onSwitchIn: ({ terrain }) => terrain === 'psychic' ? { statBoostDeltas: { spd: 1 }, consume: true } : undefined,
+  },
 };
 
 export const IMPLEMENTED_ITEM_IDS: ReadonlySet<string> = new Set(Object.keys(ITEM_HOOKS));
