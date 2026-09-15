@@ -107,6 +107,22 @@ const ITEM_HOOKS: Record<string, ItemHooks> = {
   'lum-berry': {
     onStatusApplied: () => ({ cureStatus: true, consume: true }),
   },
+  'cheri-berry': {
+    onStatusApplied: ({ status }) => status === 'par' ? { cureStatus: true, consume: true } : null,
+  },
+  'chesto-berry': {
+    onStatusApplied: ({ status }) => status === 'slp' ? { cureStatus: true, consume: true } : null,
+  },
+  'pecha-berry': {
+    onStatusApplied: ({ status }) => (status === 'psn' || status === 'tox') ? { cureStatus: true, consume: true } : null,
+  },
+  'rawst-berry': {
+    onStatusApplied: ({ status }) => status === 'brn' ? { cureStatus: true, consume: true } : null,
+  },
+  'aspear-berry': {
+    onStatusApplied: ({ status }) => status === 'frz' ? { cureStatus: true, consume: true } : null,
+  },
+  'persim-berry': {},  // handled inline in effectFactories.ts
   'salac-berry': {
     onAfterDamageTaken: ({ holder }) =>
       holder.currentHp <= holder.maxHp / 4

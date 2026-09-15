@@ -92,7 +92,21 @@ export function applyVolatileTarget(volatile: string, counter?: number): MoveEff
     const bypassSub = ctx.move.soundMove === true;
     for (let i = 0; i < ctx.targets.length; i++) {
       const event = applyVolatile(ctx.targets[i]!, ctx.targetSlotIds[i]!, ctx.userSlotId, volatile, counter, { bypassSub });
-      if (event) events.push(event);
+      if (event) {
+        events.push(event);
+        // Persim Berry: cure confusion immediately when applied
+        if (volatile === 'confusion') {
+          const tgt = ctx.targets[i]!;
+          const tgtSlotId = ctx.targetSlotIds[i]!;
+          if (tgt.heldItem === 'persim-berry') {
+            tgt.volatileStatus = tgt.volatileStatus.filter(v => v.name !== 'confusion');
+            tgt.lastConsumedItem = 'persim-berry';
+            delete tgt.heldItem;
+            events.push({ type: 'volatile-cured', data: { slotId: tgtSlotId, volatile: 'confusion' } });
+            events.push({ type: 'item-consumed', data: { slotId: tgtSlotId, item: 'persim-berry', reason: 'triggered' } });
+          }
+        }
+      }
     }
     return { events };
   };
