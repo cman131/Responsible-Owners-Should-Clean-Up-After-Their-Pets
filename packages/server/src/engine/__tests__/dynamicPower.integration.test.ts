@@ -91,6 +91,39 @@ describe('dynamicPower integration', () => {
     expect(dmgGyro).toBeGreaterThan(20); // 150 BP (capped) at 0.5x → ~31 damage
   });
 
+  it('Retaliate deals double damage when an ally fainted last turn', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+
+    // Set lastTurnFaintedTeamIndex on state to simulate an ally fainted last turn on team 0
+    const state = make1v1State();
+    state.lastTurnFaintedTeamIndex = 0;
+    state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'retaliate', currentPp: 5, maxPp: 5 };
+
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    const retaliateDmg = events.find(
+      e => e.type === 'damage-dealt' && (e.data as any)['attackerSlotId'] === 'slot-a1'
+    )?.data['damage'] as number | undefined;
+
+    // Without ally faint last turn
+    const state3 = make1v1State();
+    state3.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'retaliate', currentPp: 5, maxPp: 5 };
+    const { events: evNormal } = engine.resolveTurn(state3, {
+      'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const normalDmg = evNormal.find(
+      e => e.type === 'damage-dealt' && (e.data as any)['attackerSlotId'] === 'slot-a1'
+    )?.data['damage'] as number | undefined;
+
+    expect(retaliateDmg).toBeDefined();
+    expect(normalDmg).toBeDefined();
+    expect(retaliateDmg!).toBeGreaterThan(normalDmg! * 1.8);
+  });
+
   it('Payback deals double damage when target moved first', () => {
     const engine = new BattleEngine({ rng: () => 0.5 });
 

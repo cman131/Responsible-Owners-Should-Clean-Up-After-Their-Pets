@@ -169,6 +169,10 @@ export class BattleEngine {
       }
     }
 
+    // Snapshot last turn's faint info before resetting (used by retaliate resolver)
+    const lastTurnFaintedTeamIndex = s.lastTurnFaintedTeamIndex;
+    delete s.lastTurnFaintedTeamIndex;
+
     // 1. Determine action order (priority, then speed)
     const order = this.buildActionOrder(s, actions);
 
@@ -186,7 +190,7 @@ export class BattleEngine {
       if (action.type !== 'switch' && (!active || active.fainted)) continue;
 
       if (action.type === 'move') {
-        const moveResult = this.executeMove(s, slotId, action, movedSlotIds, order);
+        const moveResult = this.executeMove(s, slotId, action, movedSlotIds, order, lastTurnFaintedTeamIndex);
         events.push(...moveResult.events);
         s = moveResult.newState;
 
@@ -215,6 +219,18 @@ export class BattleEngine {
     const eotResult = this.endOfTurn(s);
     events.push(...eotResult.events);
     s = eotResult.newState;
+
+    // Record which team had a Pokémon faint this turn (for next turn's Retaliate)
+    const faintEvents = events.filter(e => e.type === 'faint');
+    if (faintEvents.length > 0) {
+      const faintedSlotId = String((faintEvents[0] as any)!.data['slotId']);
+      const faintedTeamIdx = s.teams.findIndex(t =>
+        t.slots.some(sl => sl.slotId === faintedSlotId)
+      );
+      if (faintedTeamIdx !== -1) {
+        s.lastTurnFaintedTeamIndex = faintedTeamIdx;
+      }
+    }
 
     // 4. Check win condition
     const winner = this.checkWinCondition(s);
@@ -277,6 +293,7 @@ export class BattleEngine {
     action: MoveAction,
     movedSlotIds: Set<string>,
     order: string[],
+    lastTurnFaintedTeamIndex?: number,
   ): MoveResult {
     const events: TurnResolveEvent[] = [];
     let s = structuredClone(state);
@@ -1263,14 +1280,33 @@ export class BattleEngine {
       const targetSpeciesForPower = this.data.getSpecies(target.speciesId);
       const targetTookDmgThisTurn = target.volatileStatus.some((v: any) => v.name === 'damaged-this-turn');
       const targetMovedThisTurn = movedSlotIds.has(targetSlotId);
+      const attackerTeamIdx = s.teams.findIndex(t => t.slots.some(sl => sl.slotId === attackerSlotId)) as 0 | 1;
+
+      // Boltbeak / Fishiousrend: faster-than-target check
+      const attSpd = getEffectiveStat(attacker.stats.spe, attacker.statBoosts.spe, 'spe');
+      const defSpd = getEffectiveStat(target.stats.spe, target.statBoosts.spe, 'spe');
+      const fasterThanTarget = s.field.trickroom > 0 ? attSpd <= defSpd : attSpd >= defSpd;
+
+      // Trumpcard: current PP in the move slot
+      const trumpCardPp: number | undefined = move.id === 'trumpcard'
+        ? (attacker.moves.find((m: any) => m.moveId === 'trumpcard')?.currentPp ?? 1)
+        : undefined;
+      const moveInputForPower = trumpCardPp !== undefined ? { ...move, currentPp: trumpCardPp } : move;
+
+      const fieldForPower = lastTurnFaintedTeamIndex !== undefined
+        ? { ...s.field, allyFaintedTeamIndex: lastTurnFaintedTeamIndex, attackerTeamIndex: attackerTeamIdx }
+        : { ...s.field, attackerTeamIndex: attackerTeamIdx };
+
       const resolvedPower = resolvePower(
-        move,
-        { ...attacker, weightkg: attackerSpeciesForPower?.weightkg ?? 0 },
+        moveInputForPower,
+        { ...attacker, weightkg: attackerSpeciesForPower?.weightkg ?? 0,
+          fasterThanTarget,
+        },
         { ...target, weightkg: targetSpeciesForPower?.weightkg ?? 0,
           movedThisTurn: targetMovedThisTurn,
           tookDamageThisTurn: targetTookDmgThisTurn,
         },
-        s.field,
+        fieldForPower,
       );
       let perTargetBasePower = resolvedPower !== move.basePower ? resolvedPower : effectiveBasePower;
 
@@ -1795,7 +1831,7 @@ export class BattleEngine {
       if (!action) continue;
 
       if (action.type === 'move') {
-        const moveResult = this.executeMove(s, slotId, action, movedSlotIds, remainingSlotOrder);
+        const moveResult = this.executeMove(s, slotId, action, movedSlotIds, remainingSlotOrder, s.lastTurnFaintedTeamIndex);
         events.push(...moveResult.events);
         s = moveResult.newState;
         // Pivot chaining within a single turn is not supported — ignore pivotSwitch here
