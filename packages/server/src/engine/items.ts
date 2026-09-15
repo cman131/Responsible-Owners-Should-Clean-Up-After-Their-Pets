@@ -192,6 +192,19 @@ const ITEM_HOOKS: Record<string, ItemHooks> = {
   'fairy-feather': { onAttackerModifier: ({ moveType }) => moveType === 'Fairy' ? 1.2 : 1 },
   // Damage modifier items
   'expert-belt': { onDamageModifier: ({ effectiveness }) => effectiveness !== undefined && effectiveness > 1 ? 1.2 : 1 },
+  // HP-restore berries
+  'oran-berry': {
+    onAfterDamageTaken: ({ holder, damageTaken }) =>
+      holder.currentHp <= holder.maxHp / 2 && damageTaken > 0
+        ? { hpDelta: 10, consume: true }
+        : { hpDelta: 0 },
+  },
+  'berry-juice': {
+    onAfterDamageTaken: ({ holder, damageTaken }) =>
+      holder.currentHp <= holder.maxHp / 2 && damageTaken > 0
+        ? { hpDelta: 20, consume: true }
+        : { hpDelta: 0 },
+  },
 };
 
 export const IMPLEMENTED_ITEM_IDS: ReadonlySet<string> = new Set(Object.keys(ITEM_HOOKS));
