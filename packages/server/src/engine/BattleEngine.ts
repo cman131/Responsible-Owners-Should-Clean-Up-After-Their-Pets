@@ -1317,6 +1317,7 @@ export class BattleEngine {
 
       let totalDamage = 0;
       let hpDamageTaken = 0;
+      let typeResistBerryToConsume = false;
       for (let hit = 0; hit < hitCount; hit++) {
         if (target.fainted) break;
 
@@ -1426,7 +1427,8 @@ export class BattleEngine {
         }
 
         // Item-based defender modifier
-        const defItemMod = getItemHooks(target.heldItem).onDefenderModifier?.({
+        typeResistBerryToConsume = false;
+        const defItemResult = getItemHooks(target.heldItem).onDefenderModifier?.({
           holder: target,
           state: s,
           moveType: effectiveMoveType,
@@ -1434,7 +1436,11 @@ export class BattleEngine {
           target: attacker,
           isPhysical,
         });
-        if (defItemMod !== undefined) otherModifiers *= defItemMod;
+        if (defItemResult !== undefined) {
+          const mult = typeof defItemResult === 'number' ? defItemResult : defItemResult.multiplier;
+          otherModifiers *= mult;
+          if (typeof defItemResult !== 'number' && defItemResult.consume) typeResistBerryToConsume = true;
+        }
 
         const { damage } = calcDamage({
           level: attacker.level,
@@ -1561,6 +1567,7 @@ export class BattleEngine {
           sec.kind !== 'multihit' && sec.kind !== 'ohko' && sec.kind !== 'charge' && sec.kind !== 'pivot'
         );
         const isSoundMove = move.soundMove === true;
+        const preSecBoosts = { ...target.statBoosts };
         if (postSecs.length > 0 && !target.fainted && (!targetHasSub || isSoundMove) && !sheerForceActive) {
           events.push(...applySecondaries({
             secondaries: postSecs,
@@ -1592,6 +1599,44 @@ export class BattleEngine {
                 target.lastConsumedItem = itemName;
                 delete target.heldItem;
                 events.push({ type: 'item-consumed', data: { slotId: targetSlotId, item: itemName, reason: 'triggered' } });
+              }
+            }
+          }
+        }
+
+        // White Herb / Eject Pack: fire when a stat was just lowered
+        if (!target.fainted && target.heldItem) {
+          const statWasDropped = (Object.keys(target.statBoosts) as (keyof StatBoosts)[]).some(
+            k => target.statBoosts[k] < preSecBoosts[k]!
+          );
+          if (statWasDropped) {
+            const dropResult = getItemHooks(target.heldItem).onStatDropped?.({ holder: target, state: s });
+            if (dropResult) {
+              if (dropResult.restoreStats) {
+                const toRestore = (Object.keys(target.statBoosts) as (keyof StatBoosts)[]).filter(k => target.statBoosts[k] < 0);
+                for (const k of toRestore) target.statBoosts[k] = 0;
+                if (toRestore.length > 0) {
+                  events.push({ type: 'stat-change', data: { slotId: targetSlotId, changes: Object.fromEntries(toRestore.map(k => [k, 0])) } });
+                }
+              }
+              if (dropResult.forceSwitch && !target.fainted) {
+                const defTeam2 = s.teams.find(t => t.slots.some(sl => sl.slotId === targetSlotId));
+                const defSlot2 = defTeam2?.slots.find(sl => sl.slotId === targetSlotId);
+                if (defSlot2) {
+                  const bench = defSlot2.party.filter((m, i) => i !== defSlot2.activePokemonIndex && !m.fainted);
+                  if (bench.length > 0) {
+                    const pick = bench[Math.floor(this.rng() * bench.length)]!;
+                    const packResult = this.performSwitch(s, targetSlotId, pick.instanceId, 'phased');
+                    events.push(...packResult.events);
+                    s = packResult.newState;
+                  }
+                }
+              }
+              if (dropResult.consume && target.heldItem) {
+                const consumed = target.heldItem;
+                target.lastConsumedItem = consumed;
+                delete target.heldItem;
+                events.push({ type: 'item-consumed', data: { slotId: targetSlotId, item: consumed, reason: 'triggered' } });
               }
             }
           }
@@ -1694,14 +1739,45 @@ export class BattleEngine {
           makesContact: move.makesContact === true,
           totalDamage,
         });
-        if (helmetResult?.directDamageToAttacker) {
-          const dmg = Math.min(helmetResult.directDamageToAttacker, attacker.currentHp);
-          attacker.currentHp -= dmg;
-          events.push({ type: 'damage-dealt', data: { source: 'rocky-helmet', slotId: attackerSlotId, damage: dmg, remainingHp: attacker.currentHp } });
-          if (attacker.currentHp <= 0) {
-            attacker.fainted = true;
-            attacker.currentHp = 0;
-            events.push({ type: 'faint', data: { slotId: attackerSlotId, instanceId: attacker.instanceId } });
+        if (helmetResult) {
+          if (helmetResult.directDamageToAttacker && !attacker.fainted) {
+            const dmg = Math.min(helmetResult.directDamageToAttacker, attacker.currentHp);
+            attacker.currentHp -= dmg;
+            events.push({ type: 'damage-dealt', data: { source: target.heldItem ?? 'rocky-helmet', slotId: attackerSlotId, damage: dmg, remainingHp: attacker.currentHp } });
+            if (attacker.currentHp <= 0) {
+              attacker.fainted = true;
+              attacker.currentHp = 0;
+              events.push({ type: 'faint', data: { slotId: attackerSlotId, instanceId: attacker.instanceId } });
+            }
+          }
+          if (helmetResult.flinchTarget && !attacker.fainted) {
+            attacker.volatileStatus = attacker.volatileStatus.filter(v => v.name !== 'flinch');
+            attacker.volatileStatus.push({ name: 'flinch' });
+          }
+          if (helmetResult.consume && target.heldItem) {
+            const consumed = target.heldItem;
+            target.lastConsumedItem = consumed;
+            delete target.heldItem;
+            events.push({ type: 'item-consumed', data: { slotId: targetSlotId, item: consumed, reason: 'triggered' } });
+          }
+          if (helmetResult.forceAttackerSwitch && !attacker.fainted) {
+            const atkTeam = s.teams.find(t => t.slots.some(sl => sl.slotId === attackerSlotId));
+            const atkSlot = atkTeam?.slots.find(sl => sl.slotId === attackerSlotId);
+            if (atkSlot) {
+              const bench = atkSlot.party.filter((m, i) => i !== atkSlot.activePokemonIndex && !m.fainted);
+              if (bench.length > 0) {
+                const pick = bench[Math.floor(this.rng() * bench.length)]!;
+                const redCardResult = this.performSwitch(s, attackerSlotId, pick.instanceId, 'phased');
+                events.push(...redCardResult.events);
+                s = redCardResult.newState;
+              }
+            }
+            if (target.heldItem) {
+              const consumed = target.heldItem;
+              target.lastConsumedItem = consumed;
+              delete target.heldItem;
+              events.push({ type: 'item-consumed', data: { slotId: targetSlotId, item: consumed, reason: 'triggered' } });
+            }
           }
         }
       }
@@ -1711,6 +1787,14 @@ export class BattleEngine {
         target.lastConsumedItem = target.heldItem;
         delete target.heldItem;
         events.push({ type: 'item-consumed', data: { slotId: targetSlotId, item: 'air-balloon', reason: 'popped' } });
+      }
+
+      // Type-resist berry: consumed after damage calculation
+      if (typeResistBerryToConsume && totalDamage > 0 && target.heldItem) {
+        const consumed = target.heldItem;
+        target.lastConsumedItem = consumed;
+        delete target.heldItem;
+        events.push({ type: 'item-consumed', data: { slotId: targetSlotId, item: consumed, reason: 'triggered' } });
       }
 
       // Weakness Policy
@@ -1731,6 +1815,8 @@ export class BattleEngine {
             state: s,
             damageTaken: totalDamage,
             effectiveness,
+            moveType: effectiveMoveType,
+            isPhysical,
           });
           if (berryResult.hpDelta > 0) {
             const heal = Math.min(berryResult.hpDelta, target.maxHp - target.currentHp);
@@ -1747,6 +1833,32 @@ export class BattleEngine {
             target.lastConsumedItem = itemName;
             delete target.heldItem;
             events.push({ type: 'item-consumed', data: { slotId: targetSlotId, item: itemName, reason: 'triggered' } });
+          }
+        }
+      }
+
+      // Eject Button: force switch the DEFENDER after taking direct damage
+      if (totalDamage > 0 && !target.fainted) {
+        const ejectFires = getItemHooks(target.heldItem).onAfterDamageTakenForceSwitch?.({
+          holder: target, state: s, damageTaken: totalDamage,
+        });
+        if (ejectFires) {
+          const defTeam = s.teams.find(t => t.slots.some(sl => sl.slotId === targetSlotId));
+          const defSlot = defTeam?.slots.find(sl => sl.slotId === targetSlotId);
+          if (defSlot) {
+            const bench = defSlot.party.filter((m, i) => i !== defSlot.activePokemonIndex && !m.fainted);
+            if (bench.length > 0) {
+              const pick = bench[Math.floor(this.rng() * bench.length)]!;
+              const ejectResult = this.performSwitch(s, targetSlotId, pick.instanceId, 'phased');
+              events.push(...ejectResult.events);
+              s = ejectResult.newState;
+            }
+          }
+          if (target.heldItem) {
+            const consumed = target.heldItem;
+            target.lastConsumedItem = consumed;
+            delete target.heldItem;
+            events.push({ type: 'item-consumed', data: { slotId: targetSlotId, item: consumed, reason: 'triggered' } });
           }
         }
       }
@@ -1976,6 +2088,24 @@ export class BattleEngine {
       }
     }
 
+    // 5b. onSwitchIn item hook (terrain seeds)
+    if (incoming) {
+      const itemSwitchHooks = getItemHooks(incoming.heldItem);
+      if (itemSwitchHooks.onSwitchIn) {
+        const terrain = s.field.terrain?.type ?? null;
+        const seedResult = itemSwitchHooks.onSwitchIn({ holder: incoming, state: s, terrain });
+        if (seedResult?.statBoostDeltas) {
+          events.push(applyStatBoost(incoming, slotId, seedResult.statBoostDeltas as Partial<Record<keyof StatBoosts, number>>));
+        }
+        if (seedResult?.consume && incoming.heldItem) {
+          const consumed = incoming.heldItem;
+          incoming.lastConsumedItem = consumed;
+          delete incoming.heldItem;
+          events.push({ type: 'item-consumed', data: { slotId, item: consumed, reason: 'triggered' } });
+        }
+      }
+    }
+
     // 6. Emit pokemon-switched event
     events.push({
       type: 'pokemon-switched',
@@ -2095,8 +2225,7 @@ export class BattleEngine {
         const hasEmbargo = active.volatileStatus.some(v => v.name === 'embargo');
         if (itemHooks.onEndOfTurn && !hasEmbargo) {
           const eotResult = itemHooks.onEndOfTurn({ holder: active, state: s });
-          const { hpDelta } = eotResult;
-          const statusToInflict = (eotResult as any).statusToInflict;
+          const { hpDelta, statusToInflict } = eotResult;
           if (hpDelta > 0) {
             const heal = Math.min(hpDelta, active.maxHp - active.currentHp);
             if (heal > 0) {
@@ -2117,6 +2246,23 @@ export class BattleEngine {
             const activeTypes = this.resolveEffectiveTypes(active);
             const statusEvt = applyStatus(active, slot.slotId, statusToInflict as StatusCondition, activeTypes, undefined, s);
             if (statusEvt) events.push(statusEvt);
+          }
+        }
+
+        // Terrain seeds: also fire at EoT when terrain is active (handles terrain set mid-battle)
+        if (!active.fainted && active.heldItem) {
+          const seedEotHooks = getItemHooks(active.heldItem);
+          if (seedEotHooks.onSwitchIn && s.field.terrain) {
+            const seedResult = seedEotHooks.onSwitchIn({ holder: active, state: s, terrain: s.field.terrain.type });
+            if (seedResult?.statBoostDeltas) {
+              events.push(applyStatBoost(active, slot.slotId, seedResult.statBoostDeltas as Partial<Record<keyof StatBoosts, number>>));
+            }
+            if (seedResult?.consume && active.heldItem) {
+              const consumed = active.heldItem;
+              active.lastConsumedItem = consumed;
+              delete active.heldItem;
+              events.push({ type: 'item-consumed', data: { slotId: slot.slotId, item: consumed, reason: 'triggered' } });
+            }
           }
         }
       }

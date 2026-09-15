@@ -15,16 +15,25 @@ export interface ItemAttackContext extends ItemContext {
 
 export interface ItemHooks {
   onAttackerModifier?: (ctx: ItemAttackContext) => number;
-  onDefenderModifier?: (ctx: ItemAttackContext) => number;
+  /** May return a plain multiplier or { multiplier, consume } for berries that self-consume on hit */
+  onDefenderModifier?: (ctx: ItemAttackContext) => number | { multiplier: number; consume?: boolean };
   onDamageModifier?: (ctx: ItemAttackContext) => number;
-  onEndOfTurn?: (ctx: ItemContext) => { hpDelta: number };
-  onAfterDamageTaken?: (ctx: ItemContext & { damageTaken: number; effectiveness?: number }) => {
+  /** hpDelta<0 emits damage-dealt; statusToInflict used by Flame Orb / Toxic Orb */
+  onEndOfTurn?: (ctx: ItemContext) => { hpDelta: number; statusToInflict?: string };
+  onAfterDamageTaken?: (ctx: ItemContext & {
+    damageTaken: number;
+    effectiveness?: number;
+    moveType?: PokemonType;
+    isPhysical?: boolean;
+  }) => {
     hpDelta: number;
     statBoostDeltas?: Partial<StatBoosts>;
     consume?: boolean;
   };
   onAfterHit?: (ctx: ItemAttackContext & { makesContact: boolean; totalDamage: number }) => {
     directDamageToAttacker?: number;
+    flinchTarget?: boolean;
+    forceAttackerSwitch?: boolean;
     consume?: boolean;
   } | null;
   onStatusApplied?: (ctx: ItemContext & { status: string }) => { cureStatus: boolean; consume?: boolean } | null;
@@ -34,6 +43,12 @@ export interface ItemHooks {
   drainMultiplier?: number;
   onHealAfterAttack?: (ctx: ItemAttackContext & { damageDealt: number }) => { hpDelta: number };
   onAccuracyModifier?: (ctx: ItemContext & { move: Move; isFirst: boolean }) => number;
+  /** Eject Button: return true to force the holder to switch out after taking direct damage */
+  onAfterDamageTakenForceSwitch?: (ctx: ItemContext & { damageTaken: number }) => boolean;
+  /** White Herb (restoreStats) + Eject Pack (forceSwitch) */
+  onStatDropped?: (ctx: ItemContext) => { restoreStats?: boolean; forceSwitch?: boolean; consume: boolean };
+  /** Terrain seeds: fires on switch-in and at end-of-turn when terrain is active */
+  onSwitchIn?: (ctx: ItemContext & { terrain: string | null }) => { statBoostDeltas?: Partial<StatBoosts>; consume?: boolean } | undefined;
 }
 
 const ITEM_HOOKS: Record<string, ItemHooks> = {
