@@ -2058,11 +2058,29 @@ export class BattleEngine {
         const itemHooks = getItemHooks(active.heldItem);
         const hasEmbargo = active.volatileStatus.some(v => v.name === 'embargo');
         if (itemHooks.onEndOfTurn && !hasEmbargo) {
-          const { hpDelta } = itemHooks.onEndOfTurn({ holder: active, state: s });
+          const eotResult = itemHooks.onEndOfTurn({ holder: active, state: s });
+          const { hpDelta } = eotResult;
+          const statusToInflict = (eotResult as any).statusToInflict;
           if (hpDelta > 0) {
             const heal = Math.min(hpDelta, active.maxHp - active.currentHp);
-            active.currentHp += heal;
-            events.push({ type: 'heal', data: { slotId: slot.slotId, amount: heal, remainingHp: active.currentHp } });
+            if (heal > 0) {
+              active.currentHp += heal;
+              events.push({ type: 'heal', data: { slotId: slot.slotId, amount: heal, remainingHp: active.currentHp } });
+            }
+          } else if (hpDelta < 0) {
+            const damage = Math.min(-hpDelta, active.currentHp);
+            active.currentHp -= damage;
+            events.push({ type: 'damage-dealt', data: { source: active.heldItem, slotId: slot.slotId, damage, remainingHp: active.currentHp } });
+            if (active.currentHp <= 0) {
+              active.fainted = true;
+              active.currentHp = 0;
+              events.push({ type: 'faint', data: { slotId: slot.slotId, instanceId: active.instanceId } });
+            }
+          }
+          if (statusToInflict && !active.fainted && !active.status) {
+            const activeTypes = this.resolveEffectiveTypes(active);
+            const statusEvt = applyStatus(active, slot.slotId, statusToInflict as StatusCondition, activeTypes, undefined, s);
+            if (statusEvt) events.push(statusEvt);
           }
         }
       }

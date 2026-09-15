@@ -66,6 +66,21 @@ describe('BattleEngine.resolveTurn', () => {
     expect(newState.phase).toBe('ended');
     expect(newState.winner).toBe(0); // team A wins
   });
+
+  it('Black Sludge on non-Poison type emits damage-dealt at end of turn', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'black-sludge';
+    // default ability is 'blaze' (non-Poison)
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 3 }, // willowisp — no damage to p1 from p1
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    const p1 = newState.teams[0]!.slots[0]!.party[0]!;
+    const sludgeDamage = Math.floor(100 / 8); // 12
+    expect(p1.currentHp).toBeLessThanOrEqual(100 - sludgeDamage);
+    expect(events.some(e => e.type === 'damage-dealt' && e.data['source'] === 'black-sludge')).toBe(true);
+  });
 });
 
 describe('Status moves', () => {
@@ -83,6 +98,7 @@ describe('Status moves', () => {
   });
 
   it('Will-O-Wisp applies burn to the target', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0); // accuracy: 0 * 100 = 0 < 85 → always hits
     const state = make1v1State();
     state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'willowisp', currentPp: 15, maxPp: 15 };
     // Give p2 a Water type so it can be burned (not Fire type)
@@ -95,6 +111,7 @@ describe('Status moves', () => {
     const p2 = newState.teams[1]!.slots[0]!.party[0]!;
     expect(p2.status).toBe('brn');
     expect(events.some(e => e.type === 'status-applied')).toBe(true);
+    vi.restoreAllMocks();
   });
 });
 
@@ -647,12 +664,14 @@ describe('Secondary effects — single-hit wiring', () => {
   it('Crunch drops target Defense by 1 stage when secondary roll succeeds', () => {
     const state = make1v1State();
     state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'crunch', currentPp: 15, maxPp: 15 };
-    // rng sequence for slot-a1 Crunch:
-    //   roll 0 (accuracy): 0 → 0*100=0 < 100 → hit
-    //   roll 1 (crit):     0.5 → 0.5 < 1/24 is false → no crit
-    //   roll 2 (secondary): 0.1 → 0.1*100=10 < 20 → secondary fires → def -1
+    // rng sequence (buildActionOrder consumes 2 tieSeed calls first, then move execution):
+    //   roll 0 (tieSeed slot-a1): 0.5 — unused (speeds differ, no tie)
+    //   roll 1 (tieSeed slot-b1): 0.5 — unused
+    //   roll 2 (accuracy): 0 → 0*100=0 < 100 → hit
+    //   roll 3 (crit):     0.5 → 0.5 < 1/24 is false → no crit
+    //   roll 4 (secondary): 0.1 → 0.1*100=10 < 20 → secondary fires → def -1
     // Note: randomDamageFactor() uses Math.random() directly, not this.rng
-    const rolls = [0, 0.5, 0.1, 0, 0.5, 0.1];
+    const rolls = [0.5, 0.5, 0, 0.5, 0.1, 0.5, 0.5, 0, 0.5, 0.1];
     let rollIdx = 0;
     const engine = new BattleEngine({ rng: () => rolls[rollIdx++ % rolls.length]! });
     const { newState } = engine.resolveTurn(state, {
@@ -668,8 +687,10 @@ describe('Multi-hit moves', () => {
   it('Bullet Seed hits the number of times determined by rng', () => {
     const state = make1v1State();
     state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'bulletseed', currentPp: 30, maxPp: 30 };
-    // rng: accuracy=0(hit), hitCount=0(→2 hits), then per hit: crit=1(no), damage falls back to Math.random
-    const rolls = [0, 0, 1, 1];
+    // rng sequence (buildActionOrder consumes 2 tieSeed calls first):
+    //   rolls 0-1: tieSeeds (no tie, ignored)
+    //   roll 2: accuracy=0(hit), roll 3: hitCount=0(→2 hits), then per hit: crit=1(no)
+    const rolls = [0.5, 0.5, 0, 0, 1, 1];
     let i = 0;
     const engine = new BattleEngine({ rng: () => rolls[i++ % rolls.length]! });
     const { events } = engine.resolveTurn(state, {
@@ -684,7 +705,8 @@ describe('Multi-hit moves', () => {
     const state = make1v1State();
     state.teams[1]!.slots[0]!.party[0]!.currentHp = 1;
     state.teams[0]!.slots[0]!.party[0]!.moves[1] = { moveId: 'bulletseed', currentPp: 30, maxPp: 30 };
-    const rolls = [0, 0, 1, 1];
+    // rolls 0-1: tieSeeds (ignored), roll 2: accuracy=0(hit), roll 3: hitCount=0(→2 hits), roll 4+: crit=1(no)
+    const rolls = [0.5, 0.5, 0, 0, 1, 1];
     let i = 0;
     const engine = new BattleEngine({ rng: () => rolls[i++ % rolls.length]! });
     const { events } = engine.resolveTurn(state, {
@@ -992,6 +1014,44 @@ describe('buildActionOrder — Trick Room', () => {
 
     const moveUsedEvents = events.filter(e => e.type === 'move-used');
     expect(moveUsedEvents[0]!.data['attackerSlotId']).toBe('slot-a1');
+  });
+});
+
+describe('buildActionOrder — speed-tie tiebreaker', () => {
+  it('uses injected rng for speed ties, not Math.random', () => {
+    // Freeze Math.random so the buggy comparator always returns the same value.
+    // If the bug exists, both runs produce the same order regardless of injected rng.
+    // If the fix is in place, opposite tieSeed sequences produce opposite first-mover results.
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+
+    function makeEqualSpeedState() {
+      const s = make1v1State();
+      s.teams[1]!.slots[0]!.party[0]!.stats.spe = 100; // match slot-a1 speed
+      return s;
+    }
+
+    // Run A: slot-a1 gets high tieSeed (0.9), slot-b1 gets low tieSeed (0.1)
+    let callA = 0;
+    const rngA = () => { callA++; return callA === 1 ? 0.9 : callA === 2 ? 0.1 : 0.5; };
+    const { events: eventsA } = new BattleEngine({ rng: rngA }).resolveTurn(makeEqualSpeedState(), {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const firstMoverA = eventsA.find(e => e.type === 'move-used')?.data['attackerSlotId'];
+
+    // Run B: slot-a1 gets low tieSeed (0.1), slot-b1 gets high tieSeed (0.9) — opposite
+    let callB = 0;
+    const rngB = () => { callB++; return callB === 1 ? 0.1 : callB === 2 ? 0.9 : 0.5; };
+    const { events: eventsB } = new BattleEngine({ rng: rngB }).resolveTurn(makeEqualSpeedState(), {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const firstMoverB = eventsB.find(e => e.type === 'move-used')?.data['attackerSlotId'];
+
+    // If injected rng controls the tie, opposite seeds must yield opposite first movers.
+    // Bug: Math.random frozen to 0 → same result both runs → firstMoverA === firstMoverB.
+    expect(firstMoverA).not.toBe(firstMoverB);
+    vi.restoreAllMocks();
   });
 });
 
@@ -1562,5 +1622,161 @@ describe('BattleEngine.resumeTurn', () => {
     const engine = new BattleEngine({ rng: () => 0 });
     const resumed = engine.resumeTurn(state, [], {}, movedSlotIds);
     expect(resumed.newState.turnNumber).toBe(2);
+  });
+});
+
+describe('Struggle — all-PP-depleted override', () => {
+  it('emits move-used with moveId=struggle when all move PP is 0', () => {
+    const state = make1v1State();
+    const active = state.teams[0]!.slots[0]!.party[0]!;
+    for (const m of active.moves) m.currentPp = 0;
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    expect(events.some(e => e.type === 'move-used' && e.data['moveId'] === 'struggle')).toBe(true);
+  });
+
+  it('applies 1/4 max-HP recoil to the user after Struggle', () => {
+    const state = make1v1State();
+    const active = state.teams[0]!.slots[0]!.party[0]!;
+    for (const m of active.moves) m.currentPp = 0;
+    const expectedRecoil = Math.floor(active.maxHp / 4); // 25 for maxHp=100
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    const recoilEvent = events.find(
+      e => e.type === 'damage-dealt' && e.data['source'] === 'recoil' && e.data['slotId'] === 'slot-a1'
+    );
+    expect(recoilEvent).toBeDefined();
+    expect(recoilEvent!.data['damage']).toBe(expectedRecoil);
+  });
+
+  it('does not decrement PP when Struggle is used', () => {
+    const state = make1v1State();
+    const active = state.teams[0]!.slots[0]!.party[0]!;
+    for (const m of active.moves) m.currentPp = 0;
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    const updatedActive = newState.teams[0]!.slots[0]!.party[0]!;
+    for (const m of updatedActive.moves) {
+      expect(m.currentPp).toBe(0); // stays at 0, no underflow
+    }
+  });
+});
+
+describe('executeSwitch — Ingrain blocks voluntary switch', () => {
+  it('blocks a voluntary switch when the active Pokémon has Ingrain', () => {
+    const state = make1v1State();
+    // Give the active Pokémon a second party member to switch to
+    const active = state.teams[0]!.slots[0]!.party[0]!;
+    const bench = makePokemon();
+    state.teams[0]!.slots[0]!.party.push(bench);
+    // Apply Ingrain volatile
+    active.volatileStatus.push({ name: 'ingrain', turnsRemaining: -1 });
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'switch', targetInstanceId: bench.instanceId },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    const blocked = events.find(e => e.type === 'move-blocked' && e.data['reason'] === 'trapped');
+    expect(blocked).toBeDefined();
+  });
+
+  it('allows a voluntary switch when the Pokémon has no Ingrain', () => {
+    const state = make1v1State();
+    const bench = makePokemon();
+    state.teams[0]!.slots[0]!.party.push(bench);
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'switch', targetInstanceId: bench.instanceId },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    const blocked = events.find(e => e.type === 'move-blocked' && e.data['reason'] === 'trapped');
+    expect(blocked).toBeUndefined();
+    expect(events.some(e => e.type === 'pokemon-switched')).toBe(true);
+  });
+});
+
+describe('BattleEngine._runSubMove — works with fewer than 4 moves', () => {
+  it('does not leave a corrupted moves[3] when Pokémon has 2 moves', () => {
+    const state = make1v1State();
+    const attacker = state.teams[0]!.slots[0]!.party[0]!;
+    // Give attacker only 2 moves
+    attacker.moves = [
+      { moveId: 'flamethrower', currentPp: 15, maxPp: 15 },
+      { moveId: 'roost',        currentPp: 10, maxPp: 10 },
+    ] as any;
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    (engine as any)._runSubMove('flamethrower', 'slot-a1', 'slot-b1', state, 0);
+
+    const afterAttacker = state.teams[0]!.slots[0]!.party[0]!;
+    expect(afterAttacker.moves).toHaveLength(2);
+  });
+});
+
+describe('BattleEngine.getSpreadTargets — randomNormal picks one foe in doubles', () => {
+  function make1v2State(): BattleState {
+    const attacker = makePokemon({ instanceId: 'att' });
+    const foe1 = makePokemon({ instanceId: 'foe1' });
+    const foe2 = makePokemon({ instanceId: 'foe2' });
+    return {
+      battleId: 'test', label: 'Test', turnNumber: 1, phase: 'action',
+      field: {
+        trickroom: 0, gravity: 0, wonderroom: 0, magicroom: 0, mudSport: 0, waterSport: 0,
+        ionDeluge: false, fairyLock: 0,
+        sideConditions: [
+          { stealthRock: false, spikes: 0, toxicSpikes: 0, stickyWeb: false, reflect: 0, lightScreen: 0, auroraVeil: 0, tailwind: 0, safeguard: 0, mist: 0, luckychant: 0 },
+          { stealthRock: false, spikes: 0, toxicSpikes: 0, stickyWeb: false, reflect: 0, lightScreen: 0, auroraVeil: 0, tailwind: 0, safeguard: 0, mist: 0, luckychant: 0 },
+        ],
+      },
+      teams: [
+        { teamId: 'team-a', slots: [{ slotId: 'slot-a1', displayName: 'P1', isNpc: false, isSpectator: false, party: [attacker], activePokemonIndex: 0 }] },
+        { teamId: 'team-b', slots: [
+          { slotId: 'slot-b1', displayName: 'E1', isNpc: true, isSpectator: false, party: [foe1], activePokemonIndex: 0 },
+          { slotId: 'slot-b2', displayName: 'E2', isNpc: true, isSpectator: false, party: [foe2], activePokemonIndex: 0 },
+        ]},
+      ],
+    } as BattleState;
+  }
+
+  it('returns exactly one foe when rng picks index 0', () => {
+    const state = make1v2State();
+    const engine = new BattleEngine({ rng: () => 0 });
+    const targets = (engine as any).getSpreadTargets(state, 'slot-a1', 'randomNormal') as string[];
+    expect(targets).toHaveLength(1);
+    expect(targets[0]).toBe('slot-b1');
+  });
+
+  it('returns exactly one foe when rng picks index 1', () => {
+    const state = make1v2State();
+    const engine = new BattleEngine({ rng: () => 0.99 });
+    const targets = (engine as any).getSpreadTargets(state, 'slot-a1', 'randomNormal') as string[];
+    expect(targets).toHaveLength(1);
+    expect(targets[0]).toBe('slot-b2');
+  });
+
+  it('returns all foes for allAdjacentFoes in doubles (spread unchanged)', () => {
+    const state = make1v2State();
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const targets = (engine as any).getSpreadTargets(state, 'slot-a1', 'allAdjacentFoes') as string[];
+    expect(targets).toHaveLength(2);
   });
 });
