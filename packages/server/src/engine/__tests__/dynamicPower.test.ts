@@ -77,4 +77,52 @@ describe('resolvePower', () => {
     const fieldWrongTeam = { ...field(), allyFaintedTeamIndex: 1, attackerTeamIndex: 0 };
     expect(resolvePower(move('retaliate', 70), attacker, mon(), fieldWrongTeam)).toBe(70);
   });
+
+  it('echoedvoice: scales 40/80/120/160/200 based on echoedvoice-active counter', () => {
+    const vs = (n: number) => mon({ volatileStatus: [{ name: 'echoedvoice-active', counter: n }] });
+    const m = move('echoedvoice', 40);
+    expect(resolvePower(m, vs(1), mon(), field())).toBe(40);
+    expect(resolvePower(m, vs(2), mon(), field())).toBe(80);
+    expect(resolvePower(m, vs(3), mon(), field())).toBe(120);
+    expect(resolvePower(m, vs(4), mon(), field())).toBe(160);
+    expect(resolvePower(m, vs(5), mon(), field())).toBe(200);
+    // No volatile → first use → base power
+    expect(resolvePower(m, mon(), mon(), field())).toBe(40);
+  });
+
+  it('rollout: doubles power each hit (30/60/120/240/480)', () => {
+    const vs = (n: number) => mon({ volatileStatus: [{ name: 'rollout-active', counter: n }] });
+    const m = move('rollout', 30);
+    expect(resolvePower(m, vs(1), mon(), field())).toBe(30);
+    expect(resolvePower(m, vs(2), mon(), field())).toBe(60);
+    expect(resolvePower(m, vs(3), mon(), field())).toBe(120);
+    expect(resolvePower(m, vs(4), mon(), field())).toBe(240);
+    expect(resolvePower(m, vs(5), mon(), field())).toBe(480);
+    expect(resolvePower(m, mon(), mon(), field())).toBe(30); // no volatile → first hit
+  });
+
+  it('iceball: same scaling as rollout (30/60/120/240/480)', () => {
+    const vs = (n: number) => mon({ volatileStatus: [{ name: 'iceball-active', counter: n }] });
+    const m = move('iceball', 30);
+    expect(resolvePower(m, vs(3), mon(), field())).toBe(120);
+  });
+
+  it('trumpcard: 200/80/60/50/40 based on remaining PP', () => {
+    const mk = (pp: number) => ({ id: 'trumpcard', effectId: 'trumpcard', basePower: 0, currentPp: pp });
+    expect(resolvePower(mk(1), mon(), mon(), field())).toBe(200);
+    expect(resolvePower(mk(2), mon(), mon(), field())).toBe(80);
+    expect(resolvePower(mk(3), mon(), mon(), field())).toBe(60);
+    expect(resolvePower(mk(4), mon(), mon(), field())).toBe(50);
+    expect(resolvePower(mk(5), mon(), mon(), field())).toBe(40);
+  });
+
+  it('boltbeak: doubles (85→170) when attacker is faster than target', () => {
+    expect(resolvePower(move('boltbeak', 85), mon({ fasterThanTarget: true }), mon(), field())).toBe(170);
+    expect(resolvePower(move('boltbeak', 85), mon({ fasterThanTarget: false }), mon(), field())).toBe(85);
+  });
+
+  it('fishiousrend: doubles (85→170) when attacker is faster than target', () => {
+    expect(resolvePower(move('fishiousrend', 85), mon({ fasterThanTarget: true }), mon(), field())).toBe(170);
+    expect(resolvePower(move('fishiousrend', 85), mon({ fasterThanTarget: false }), mon(), field())).toBe(85);
+  });
 });

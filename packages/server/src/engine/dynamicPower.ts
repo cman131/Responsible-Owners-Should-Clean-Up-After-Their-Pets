@@ -163,10 +163,41 @@ const resolvers: Record<string, PowerResolver> = {
     field.allyFaintedTeamIndex !== undefined && field.allyFaintedTeamIndex === field.attackerTeamIndex
       ? move.basePower * 2 : move.basePower,
 
-  // TODO: needs consecutive-use counters
-  echoedvoice: (move) => move.basePower,
-  rollout: (move) => move.basePower,
-  iceball: (move) => move.basePower,
+  echoedvoice: (move, attacker) => {
+    const v = (attacker.volatileStatus as { name: string; counter?: number }[])
+      .find(v => v.name === 'echoedvoice-active');
+    const n = v?.counter ?? 1;
+    return Math.min(200, move.basePower * n);
+  },
+
+  rollout: (move, attacker) => {
+    const v = (attacker.volatileStatus as { name: string; counter?: number }[])
+      .find(v => v.name === 'rollout-active');
+    const n = v?.counter ?? 1;
+    return move.basePower * Math.pow(2, n - 1);
+  },
+
+  iceball: (move, attacker) => {
+    const v = (attacker.volatileStatus as { name: string; counter?: number }[])
+      .find(v => v.name === 'iceball-active');
+    const n = v?.counter ?? 1;
+    return move.basePower * Math.pow(2, n - 1);
+  },
+
+  trumpcard: (move) => {
+    const pp = move.currentPp ?? 1;
+    if (pp <= 1) return 200;
+    if (pp === 2) return 80;
+    if (pp === 3) return 60;
+    if (pp === 4) return 50;
+    return 40;
+  },
+
+  boltbeak: (move, attacker) =>
+    attacker.fasterThanTarget ? move.basePower * 2 : move.basePower,
+
+  fishiousrend: (move, attacker) =>
+    attacker.fasterThanTarget ? move.basePower * 2 : move.basePower,
 };
 
 export function resolvePower(
