@@ -61,6 +61,12 @@ const ITEM_HOOKS: Record<string, ItemHooks> = {
   'choice-specs': {
     onAttackerModifier: ({ isPhysical }) => !isPhysical ? 1.5 : 1,
   },
+  'muscle-band': {
+    onAttackerModifier: ({ isPhysical }) => isPhysical ? 1.1 : 1,
+  },
+  'wise-glasses': {
+    onAttackerModifier: ({ isPhysical }) => !isPhysical ? 1.1 : 1,
+  },
   'choice-scarf': {
     onSpeedModifier: () => 1.5,
   },

@@ -2378,3 +2378,82 @@ describe('White Herb', () => {
     expect(newState.teams[1]!.slots[0]!.party[0]!.heldItem).toBeUndefined();
   });
 });
+
+describe('Muscle Band and Wise Glasses', () => {
+  it('Muscle Band gives 1.1x damage on physical moves', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const stateWith = make1v1State();
+    stateWith.teams[0]!.slots[0]!.party[0]!.heldItem = 'muscle-band';
+    stateWith.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'tackle', currentPp: 35, maxPp: 35 };
+    const stateWithout = make1v1State();
+    stateWithout.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'tackle', currentPp: 35, maxPp: 35 };
+    const { newState: with_ } = engine.resolveTurn(stateWith, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    const { newState: without_ } = new BattleEngine({ rng: () => 0 }).resolveTurn(stateWithout, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    const dmgWith = 100 - with_.teams[1]!.slots[0]!.party[0]!.currentHp;
+    const dmgWithout = 100 - without_.teams[1]!.slots[0]!.party[0]!.currentHp;
+    expect(dmgWith).toBeGreaterThan(dmgWithout);
+  });
+
+  it('Muscle Band does not boost special moves', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const stateWith = make1v1State();
+    stateWith.teams[0]!.slots[0]!.party[0]!.heldItem = 'muscle-band';
+    // flamethrower is special (default moves[0])
+    const stateWithout = make1v1State();
+    const { newState: with_ } = engine.resolveTurn(stateWith, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    const { newState: without_ } = new BattleEngine({ rng: () => 0 }).resolveTurn(stateWithout, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    expect(100 - with_.teams[1]!.slots[0]!.party[0]!.currentHp).toBe(
+      100 - without_.teams[1]!.slots[0]!.party[0]!.currentHp
+    );
+  });
+
+  it('Wise Glasses gives 1.1x damage on special moves', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const stateWith = make1v1State();
+    stateWith.teams[0]!.slots[0]!.party[0]!.heldItem = 'wise-glasses';
+    const stateWithout = make1v1State();
+    const { newState: with_ } = engine.resolveTurn(stateWith, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' }, // flamethrower (special)
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    const { newState: without_ } = new BattleEngine({ rng: () => 0 }).resolveTurn(stateWithout, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    expect(100 - with_.teams[1]!.slots[0]!.party[0]!.currentHp).toBeGreaterThan(
+      100 - without_.teams[1]!.slots[0]!.party[0]!.currentHp
+    );
+  });
+
+  it('Wise Glasses does not boost physical moves', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const stateWith = make1v1State();
+    stateWith.teams[0]!.slots[0]!.party[0]!.heldItem = 'wise-glasses';
+    stateWith.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'tackle', currentPp: 35, maxPp: 35 };
+    const stateWithout = make1v1State();
+    stateWithout.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'tackle', currentPp: 35, maxPp: 35 };
+    const { newState: with_ } = engine.resolveTurn(stateWith, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    const { newState: without_ } = new BattleEngine({ rng: () => 0 }).resolveTurn(stateWithout, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    expect(100 - with_.teams[1]!.slots[0]!.party[0]!.currentHp).toBe(
+      100 - without_.teams[1]!.slots[0]!.party[0]!.currentHp
+    );
+  });
+});
