@@ -266,7 +266,7 @@ const ITEM_HOOKS: Record<string, ItemHooks> = {
   },
   'maranga-berry': {
     onAfterDamageTaken: ({ damageTaken, isPhysical }) =>
-      damageTaken > 0 && !isPhysical
+      damageTaken > 0 && isPhysical === false
         ? { hpDelta: 0, statBoostDeltas: { spd: 1 }, consume: true }
         : { hpDelta: 0 },
   },

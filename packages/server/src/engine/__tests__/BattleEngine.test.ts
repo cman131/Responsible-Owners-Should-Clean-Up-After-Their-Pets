@@ -2069,6 +2069,20 @@ describe('Custap and Micle berries', () => {
     expect(newState.teams[0]!.slots[0]!.party[0]!.volatileStatus.some(v => v.name === 'micle-active')).toBe(true);
     expect(newState.teams[0]!.slots[0]!.party[0]!.heldItem).toBeUndefined();
   });
+
+  it('Micle Berry clears micle-active volatile when holder uses a move', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    // Pre-bake micle-active volatile AND keep the item so onAccuracyModifier fires
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'micle-berry';
+    state.teams[0]!.slots[0]!.party[0]!.volatileStatus.push({ name: 'micle-active' });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    // After using a move, micle-active should be cleared (onAccuracyModifier consumed it)
+    expect(newState.teams[0]!.slots[0]!.party[0]!.volatileStatus.some(v => v.name === 'micle-active')).toBe(false);
+  });
 });
 
 describe('Reactive berries', () => {
@@ -2110,6 +2124,47 @@ describe('Reactive berries', () => {
     const jabocaDmg = Math.floor(100 / 8); // 12
     expect(newState.teams[0]!.slots[0]!.party[0]!.currentHp).toBeLessThanOrEqual(100 - jabocaDmg);
     expect(newState.teams[1]!.slots[0]!.party[0]!.heldItem).toBeUndefined();
+  });
+
+  it('Rowap Berry damages the attacker when hit by a special move', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.teams[1]!.slots[0]!.party[0]!.heldItem = 'rowap-berry';
+    // flamethrower is special (default move at index 0)
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    const p1 = newState.teams[0]!.slots[0]!.party[0]!;
+    const rowapDmg = Math.floor(100 / 8); // 12
+    expect(p1.currentHp).toBeLessThanOrEqual(100 - rowapDmg);
+    expect(newState.teams[1]!.slots[0]!.party[0]!.heldItem).toBeUndefined();
+  });
+
+  it('Kee Berry does not trigger on special moves', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.teams[1]!.slots[0]!.party[0]!.heldItem = 'kee-berry';
+    // flamethrower is special — should NOT trigger Kee Berry
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.heldItem).toBe('kee-berry');
+    expect(newState.teams[1]!.slots[0]!.party[0]!.statBoosts.def).toBe(0);
+  });
+
+  it('Maranga Berry does not trigger on physical moves', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.teams[1]!.slots[0]!.party[0]!.heldItem = 'maranga-berry';
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'tackle', currentPp: 35, maxPp: 35 };
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.heldItem).toBe('maranga-berry');
+    expect(newState.teams[1]!.slots[0]!.party[0]!.statBoosts.spd).toBe(0);
   });
 });
 
