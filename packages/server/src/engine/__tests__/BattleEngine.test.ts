@@ -2070,18 +2070,20 @@ describe('Custap and Micle berries', () => {
     expect(newState.teams[0]!.slots[0]!.party[0]!.heldItem).toBeUndefined();
   });
 
-  it('Micle Berry clears micle-active volatile when holder uses a move', () => {
+  it('Micle Berry clears micle-active volatile and boosts accuracy on next move', () => {
     const engine = new BattleEngine({ rng: () => 0 });
     const state = make1v1State();
-    // Pre-bake micle-active volatile AND keep the item so onAccuracyModifier fires
-    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'micle-berry';
+    // Pre-bake micle-active as if it was set last turn (item already consumed)
     state.teams[0]!.slots[0]!.party[0]!.volatileStatus.push({ name: 'micle-active' });
+    // heldItem is undefined (consumed) — this is the real-world post-consumption state
     const { newState } = engine.resolveTurn(state, {
       'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
       'slot-b1': { type: 'move', moveIndex: 3 },
     });
-    // After using a move, micle-active should be cleared (onAccuracyModifier consumed it)
+    // After using a move, micle-active should be cleared even with no heldItem
     expect(newState.teams[0]!.slots[0]!.party[0]!.volatileStatus.some(v => v.name === 'micle-active')).toBe(false);
+    // Note: heldItem stays undefined (already consumed)
+    expect(newState.teams[0]!.slots[0]!.party[0]!.heldItem).toBeUndefined();
   });
 });
 

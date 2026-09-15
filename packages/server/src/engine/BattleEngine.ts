@@ -509,6 +509,13 @@ export class BattleEngine {
             holder: attacker, state: s, move, isFirst,
           });
           if (attItemMod !== undefined) statusHitChance = Math.min(100, Math.floor(statusHitChance * attItemMod));
+          // Micle Berry: apply 1.2× accuracy boost from volatile (item already consumed)
+          let micleBonus = 1;
+          if (attacker.volatileStatus.some(v => v.name === 'micle-active')) {
+            micleBonus = 1.2;
+            attacker.volatileStatus = attacker.volatileStatus.filter(v => v.name !== 'micle-active');
+          }
+          if (micleBonus !== 1) statusHitChance = Math.min(100, Math.floor(statusHitChance * micleBonus));
           if (filteredSlotIds.length === 1) {
             const tSlot = this.findSlot(s, primaryTargetSlotId);
             const tMon = tSlot?.party[tSlot.activePokemonIndex];
@@ -694,6 +701,13 @@ export class BattleEngine {
           holder: attacker, state: s, move, isFirst,
         });
         if (attItemMod !== undefined) hitChance = Math.min(100, Math.floor(hitChance * attItemMod));
+        // Micle Berry: apply 1.2× accuracy boost from volatile (item already consumed)
+        let micleBonus = 1;
+        if (attacker.volatileStatus.some(v => v.name === 'micle-active')) {
+          micleBonus = 1.2;
+          attacker.volatileStatus = attacker.volatileStatus.filter(v => v.name !== 'micle-active');
+        }
+        if (micleBonus !== 1) hitChance = Math.min(100, Math.floor(hitChance * micleBonus));
         if (targetSlotIds.length === 1) {
           const tSlot = this.findSlot(s, primaryTargetSlotId);
           const tMon = tSlot?.party[tSlot.activePokemonIndex];

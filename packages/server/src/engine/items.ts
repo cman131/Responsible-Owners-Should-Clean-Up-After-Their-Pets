@@ -241,6 +241,8 @@ const ITEM_HOOKS: Record<string, ItemHooks> = {
     },
   },
   // Micle Berry — sets micle-active volatile at ≤25% HP for 1.2× accuracy on next move
+  // The accuracy boost is applied inline in BattleEngine (reads volatileStatus directly,
+  // since heldItem is already undefined when the next move fires).
   'micle-berry': {
     onAfterDamageTaken: ({ holder, damageTaken }) => {
       if (damageTaken > 0 && holder.currentHp <= Math.floor(holder.maxHp / 4)) {
@@ -248,13 +250,6 @@ const ITEM_HOOKS: Record<string, ItemHooks> = {
         return { hpDelta: 0, consume: true };
       }
       return { hpDelta: 0 };
-    },
-    onAccuracyModifier: ({ holder }) => {
-      if (holder.volatileStatus.some(v => v.name === 'micle-active')) {
-        holder.volatileStatus = holder.volatileStatus.filter(v => v.name !== 'micle-active');
-        return 1.2;
-      }
-      return 1;
     },
   },
   // Reactive berries
