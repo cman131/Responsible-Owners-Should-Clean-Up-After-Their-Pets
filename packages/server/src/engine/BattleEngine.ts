@@ -159,6 +159,16 @@ export class BattleEngine {
     const events: TurnResolveEvent[] = [];
     let s = structuredClone(state);
 
+    // Clear per-turn damage flag before new turn begins
+    for (const team of s.teams) {
+      for (const slot of team.slots) {
+        const active = slot.party[slot.activePokemonIndex];
+        if (active) {
+          active.volatileStatus = active.volatileStatus.filter((v: any) => v.name !== 'damaged-this-turn');
+        }
+      }
+    }
+
     // 1. Determine action order (priority, then speed)
     const order = this.buildActionOrder(s, actions);
 
@@ -220,9 +230,9 @@ export class BattleEngine {
   private buildActionOrder(state: BattleState, actions: Record<string, Action>): string[] {
     const entries = Object.entries(actions).map(([slotId, action]) => {
       const slot = this.findSlot(state, slotId);
-      if (!slot) return { slotId, priority: 0, spe: 0 };
+      if (!slot) return { slotId, priority: 0, spe: 0, tieSeed: this.rng() };
       const active = slot.party[slot.activePokemonIndex];
-      if (!active) return { slotId, priority: 0, spe: 0 };
+      if (!active) return { slotId, priority: 0, spe: 0, tieSeed: this.rng() };
 
       let priority = 6; // switches are highest
       if (action.type === 'move') {
@@ -232,7 +242,7 @@ export class BattleEngine {
 
       const teamIdx = state.teams.findIndex((t) => t.slots.some((sl) => sl.slotId === slotId)) as 0 | 1;
       const effectiveSpe = this.getEffectiveSpeed(active, state, teamIdx);
-      return { slotId, priority, spe: effectiveSpe };
+      return { slotId, priority, spe: effectiveSpe, tieSeed: this.rng() };
     });
 
     const trickRoomActive = state.field.trickroom > 0;
@@ -240,7 +250,7 @@ export class BattleEngine {
       .sort((a, b) =>
         b.priority - a.priority ||
         (trickRoomActive ? a.spe - b.spe : b.spe - a.spe) ||
-        Math.random() - 0.5,
+        a.tieSeed - b.tieSeed,
       )
       .map((e) => e.slotId);
   }
@@ -293,7 +303,11 @@ export class BattleEngine {
 
     const moveSlot = attacker.moves[action.moveIndex];
     if (!moveSlot) return { newState: s, events };
-    let move = this.data.getMove(moveSlot.moveId);
+
+    const allPpDepleted = attacker.moves.every(m => m.currentPp === 0);
+    let move = allPpDepleted
+      ? this.data.getMove('struggle')
+      : this.data.getMove(moveSlot.moveId);
     if (!move) return { newState: s, events };
 
     // Check if chosen move is disabled (block before decrement so same-turn disable preserves counter)
@@ -361,8 +375,10 @@ export class BattleEngine {
       events.push({ type: 'terastallize', data: { slotId: attackerSlotId, teraType: attacker.teraType } });
     }
 
-    // Spend PP
-    moveSlot.currentPp = Math.max(0, moveSlot.currentPp - 1);
+    // Spend PP (Struggle has no PP to consume)
+    if (!allPpDepleted) {
+      moveSlot.currentPp = Math.max(0, moveSlot.currentPp - 1);
+    }
 
     events.push({ type: 'move-used', data: { attackerSlotId, attackerName: attacker.nickname, moveId: move.id, moveName: move.name } });
 
@@ -1245,10 +1261,15 @@ export class BattleEngine {
       // Look up species weights for weight-based move power
       const attackerSpeciesForPower = this.data.getSpecies(attacker.speciesId);
       const targetSpeciesForPower = this.data.getSpecies(target.speciesId);
+      const targetTookDmgThisTurn = target.volatileStatus.some((v: any) => v.name === 'damaged-this-turn');
+      const targetMovedThisTurn = movedSlotIds.has(targetSlotId);
       const resolvedPower = resolvePower(
         move,
         { ...attacker, weightkg: attackerSpeciesForPower?.weightkg ?? 0 },
-        { ...target, weightkg: targetSpeciesForPower?.weightkg ?? 0 },
+        { ...target, weightkg: targetSpeciesForPower?.weightkg ?? 0,
+          movedThisTurn: targetMovedThisTurn,
+          tookDamageThisTurn: targetTookDmgThisTurn,
+        },
         s.field,
       );
       let perTargetBasePower = resolvedPower !== move.basePower ? resolvedPower : effectiveBasePower;
@@ -1483,6 +1504,10 @@ export class BattleEngine {
         const bideEntry = target.volatileStatus.find(v => v.name === 'bide');
         if (bideEntry) {
           bideEntry.accumulated = (bideEntry.accumulated ?? 0) + hpDamageTaken;
+        }
+        // Mark target as having taken damage this turn (for Assurance)
+        if (!target.volatileStatus.some((v: any) => v.name === 'damaged-this-turn')) {
+          target.volatileStatus.push({ name: 'damaged-this-turn' });
         }
       }
 
@@ -1804,7 +1829,7 @@ export class BattleEngine {
     const active = slot?.party[slot.activePokemonIndex];
     if (active) {
       const isTrapped = active.volatileStatus.some(
-        v => v.name === 'trapped' || v.name === 'no-retreat',
+        v => v.name === 'trapped' || v.name === 'no-retreat' || v.name === 'ingrain',
       );
       if (isTrapped) {
         events.push({ type: 'move-blocked', data: { slotId, reason: 'trapped' } });
@@ -2154,9 +2179,14 @@ export class BattleEngine {
     const foeTeamIndex = attackerTeamIndex === 0 ? 1 : 0;
     const foeTeam = state.teams[foeTeamIndex];
     if (!foeTeam) return [];
-    return foeTeam.slots
+    const allFoes = foeTeam.slots
       .filter((s) => !s.isSpectator && !s.party[s.activePokemonIndex]?.fainted)
       .map((s) => s.slotId);
+    if (target === 'randomNormal') {
+      if (allFoes.length === 0) return [];
+      return [allFoes[Math.floor(this.rng() * allFoes.length)]!];
+    }
+    return allFoes;
   }
 
   private checkWinCondition(state: BattleState): 0 | 1 | null {
@@ -2191,8 +2221,9 @@ export class BattleEngine {
     // Mark attacker to bypass pre-move checks in EffectEngine
     attacker.volatileStatus.push({ name: '__submove-bypass' });
 
-    // Temporarily replace move slot 3 with the sub-move
-    const savedMove3 = { ...attacker.moves[3]! };
+    // Temporarily inject the sub-move at slot 3 (may extend array if < 4 moves)
+    const originalMoveCount = attacker.moves.length;
+    const savedMove3 = originalMoveCount >= 4 ? { ...attacker.moves[3]! } : null;
     attacker.moves[3] = { moveId, currentPp: 5, maxPp: 5 };
 
     const action: MoveAction = defaultTargetSlotId
@@ -2211,7 +2242,11 @@ export class BattleEngine {
     const mergedSlot = this.findSlot(s, attackerSlotId);
     const mergedAttacker = mergedSlot?.party[mergedSlot.activePokemonIndex];
     if (mergedAttacker) {
-      mergedAttacker.moves[3] = savedMove3;
+      if (savedMove3 !== null) {
+        mergedAttacker.moves[3] = savedMove3;
+      } else {
+        mergedAttacker.moves.length = originalMoveCount;
+      }
     }
 
     return result.events;

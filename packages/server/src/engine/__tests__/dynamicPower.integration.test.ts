@@ -90,4 +90,45 @@ describe('dynamicPower integration', () => {
     expect(dmgGyro).toBeDefined();
     expect(dmgGyro).toBeGreaterThan(20); // 150 BP (capped) at 0.5x → ~31 damage
   });
+
+  it('Payback deals double damage when target moved first', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+
+    // p1 spe=100 (faster), p2 spe=80 (slower) in make1v1State
+    // p2 uses payback — target (p1) already moved, so double power
+    const state = make1v1State();
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'payback', currentPp: 10, maxPp: 10 };
+    // p1 uses splash (no damage) so it moves first without damaging p2
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'splash', currentPp: 40, maxPp: 40 };
+
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    const paybackDmg = events.find(
+      e => e.type === 'damage-dealt' && (e.data as any)['attackerSlotId'] === 'slot-b1'
+    )?.data['damage'] as number | undefined;
+
+    // Without ally faint — p2 moves FIRST (spe=200), so payback should NOT double
+    const stateNormal = make1v1State();
+    stateNormal.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'payback', currentPp: 10, maxPp: 10 };
+    stateNormal.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'splash', currentPp: 40, maxPp: 40 };
+    // Give p2 higher speed so it moves FIRST and payback should NOT double
+    stateNormal.teams[1]!.slots[0]!.party[0]!.stats = {
+      ...stateNormal.teams[1]!.slots[0]!.party[0]!.stats, spe: 200,
+    };
+    const { events: evNormal } = engine.resolveTurn(stateNormal, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const normalDmg = evNormal.find(
+      e => e.type === 'damage-dealt' && (e.data as any)['attackerSlotId'] === 'slot-b1'
+    )?.data['damage'] as number | undefined;
+
+    expect(paybackDmg).toBeDefined();
+    expect(normalDmg).toBeDefined();
+    // When target moved first, payback should deal roughly 2× the non-doubled damage
+    expect(paybackDmg!).toBeGreaterThan(normalDmg! * 1.8);
+  });
 });
