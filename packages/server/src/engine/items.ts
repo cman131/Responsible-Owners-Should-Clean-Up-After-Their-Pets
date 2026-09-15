@@ -230,6 +230,33 @@ const ITEM_HOOKS: Record<string, ItemHooks> = {
   'mago-berry':  { onAfterDamageTaken: ({ holder, damageTaken }) => holder.currentHp <= Math.floor(holder.maxHp / 3) && damageTaken > 0 ? { hpDelta: Math.floor(holder.maxHp / 3), consume: true } : { hpDelta: 0 } },
   'aguav-berry': { onAfterDamageTaken: ({ holder, damageTaken }) => holder.currentHp <= Math.floor(holder.maxHp / 3) && damageTaken > 0 ? { hpDelta: Math.floor(holder.maxHp / 3), consume: true } : { hpDelta: 0 } },
   'iapapa-berry':{ onAfterDamageTaken: ({ holder, damageTaken }) => holder.currentHp <= Math.floor(holder.maxHp / 3) && damageTaken > 0 ? { hpDelta: Math.floor(holder.maxHp / 3), consume: true } : { hpDelta: 0 } },
+  // Custap Berry — sets custap-active volatile at ≤25% HP for priority within bracket
+  'custap-berry': {
+    onAfterDamageTaken: ({ holder, damageTaken }) => {
+      if (damageTaken > 0 && holder.currentHp <= Math.floor(holder.maxHp / 4)) {
+        holder.volatileStatus.push({ name: 'custap-active' });
+        return { hpDelta: 0, consume: true };
+      }
+      return { hpDelta: 0 };
+    },
+  },
+  // Micle Berry — sets micle-active volatile at ≤25% HP for 1.2× accuracy on next move
+  'micle-berry': {
+    onAfterDamageTaken: ({ holder, damageTaken }) => {
+      if (damageTaken > 0 && holder.currentHp <= Math.floor(holder.maxHp / 4)) {
+        holder.volatileStatus.push({ name: 'micle-active' });
+        return { hpDelta: 0, consume: true };
+      }
+      return { hpDelta: 0 };
+    },
+    onAccuracyModifier: ({ holder }) => {
+      if (holder.volatileStatus.some(v => v.name === 'micle-active')) {
+        holder.volatileStatus = holder.volatileStatus.filter(v => v.name !== 'micle-active');
+        return 1.2;
+      }
+      return 1;
+    },
+  },
 };
 
 export const IMPLEMENTED_ITEM_IDS: ReadonlySet<string> = new Set(Object.keys(ITEM_HOOKS));
