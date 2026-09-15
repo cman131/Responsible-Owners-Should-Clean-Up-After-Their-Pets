@@ -537,6 +537,12 @@ export function BattleProvider({ mySlotId, initialState, children }: Props) {
     }
 
     if (hasPendingBattleEnd) {
+      if (!hasPendingState) {
+        setDisplayHp(new Map());
+        setAnimatingSlots(new Map());
+        for (const t of animClearTimersRef.current) clearTimeout(t);
+        animClearTimersRef.current.clear();
+      }
       const { winningTeamId, finalState } = pendingBattleEnd!;
       const winnerTeam = finalState.teams.find(t => t.teamId === winningTeamId);
       const winnerNames = winnerTeam?.slots.filter(s => !s.isSpectator).map(s => s.displayName).join(', ') ?? winningTeamId;
