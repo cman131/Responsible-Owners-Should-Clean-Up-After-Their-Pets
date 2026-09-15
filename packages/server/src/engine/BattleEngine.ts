@@ -11,7 +11,7 @@ import { EffectEngine, SlotContext } from './EffectEngine.js';
 import { getAbilityHooks, effectiveAbilityId } from './abilities.js';
 import type { SwitchInResult } from './abilities.js';
 import { getItemHooks } from './items.js';
-import { applyStatus, applyStatBoost, evaluateSecondaryEffect, evaluateVolatileEffect, applySecondaries } from './effects.js';
+import { applyStatus, applyStatBoost, evaluateSecondaryEffect, evaluateVolatileEffect, applySecondaries, applyVolatile } from './effects.js';
 import type { SecondaryContext } from './effects.js';
 import { MoveEffectRegistry, MoveContext } from './MoveEffectRegistry.js';
 import { buildDefaultRegistry } from './registrations.js';
@@ -137,6 +137,9 @@ const MEMORY_TYPE_MAP: Record<string, string> = {
 };
 
 const CHOICE_LOCK_ITEMS = new Set(['choice-band', 'choice-specs', 'choice-scarf']);
+
+const THRASH_LOCK_MOVES = new Set(['outrage', 'petaldance', 'thrash']);
+const ROLLOUT_LOCK_MOVES = new Set(['rollout', 'iceball']);
 
 const ABILITY_VOLATILE_CLEAR = new Set(['slow-start', 'truant']);
 
@@ -379,6 +382,18 @@ export class BattleEngine {
         // PP ran out, Encore ends
         attacker.volatileStatus = attacker.volatileStatus.filter(v => v.name !== 'encore');
       }
+    }
+
+    // Outrage / Thrash / Petaldance / Rollout / Iceball: enforce move lock
+    const lockVolatile = attacker.volatileStatus.find((v: any) =>
+      v.name.endsWith('-active') && (
+        THRASH_LOCK_MOVES.has(v.name.replace('-active', '')) ||
+        ROLLOUT_LOCK_MOVES.has(v.name.replace('-active', ''))
+      )
+    );
+    if (lockVolatile?.moveId && move.id !== lockVolatile.moveId) {
+      const lockedMoveData = this.data.getMove(lockVolatile.moveId);
+      if (lockedMoveData) move = lockedMoveData;
     }
 
     // Torment: block repeating last move
@@ -1988,6 +2003,27 @@ export class BattleEngine {
           // Note: target/targetSlot references are stale after s update, but we're done with them
         }
         // If no bench, just skip the force-switch (target stays in)
+      }
+    }
+
+    // Outrage / Petaldance / Thrash: manage lock volatile
+    if (THRASH_LOCK_MOVES.has(move.id) && !attacker.fainted) {
+      const volatileName = `${move.id}-active`;
+      let lockV = attacker.volatileStatus.find((v: any) => v.name === volatileName);
+      if (!lockV) {
+        // First use: 2 or 3 turns (rng < 0.5 → 2, else → 3)
+        const turns = this.rng() < 0.5 ? 2 : 3;
+        lockV = { name: volatileName, moveId: move.id, counter: turns };
+        attacker.volatileStatus.push(lockV);
+        events.push({ type: 'volatile-applied', data: { targetSlotId: attackerSlotId, volatile: volatileName } });
+      }
+      lockV.counter = (lockV.counter ?? 1) - 1;
+      if (lockV.counter <= 0) {
+        attacker.volatileStatus = attacker.volatileStatus.filter((v: any) => v !== lockV);
+        events.push({ type: 'volatile-cured', data: { slotId: attackerSlotId, volatile: volatileName } });
+        // Apply confusion after thrash sequence ends
+        const confuseEvent = applyVolatile(attacker, attackerSlotId, attackerSlotId, 'confusion');
+        if (confuseEvent) events.push(confuseEvent);
       }
     }
 
