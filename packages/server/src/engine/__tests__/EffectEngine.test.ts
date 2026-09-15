@@ -377,3 +377,76 @@ describe('EffectEngine.runPreMove — recharge', () => {
     expect(result.blocked).toBe(false);
   });
 });
+
+describe('EffectEngine.runPreMove — rng injection (freeze/paralysis/confusion)', () => {
+  it('freeze thaw uses the injected rng, not Math.random', () => {
+    // rng returns 0 → would thaw (0 < FREEZE_THAW_CHANCE)
+    // Math.random spy returns 0.9 → would stay frozen
+    // If the bug is present: blocked=true. If fixed: blocked=false.
+    vi.spyOn(Math, 'random').mockReturnValue(0.9);
+    const thawingRng = () => 0;
+    const engine = new EffectEngine();
+    const pokemon = makePokemon({ status: 'frz' });
+    const result = engine.runPreMove(pokemon, 'slot-a1', emptyState, emptySlots, thawingRng);
+    expect(result.blocked).toBe(false);
+    expect(pokemon.status).toBeUndefined();
+    vi.restoreAllMocks();
+  });
+
+  it('paralysis full-paralysis uses the injected rng, not Math.random', () => {
+    // rng returns 0 → would fully paralyze (0 < PARALYSIS_FULL_PARALYSIS_CHANCE)
+    // Math.random spy returns 0.9 → would not paralyze
+    // If the bug is present: blocked=false. If fixed: blocked=true.
+    vi.spyOn(Math, 'random').mockReturnValue(0.9);
+    const paralyzeRng = () => 0;
+    const engine = new EffectEngine();
+    const pokemon = makePokemon({ status: 'par' });
+    const result = engine.runPreMove(pokemon, 'slot-a1', emptyState, emptySlots, paralyzeRng);
+    expect(result.blocked).toBe(true);
+    expect(result.events.find(e => e.type === 'move-blocked')?.data['reason']).toBe('paralysis');
+    vi.restoreAllMocks();
+  });
+
+  it('confusion self-hit uses the injected rng, not Math.random', () => {
+    // rng returns 0 → would self-hit (0 < CONFUSION_HURT_CHANCE)
+    // Math.random spy returns 0.9 → would not self-hit
+    // If the bug is present: blocked=false. If fixed: blocked=true with self-damage.
+    vi.spyOn(Math, 'random').mockReturnValue(0.9);
+    const selfHitRng = () => 0;
+    const engine = new EffectEngine();
+    const pokemon = makePokemon({
+      volatileStatus: [{ name: 'confusion', counter: 2 }],
+      currentHp: 100, maxHp: 100,
+    });
+    const result = engine.runPreMove(pokemon, 'slot-a1', emptyState, emptySlots, selfHitRng);
+    expect(result.blocked).toBe(true);
+    expect(pokemon.currentHp).toBeLessThan(100);
+    expect(result.events.some(e => e.type === 'damage-dealt' && e.data['source'] === 'confusion')).toBe(true);
+    vi.restoreAllMocks();
+  });
+});
+
+describe('EffectEngine.runPreMove — confusion self-hit respects Burn', () => {
+  it('confusion self-hit deals half damage when the user is burned', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0); // triggers self-hit, deterministic damage factor
+    const engine = new EffectEngine();
+    const unburnedPokemon = makePokemon({
+      volatileStatus: [{ name: 'confusion', counter: 2 }],
+      currentHp: 100, maxHp: 100,
+    });
+    const burnedPokemon = makePokemon({
+      status: 'brn',
+      volatileStatus: [{ name: 'confusion', counter: 2 }],
+      currentHp: 100, maxHp: 100,
+    });
+    const normalResult = engine.runPreMove(unburnedPokemon, 'slot-a1', emptyState, emptySlots);
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    const burnedResult = engine.runPreMove(burnedPokemon, 'slot-b1', emptyState, emptySlots);
+
+    const normalDmg = normalResult.events.find(e => e.type === 'damage-dealt')!.data['damage'] as number;
+    const burnedDmg = burnedResult.events.find(e => e.type === 'damage-dealt')!.data['damage'] as number;
+
+    expect(burnedDmg).toBe(Math.floor(normalDmg / 2));
+    vi.restoreAllMocks();
+  });
+});

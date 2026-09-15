@@ -107,7 +107,7 @@ export class EffectEngine {
     }
 
     if (pokemon.status === 'frz') {
-      if (Math.random() < FREEZE_THAW_CHANCE) {
+      if (rng() < FREEZE_THAW_CHANCE) {
         delete pokemon.status;
         events.push({ type: 'status-cured', data: { slotId, status: 'frz' } });
         return { blocked: false, events };
@@ -117,7 +117,7 @@ export class EffectEngine {
     }
 
     if (pokemon.status === 'par') {
-      if (Math.random() < PARALYSIS_FULL_PARALYSIS_CHANCE) {
+      if (rng() < PARALYSIS_FULL_PARALYSIS_CHANCE) {
         events.push({ type: 'move-blocked', data: { slotId, pokemonName: pokemon.nickname, reason: 'paralysis' } });
         return { blocked: true, events };
       }
@@ -138,7 +138,7 @@ export class EffectEngine {
         events.push({ type: 'volatile-cured', data: { slotId, volatile: 'confusion' } });
       } else {
         confusionEntry.counter = (confusionEntry.counter ?? 1) - 1;
-        if (Math.random() < CONFUSION_HURT_CHANCE) {
+        if (rng() < CONFUSION_HURT_CHANCE) {
           const atkStat = getEffectiveStat(pokemon.stats.atk, pokemon.statBoosts.atk, 'atk');
           const defStat = getEffectiveStat(pokemon.stats.def, pokemon.statBoosts.def, 'def');
           const { damage } = calcDamage({
@@ -148,7 +148,7 @@ export class EffectEngine {
             basePower: 40,
             typeEffectiveness: 1,
             stab: false,
-            isBurned: false,
+            isBurned: pokemon.status === 'brn',
             randomFactor: randomDamageFactor(),
             otherModifiers: 1,
           });
