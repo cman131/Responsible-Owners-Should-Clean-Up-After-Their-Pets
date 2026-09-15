@@ -62,6 +62,9 @@ export interface PartyMember {
   isEvioliteEligible?: boolean;
   fainted: boolean;
   expTotal: number;
+  ivs?: Stats;
+  evs?: Stats;
+  nature?: string;
 }
 
 export interface SlotState {
@@ -118,4 +121,5 @@ export interface BattleState {
   field: FieldState;
   winner?: 0 | 1;
   lastUsedMoveId?: string;
+  lastTurnFaintedTeamIndex?: number;
 }

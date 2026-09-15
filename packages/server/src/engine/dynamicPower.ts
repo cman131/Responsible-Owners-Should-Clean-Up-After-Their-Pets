@@ -2,6 +2,7 @@ interface MoveInput {
   id: string;
   effectId?: string;
   basePower: number;
+  currentPp?: number;      // for trumpcard: PP remaining in the move slot
 }
 
 interface MonInput {
@@ -15,6 +16,9 @@ interface MonInput {
   level: number;
   friendship?: number;
   weightkg?: number;
+  movedThisTurn?: boolean;      // true if this Pokémon already moved this turn (payback/avalanche)
+  tookDamageThisTurn?: boolean; // true if this Pokémon took HP damage earlier this turn (assurance)
+  fasterThanTarget?: boolean;   // true if attacker moves before target (boltbeak/fishiousrend)
 }
 
 interface FieldInput {
@@ -23,6 +27,8 @@ interface FieldInput {
   trickroom: number;
   gravity: number;
   sideConditions: unknown[];
+  allyFaintedTeamIndex?: number; // 0 or 1 — team that had a faint last turn (retaliate)
+  attackerTeamIndex?: number;    // 0 or 1 — the attacker's team index (retaliate)
 }
 
 function sumPositiveStages(boosts: MonInput['statBoosts']): number {
