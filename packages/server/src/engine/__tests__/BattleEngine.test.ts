@@ -2518,6 +2518,7 @@ describe('Eject Button, Eject Pack, Red Card', () => {
       'slot-b1': { type: 'move', moveIndex: 3 },
     });
     expect(events.some(e => e.type === 'pokemon-switched')).toBe(false);
+    expect(events.some(e => e.type === 'item-consumed' && e.data['item'] === 'eject-button')).toBe(false);
   });
 
   it('Eject Pack forces the holder to switch when its stats are lowered', () => {

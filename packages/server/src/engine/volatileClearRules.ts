@@ -15,6 +15,7 @@ export const SWITCH_CLEAR_NAMES = new Set([
   'trapped', 'octolock', 'no-retreat',
   'imprison',
   'minimize', 'tar-shot', 'nightmare',
+  'custap-active', 'micle-active',
 ]);
 
 export const SWITCH_CLEAR_PREFIXES = ['charging-'];

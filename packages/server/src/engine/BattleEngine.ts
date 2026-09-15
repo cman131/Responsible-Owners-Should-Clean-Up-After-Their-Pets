@@ -2004,13 +2004,13 @@ export class BattleEngine {
               const ejectResult = this.performSwitch(s, targetSlotId, pick.instanceId, 'phased');
               events.push(...ejectResult.events);
               s = ejectResult.newState;
+              if (target.heldItem) {
+                const consumed = target.heldItem;
+                target.lastConsumedItem = consumed;
+                delete target.heldItem;
+                events.push({ type: 'item-consumed', data: { slotId: targetSlotId, item: consumed, reason: 'triggered' } });
+              }
             }
-          }
-          if (target.heldItem) {
-            const consumed = target.heldItem;
-            target.lastConsumedItem = consumed;
-            delete target.heldItem;
-            events.push({ type: 'item-consumed', data: { slotId: targetSlotId, item: consumed, reason: 'triggered' } });
           }
         }
       }
