@@ -1905,6 +1905,264 @@ describe('poltergeist', () => {
   });
 });
 
+describe('HP-restore berries', () => {
+  it('Oran Berry heals 10 HP when at or below 50% max HP after taking damage', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'oran-berry';
+    state.teams[0]!.slots[0]!.party[0]!.currentHp = 50; // exactly 50%
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const p1 = newState.teams[0]!.slots[0]!.party[0]!;
+    expect(events.some(e => e.type === 'heal' && e.data['amount'] === 10)).toBe(true);
+    expect(p1.heldItem).toBeUndefined();
+  });
+
+  it('Oran Berry does not trigger above 50% HP', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'oran-berry';
+    state.teams[0]!.slots[0]!.party[0]!.currentHp = 51;
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 3 },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    expect(newState.teams[0]!.slots[0]!.party[0]!.heldItem).toBe('oran-berry');
+  });
+
+  it('Berry Juice heals 20 HP when at or below 50%', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'berry-juice';
+    state.teams[0]!.slots[0]!.party[0]!.currentHp = 50;
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(events.some(e => e.type === 'heal' && e.data['amount'] === 20)).toBe(true);
+  });
+});
+
+describe('Type-resist berries', () => {
+  it('Occa Berry halves a super-effective Fire hit and is consumed', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const stateWith = make1v1State();
+    stateWith.teams[1]!.slots[0]!.party[0]!.typeOverride = ['Grass'];
+    stateWith.teams[1]!.slots[0]!.party[0]!.heldItem = 'occa-berry';
+    const stateWithout = make1v1State();
+    stateWithout.teams[1]!.slots[0]!.party[0]!.typeOverride = ['Grass'];
+    const { newState: withBerry } = engine.resolveTurn(stateWith, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' }, // flamethrower
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    const { newState: withoutBerry } = new BattleEngine({ rng: () => 0 }).resolveTurn(stateWithout, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    const dmgWith = 100 - withBerry.teams[1]!.slots[0]!.party[0]!.currentHp;
+    const dmgWithout = 100 - withoutBerry.teams[1]!.slots[0]!.party[0]!.currentHp;
+    expect(withBerry.teams[1]!.slots[0]!.party[0]!.heldItem).toBeUndefined();
+    expect(dmgWith).toBeLessThan(dmgWithout);
+  });
+
+  it('Occa Berry does not trigger when Fire hit is not super-effective', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State(); // Charizard Fire/Flying — Fire not SE
+    state.teams[1]!.slots[0]!.party[0]!.heldItem = 'occa-berry';
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.heldItem).toBe('occa-berry');
+  });
+
+  it('Chilan Berry halves any Normal-type hit', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const stateWith = make1v1State();
+    stateWith.teams[1]!.slots[0]!.party[0]!.heldItem = 'chilan-berry';
+    stateWith.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'tackle', currentPp: 35, maxPp: 35 };
+    const stateWithout = make1v1State();
+    stateWithout.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'tackle', currentPp: 35, maxPp: 35 };
+    const { newState: withBerry } = engine.resolveTurn(stateWith, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    const { newState: withoutBerry } = new BattleEngine({ rng: () => 0 }).resolveTurn(stateWithout, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    expect(withBerry.teams[1]!.slots[0]!.party[0]!.heldItem).toBeUndefined();
+    const dmgWith = 100 - withBerry.teams[1]!.slots[0]!.party[0]!.currentHp;
+    const dmgWithout = 100 - withoutBerry.teams[1]!.slots[0]!.party[0]!.currentHp;
+    expect(dmgWith).toBeLessThan(dmgWithout);
+  });
+});
+
+describe('Confusion berries (Figy/Wiki/Mago/Aguav/Iapapa)', () => {
+  it('Figy Berry heals floor(maxHp/3) when HP drops to or below 33%', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'figy-berry';
+    state.teams[0]!.slots[0]!.party[0]!.currentHp = 33;
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const p1 = newState.teams[0]!.slots[0]!.party[0]!;
+    expect(events.some(e => e.type === 'heal' && e.data['amount'] === Math.floor(100 / 3))).toBe(true);
+    expect(p1.heldItem).toBeUndefined();
+  });
+
+  it('Figy Berry does not trigger above 33% HP', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'figy-berry';
+    state.teams[0]!.slots[0]!.party[0]!.currentHp = 34;
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 3 },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    expect(newState.teams[0]!.slots[0]!.party[0]!.heldItem).toBe('figy-berry');
+  });
+});
+
+describe('Custap and Micle berries', () => {
+  it('Custap Berry sets custap-active volatile when HP drops to ≤25%', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'custap-berry';
+    state.teams[0]!.slots[0]!.party[0]!.currentHp = 25;
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const p1 = newState.teams[0]!.slots[0]!.party[0]!;
+    expect(p1.volatileStatus.some(v => v.name === 'custap-active')).toBe(true);
+    expect(p1.heldItem).toBeUndefined();
+  });
+
+  it('Custap-active holder moves before slower same-priority opponent', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State(); // p1 spe=100, p2 spe=80
+    // Give p2 custap-active volatile pre-baked (as if set last turn)
+    state.teams[1]!.slots[0]!.party[0]!.volatileStatus.push({ name: 'custap-active' });
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    const moveEvents = events.filter(e => e.type === 'move-used');
+    // p2 has custap-active so should move first despite lower speed
+    expect(moveEvents[0]!.data['attackerSlotId']).toBe('slot-b1');
+  });
+
+  it('Micle Berry sets micle-active volatile at ≤25% HP', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'micle-berry';
+    state.teams[0]!.slots[0]!.party[0]!.currentHp = 25;
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+    expect(newState.teams[0]!.slots[0]!.party[0]!.volatileStatus.some(v => v.name === 'micle-active')).toBe(true);
+    expect(newState.teams[0]!.slots[0]!.party[0]!.heldItem).toBeUndefined();
+  });
+});
+
+describe('Reactive berries', () => {
+  it('Kee Berry gives +1 Defense when hit by a physical move', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.teams[1]!.slots[0]!.party[0]!.heldItem = 'kee-berry';
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'tackle', currentPp: 35, maxPp: 35 };
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.statBoosts.def).toBe(1);
+    expect(newState.teams[1]!.slots[0]!.party[0]!.heldItem).toBeUndefined();
+  });
+
+  it('Maranga Berry gives +1 Sp.Def when hit by a special move', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.teams[1]!.slots[0]!.party[0]!.heldItem = 'maranga-berry';
+    // flamethrower (move 0) is special
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.statBoosts.spd).toBe(1);
+    expect(newState.teams[1]!.slots[0]!.party[0]!.heldItem).toBeUndefined();
+  });
+
+  it('Jaboca Berry damages the attacker when hit by a physical move', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.teams[1]!.slots[0]!.party[0]!.heldItem = 'jaboca-berry';
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'tackle', currentPp: 35, maxPp: 35 };
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    const jabocaDmg = Math.floor(100 / 8); // 12
+    expect(newState.teams[0]!.slots[0]!.party[0]!.currentHp).toBeLessThanOrEqual(100 - jabocaDmg);
+    expect(newState.teams[1]!.slots[0]!.party[0]!.heldItem).toBeUndefined();
+  });
+});
+
+describe('Flame Orb and Toxic Orb', () => {
+  it('Flame Orb burns the holder at end of turn', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'flame-orb';
+    state.teams[0]!.slots[0]!.party[0]!.typeOverride = ['Normal'];
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 3 },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    expect(newState.teams[0]!.slots[0]!.party[0]!.status).toBe('brn');
+  });
+
+  it('Flame Orb does not re-burn an already-burned holder', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'flame-orb';
+    state.teams[0]!.slots[0]!.party[0]!.typeOverride = ['Normal'];
+    state.teams[0]!.slots[0]!.party[0]!.status = 'brn';
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 3 },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    expect(newState.teams[0]!.slots[0]!.party[0]!.status).toBe('brn');
+  });
+
+  it('Toxic Orb badly poisons the holder at end of turn', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'toxic-orb';
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 3 },
+      'slot-b1': { type: 'move', moveIndex: 3 },
+    });
+    expect(newState.teams[0]!.slots[0]!.party[0]!.status).toBe('tox');
+  });
+
+  it('Toxic Orb does not inflict on Poison-immune holder', () => {
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'toxic-orb';
+    state.teams[0]!.slots[0]!.party[0]!.typeOverride = ['Poison'];
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 3 },
+      'slot-b1': { type: 'move', moveIndex: 2 }, // roost — no harmful status effect on p1
+    });
+    expect(newState.teams[0]!.slots[0]!.party[0]!.status).toBeUndefined();
+  });
+});
+
 describe('highjumpkick crash damage', () => {
   it('user takes half max HP on miss', () => {
     // highjumpkick accuracy=90, so rng=0.95 misses
@@ -1934,5 +2192,85 @@ describe('highjumpkick crash damage', () => {
     });
 
     expect(events.some(e => e.type === 'damage-dealt' && (e.data as any)['source'] === 'crash')).toBe(true);
+  });
+});
+
+describe('judgment', () => {
+  it('is Normal type when no plate held', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'judgment', currentPp: 10, maxPp: 10 };
+    delete (state.teams[0]!.slots[0]!.party[0]! as any).heldItem;
+
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    const dmg = events.find(e => e.type === 'damage-dealt' && (e.data as any)['attackerSlotId'] === 'slot-a1');
+    expect(dmg).toBeDefined();
+    // Normal type vs Normal type opponent means at least some damage dealt
+  });
+
+  it('becomes Fire type when flame-plate held', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'judgment', currentPp: 10, maxPp: 10 };
+    (state.teams[0]!.slots[0]!.party[0]! as any).heldItem = 'flame-plate';
+
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    const dmg = events.find(e => e.type === 'damage-dealt' && (e.data as any)['attackerSlotId'] === 'slot-a1');
+    expect(dmg!.data['moveType']).toBe('Fire');
+  });
+
+  it('multiattack uses fire-memory for Fire type', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'multiattack', currentPp: 10, maxPp: 10 };
+    (state.teams[0]!.slots[0]!.party[0]! as any).heldItem = 'fire-memory';
+
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    const dmg = events.find(e => e.type === 'damage-dealt' && (e.data as any)['attackerSlotId'] === 'slot-a1');
+    expect(dmg!.data['moveType']).toBe('Fire');
+  });
+});
+
+describe('naturepower', () => {
+  it('uses tri-attack with no terrain', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'naturepower', currentPp: 20, maxPp: 20 };
+
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    // triattack should be executed — move-used event for triattack
+    const used = events.find(e => e.type === 'move-used' && (e.data as any)['moveId'] === 'triattack');
+    expect(used).toBeDefined();
+  });
+
+  it('uses thunderbolt on electric terrain', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'naturepower', currentPp: 20, maxPp: 20 };
+    state.field.terrain = { type: 'electric', turnsRemaining: 5 };
+
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    const used = events.find(e => e.type === 'move-used' && (e.data as any)['moveId'] === 'thunderbolt');
+    expect(used).toBeDefined();
   });
 });

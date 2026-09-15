@@ -118,6 +118,24 @@ const NATURAL_GIFT_TABLE: Record<string, { power: number; type: PokemonType }> =
   'razz-berry':   { power: 80, type: 'Steel' },
 };
 
+const PLATE_TYPE_MAP: Record<string, string> = {
+  'flame-plate': 'Fire', 'splash-plate': 'Water', 'zap-plate': 'Electric',
+  'meadow-plate': 'Grass', 'icicle-plate': 'Ice', 'fist-plate': 'Fighting',
+  'toxic-plate': 'Poison', 'earth-plate': 'Ground', 'sky-plate': 'Flying',
+  'mind-plate': 'Psychic', 'insect-plate': 'Bug', 'stone-plate': 'Rock',
+  'spooky-plate': 'Ghost', 'draco-plate': 'Dragon', 'dread-plate': 'Dark',
+  'iron-plate': 'Steel', 'pixie-plate': 'Fairy',
+};
+
+const MEMORY_TYPE_MAP: Record<string, string> = {
+  'fire-memory': 'Fire', 'water-memory': 'Water', 'electric-memory': 'Electric',
+  'grass-memory': 'Grass', 'ice-memory': 'Ice', 'fighting-memory': 'Fighting',
+  'poison-memory': 'Poison', 'ground-memory': 'Ground', 'flying-memory': 'Flying',
+  'psychic-memory': 'Psychic', 'bug-memory': 'Bug', 'rock-memory': 'Rock',
+  'ghost-memory': 'Ghost', 'dragon-memory': 'Dragon', 'dark-memory': 'Dark',
+  'steel-memory': 'Steel', 'fairy-memory': 'Fairy',
+};
+
 const CHOICE_LOCK_ITEMS = new Set(['choice-band', 'choice-specs', 'choice-scarf']);
 
 const ABILITY_VOLATILE_CLEAR = new Set(['slow-start', 'truant']);
@@ -265,13 +283,15 @@ export class BattleEngine {
 
       const teamIdx = state.teams.findIndex((t) => t.slots.some((sl) => sl.slotId === slotId)) as 0 | 1;
       const effectiveSpe = this.getEffectiveSpeed(active, state, teamIdx);
-      return { slotId, priority, spe: effectiveSpe, tieSeed: this.rng() };
+      const hasCustap = active.volatileStatus.some(v => v.name === 'custap-active');
+      return { slotId, priority, spe: effectiveSpe, tieSeed: this.rng(), hasCustap };
     });
 
     const trickRoomActive = state.field.trickroom > 0;
     return entries
       .sort((a, b) =>
         b.priority - a.priority ||
+        (b.hasCustap ? 1 : 0) - (a.hasCustap ? 1 : 0) ||
         (trickRoomActive ? a.spe - b.spe : b.spe - a.spe) ||
         a.tieSeed - b.tieSeed,
       )
@@ -786,6 +806,17 @@ export class BattleEngine {
     // Ion Deluge: this-turn field flag makes Normal moves Electric
     if (s.field.ionDeluge && effectiveMoveType === 'Normal') {
       effectiveMoveType = 'Electric';
+    }
+
+    // Judgment: type from held Plate
+    if (move.id === 'judgment') {
+      const plate = (attacker as any).heldItem ?? '';
+      effectiveMoveType = (PLATE_TYPE_MAP[plate] ?? 'Normal') as any;
+    }
+    // Multiattack: type from held Memory
+    if (move.id === 'multiattack') {
+      const memory = (attacker as any).heldItem ?? '';
+      effectiveMoveType = (MEMORY_TYPE_MAP[memory] ?? 'Normal') as any;
     }
 
     // Powder: if attacker has powder volatile and uses a Fire move, cancel move and self-damage
@@ -1480,6 +1511,7 @@ export class BattleEngine {
           basePower: perTargetBasePower,
           target: attacker,
           isPhysical,
+          effectiveness,
         });
         if (defItemResult !== undefined) {
           const mult = typeof defItemResult === 'number' ? defItemResult : defItemResult.multiplier;
@@ -1548,6 +1580,7 @@ export class BattleEngine {
           events.push({ type: 'damage-dealt', data: {
             attackerSlotId, targetSlotId, moveId: move.id,
             damage: cappedDamage, effectiveness, remainingHp: target.currentHp,
+            moveType: effectiveMoveType,
           }});
 
           if (endureEntry && cappedDamage < actualDamage) {
@@ -1908,9 +1941,10 @@ export class BattleEngine {
         }
       }
 
-      // Life Orb recoil etc.
+      // Life Orb recoil + attacker-held berry triggers (e.g. Custap, Micle, Figy at low HP)
       if (totalDamage > 0 && itemHooks.onAfterDamageTaken) {
-        const { hpDelta } = itemHooks.onAfterDamageTaken({ holder: attacker, state: s, damageTaken: totalDamage });
+        const attackerBerryResult = itemHooks.onAfterDamageTaken({ holder: attacker, state: s, damageTaken: totalDamage });
+        const { hpDelta } = attackerBerryResult;
         if (hpDelta < 0) {
           const recoil = Math.min(-hpDelta, attacker.currentHp);
           attacker.currentHp -= recoil;
@@ -1920,6 +1954,21 @@ export class BattleEngine {
             attacker.currentHp = 0;
             events.push({ type: 'faint', data: { slotId: attackerSlotId, instanceId: attacker.instanceId } });
           }
+        } else if (hpDelta > 0) {
+          const heal = Math.min(hpDelta, attacker.maxHp - attacker.currentHp);
+          if (heal > 0) {
+            attacker.currentHp += heal;
+            events.push({ type: 'heal', data: { slotId: attackerSlotId, amount: heal, remainingHp: attacker.currentHp } });
+          }
+        }
+        if (attackerBerryResult.statBoostDeltas) {
+          events.push(applyStatBoost(attacker, attackerSlotId, attackerBerryResult.statBoostDeltas as Partial<Record<keyof StatBoosts, number>>));
+        }
+        if (attackerBerryResult.consume && attacker.heldItem) {
+          const consumed = attacker.heldItem;
+          attacker.lastConsumedItem = consumed;
+          delete attacker.heldItem;
+          events.push({ type: 'item-consumed', data: { slotId: attackerSlotId, item: consumed, reason: 'triggered' } });
         }
       }
 

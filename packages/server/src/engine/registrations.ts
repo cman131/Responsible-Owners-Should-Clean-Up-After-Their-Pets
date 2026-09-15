@@ -1769,6 +1769,19 @@ export function buildDefaultRegistry(data: DataLoader = new DataLoader()): MoveE
     return { events };
   }));
 
+  // Nature Power: status move that executes a sub-move based on terrain
+  r.register('naturepower', (ctx) => {
+    const NATUREPOWER_MOVE: Record<string, string> = {
+      electric: 'thunderbolt',
+      grassy: 'energyball',
+      misty: 'moonblast',
+      psychic: 'psychic',
+    };
+    const terrain = ctx.battle.field.terrain?.type;
+    const subMoveId = terrain ? (NATUREPOWER_MOVE[terrain] ?? 'triattack') : 'triattack';
+    return { events: ctx.executeSubMove(subMoveId) };
+  });
+
   // Tidy Up: removes entry hazards + substitutes, boosts ATK and SPE
   r.register('tidyup', custom((ctx) => {
     const events: TurnResolveEvent[] = [];
