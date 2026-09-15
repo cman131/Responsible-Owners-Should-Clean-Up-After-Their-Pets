@@ -257,6 +257,31 @@ const ITEM_HOOKS: Record<string, ItemHooks> = {
       return 1;
     },
   },
+  // Reactive berries
+  'kee-berry': {
+    onAfterDamageTaken: ({ damageTaken, isPhysical }) =>
+      damageTaken > 0 && isPhysical
+        ? { hpDelta: 0, statBoostDeltas: { def: 1 }, consume: true }
+        : { hpDelta: 0 },
+  },
+  'maranga-berry': {
+    onAfterDamageTaken: ({ damageTaken, isPhysical }) =>
+      damageTaken > 0 && !isPhysical
+        ? { hpDelta: 0, statBoostDeltas: { spd: 1 }, consume: true }
+        : { hpDelta: 0 },
+  },
+  'jaboca-berry': {
+    onAfterHit: ({ isPhysical, holder, totalDamage }) =>
+      isPhysical && totalDamage > 0
+        ? { directDamageToAttacker: Math.floor(holder.maxHp / 8), consume: true }
+        : null,
+  },
+  'rowap-berry': {
+    onAfterHit: ({ isPhysical, holder, totalDamage }) =>
+      !isPhysical && totalDamage > 0
+        ? { directDamageToAttacker: Math.floor(holder.maxHp / 8), consume: true }
+        : null,
+  },
 };
 
 export const IMPLEMENTED_ITEM_IDS: ReadonlySet<string> = new Set(Object.keys(ITEM_HOOKS));
