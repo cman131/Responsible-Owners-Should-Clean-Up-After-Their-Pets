@@ -162,6 +162,7 @@ describe('dynamicPower integration', () => {
     expect(paybackDmg).toBeDefined();
     expect(normalDmg).toBeDefined();
     // When target moved first, payback should deal roughly 2× the non-doubled damage
-    expect(paybackDmg!).toBeGreaterThan(normalDmg! * 1.8);
+    // Threshold is 1.5 (not 2.0) because the +2 base in the damage formula dilutes the ratio
+    expect(paybackDmg!).toBeGreaterThan(normalDmg! * 1.5);
   });
 });

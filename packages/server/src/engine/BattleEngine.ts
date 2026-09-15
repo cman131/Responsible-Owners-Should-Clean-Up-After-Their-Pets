@@ -618,9 +618,40 @@ export class BattleEngine {
         return { newState: s, events };
       }
 
+      const preHandlerBoosts = filteredTargets.map(t => ({ ...t.statBoosts }));
+
       if (handler) {
         const handlerResult = handler(ctx);
         events.push(...handlerResult.events);
+
+        // White Herb / Eject Pack: fire when a status move lowered a stat
+        for (let tIdx = 0; tIdx < filteredTargets.length; tIdx++) {
+          const t = filteredTargets[tIdx]!;
+          const tSlotId = filteredSlotIds[tIdx]!;
+          const pre = preHandlerBoosts[tIdx]!;
+          if (!t.fainted && t.heldItem) {
+            const statWasDropped = (Object.keys(t.statBoosts) as (keyof StatBoosts)[]).some(k => t.statBoosts[k] < pre[k]!);
+            if (statWasDropped) {
+              const dropResult = getItemHooks(t.heldItem).onStatDropped?.({ holder: t, state: s });
+              if (dropResult) {
+                if (dropResult.restoreStats) {
+                  const toRestore = (Object.keys(t.statBoosts) as (keyof StatBoosts)[]).filter(k => t.statBoosts[k] < 0);
+                  for (const k of toRestore) t.statBoosts[k] = 0;
+                  if (toRestore.length > 0) {
+                    events.push({ type: 'stat-change', data: { slotId: tSlotId, changes: Object.fromEntries(toRestore.map(k => [k, 0])) } });
+                  }
+                }
+                if (dropResult.consume && t.heldItem) {
+                  const consumed = t.heldItem;
+                  t.lastConsumedItem = consumed;
+                  delete t.heldItem;
+                  events.push({ type: 'item-consumed', data: { slotId: tSlotId, item: consumed, reason: 'triggered' } });
+                }
+              }
+            }
+          }
+        }
+
         if (handlerResult.forceSwitch) {
           const { targetSlotId, targetInstanceId } = handlerResult.forceSwitch;
           const switchResult = this.performSwitch(s, targetSlotId, targetInstanceId, 'phased');
