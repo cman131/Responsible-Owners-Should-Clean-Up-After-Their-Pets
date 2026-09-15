@@ -150,13 +150,18 @@ const resolvers: Record<string, PowerResolver> = {
   frustration: (_move, attacker) =>
     Math.max(1, Math.floor((255 - (attacker.friendship ?? 70)) * 2 / 5)),
 
-  // TODO: needs field flag for last fainted team member
-  retaliate: (move) => move.basePower,
+  payback: (move, _attacker, target) =>
+    target.movedThisTurn ? move.basePower * 2 : move.basePower,
 
-  // TODO: needs turn-order volatile flags
-  payback: (move) => move.basePower,
-  avalanche: (move) => move.basePower,
-  assurance: (move) => move.basePower,
+  avalanche: (move, _attacker, target) =>
+    target.movedThisTurn ? move.basePower * 2 : move.basePower,
+
+  assurance: (move, _attacker, target) =>
+    target.tookDamageThisTurn ? move.basePower * 2 : move.basePower,
+
+  retaliate: (move, _attacker, _target, field) =>
+    field.allyFaintedTeamIndex !== undefined && field.allyFaintedTeamIndex === field.attackerTeamIndex
+      ? move.basePower * 2 : move.basePower,
 
   // TODO: needs consecutive-use counters
   echoedvoice: (move) => move.basePower,

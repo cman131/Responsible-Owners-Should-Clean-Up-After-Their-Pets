@@ -49,4 +49,32 @@ describe('resolvePower', () => {
     expect(resolvePower(move('acrobatics', 55), mon({ heldItem: undefined }), mon(), field())).toBe(110);
     expect(resolvePower(move('acrobatics', 55), mon({ heldItem: 'oran-berry' }), mon(), field())).toBe(55);
   });
+
+  it('payback: doubles (60→120) when target already moved this turn', () => {
+    expect(resolvePower(move('payback', 60), mon(), mon({ movedThisTurn: true }), field())).toBe(120);
+    expect(resolvePower(move('payback', 60), mon(), mon({ movedThisTurn: false }), field())).toBe(60);
+  });
+
+  it('avalanche: doubles (60→120) when target already moved this turn', () => {
+    expect(resolvePower(move('avalanche', 60), mon(), mon({ movedThisTurn: true }), field())).toBe(120);
+    expect(resolvePower(move('avalanche', 60), mon(), mon({ movedThisTurn: false }), field())).toBe(60);
+  });
+
+  it('assurance: doubles (60→120) when target took damage earlier this turn', () => {
+    expect(resolvePower(move('assurance', 60), mon(), mon({ tookDamageThisTurn: true }), field())).toBe(120);
+    expect(resolvePower(move('assurance', 60), mon(), mon({ tookDamageThisTurn: false }), field())).toBe(60);
+  });
+
+  it('retaliate: doubles (70→140) when ally fainted last turn on attacker team', () => {
+    const attacker = mon();
+    const fieldWithFaint = { ...field(), allyFaintedTeamIndex: 0, attackerTeamIndex: 0 };
+    expect(resolvePower(move('retaliate', 70), attacker, mon(), fieldWithFaint)).toBe(140);
+
+    const fieldNoFaint = { ...field(), allyFaintedTeamIndex: undefined, attackerTeamIndex: 0 };
+    expect(resolvePower(move('retaliate', 70), attacker, mon(), fieldNoFaint)).toBe(70);
+
+    // ally fainted on opposite team — should NOT double
+    const fieldWrongTeam = { ...field(), allyFaintedTeamIndex: 1, attackerTeamIndex: 0 };
+    expect(resolvePower(move('retaliate', 70), attacker, mon(), fieldWrongTeam)).toBe(70);
+  });
 });
