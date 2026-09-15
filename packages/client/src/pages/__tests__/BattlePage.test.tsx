@@ -93,7 +93,7 @@ describe('BattlePage', () => {
     act(() => {
       onCall![1]({ slotId: 'a1', validMoves: [{ index: 0, moveId: 'tackle', pp: 35, disabled: false, targetType: 'normal', legalTargets: ['b1'] }], canSwitch: false, switchTargets: [], canTerastallize: false });
     });
-    expect(screen.getByText('tackle')).toBeTruthy();
+    expect(screen.getByText('Tackle')).toBeTruthy();
   });
 
   it('shows target dropdown when move has multiple legal targets', () => {
@@ -102,7 +102,7 @@ describe('BattlePage', () => {
     act(() => {
       onCall![1]({ slotId: 'a1', validMoves: [{ index: 0, moveId: 'tackle', pp: 35, disabled: false, targetType: 'normal', legalTargets: ['b1', 'b2'] }], canSwitch: false, switchTargets: [], canTerastallize: false });
     });
-    fireEvent.click(screen.getByText('tackle'));
+    fireEvent.click(screen.getByText('Tackle'));
     expect(screen.getByRole('combobox')).toBeTruthy();
   });
 
@@ -112,7 +112,7 @@ describe('BattlePage', () => {
     act(() => {
       onCall![1]({ slotId: 'a1', validMoves: [{ index: 0, moveId: 'roost', pp: 10, disabled: false, targetType: 'self', legalTargets: ['a1'] }], canSwitch: false, switchTargets: [], canTerastallize: false });
     });
-    fireEvent.click(screen.getByText('roost'));
+    fireEvent.click(screen.getByText('Roost'));
     expect(mockSocket.emit).toHaveBeenCalledWith('action:submit', expect.objectContaining({ action: expect.objectContaining({ type: 'move', targetSlotId: 'a1' }) }));
     expect(screen.queryByRole('combobox')).toBeNull();
     expect(screen.queryByText('Confirm')).toBeNull();
@@ -135,7 +135,7 @@ describe('BattlePage', () => {
       });
     });
     expect(screen.getByText('MUST RECHARGE')).toBeTruthy();
-    expect(screen.queryByText('hyperbeam')).toBeNull();
+    expect(screen.queryByText('Hyperbeam')).toBeNull();
   });
 
   it('gates action panel behind turn:resolve playback queue', async () => {
@@ -166,13 +166,13 @@ describe('BattlePage', () => {
     });
 
     // Move panel must NOT be visible — queue is still draining
-    expect(screen.queryByText('watergun')).toBeNull();
+    expect(screen.queryByText('Watergun')).toBeNull();
 
     // Advance past the 600ms delay
     await act(async () => { vi.advanceTimersByTime(700); });
 
     // Now the queue is empty → pending action released → move panel visible
-    expect(screen.getByText('watergun')).toBeTruthy();
+    expect(screen.getByText('Watergun')).toBeTruthy();
 
     vi.useRealTimers();
   });

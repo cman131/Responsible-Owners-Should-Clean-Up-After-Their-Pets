@@ -2,6 +2,7 @@ import type { BattleState, MoveAction, SwitchAction, TurnResolveEvent, SlotState
 import { BattleEngine } from '../engine/index.js';
 import { getLegalTargets } from '../engine/targeting.js';
 import { calcExpYield, distributeExp, checkLevelUps, type ExpAward, type LevelUpResult } from '../engine/exp.js';
+import { calcAllStats } from '../engine/stats.js';
 import { DataLoader } from '../data/loader.js';
 import { effectiveAbilityId } from '../engine/abilities.js';
 
@@ -298,6 +299,19 @@ export class BattleRoom {
             const levelUp = checkLevelUps(mon, award.newTotal, growth);
             if (levelUp) {
               mon.level = levelUp.newLevel;
+              const levelUpSpecies = this.data.getSpecies(mon.speciesId);
+              if (levelUpSpecies && mon.ivs && mon.evs && mon.nature) {
+                const oldHp = mon.stats.hp;
+                mon.stats = calcAllStats({
+                  baseStats: levelUpSpecies.baseStats,
+                  ivs: mon.ivs,
+                  evs: mon.evs,
+                  level: mon.level,
+                  nature: mon.nature,
+                });
+                mon.maxHp = mon.stats.hp;
+                mon.currentHp = Math.min(mon.currentHp + (mon.stats.hp - oldHp), mon.maxHp);
+              }
               this.onLevelUpCb?.(levelUp, mon.stats);
             }
           }
@@ -328,19 +342,31 @@ export class BattleRoom {
     return undefined;
   }
 
-  private getLockedReason(active: PartyMember): 'recharge' | 'sleep' | 'freeze' | undefined {
+  private getLockedReason(active: PartyMember): 'recharge' | 'sleep' | 'freeze' | 'bide' | undefined {
     if (active.volatileStatus.some(v => v.name === 'recharge')) return 'recharge';
+    if (active.volatileStatus.some(v => v.name === 'bide')) return 'bide';
     if (active.status === 'slp') return 'sleep';
     if (active.status === 'frz') return 'freeze';
   }
 
   private buildValidMoves(slotId: string, active: PartyMember): ActionRequestPayload['validMoves'] {
+    if (active.moves.every(m => m.currentPp === 0)) {
+      return [{
+        index: 0,
+        moveId: 'struggle',
+        pp: 1,
+        disabled: false,
+        targetType: 'normal',
+        legalTargets: getLegalTargets(this.state, slotId, 'normal'),
+      }];
+    }
+
     const disableEntry = active.volatileStatus.find(v => v.name === 'disable');
     const tauntActive = active.volatileStatus.some(v => v.name === 'taunt');
     const encoreEntry = active.volatileStatus.find(v => v.name === 'encore');
     const tormentActive = active.volatileStatus.some(v => v.name === 'torment');
 
-    return active.moves.map((m, i) => {
+    const result = active.moves.map((m, i) => {
       const moveData = this.data.getMove(m.moveId);
       if (!moveData) console.warn(`[BattleRoom] Unknown moveId "${m.moveId}" — defaulting targetType to 'normal'`);
       const targetType = moveData?.target ?? 'normal';
@@ -365,6 +391,20 @@ export class BattleRoom {
         legalTargets: getLegalTargets(this.state, slotId, targetType),
       };
     });
+
+    // If all moves ended up disabled (e.g. Torment + Choice lock deadlock), fall back to Struggle
+    if (result.every(m => m.disabled)) {
+      return [{
+        index: 0,
+        moveId: 'struggle',
+        pp: 1,
+        disabled: false,
+        targetType: 'normal',
+        legalTargets: getLegalTargets(this.state, slotId, 'normal'),
+      }];
+    }
+
+    return result;
   }
 
   private activeSlotsNeedingAction(): string[] {
@@ -518,7 +558,10 @@ export class BattleRoom {
         ...faintSwitchSlots.filter((s) => !pivotSlotSet.has(s.slotId)),
       ];
 
-      this.awaitingForcedSwitches = new Map(allSwitchSlots.map((s) => [s.slotId, 'forced' as const]));
+      this.awaitingForcedSwitches = new Map<string, 'forced' | 'phased'>([
+        ...pivotSlotStates.map((s) => [s.slotId, 'phased'] as [string, 'phased']),
+        ...faintSwitchSlots.filter((s) => !pivotSlotSet.has(s.slotId)).map((s) => [s.slotId, 'forced'] as [string, 'forced']),
+      ]);
 
       try {
         this.onSwitchRequestCb?.(allSwitchSlots);

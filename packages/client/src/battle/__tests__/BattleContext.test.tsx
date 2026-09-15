@@ -59,7 +59,7 @@ describe('turn:resolve', () => {
     await fireTurnResolveAndDrain([{ type: 'faint', data: { slotId: 's1', instanceId: 'i1' } }]);
     const log = result.current.turnLog;
     expect(log[0]).toEqual({ type: 'round-start', text: '-------Round 1-------' });
-    expect(log[1]).toEqual({ type: 'normal', text: "s1's Pokémon fainted!" });
+    expect(log[1]).toEqual({ type: 'normal', text: 's1 fainted!' });
   });
 
   it('filters out events that produce empty text', async () => {
@@ -99,7 +99,7 @@ describe('battle:history', () => {
     });
     const log = result.current.turnLog;
     expect(log[0]).toEqual({ type: 'round-start', text: '-------Round 0-------' });
-    expect(log[1]).toEqual({ type: 'normal', text: "a1's Pokémon fainted!" });
+    expect(log[1]).toEqual({ type: 'normal', text: 'a1 fainted!' });
     expect(log[2]).toEqual({ type: 'round-start', text: '-------Round 1-------' });
     expect(log[3]).toEqual({ type: 'normal', text: 'b1 restored HP.' });
   });

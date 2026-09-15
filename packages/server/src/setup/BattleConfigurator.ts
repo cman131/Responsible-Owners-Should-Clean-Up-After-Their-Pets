@@ -106,6 +106,9 @@ export class BattleConfigurator {
     if (set.heldItem !== undefined) member.heldItem = set.heldItem;
     if (set.teraType !== undefined) member.teraType = set.teraType;
     member.isEvioliteEligible = species.evolutionStage < 3;
+    member.ivs = set.ivs;
+    member.evs = set.evs;
+    member.nature = set.nature;
 
     return member;
   }

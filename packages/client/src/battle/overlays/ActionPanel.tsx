@@ -15,10 +15,15 @@ interface ActionPanelProps {
   theme?: 'player' | 'npc';
 }
 
+function formatMoveName(id: string): string {
+  return id.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 const LOCKED_LABELS: Record<NonNullable<ActionRequestPayload['lockedReason']>, string> = {
   recharge: 'MUST RECHARGE',
   sleep: 'FAST ASLEEP',
   freeze: 'FROZEN SOLID',
+  bide: 'STORING ENERGY',
 };
 
 export function ActionPanel({
@@ -122,7 +127,7 @@ export function ActionPanel({
                 opacity: disabled ? 0.4 : 1, cursor: disabled ? 'not-allowed' : 'pointer',
               }}
             >
-              <span style={{ fontSize: 13, textTransform: 'capitalize' }}>{mv.moveId}</span>
+              <span style={{ fontSize: 13 }}>{formatMoveName(mv.moveId)}</span>
               <span style={{ fontSize: 11, color: '#aaa' }}>PP {mv.pp}</span>
             </button>
           );

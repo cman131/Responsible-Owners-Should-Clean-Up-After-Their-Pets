@@ -86,7 +86,7 @@ describe('ActionPanel — locked state', () => {
 
   it('does not render move buttons when locked', () => {
     render(<ActionPanel request={{ ...baseRequest, lockedReason: 'recharge' }} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={vi.fn()} />);
-    expect(screen.queryByText('flamethrower')).toBeNull();
+    expect(screen.queryByText('Flamethrower')).toBeNull();
   });
 
   it('Confirm on locked panel calls onSubmitMove(0)', () => {
@@ -100,10 +100,10 @@ describe('ActionPanel — locked state', () => {
 describe('ActionPanel — move grid', () => {
   it('renders all 4 move buttons', () => {
     render(<ActionPanel request={baseRequest} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={vi.fn()} />);
-    expect(screen.getByText('flamethrower')).toBeTruthy();
-    expect(screen.getByText('airslash')).toBeTruthy();
-    expect(screen.getByText('roost')).toBeTruthy();
-    expect(screen.getByText('willowisp')).toBeTruthy();
+    expect(screen.getByText('Flamethrower')).toBeTruthy();
+    expect(screen.getByText('Airslash')).toBeTruthy();
+    expect(screen.getByText('Roost')).toBeTruthy();
+    expect(screen.getByText('Willowisp')).toBeTruthy();
   });
 
   it('disables a move with pp=0', () => {
@@ -123,7 +123,7 @@ describe('ActionPanel — move grid', () => {
   it('auto-submits a self-targeting move immediately on click', () => {
     const onSubmitMove = vi.fn();
     render(<ActionPanel request={baseRequest} slotId="a1" state={mockState} onSubmitMove={onSubmitMove} onSubmitSwitch={vi.fn()} />);
-    fireEvent.click(screen.getByText('roost'));
+    fireEvent.click(screen.getByText('Roost'));
     expect(onSubmitMove).toHaveBeenCalledWith(2, 'a1', undefined);
     expect(screen.queryByRole('combobox')).toBeNull();
   });
@@ -131,7 +131,7 @@ describe('ActionPanel — move grid', () => {
   it('auto-submits a choose move with exactly one legal target immediately on click', () => {
     const onSubmitMove = vi.fn();
     render(<ActionPanel request={baseRequest} slotId="a1" state={mockState} onSubmitMove={onSubmitMove} onSubmitSwitch={vi.fn()} />);
-    fireEvent.click(screen.getByText('flamethrower'));
+    fireEvent.click(screen.getByText('Flamethrower'));
     expect(onSubmitMove).toHaveBeenCalledWith(0, 'b1', undefined);
   });
 
@@ -152,24 +152,24 @@ describe('ActionPanel — target selector', () => {
 
   it('shows target dropdown when choose move has multiple legal targets', () => {
     render(<ActionPanel request={multiTargetRequest} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={vi.fn()} />);
-    fireEvent.click(screen.getByText('earthquake'));
+    fireEvent.click(screen.getByText('Earthquake'));
     expect(screen.getByRole('combobox')).toBeTruthy();
   });
 
   it('clicking Confirm submits with the selected target', () => {
     const onSubmitMove = vi.fn();
     render(<ActionPanel request={multiTargetRequest} slotId="a1" state={mockState} onSubmitMove={onSubmitMove} onSubmitSwitch={vi.fn()} />);
-    fireEvent.click(screen.getByText('earthquake'));
+    fireEvent.click(screen.getByText('Earthquake'));
     fireEvent.click(screen.getByText('Confirm'));
     expect(onSubmitMove).toHaveBeenCalledWith(0, 'b1', undefined);
   });
 
   it('clicking ✕ cancels target selection and returns to move grid', () => {
     render(<ActionPanel request={multiTargetRequest} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={vi.fn()} />);
-    fireEvent.click(screen.getByText('earthquake'));
+    fireEvent.click(screen.getByText('Earthquake'));
     fireEvent.click(screen.getByText('✕'));
     expect(screen.queryByRole('combobox')).toBeNull();
-    expect(screen.getByText('earthquake')).toBeTruthy();
+    expect(screen.getByText('Earthquake')).toBeTruthy();
   });
 
   it('shows formatted names display (not dropdown) for listed moves', () => {
@@ -181,7 +181,7 @@ describe('ActionPanel — target selector', () => {
       ],
     };
     render(<ActionPanel request={listedRequest} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={vi.fn()} />);
-    fireEvent.click(screen.getByText('surf'));
+    fireEvent.click(screen.getByText('Surf'));
     expect(screen.queryByRole('combobox')).toBeNull();
     expect(screen.getByText('Confirm')).toBeTruthy();
     expect(screen.getByText('Bob')).toBeTruthy();
@@ -197,7 +197,7 @@ describe('ActionPanel — target selector', () => {
       ],
     };
     render(<ActionPanel request={listedRequest} slotId="a1" state={mockState} onSubmitMove={onSubmitMove} onSubmitSwitch={vi.fn()} />);
-    fireEvent.click(screen.getByText('surf'));
+    fireEvent.click(screen.getByText('Surf'));
     fireEvent.click(screen.getByText('Confirm'));
     expect(onSubmitMove).toHaveBeenCalledWith(0, undefined, undefined);
   });
@@ -220,7 +220,7 @@ describe('ActionPanel — switch mode', () => {
     fireEvent.click(screen.getByText('SWITCH POKÉMON'));
     expect(screen.getByText('Blastoise L45')).toBeTruthy();
     expect(screen.getByText('[Cancel]')).toBeTruthy();
-    expect(screen.queryByText('flamethrower')).toBeNull();
+    expect(screen.queryByText('Flamethrower')).toBeNull();
   });
 
   it('clicking [Cancel] returns to move grid without submitting', () => {
@@ -228,7 +228,7 @@ describe('ActionPanel — switch mode', () => {
     render(<ActionPanel request={switchableRequest} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={onSubmitSwitch} />);
     fireEvent.click(screen.getByText('SWITCH POKÉMON'));
     fireEvent.click(screen.getByText('[Cancel]'));
-    expect(screen.getByText('flamethrower')).toBeTruthy();
+    expect(screen.getByText('Flamethrower')).toBeTruthy();
     expect(onSubmitSwitch).not.toHaveBeenCalled();
   });
 
@@ -263,8 +263,23 @@ describe('ActionPanel — tera checkbox', () => {
     const onSubmitMove = vi.fn();
     render(<ActionPanel request={{ ...baseRequest, canTerastallize: true }} slotId="a1" state={mockState} onSubmitMove={onSubmitMove} onSubmitSwitch={vi.fn()} />);
     fireEvent.click(screen.getByLabelText('Terastallize this turn'));
-    fireEvent.click(screen.getByText('roost'));
+    fireEvent.click(screen.getByText('Roost'));
     expect(onSubmitMove).toHaveBeenCalledWith(2, 'a1', true);
+  });
+});
+
+describe('ActionPanel — move name formatting', () => {
+  it('displays formatted move name (capitalised, dashes replaced with spaces)', () => {
+    const hyphenatedRequest: ActionRequestPayload = {
+      ...baseRequest,
+      validMoves: [
+        { index: 0, moveId: 'ice-beam', pp: 10, disabled: false, targetType: 'normal', legalTargets: ['b1'] },
+        ...baseRequest.validMoves.slice(1),
+      ],
+    };
+    render(<ActionPanel request={hyphenatedRequest} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={vi.fn()} />);
+    expect(screen.getByText('Ice Beam')).toBeTruthy();
+    expect(screen.queryByText('ice-beam')).toBeNull();
   });
 });
 

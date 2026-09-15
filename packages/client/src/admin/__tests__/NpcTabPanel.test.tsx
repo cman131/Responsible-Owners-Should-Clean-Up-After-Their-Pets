@@ -54,13 +54,13 @@ describe('NpcTabPanel', () => {
 
   it('shows move buttons for the active tab', () => {
     render(<NpcTabPanel battleId="test" npcRequests={npcRequests} state={state} />);
-    expect(screen.getByText('surf')).toBeTruthy();
-    expect(screen.getByText('icebeam')).toBeTruthy();
+    expect(screen.getByText('Surf')).toBeTruthy();
+    expect(screen.getByText('Icebeam')).toBeTruthy();
   });
 
   it('emits npc-action and marks tab as submitted on single-target move click', () => {
     render(<NpcTabPanel battleId="test" npcRequests={npcRequests} state={state} />);
-    fireEvent.click(screen.getByText('surf'));
+    fireEvent.click(screen.getByText('Surf'));
     expect(mockSocket.emit).toHaveBeenCalledWith('admin:action', {
       type: 'npc-action',
       data: { battleId: 'test', slotId: 'b1', action: { type: 'move', moveIndex: 0, targetSlotId: 'a1' } },
@@ -73,7 +73,7 @@ describe('NpcTabPanel', () => {
       { slotId: 'b1', displayName: 'Blastoise', request: makeRequest('b1', ['a1', 'a2']) },
     ];
     render(<NpcTabPanel battleId="test" npcRequests={multiTargetRequests} state={state} />);
-    fireEvent.click(screen.getByText('surf'));
+    fireEvent.click(screen.getByText('Surf'));
     expect(screen.getByRole('combobox')).toBeTruthy();
     expect(screen.queryByText('Blastoise ✓')).toBeFalsy(); // not yet submitted
   });
@@ -83,7 +83,7 @@ describe('NpcTabPanel', () => {
       { slotId: 'b1', displayName: 'Blastoise', request: makeRequest('b1', ['a1', 'a2']) },
     ];
     render(<NpcTabPanel battleId="test" npcRequests={multiTargetRequests} state={state} />);
-    fireEvent.click(screen.getByText('surf'));
+    fireEvent.click(screen.getByText('Surf'));
     fireEvent.click(screen.getByText('Confirm'));
     expect(mockSocket.emit).toHaveBeenCalledWith('admin:action', expect.objectContaining({
       type: 'npc-action',
@@ -153,7 +153,7 @@ describe('NpcTabPanel — voluntary switch', () => {
     fireEvent.click(screen.getByText('SWITCH POKÉMON'));
     expect(screen.getByText(/Squirtle/)).toBeTruthy();
     expect(screen.getByText('[Cancel]')).toBeTruthy();
-    expect(screen.queryByText('surf')).toBeNull();
+    expect(screen.queryByText('Surf')).toBeNull();
   });
 
   it('clicking a bench Pokémon submits the switch action and marks slot submitted', () => {
@@ -173,7 +173,7 @@ describe('NpcTabPanel — voluntary switch', () => {
     render(<NpcTabPanel battleId="test" npcRequests={requests} state={stateWithBench} />);
     fireEvent.click(screen.getByText('SWITCH POKÉMON'));
     fireEvent.click(screen.getByText('[Cancel]'));
-    expect(screen.getByText('surf')).toBeTruthy();
+    expect(screen.getByText('Surf')).toBeTruthy();
     expect(mockSocket.emit).not.toHaveBeenCalled();
   });
 

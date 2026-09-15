@@ -86,6 +86,18 @@ describe('getPendingActionRequest', () => {
     const room = new BattleRoom({ initialState: state });
     expect(room.getPendingActionRequest('slot-a1')).toBeNull();
   });
+
+  it('returns Struggle as the only move when all move PP is 0', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.isNpc = false;
+    const active = state.teams[0]!.slots[0]!.party[0]!;
+    for (const m of active.moves) m.currentPp = 0;
+    const room = new BattleRoom({ initialState: state });
+    const req = room.getPendingActionRequest('slot-a1');
+    expect(req!.validMoves).toHaveLength(1);
+    expect(req!.validMoves[0]!.moveId).toBe('struggle');
+    expect(req!.validMoves[0]!.disabled).toBe(false);
+  });
 });
 
 describe('onPlayerActionRequired', () => {
@@ -169,6 +181,25 @@ describe('Choice lock enforcement', () => {
     room.submitAction('slot-b1', { type: 'move', moveIndex: 0 }); // resolves turn
 
     expect(room.getState().teams[0]!.slots[0]!.party[0]!.lockedMoveId).toBe('flamethrower');
+  });
+
+  it('returns Struggle when Torment + Choice lock makes all moves disabled', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.isNpc = false;
+    const p1 = state.teams[0]!.slots[0]!.party[0]!;
+    // Choice-locked to flamethrower (move 0) AND tormented (can't use last move = flamethrower)
+    p1.heldItem = 'choice-band';
+    p1.lockedMoveId = 'flamethrower';
+    p1.lastMoveId = 'flamethrower';
+    p1.volatileStatus.push({ name: 'torment', turnsRemaining: -1 });
+
+    const room = new BattleRoom({ initialState: state });
+    const req = room.getPendingActionRequest('slot-a1');
+
+    expect(req).not.toBeNull();
+    expect(req!.validMoves).toHaveLength(1);
+    expect(req!.validMoves[0]!.moveId).toBe('struggle');
+    expect(req!.validMoves[0]!.disabled).toBe(false);
   });
 });
 
@@ -324,9 +355,78 @@ describe('getPendingActionRequest — lockedReason', () => {
     expect(req!.lockedReason).toBe('freeze');
   });
 
+  it('returns lockedReason "bide" when active pokemon has bide volatile', () => {
+    const room = makeHumanRoom({ volatileStatus: [{ name: 'bide', turnsRemaining: 1 }] });
+    const req = room.getPendingActionRequest('slot-a1');
+    expect(req!.lockedReason).toBe('bide');
+  });
+
   it('returns no lockedReason for a healthy pokemon', () => {
     const room = makeHumanRoom();
     const req = room.getPendingActionRequest('slot-a1');
     expect(req!.lockedReason).toBeUndefined();
+  });
+});
+
+describe('level-up stat recalculation', () => {
+  // Charizard (speciesId=6): MediumSlow growth, baseExpYield=240
+  // Level 51 threshold = floor(6*51^3/5 - 15*51^2 + 100*51 - 140) = 125126
+  // Exp gained from killing lv50 Charizard = floor(240*50/7) = 1714
+  // So start with expTotal = 125126 - 1714 = 123412 to trigger level-up on one faint
+  //
+  // Charizard stats at lv50, 31 IVs, 0 EVs, Hardy nature:
+  //   atk = floor(floor((2*84+31)*50)/100) + 5 = 104
+  // At lv51:
+  //   atk = floor(floor((2*84+31)*51)/100) + 5 = 106
+  it('updates mon.stats after level-up when ivs/evs/nature are present', () => {
+    const state = make1v1State();
+    // Set p1 near level-up threshold
+    const p1 = state.teams[0]!.slots[0]!.party[0]!;
+    p1.expTotal = 123412;
+    p1.level = 50;
+    p1.stats = { hp: 247, atk: 104, def: 97, spa: 136, spd: 106, spe: 123 }; // lv50 values
+    p1.maxHp = 247;
+    p1.currentHp = 247;
+    // Store ivs/evs/nature so BattleRoom can recalculate
+    (p1 as any).ivs = { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 };
+    (p1 as any).evs = { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 };
+    (p1 as any).nature = 'hardy';
+
+    // p2 needs very low HP to faint from p1's attack
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    p2.currentHp = 1;
+
+    const room = new BattleRoom({ initialState: state });
+    room.submitAction('slot-a1', { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' });
+    room.submitAction('slot-b1', { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' });
+
+    const updatedP1 = room.getState().teams[0]!.slots[0]!.party[0]!;
+    expect(updatedP1.level).toBe(51);
+    expect(updatedP1.stats.atk).toBe(106); // recalculated, not stale 104
+  });
+});
+
+describe('pivot switch reason', () => {
+  it('pokemon-switched event has reason "phased" for pivot (U-turn) switch', () => {
+    const state = make1v1State();
+    const bench = makePokemon({ instanceId: 'p1-bench' });
+    state.teams[0]!.slots[0]!.party.push(bench);
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'uturn', currentPp: 20, maxPp: 20 };
+
+    const room = new BattleRoom({ initialState: state });
+    const allEvents: import('@poke-fighter/shared').TurnResolveEvent[] = [];
+    room.onTurnResolved((evts) => allEvents.push(...evts));
+
+    room.submitAction('slot-a1', { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' });
+    room.submitAction('slot-b1', { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' });
+
+    // After U-turn resolves, slot-a1 is awaiting a pivot switch
+    room.submitAction('slot-a1', { type: 'switch', targetInstanceId: 'p1-bench' });
+
+    const switchedEvent = allEvents.find(
+      e => e.type === 'pokemon-switched' && e.data['slotId'] === 'slot-a1'
+    );
+    expect(switchedEvent).toBeDefined();
+    expect(switchedEvent!.data['reason']).toBe('phased');
   });
 });

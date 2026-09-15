@@ -11057,7 +11057,7 @@
     "priority": 0,
     "target": "randomNormal",
     "makesContact": true,
-    "effectId": "struggle"
+    "secondaries": [{ "kind": "recoil-hp", "fraction": [1, 4] }]
   },
   {
     "id": "strugglebug",
