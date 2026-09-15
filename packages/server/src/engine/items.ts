@@ -205,6 +205,25 @@ const ITEM_HOOKS: Record<string, ItemHooks> = {
         ? { hpDelta: 20, consume: true }
         : { hpDelta: 0 },
   },
+  // Type-resist berries — halve SE damage and consume (Chilan: halve any Normal hit)
+  'occa-berry':   { onDefenderModifier: ({ moveType, effectiveness }) => moveType === 'Fire'     && (effectiveness ?? 1) > 1 ? { multiplier: 0.5, consume: true } : 1 },
+  'passho-berry': { onDefenderModifier: ({ moveType, effectiveness }) => moveType === 'Water'    && (effectiveness ?? 1) > 1 ? { multiplier: 0.5, consume: true } : 1 },
+  'wacan-berry':  { onDefenderModifier: ({ moveType, effectiveness }) => moveType === 'Electric' && (effectiveness ?? 1) > 1 ? { multiplier: 0.5, consume: true } : 1 },
+  'rindo-berry':  { onDefenderModifier: ({ moveType, effectiveness }) => moveType === 'Grass'    && (effectiveness ?? 1) > 1 ? { multiplier: 0.5, consume: true } : 1 },
+  'yache-berry':  { onDefenderModifier: ({ moveType, effectiveness }) => moveType === 'Ice'      && (effectiveness ?? 1) > 1 ? { multiplier: 0.5, consume: true } : 1 },
+  'chople-berry': { onDefenderModifier: ({ moveType, effectiveness }) => moveType === 'Fighting' && (effectiveness ?? 1) > 1 ? { multiplier: 0.5, consume: true } : 1 },
+  'kebia-berry':  { onDefenderModifier: ({ moveType, effectiveness }) => moveType === 'Poison'   && (effectiveness ?? 1) > 1 ? { multiplier: 0.5, consume: true } : 1 },
+  'shuca-berry':  { onDefenderModifier: ({ moveType, effectiveness }) => moveType === 'Ground'   && (effectiveness ?? 1) > 1 ? { multiplier: 0.5, consume: true } : 1 },
+  'coba-berry':   { onDefenderModifier: ({ moveType, effectiveness }) => moveType === 'Flying'   && (effectiveness ?? 1) > 1 ? { multiplier: 0.5, consume: true } : 1 },
+  'payapa-berry': { onDefenderModifier: ({ moveType, effectiveness }) => moveType === 'Psychic'  && (effectiveness ?? 1) > 1 ? { multiplier: 0.5, consume: true } : 1 },
+  'tanga-berry':  { onDefenderModifier: ({ moveType, effectiveness }) => moveType === 'Bug'      && (effectiveness ?? 1) > 1 ? { multiplier: 0.5, consume: true } : 1 },
+  'charti-berry': { onDefenderModifier: ({ moveType, effectiveness }) => moveType === 'Rock'     && (effectiveness ?? 1) > 1 ? { multiplier: 0.5, consume: true } : 1 },
+  'kasib-berry':  { onDefenderModifier: ({ moveType, effectiveness }) => moveType === 'Ghost'    && (effectiveness ?? 1) > 1 ? { multiplier: 0.5, consume: true } : 1 },
+  'haban-berry':  { onDefenderModifier: ({ moveType, effectiveness }) => moveType === 'Dragon'   && (effectiveness ?? 1) > 1 ? { multiplier: 0.5, consume: true } : 1 },
+  'colbur-berry': { onDefenderModifier: ({ moveType, effectiveness }) => moveType === 'Dark'     && (effectiveness ?? 1) > 1 ? { multiplier: 0.5, consume: true } : 1 },
+  'babiri-berry': { onDefenderModifier: ({ moveType, effectiveness }) => moveType === 'Steel'    && (effectiveness ?? 1) > 1 ? { multiplier: 0.5, consume: true } : 1 },
+  'chilan-berry': { onDefenderModifier: ({ moveType }) => moveType === 'Normal' ? { multiplier: 0.5, consume: true } : 1 },
+  'roseli-berry': { onDefenderModifier: ({ moveType, effectiveness }) => moveType === 'Fairy'    && (effectiveness ?? 1) > 1 ? { multiplier: 0.5, consume: true } : 1 },
 };
 
 export const IMPLEMENTED_ITEM_IDS: ReadonlySet<string> = new Set(Object.keys(ITEM_HOOKS));
