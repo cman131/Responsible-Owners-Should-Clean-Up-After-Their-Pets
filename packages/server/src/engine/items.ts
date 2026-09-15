@@ -282,6 +282,13 @@ const ITEM_HOOKS: Record<string, ItemHooks> = {
         ? { directDamageToAttacker: Math.floor(holder.maxHp / 8), consume: true }
         : null,
   },
+  // Status-inflicting orbs
+  'flame-orb': {
+    onEndOfTurn: () => ({ hpDelta: 0, statusToInflict: 'brn' }),
+  },
+  'toxic-orb': {
+    onEndOfTurn: () => ({ hpDelta: 0, statusToInflict: 'tox' }),
+  },
 };
 
 export const IMPLEMENTED_ITEM_IDS: ReadonlySet<string> = new Set(Object.keys(ITEM_HOOKS));
