@@ -284,6 +284,9 @@ const ITEM_HOOKS: Record<string, ItemHooks> = {
   'toxic-orb': {
     onEndOfTurn: () => ({ hpDelta: 0, statusToInflict: 'tox' }),
   },
+  'white-herb': {
+    onStatDropped: (ctx) => ({ restoreStats: true, consume: true }),
+  },
 };
 
 export const IMPLEMENTED_ITEM_IDS: ReadonlySet<string> = new Set(Object.keys(ITEM_HOOKS));

@@ -2331,3 +2331,50 @@ describe('naturepower', () => {
     expect(used).toBeDefined();
   });
 });
+
+describe('White Herb', () => {
+  it('Screech lowers target Defense by 2', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0); // forces accuracy roll to hit (screech is 85%)
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'screech', currentPp: 40, maxPp: 40 }; // -2 Def
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-a1' },
+    });
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2.statBoosts.def).toBe(-2); // Should be lowered by 2
+    expect(events.some(e => e.type === 'stat-change')).toBe(true);
+  });
+
+  it('White Herb restores all negative stat stages when any stat is lowered', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0); // forces accuracy roll to hit (screech is 85%)
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.teams[1]!.slots[0]!.party[0]!.heldItem = 'white-herb';
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'screech', currentPp: 40, maxPp: 40 }; // -2 Def
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-a1' },
+    });
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2.statBoosts.def).toBe(0); // restored from -2 to 0
+    expect(p2.heldItem).toBeUndefined();
+    expect(events.some(e => e.type === 'item-consumed' && e.data['item'] === 'white-herb')).toBe(true);
+  });
+
+  it('White Herb only fires once (consumed after first trigger)', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0); // forces accuracy roll to hit (screech is 85%)
+    const engine = new BattleEngine({ rng: () => 0 });
+    const state = make1v1State();
+    state.teams[1]!.slots[0]!.party[0]!.heldItem = 'white-herb';
+    state.teams[1]!.slots[0]!.party[0]!.statBoosts.def = -2; // pre-existing drop
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'screech', currentPp: 40, maxPp: 40 };
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-a1' },
+    });
+    // White Herb fires on first stat drop, then is consumed
+    expect(newState.teams[1]!.slots[0]!.party[0]!.heldItem).toBeUndefined();
+  });
+});
