@@ -67,6 +67,8 @@ const HP_HALVING_MOVES = new Set(['superfang', 'naturesmadness', 'ruination']);
 
 const PHASING_MOVES = new Set(['dragontail', 'circlethrow']);
 
+const CRASH_MOVE_IDS = new Set(['highjumpkick', 'jumpkick']);
+
 const TYPE_STRIPPING_MOVES: Record<string, string> = {
   burnup: 'Fire',
   doubleshock: 'Electric',
@@ -686,6 +688,17 @@ export class BattleEngine {
       }
       if (hitChance !== 'always' && this.rng() * 100 >= hitChance) {
         events.push({ type: 'miss', data: { attackerSlotId, moveId: move.id } });
+        if (CRASH_MOVE_IDS.has(move.id)) {
+          const crash = Math.floor(attacker.maxHp / 2);
+          const actual = Math.min(crash, attacker.currentHp);
+          attacker.currentHp -= actual;
+          events.push({ type: 'damage-dealt', data: { source: 'crash', slotId: attackerSlotId, damage: actual, remainingHp: attacker.currentHp } });
+          if (attacker.currentHp <= 0) {
+            attacker.fainted = true;
+            attacker.currentHp = 0;
+            events.push({ type: 'faint', data: { slotId: attackerSlotId, instanceId: attacker.instanceId } });
+          }
+        }
         return { newState: s, events };
       }
     }
@@ -830,6 +843,12 @@ export class BattleEngine {
         }
       }
 
+      // Poltergeist: fail if target holds no item
+      if (move.id === 'poltergeist' && !(target as any).heldItem) {
+        events.push({ type: 'move-failed', data: { moveId: move.id, reason: 'no-item' } });
+        continue;
+      }
+
       // Protect check
       const protectEntry = target.volatileStatus.find(v => v.name === 'protect');
       if (protectEntry) {
@@ -858,6 +877,17 @@ export class BattleEngine {
               ?? (attackerSpecies?.types ?? ['Normal']) as PokemonType[];
             const evt = applyStatus(attacker, attackerSlotId, variantEffects.status as StatusCondition, attackerTypes, undefined, s);
             if (evt) events.push(evt);
+          }
+        }
+        if (CRASH_MOVE_IDS.has(move.id)) {
+          const crash = Math.floor(attacker.maxHp / 2);
+          const actual = Math.min(crash, attacker.currentHp);
+          attacker.currentHp -= actual;
+          events.push({ type: 'damage-dealt', data: { source: 'crash', slotId: attackerSlotId, damage: actual, remainingHp: attacker.currentHp } });
+          if (attacker.currentHp <= 0) {
+            attacker.fainted = true;
+            attacker.currentHp = 0;
+            events.push({ type: 'faint', data: { slotId: attackerSlotId, instanceId: attacker.instanceId } });
           }
         }
         continue;

@@ -1873,3 +1873,66 @@ describe('Status-cure berries', () => {
     expect(p1.heldItem).toBeUndefined();
   });
 });
+
+describe('poltergeist', () => {
+  it('fails when target holds no item', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'poltergeist', currentPp: 5, maxPp: 5 };
+    delete (state.teams[1]!.slots[0]!.party[0]! as any).heldItem;
+
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    expect(events.some(e => e.type === 'move-failed' && (e.data as any)['reason'] === 'no-item')).toBe(true);
+    expect(events.some(e => e.type === 'damage-dealt' && (e.data as any)['attackerSlotId'] === 'slot-a1')).toBe(false);
+  });
+
+  it('lands when target holds an item', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'poltergeist', currentPp: 5, maxPp: 5 };
+    (state.teams[1]!.slots[0]!.party[0]! as any).heldItem = 'oran-berry';
+
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    expect(events.some(e => e.type === 'damage-dealt' && (e.data as any)['attackerSlotId'] === 'slot-a1')).toBe(true);
+  });
+});
+
+describe('highjumpkick crash damage', () => {
+  it('user takes half max HP on miss', () => {
+    // highjumpkick accuracy=90, so rng=0.95 misses
+    const engine = new BattleEngine({ rng: () => 0.95 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'highjumpkick', currentPp: 10, maxPp: 10 };
+
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    expect(events.some(e => e.type === 'miss')).toBe(true);
+    const crashEvt = events.find(e => e.type === 'damage-dealt' && (e.data as any)['source'] === 'crash');
+    expect(crashEvt).toBeDefined();
+    expect((crashEvt!.data as any)['damage']).toBe(50); // floor(100 / 2) = 50
+  });
+
+  it('jumpkick also crashes on miss', () => {
+    const engine = new BattleEngine({ rng: () => 0.96 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'jumpkick', currentPp: 10, maxPp: 10 };
+
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    expect(events.some(e => e.type === 'damage-dealt' && (e.data as any)['source'] === 'crash')).toBe(true);
+  });
+});
