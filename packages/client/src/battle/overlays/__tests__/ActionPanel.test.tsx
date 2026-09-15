@@ -74,16 +74,6 @@ describe('ActionPanel — locked state', () => {
     expect(screen.getByText('MUST RECHARGE')).toBeTruthy();
   });
 
-  it('shows FAST ASLEEP label when lockedReason is sleep', () => {
-    render(<ActionPanel request={{ ...baseRequest, lockedReason: 'sleep' }} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={vi.fn()} />);
-    expect(screen.getByText('FAST ASLEEP')).toBeTruthy();
-  });
-
-  it('shows FROZEN SOLID label when lockedReason is freeze', () => {
-    render(<ActionPanel request={{ ...baseRequest, lockedReason: 'freeze' }} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={vi.fn()} />);
-    expect(screen.getByText('FROZEN SOLID')).toBeTruthy();
-  });
-
   it('does not render move buttons when locked', () => {
     render(<ActionPanel request={{ ...baseRequest, lockedReason: 'recharge' }} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={vi.fn()} />);
     expect(screen.queryByText('Flamethrower')).toBeNull();

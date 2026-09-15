@@ -21,8 +21,6 @@ function formatMoveName(id: string): string {
 
 const LOCKED_LABELS: Record<NonNullable<ActionRequestPayload['lockedReason']>, string> = {
   recharge: 'MUST RECHARGE',
-  sleep: 'FAST ASLEEP',
-  freeze: 'FROZEN SOLID',
   bide: 'STORING ENERGY',
 };
 
