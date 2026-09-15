@@ -342,11 +342,9 @@ export class BattleRoom {
     return undefined;
   }
 
-  private getLockedReason(active: PartyMember): 'recharge' | 'sleep' | 'freeze' | 'bide' | undefined {
+  private getLockedReason(active: PartyMember): 'recharge' | 'bide' | undefined {
     if (active.volatileStatus.some(v => v.name === 'recharge')) return 'recharge';
     if (active.volatileStatus.some(v => v.name === 'bide')) return 'bide';
-    if (active.status === 'slp') return 'sleep';
-    if (active.status === 'frz') return 'freeze';
   }
 
   private buildValidMoves(slotId: string, active: PartyMember): ActionRequestPayload['validMoves'] {
