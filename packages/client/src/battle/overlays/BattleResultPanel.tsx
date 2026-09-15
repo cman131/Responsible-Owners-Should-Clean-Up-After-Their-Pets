@@ -13,8 +13,8 @@ function teamDisplayNames(team: TeamState): string {
 
 export function BattleResultPanel({ winningTeamId, finalState, mySlotId, onGoHome }: Props) {
   const winnerIdx = finalState.teams.findIndex(t => t.teamId === winningTeamId);
-  const winnerTeam = finalState.teams[winnerIdx];
-  const loserTeam = finalState.teams[winnerIdx === 0 ? 1 : 0];
+  const winnerTeam = winnerIdx >= 0 ? finalState.teams[winnerIdx] : undefined;
+  const loserTeam = winnerIdx >= 0 ? finalState.teams[winnerIdx === 0 ? 1 : 0] : undefined;
   const myTeamIdx = finalState.teams.findIndex(t => t.slots.some(s => s.slotId === mySlotId));
 
   const outcome = myTeamIdx === -1 ? 'neutral' : myTeamIdx === winnerIdx ? 'victory' : 'defeat';
