@@ -111,3 +111,27 @@ describe('TeamBuilder slot compaction', () => {
     expect(screen.getByText('+ Add')).toBeTruthy();
   });
 });
+
+describe('TeamBuilder slot reorder', () => {
+  it('swaps slots when down arrow on first slot is clicked', () => {
+    render(<TeamBuilder onTeamSaved={vi.fn()} initialTeam={[pikachu, charizard]} />);
+    fireEvent.click(screen.getByLabelText('Move slot 1 down'));
+    const tabButtons = screen.getAllByRole('button').filter(
+      (b) => b.textContent === 'Pikachu' || b.textContent === 'Charizard'
+    );
+    expect(tabButtons[0]?.textContent).toBe('Charizard');
+    expect(tabButtons[1]?.textContent).toBe('Pikachu');
+  });
+
+  it('up arrow on the first slot is disabled', () => {
+    render(<TeamBuilder onTeamSaved={vi.fn()} initialTeam={[pikachu, charizard]} />);
+    const upButton = screen.getByLabelText('Move slot 1 up') as HTMLButtonElement;
+    expect(upButton.disabled).toBe(true);
+  });
+
+  it('down arrow on the last filled slot is disabled', () => {
+    render(<TeamBuilder onTeamSaved={vi.fn()} initialTeam={[pikachu, charizard]} />);
+    const downButton = screen.getByLabelText('Move slot 2 down') as HTMLButtonElement;
+    expect(downButton.disabled).toBe(true);
+  });
+});

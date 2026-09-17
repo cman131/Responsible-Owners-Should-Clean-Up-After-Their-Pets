@@ -40,6 +40,17 @@ export function TeamBuilder({ onTeamSaved, initialTeam = [], onSendToBank }: Pro
     setSelectedSlot(Math.min(selectedSlot, safeTeam.length - 1));
   }
 
+  function handleSwap(i: number, direction: -1 | 1) {
+    const j = i + direction;
+    const next = [...team];
+    const tmp = next[i]!;
+    next[i] = next[j]!;
+    next[j] = tmp;
+    setTeam(next);
+    if (selectedSlot === i) setSelectedSlot(j);
+    else if (selectedSlot === j) setSelectedSlot(i);
+  }
+
   useEffect(() => {
     onTeamSaved(team.filter((s): s is PokemonSet => !!s.speciesId));
   }, [team, onTeamSaved]);
@@ -62,22 +73,40 @@ export function TeamBuilder({ onTeamSaved, initialTeam = [], onSendToBank }: Pro
           const label = team[i]?.speciesId
             ? (team[i]!.nickname ?? `#${team[i]!.speciesId}`)
             : i < visibleSlots - 1 ? `Slot ${i + 1}` : '+ Add';
+          const isFilled = !!team[i]?.speciesId;
 
           return (
-            <button
-              key={i}
-              onClick={() => {
-                setSelectedSlot(i);
-                if (!team[i]) {
-                  const t = [...team];
-                  t[i] = {};
-                  setTeam(t);
-                }
-              }}
-              style={{ background: isSelected ? '#2980b9' : '#1a1a2e', border: `1px solid ${borderColor}`, color: '#fff', padding: '4px 10px', borderRadius: 3, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11 }}
-            >
-              {label}
-            </button>
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              {isFilled && (
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleSwap(i, -1); }}
+                    disabled={i === 0}
+                    aria-label={`Move slot ${i + 1} up`}
+                    style={{ background: 'none', border: 'none', color: i === 0 ? '#444' : '#aaa', cursor: i === 0 ? 'default' : 'pointer', padding: '0 2px', fontSize: 9, lineHeight: 1 }}
+                  >▲</button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleSwap(i, 1); }}
+                    disabled={i === filledCount - 1}
+                    aria-label={`Move slot ${i + 1} down`}
+                    style={{ background: 'none', border: 'none', color: i === filledCount - 1 ? '#444' : '#aaa', cursor: i === filledCount - 1 ? 'default' : 'pointer', padding: '0 2px', fontSize: 9, lineHeight: 1 }}
+                  >▼</button>
+                </div>
+              )}
+              <button
+                onClick={() => {
+                  setSelectedSlot(i);
+                  if (!team[i]) {
+                    const t = [...team];
+                    t[i] = {};
+                    setTeam(t);
+                  }
+                }}
+                style={{ background: isSelected ? '#2980b9' : '#1a1a2e', border: `1px solid ${borderColor}`, color: '#fff', padding: '4px 10px', borderRadius: 3, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11 }}
+              >
+                {label}
+              </button>
+            </div>
           );
         })}
       </div>
