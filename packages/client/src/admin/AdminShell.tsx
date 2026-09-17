@@ -75,9 +75,10 @@ export function AdminShell() {
   }
 
   function handleLogout() {
+    getSocket().disconnect();
     localStorage.removeItem(SESSION_KEY);
     setAuthenticated(false);
-    getSocket().disconnect();
+    setConnecting(false);
   }
 
   if (authenticated) return <AdminRouter onLogout={handleLogout} />;
