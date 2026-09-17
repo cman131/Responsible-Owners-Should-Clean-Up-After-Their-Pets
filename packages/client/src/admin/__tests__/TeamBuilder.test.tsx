@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('../../socket.js', () => ({ getSocket: vi.fn() }));
 import { getSocket } from '../../socket.js';
-import { TeamBuilder } from '../TeamBuilder.js';
+import { TeamBuilder, slotStatus } from '../TeamBuilder.js';
 import type { PokemonSet } from '@poke-fighter/shared';
 
 const mockSocket = { emit: vi.fn(), on: vi.fn(), off: vi.fn() };
@@ -22,6 +22,24 @@ const pikachu: PokemonSet = {
   ivs: { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 },
   nature: 'timid',
 };
+
+describe('slotStatus', () => {
+  it('returns empty for undefined', () => {
+    expect(slotStatus(undefined)).toBe('empty');
+  });
+  it('returns empty for slot with no speciesId', () => {
+    expect(slotStatus({})).toBe('empty');
+  });
+  it('returns incomplete for slot with speciesId but no moves array', () => {
+    expect(slotStatus({ speciesId: 6 })).toBe('incomplete');
+  });
+  it('returns incomplete for slot with speciesId and all-empty moves', () => {
+    expect(slotStatus({ speciesId: 6, moves: ['', '', '', ''] })).toBe('incomplete');
+  });
+  it('returns complete for slot with speciesId and at least one non-empty move', () => {
+    expect(slotStatus({ speciesId: 6, moves: ['flamethrower', '', '', ''] })).toBe('complete');
+  });
+});
 
 describe('TeamBuilder nature field', () => {
   it('renders nature as a select/combobox, not a text input', () => {

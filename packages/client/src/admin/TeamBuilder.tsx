@@ -2,6 +2,12 @@ import { useState, useEffect } from 'react';
 import type { PokemonSet } from '@poke-fighter/shared';
 import { PokemonSlotEditor } from './PokemonSlotEditor.js';
 
+export function slotStatus(p: Partial<PokemonSet> | undefined): 'empty' | 'incomplete' | 'complete' {
+  if (!p?.speciesId) return 'empty';
+  if (!(p.moves ?? []).some(Boolean)) return 'incomplete';
+  return 'complete';
+}
+
 interface Props {
   onTeamSaved: (team: PokemonSet[]) => void;
   initialTeam?: PokemonSet[];
