@@ -41,6 +41,23 @@ describe('slotStatus', () => {
   });
 });
 
+describe('TeamBuilder tab strip', () => {
+  it('shows only + Add tab when no initialTeam provided', () => {
+    render(<TeamBuilder onTeamSaved={vi.fn()} />);
+    expect(screen.getByText('+ Add')).toBeTruthy();
+    expect(screen.queryByText('Slot 2')).toBeNull();
+    expect(screen.queryByText('Slot 3')).toBeNull();
+  });
+
+  it('shows filled tab and + Add for a single-pokemon team', () => {
+    render(<TeamBuilder onTeamSaved={vi.fn()} initialTeam={[pikachu]} />);
+    const buttons = screen.getAllByRole('button');
+    expect(buttons.some(b => b.textContent === 'Pikachu')).toBe(true);
+    expect(screen.getByText('+ Add')).toBeTruthy();
+    expect(screen.queryByText('Slot 3')).toBeNull();
+  });
+});
+
 describe('TeamBuilder nature field', () => {
   it('renders nature as a select/combobox, not a text input', () => {
     render(<TeamBuilder onTeamSaved={vi.fn()} initialTeam={[pikachu]} />);

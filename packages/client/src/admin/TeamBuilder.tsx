@@ -36,20 +36,42 @@ export function TeamBuilder({ onTeamSaved, initialTeam = [], onSendToBank }: Pro
     onTeamSaved(team.filter((s): s is PokemonSet => !!s.speciesId));
   }, [team, onTeamSaved]);
 
+  const filledCount = team.filter(s => !!s.speciesId).length;
+  const visibleSlots = Math.min(filledCount + 1, 6);
+
   return (
     <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div style={{ color: '#f0c040', fontSize: 14, letterSpacing: 1 }}>TEAM BUILDER</div>
 
       <div style={{ display: 'flex', gap: 4 }}>
-        {Array.from({ length: 6 }, (_, i) => (
-          <button
-            key={i}
-            onClick={() => { setSelectedSlot(i); if (!team[i]) { const t = [...team]; t[i] = {}; setTeam(t); } }}
-            style={{ background: selectedSlot === i ? '#2980b9' : '#1a1a2e', border: `1px solid ${selectedSlot === i ? '#3498db' : '#333'}`, color: '#fff', padding: '4px 10px', borderRadius: 3, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11 }}
-          >
-            {team[i]?.speciesId ? (team[i]!.nickname ?? `#${team[i]!.speciesId}`) : `Slot ${i + 1}`}
-          </button>
-        ))}
+        {Array.from({ length: visibleSlots }, (_, i) => {
+          const status = slotStatus(team[i]);
+          const isSelected = selectedSlot === i;
+          const borderColor =
+            status === 'complete'   ? '#27ae60' :
+            status === 'incomplete' ? '#f0c040' :
+            isSelected              ? '#3498db' : '#333';
+          const label = team[i]?.speciesId
+            ? (team[i]!.nickname ?? `#${team[i]!.speciesId}`)
+            : i < visibleSlots - 1 ? `Slot ${i + 1}` : '+ Add';
+
+          return (
+            <button
+              key={i}
+              onClick={() => {
+                setSelectedSlot(i);
+                if (!team[i]) {
+                  const t = [...team];
+                  t[i] = {};
+                  setTeam(t);
+                }
+              }}
+              style={{ background: isSelected ? '#2980b9' : '#1a1a2e', border: `1px solid ${borderColor}`, color: '#fff', padding: '4px 10px', borderRadius: 3, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11 }}
+            >
+              {label}
+            </button>
+          );
+        })}
       </div>
 
       <PokemonSlotEditor
