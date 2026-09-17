@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('../../socket.js', () => ({ getSocket: vi.fn() }));
@@ -18,6 +18,17 @@ const pikachu: PokemonSet = {
   level: 50,
   ability: 'Static',
   moves: ['thunderbolt', '', '', ''],
+  evs: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
+  ivs: { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 },
+  nature: 'timid',
+};
+
+const charizard: PokemonSet = {
+  speciesId: 6,
+  nickname: 'Charizard',
+  level: 50,
+  ability: 'Blaze',
+  moves: ['flamethrower', '', '', ''],
   evs: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
   ivs: { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 },
   nature: 'timid',
@@ -87,5 +98,16 @@ describe('TeamBuilder nature field', () => {
     const selects = screen.getAllByRole('combobox') as HTMLSelectElement[];
     const natureSelect = selects.find((s) => s.options.length === 25)!;
     expect(natureSelect.value).toBe('timid');
+  });
+});
+
+describe('TeamBuilder slot compaction', () => {
+  it('collapses the gap when a slot is cleared from a multi-pokemon team', () => {
+    render(<TeamBuilder onTeamSaved={vi.fn()} initialTeam={[pikachu, charizard]} />);
+    fireEvent.click(screen.getByText('✕ CLEAR'));
+    expect(screen.queryByText('Slot 1')).toBeNull();
+    const buttons = screen.getAllByRole('button');
+    expect(buttons.some(b => b.textContent === 'Charizard')).toBe(true);
+    expect(screen.getByText('+ Add')).toBeTruthy();
   });
 });

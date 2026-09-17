@@ -19,17 +19,25 @@ export function TeamBuilder({ onTeamSaved, initialTeam = [], onSendToBank }: Pro
   const [selectedSlot, setSelectedSlot] = useState(0);
 
   function handleSlotChange(updated: Partial<PokemonSet>) {
-    const next = [...team];
-    next[selectedSlot] = updated;
-    setTeam(next);
+    if (!updated.speciesId) {
+      const next = team.filter((_, i) => i !== selectedSlot);
+      const safeTeam = next.length === 0 ? [{}] : next;
+      setTeam(safeTeam);
+      setSelectedSlot(Math.min(selectedSlot, safeTeam.length - 1));
+    } else {
+      const next = [...team];
+      next[selectedSlot] = updated;
+      setTeam(next);
+    }
   }
 
   function handleSendToBank() {
     const pokemon = team[selectedSlot] as PokemonSet;
     onSendToBank!(pokemon);
-    const next = [...team];
-    next[selectedSlot] = {};
-    setTeam(next);
+    const next = team.filter((_, i) => i !== selectedSlot);
+    const safeTeam = next.length === 0 ? [{}] : next;
+    setTeam(safeTeam);
+    setSelectedSlot(Math.min(selectedSlot, safeTeam.length - 1));
   }
 
   useEffect(() => {
