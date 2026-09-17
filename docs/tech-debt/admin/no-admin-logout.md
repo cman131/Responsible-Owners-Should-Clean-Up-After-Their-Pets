@@ -1,7 +1,7 @@
 # Tech Debt: No Logout Button in AdminShell
 
 ## State
-InProgress
+Complete
 
 ## Summary
 
