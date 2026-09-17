@@ -74,7 +74,13 @@ export function AdminShell() {
     connectAsAdmin(t);
   }
 
-  if (authenticated) return <AdminRouter />;
+  function handleLogout() {
+    localStorage.removeItem(SESSION_KEY);
+    setAuthenticated(false);
+    getSocket().disconnect();
+  }
+
+  if (authenticated) return <AdminRouter onLogout={handleLogout} />;
 
   if (connecting) {
     return (

@@ -12,6 +12,7 @@ const mockSocket = {
   off: vi.fn((event: string, handler: EventHandler) => {
     listeners.set(event, (listeners.get(event) ?? []).filter((h) => h !== handler));
   }),
+  disconnect: vi.fn(),
 };
 
 function emit(event: string, ...args: unknown[]) {
@@ -22,7 +23,14 @@ vi.mock('../../socket.js', () => ({
   connectAsAdmin: vi.fn(),
   getSocket: vi.fn(() => mockSocket),
 }));
-vi.mock('../AdminRouter.tsx', () => ({ AdminRouter: () => <div>admin-router</div> }));
+vi.mock('../AdminRouter.tsx', () => ({
+  AdminRouter: ({ onLogout }: any) => (
+    <div>
+      admin-router
+      <button onClick={onLogout}>admin-logout</button>
+    </div>
+  ),
+}));
 
 import { connectAsAdmin } from '../../socket.js';
 import { AdminShell } from '../AdminShell.js';
@@ -80,6 +88,21 @@ describe('AdminShell', () => {
     expect(stored.token).toBe('my-token');
     expect(stored.expiresAt).toBeGreaterThan(Date.now());
     expect(screen.getByText('admin-router')).toBeTruthy();
+  });
+
+  it('clears session and shows login form when logout is triggered', async () => {
+    localStorage.setItem('poke_admin_session', JSON.stringify({
+      token: 'my-token',
+      expiresAt: Date.now() + 60_000,
+    }));
+    render(<AdminShell />);
+    await act(async () => { emit('admin:authenticated'); });
+    expect(screen.getByText('admin-router')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: /admin-logout/i }));
+    expect(localStorage.getItem('poke_admin_session')).toBeNull();
+    expect(mockSocket.disconnect).toHaveBeenCalled();
+    expect(screen.getByPlaceholderText(/admin token/i)).toBeTruthy();
   });
 
   it('clears session and shows error on admin:error', async () => {
