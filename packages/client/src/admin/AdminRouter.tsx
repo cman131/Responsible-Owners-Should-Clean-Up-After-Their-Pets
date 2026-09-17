@@ -8,7 +8,11 @@ import { BattlesPanel } from './BattlesPanel.js';
 
 type Mode = 'setup' | 'registry' | 'battles' | null;
 
-export function AdminRouter() {
+interface AdminRouterProps {
+  onLogout: () => void;
+}
+
+export function AdminRouter({ onLogout }: AdminRouterProps) {
   const [mode, setMode] = useState<Mode>(null);
   const [activeBattle, setActiveBattle] = useState<string | null>(null);
 
@@ -28,6 +32,7 @@ export function AdminRouter() {
       onSetup={() => setMode('setup')}
       onRegistry={() => setMode('registry')}
       onBattles={() => setMode('battles')}
+      onLogout={onLogout}
     />
   );
 }
