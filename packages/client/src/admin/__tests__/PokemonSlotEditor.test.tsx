@@ -167,4 +167,20 @@ describe('PokemonSlotEditor', () => {
     const lastCall = onChange.mock.calls.at(-1)?.[0];
     expect(lastCall?.heldItem).toBeUndefined();
   });
+
+  it('shows no-moves warning when speciesId is set but all moves are empty', () => {
+    render(<PokemonSlotEditor
+      value={{ speciesId: 6, nickname: 'Charizard', level: 50, nature: 'timid', moves: ['', '', '', ''], ability: 'Blaze', evs: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 }, ivs: { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 } }}
+      onChange={vi.fn()}
+    />);
+    expect(screen.getByText('⚠ No moves set')).toBeTruthy();
+  });
+
+  it('does not show no-moves warning when at least one move is set', () => {
+    render(<PokemonSlotEditor
+      value={{ speciesId: 6, nickname: 'Charizard', level: 50, nature: 'timid', moves: ['flamethrower', '', '', ''], ability: 'Blaze', evs: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 }, ivs: { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 } }}
+      onChange={vi.fn()}
+    />);
+    expect(screen.queryByText('⚠ No moves set')).toBeNull();
+  });
 });

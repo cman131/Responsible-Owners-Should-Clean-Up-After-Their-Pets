@@ -129,6 +129,9 @@ export function PokemonSlotEditor({ value, onChange }: Props) {
               />
             </div>
           </div>
+          {value.speciesId && !(value.moves ?? []).some(Boolean) && (
+            <div style={{ color: '#f0c040', fontSize: 11 }}>⚠ No moves set</div>
+          )}
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <label style={lbl}>Name</label>
             <input
