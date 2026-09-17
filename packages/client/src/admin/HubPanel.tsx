@@ -2,11 +2,13 @@ interface HubPanelProps {
   onSetup: () => void;
   onBattles: () => void;
   onRegistry: () => void;
+  onLogout: () => void;
 }
 
-export function HubPanel({ onSetup, onBattles, onRegistry }: HubPanelProps) {
+export function HubPanel({ onSetup, onBattles, onRegistry, onLogout }: HubPanelProps) {
   return (
-    <div style={{ minHeight: '100vh', background: '#0d0d1a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 32 }}>
+    <div style={{ position: 'relative', minHeight: '100vh', background: '#0d0d1a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 32 }}>
+      <button onClick={onLogout} style={logoutBtn}>LOG OUT</button>
       <h1 style={{ fontSize: 32, letterSpacing: 6, color: '#e74c3c' }}>ADMIN</h1>
       <div style={{ display: 'flex', gap: 24 }}>
         <button onClick={onSetup} style={tile('#e74c3c')}>
@@ -36,3 +38,10 @@ function tile(accent: string): React.CSSProperties {
     alignItems: 'center', gap: 8, cursor: 'pointer', fontFamily: 'inherit', width: 180,
   };
 }
+
+const logoutBtn: React.CSSProperties = {
+  position: 'absolute', top: 16, right: 16,
+  background: 'transparent', border: '1px solid #555', color: '#888',
+  padding: '6px 14px', fontSize: 11, letterSpacing: 2,
+  cursor: 'pointer', fontFamily: 'inherit', borderRadius: 4,
+};
