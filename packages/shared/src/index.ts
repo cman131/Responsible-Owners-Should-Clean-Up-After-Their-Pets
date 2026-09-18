@@ -5,3 +5,4 @@ export * from './types/events.js';
 export * from './types/secondary.js';
 export * from './schemas/pokemon.schema.js';
 export * from './schemas/move.schema.js';
+export { expForLevel } from './utils/exp.js';
