@@ -5,6 +5,7 @@ import { BattleScene } from '../battle/BattleScene.js';
 import { HpBarsRow } from '../battle/overlays/HpBarsRow.js';
 import { TurnLog } from '../battle/overlays/TurnLog.js';
 import { NpcTabPanel } from './NpcTabPanel.js';
+import { BattleResultPanel } from '../battle/overlays/BattleResultPanel.js';
 import type { ActionRequestPayload, AdminActionPayload, SlotStatusPayload } from '@poke-fighter/shared';
 
 interface NpcSlotRequest {
@@ -16,7 +17,7 @@ interface NpcSlotRequest {
 interface Props { battleId: string; onBack: () => void }
 
 function ControlPanelInner({ battleId, onBack }: Props) {
-  const { state, turnLog } = useBattle();
+  const { state, turnLog, battleResult } = useBattle();
   const [npcRequests, setNpcRequests] = useState<NpcSlotRequest[]>([]);
   const [slotStatuses, setSlotStatuses] = useState<SlotStatusPayload['slots']>([]);
 
@@ -93,7 +94,14 @@ function ControlPanelInner({ battleId, onBack }: Props) {
 
       <div style={{ display: 'flex', gap: 16, width: 800 }}>
         <div style={{ flex: 1 }}>
-          {npcRequests.length > 0 ? (
+          {battleResult ? (
+            <BattleResultPanel
+              winningTeamId={battleResult.winningTeamId}
+              finalState={battleResult.finalState}
+              mySlotId="__admin__"
+              onGoHome={onBack}
+            />
+          ) : npcRequests.length > 0 ? (
             <NpcTabPanel battleId={battleId} npcRequests={npcRequests} state={state} />
           ) : (
             <div style={{ background: '#0d0d1a', border: '1px solid #333', borderRadius: 6, padding: 16, color: '#555', fontSize: 13, textAlign: 'center' }}>

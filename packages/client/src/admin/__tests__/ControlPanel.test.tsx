@@ -18,6 +18,13 @@ vi.mock('../../battle/overlays/HpBarsRow.js', () => ({
   HpBarsRow: ({ label }: { label: string }) =>
     <div data-testid={`hp-bars-${label.toLowerCase().replace(/ /g, '-')}`} />,
 }));
+vi.mock('../../battle/overlays/BattleResultPanel.js', () => ({
+  BattleResultPanel: ({ winningTeamId, onGoHome }: { winningTeamId: string; onGoHome: () => void }) => (
+    <div data-testid="battle-result-panel" data-winner={winningTeamId}>
+      <button onClick={onGoHome}>Return</button>
+    </div>
+  ),
+}));
 
 import { ControlPanel } from '../ControlPanel.js';
 import type { BattleState, PartyMember } from '@poke-fighter/shared';
@@ -160,5 +167,26 @@ describe('ControlPanel', () => {
       data: { battleId: 'b1', teamId: 'team-b' },
     });
     vi.restoreAllMocks();
+  });
+
+  it('shows BattleResultPanel when battle:end arrives', () => {
+    render(<ControlPanel battleId="b1" onBack={vi.fn()} />);
+    const battleEndCall = mockSocket.on.mock.calls.find((c) => c[0] === 'battle:end');
+    act(() => {
+      battleEndCall![1]({ winningTeamId: 'team-a', state: makeState() });
+    });
+    expect(screen.getByTestId('battle-result-panel')).toBeTruthy();
+    expect(screen.queryByText('No pending NPC actions')).toBeNull();
+  });
+
+  it('calls onBack when Return is clicked in BattleResultPanel', () => {
+    const onBack = vi.fn();
+    render(<ControlPanel battleId="b1" onBack={onBack} />);
+    const battleEndCall = mockSocket.on.mock.calls.find((c) => c[0] === 'battle:end');
+    act(() => {
+      battleEndCall![1]({ winningTeamId: 'team-a', state: makeState() });
+    });
+    fireEvent.click(screen.getByRole('button', { name: /return/i }));
+    expect(onBack).toHaveBeenCalledOnce();
   });
 });
