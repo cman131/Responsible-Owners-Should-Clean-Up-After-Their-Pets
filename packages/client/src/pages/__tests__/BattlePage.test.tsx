@@ -236,6 +236,7 @@ describe('BattlePage', () => {
     sessionStorage.setItem('mySlotId', 'a1');
     renderBattlePage(makeState());
     fireEvent.click(screen.getByRole('button', { name: /home/i }));
+    expect(window.confirm).toHaveBeenCalledTimes(1);
     expect(mockSocket.emit).toHaveBeenCalledWith('player:leave');
     expect(sessionStorage.getItem('mySlotId')).toBeNull();
   });
@@ -259,6 +260,7 @@ describe('BattlePage', () => {
     act(() => {
       battleEndCall![1]({ winningTeamId: 'team-b', state: makeState() });
     });
+    act(() => {}); // flush pending effects (battleResult set via queue-drain useEffect)
     // Two /home/i buttons exist after battle:end — the corner button and the BattleResultPanel button.
     // Click the first one (corner "← Home").
     fireEvent.click(screen.getAllByRole('button', { name: /home/i })[0]!);

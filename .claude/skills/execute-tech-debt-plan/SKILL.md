@@ -59,7 +59,7 @@ This single-line edit is the only modification made to the document before imple
 
 Invoke `superpowers:using-superpowers` via the `Skill` tool with this prompt:
 
-> Implement the tech-debt plan at `<resolved-path>`. Its `## State` has been set to `InProgress`. Read the full document — pay particular attention to `## Problem Details`, `## Suggested Fix`, and `## Related Files`. Use whatever superpowers apply (brainstorming, TDD, systematic-debugging, etc.) to complete the fix described in `## Suggested Fix`. **Your final two actions after all work is complete — including any branch decisions via `superpowers:finishing-a-development-branch` — must be: (1) edit `<resolved-path>` and change `## State` from `InProgress` to `Complete`; (2) move `<resolved-path>` to `docs/completed-tech-debt/<area>/<filename>` (same subdirectory name, same filename), creating the destination directory if it doesn't exist.**
+> Implement the tech-debt plan at `<resolved-path>`. Its `## State` has been set to `InProgress`. Read the full document — pay particular attention to `## Problem Details`, `## Suggested Fix`, and `## Related Files`. Use whatever superpowers apply (brainstorming, TDD, systematic-debugging, etc.) to complete the fix described in `## Suggested Fix`. **When `superpowers:finishing-a-development-branch` asks how to integrate the work, always choose: merge locally to master (do not open a PR, do not push to remote). Your final three actions after all work is complete must be: (1) edit `<resolved-path>` and change `## State` from `InProgress` to `Complete`; (2) move `<resolved-path>` to `docs/completed-tech-debt/<area>/<filename>` (same subdirectory name, same filename), creating the destination directory if it doesn't exist; (3) commit the document state change and file relocation with a message like `docs: complete tech-debt <area>/<filename>`.**
 
 > **Why this matters:** The `execute-tech-debt-plan` wrapper that set the state to `InProgress` cannot resume after a multi-turn workflow — this delegation is not a coroutine. You are responsible for the final state update and file move.
 
@@ -75,6 +75,12 @@ This step runs only if the implementation did not complete the final actions its
    ```bash
    mkdir -p docs/completed-tech-debt/<area>
    mv docs/tech-debt/<area>/<filename> docs/completed-tech-debt/<area>/<filename>
+   ```
+
+3. **Commit check:** If the state change and/or file move have not already been committed, stage and commit them:
+   ```bash
+   git add docs/tech-debt/<area>/<filename> docs/completed-tech-debt/<area>/<filename>
+   git commit -m "docs: complete tech-debt <area>/<filename>"
    ```
 
 **On abort or unrecoverable failure:** Leave `State` as `InProgress` and the file in place. Report what was done and what remains so the plan can be resumed later with `/execute-tech-debt-plan <path>`.
@@ -133,6 +139,6 @@ The `## State` section must contain exactly one of: `New`, `InProgress`, `Comple
 ## Non-Goals
 
 - Does not implement the fix itself — `superpowers:using-superpowers` does that
-- Does not commit changes or open PRs
+- Does not open PRs
 - Does not modify any section of the document other than `## State`
 - Does not move docs to `docs/completed-tech-debt/` until `## State` reaches `Complete`

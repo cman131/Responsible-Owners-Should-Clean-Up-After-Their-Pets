@@ -28,7 +28,9 @@ function BattleView() {
 
   function handleGoHome() {
     if (state && !battleResult) {
-      if (!confirm('Leave this battle? You may not be able to rejoin.')) return;
+      if (!confirm('Leave this battle? You may not be able to rejoin.')) {
+        return;
+      }
     }
     getSocket().emit('player:leave');
     sessionStorage.removeItem('mySlotId');
