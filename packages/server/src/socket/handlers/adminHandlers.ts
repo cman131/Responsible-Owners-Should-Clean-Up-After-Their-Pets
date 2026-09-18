@@ -41,13 +41,15 @@ export function registerAdminHandlers(
         break;
       }
       case 'start-battle': {
-        const { battleId, label, teams } = payload.data as {
-          battleId: string; label: string;
+        const { battleId, label, teams, levelCap } = payload.data as {
+          battleId: string; label: string; levelCap?: number;
           teams: [{ slots: { slotId: string; displayName: string; isNpc: boolean; party: import('@poke-fighter/shared').PokemonSet[] }[] }, { slots: { slotId: string; displayName: string; isNpc: boolean; party: import('@poke-fighter/shared').PokemonSet[] }[] }];
         };
         const { BattleConfigurator } = await import('../../setup/BattleConfigurator.js');
         const configurator = new BattleConfigurator();
-        const state = configurator.build({ battleId, label, teams });
+        const buildConfig = { battleId, label, teams } as { battleId: string; label: string; teams: typeof teams; levelCap?: number };
+        if (levelCap !== undefined) buildConfig.levelCap = levelCap;
+        const state = configurator.build(buildConfig);
         db.battles.insert(state);
         startBattle(state);
         break;
