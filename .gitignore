@@ -12,3 +12,4 @@ pnpm-debug.log*
 *.db-wal
 .superpowers/
 docs/superpowers/
+.claude/worktrees
