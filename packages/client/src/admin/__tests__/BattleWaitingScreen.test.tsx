@@ -148,6 +148,36 @@ describe('BattleWaitingScreen', () => {
     expect(onWatch).toHaveBeenCalledWith('battle-1');
   });
 
+  it('renders a Cancel Battle button', () => {
+    render(
+      <BattleWaitingScreen
+        battleId="battle-1"
+        slotAssignment={slotAssignment}
+        onBack={vi.fn()}
+        onWatch={vi.fn()}
+      />
+    );
+    expect(screen.getByRole('button', { name: /cancel battle/i })).toBeTruthy();
+  });
+
+  it('emits cancel-battle and calls onBack when Cancel Battle is clicked', () => {
+    const onBack = vi.fn();
+    render(
+      <BattleWaitingScreen
+        battleId="battle-1"
+        slotAssignment={slotAssignment}
+        onBack={onBack}
+        onWatch={vi.fn()}
+      />
+    );
+    screen.getByRole('button', { name: /cancel battle/i }).click();
+    expect(mockSocket.emit).toHaveBeenCalledWith('admin:action', {
+      type: 'cancel-battle',
+      data: { battleId: 'battle-1' },
+    });
+    expect(onBack).toHaveBeenCalledOnce();
+  });
+
   it('removes lobby:slot-status listener on unmount', () => {
     const { unmount } = render(
       <BattleWaitingScreen

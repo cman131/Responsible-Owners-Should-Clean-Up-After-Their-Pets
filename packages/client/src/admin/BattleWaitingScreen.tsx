@@ -92,7 +92,18 @@ export function BattleWaitingScreen({ battleId, slotAssignment, onBack, onWatch 
 
       <div style={styles.footer}>
         <div style={styles.countText}>{joinedCount} / {totalCount} players connected</div>
-        <button onClick={() => onWatch(battleId)} style={styles.watchButton}>WATCH BATTLE →</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={() => {
+              getSocket().emit('admin:action', { type: 'cancel-battle', data: { battleId } });
+              onBack();
+            }}
+            style={{ background: '#c0392b', color: '#fff', border: 'none', padding: '5px 14px', fontSize: 11, letterSpacing: 1, cursor: 'pointer', borderRadius: 3, fontFamily: 'inherit' }}
+          >
+            Cancel Battle
+          </button>
+          <button onClick={() => onWatch(battleId)} style={styles.watchButton}>WATCH BATTLE →</button>
+        </div>
       </div>
     </div>
   );
