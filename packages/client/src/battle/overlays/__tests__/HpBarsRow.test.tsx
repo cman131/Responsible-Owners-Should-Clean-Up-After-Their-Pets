@@ -148,4 +148,11 @@ describe('HpBarsRow', () => {
     );
     expect(screen.queryByText(/EXP \d+%/)).toBeNull();
   });
+
+  it('outer container is fluid with max-width 800', () => {
+    const { container } = render(<HpBarsRow slots={[makeSlot('a1')]} label="ENEMY" variant="enemy" />);
+    const outer = container.firstChild as HTMLElement;
+    expect(outer.style.width).toBe('100%');
+    expect(outer.style.maxWidth).toBe('800px');
+  });
 });

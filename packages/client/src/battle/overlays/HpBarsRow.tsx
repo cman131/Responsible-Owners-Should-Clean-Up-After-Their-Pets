@@ -23,7 +23,7 @@ export function HpBarsRow({ slots, label, variant, highlightSlotId, displayHp }:
   const labelColor = variant === 'enemy' ? '#e74c3c' : '#3498db';
 
   return (
-    <div style={{ width: 800, background: '#0d0d1a', border: `1px solid ${borderColor}`, borderRadius: 4, padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: 5 }}>
+    <div style={{ width: '100%', maxWidth: 800, background: '#0d0d1a', border: `1px solid ${borderColor}`, borderRadius: 4, padding: '6px 10px', display: 'flex', flexDirection: 'column', gap: 5 }}>
       <span style={{ color: labelColor, fontSize: 9, letterSpacing: 1 }}>{label}</span>
       {slots.map((slot) => {
         const mon = slot.party[slot.activePokemonIndex];
