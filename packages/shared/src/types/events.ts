@@ -36,6 +36,7 @@ export interface AdminActionPayload {
     | 'force-faint'
     | 'forfeit'
     | 'force-switch'
+    | 'submit-default-action'
     | 'lobby:list'
     | 'lobby:slot-status'
     | 'battles:list'
@@ -168,6 +169,7 @@ export interface BattleSummary {
   endedAt: number | null;
   turnNumber: number;
   teams: Array<{
+    teamId: string;
     slots: Array<{ displayName: string; isNpc: boolean }>;
   }>;
 }
