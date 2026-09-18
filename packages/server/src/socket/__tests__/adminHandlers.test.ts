@@ -118,7 +118,7 @@ describe('registerAdminHandlers – battles:connect', () => {
   beforeEach(() => {
     db = new AppDatabase(':memory:');
     socket = makeAdminSocket();
-    registerAdminHandlers(socket as any, mockIo, () => undefined, mockStartBattle, db, mockLobby);
+    registerAdminHandlers(socket as any, mockIo, () => undefined, mockStartBattle, db, mockLobby, vi.fn());
   });
 
   afterEach(() => { db.close(); });
@@ -200,7 +200,7 @@ describe('registerAdminHandlers – data:query items', () => {
   beforeEach(() => {
     db = new AppDatabase(':memory:');
     socket = makeAdminSocket();
-    registerAdminHandlers(socket as any, mockIo, () => undefined, mockStartBattle, db, mockLobby);
+    registerAdminHandlers(socket as any, mockIo, () => undefined, mockStartBattle, db, mockLobby, vi.fn());
   });
 
   afterEach(() => { db.close(); });
@@ -229,5 +229,47 @@ describe('registerAdminHandlers – data:query items', () => {
     const payload = call?.[1] as { resource: string; results: HeldItem[] };
     expect(payload.results.length).toBeGreaterThan(0);
     expect(payload.results.every((i) => i.name.toLowerCase().includes('choice') || i.id.toLowerCase().includes('choice'))).toBe(true);
+  });
+});
+
+describe('registerAdminHandlers – cancel-battle', () => {
+  function makeAdminSocket(id = 'admin1') {
+    const handlers: Record<string, (p: unknown) => void> = {};
+    return {
+      id,
+      data: {} as Record<string, unknown>,
+      emit: vi.fn(),
+      join: vi.fn(),
+      leave: vi.fn(),
+      on(event: string, handler: (p: unknown) => void) { handlers[event] = handler; },
+      trigger(event: string, payload: unknown) { handlers[event]?.(payload); },
+    };
+  }
+
+  const mockIo = { sockets: { sockets: { values: () => [] } } } as any;
+  const mockStartBattle = vi.fn();
+  const mockLobby = { getWaitingPlayers: vi.fn(() => []), getBySlotId: vi.fn() } as any;
+  const mockCancelRoom = vi.fn();
+
+  let db: AppDatabase;
+  let socket: ReturnType<typeof makeAdminSocket>;
+
+  beforeEach(() => {
+    db = new AppDatabase(':memory:');
+    socket = makeAdminSocket();
+    mockCancelRoom.mockClear();
+    registerAdminHandlers(socket as any, mockIo, () => undefined, mockStartBattle, db, mockLobby, mockCancelRoom);
+  });
+
+  afterEach(() => { db.close(); });
+
+  it('calls cancelRoom with the battleId', () => {
+    socket.trigger('admin:action', { type: 'cancel-battle', data: { battleId: 'b1' } });
+    expect(mockCancelRoom).toHaveBeenCalledWith('b1');
+  });
+
+  it('does not call cancelRoom when battleId is missing', () => {
+    socket.trigger('admin:action', { type: 'cancel-battle', data: {} });
+    expect(mockCancelRoom).not.toHaveBeenCalled();
   });
 });

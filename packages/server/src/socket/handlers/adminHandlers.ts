@@ -29,7 +29,8 @@ export function registerAdminHandlers(
   getRoom: (battleId: string) => BattleRoom | undefined,
   startBattle: (config: BattleState) => BattleRoom,
   db: AppDatabase,
-  lobby: LobbyManager
+  lobby: LobbyManager,
+  cancelRoom: (battleId: string) => void
 ): void {
   socket.on('admin:action', async (payload: AdminActionPayload) => {
     switch (payload.type) {
@@ -129,6 +130,11 @@ export function registerAdminHandlers(
         if (typeof battleId === 'string' && typeof teamId === 'string') {
           getRoom(battleId)?.forfeit(teamId);
         }
+        break;
+      }
+      case 'cancel-battle': {
+        const { battleId } = payload.data as { battleId: string };
+        if (typeof battleId === 'string') cancelRoom(battleId);
         break;
       }
       case 'lobby:list': {
