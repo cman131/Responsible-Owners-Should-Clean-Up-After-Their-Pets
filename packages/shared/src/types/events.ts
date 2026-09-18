@@ -48,6 +48,7 @@ export interface AdminActionPayload {
     | 'registry:save-team'
     | 'registry:delete-team'
     | 'start-battle'
+    | 'cancel-battle'
     | 'data:query';
   data: Record<string, unknown>;
 }
