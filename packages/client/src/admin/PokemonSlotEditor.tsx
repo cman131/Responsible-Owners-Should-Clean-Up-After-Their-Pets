@@ -1,16 +1,11 @@
 import { useState, useEffect } from 'react';
-import type { PokemonSpecies, PokemonSet } from '@poke-fighter/shared';
+import type { PokemonSpecies, PokemonSet, PokemonType } from '@poke-fighter/shared';
 import { PokemonSearchDropdown } from './PokemonSearchDropdown.js';
 import { MoveSearchDropdown } from './MoveSearchDropdown.js';
 import { ItemSearchDropdown } from './ItemSearchDropdown.js';
 import { TYPE_COLORS } from '../pokemonTypeColors.js';
 import { getSocket } from '../socket.js';
 import { toShowdownId } from '../battle/utils.js';
-
-interface Props {
-  value: Partial<PokemonSet>;
-  onChange: (updated: Partial<PokemonSet>) => void;
-}
 
 const NATURES = [
   { id: 'hardy',   boost: null,  drop: null  },
@@ -39,6 +34,21 @@ const NATURES = [
   { id: 'bashful', boost: null,  drop: null  },
   { id: 'quirky',  boost: null,  drop: null  },
 ] as const;
+
+const TERA_TYPES: PokemonType[] = [
+  'Normal', 'Fire', 'Water', 'Electric', 'Grass', 'Ice', 'Fighting', 'Poison',
+  'Ground', 'Flying', 'Psychic', 'Bug', 'Rock', 'Ghost', 'Dragon', 'Dark', 'Steel', 'Fairy',
+];
+
+const EV_IV_STATS = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'] as const;
+
+const DEFAULT_EVS = { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 };
+const DEFAULT_IVS = { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 };
+
+interface Props {
+  value: Partial<PokemonSet>;
+  onChange: (updated: Partial<PokemonSet>) => void;
+}
 
 export function PokemonSlotEditor({ value, onChange }: Props) {
   const [currentSpecies, setCurrentSpecies] = useState<PokemonSpecies | null>(null);
@@ -72,9 +82,10 @@ export function PokemonSlotEditor({ value, onChange }: Props) {
       level: value.level ?? 50,
       ability: Object.values(species.abilities)[0] ?? '',
       moves: value.moves ?? ['', '', '', ''],
-      evs: value.evs ?? { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
-      ivs: value.ivs ?? { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 },
+      evs: value.evs ?? DEFAULT_EVS,
+      ivs: value.ivs ?? DEFAULT_IVS,
       nature: value.nature ?? 'hardy',
+      teraType: species.types[0],
     });
   }
 
@@ -86,6 +97,17 @@ export function PokemonSlotEditor({ value, onChange }: Props) {
   function updateField<K extends keyof PokemonSet>(field: K, v: PokemonSet[K]) {
     onChange({ ...value, [field]: v });
   }
+
+  function updateTeraType(typeVal: string) {
+    if (typeVal) {
+      updateField('teraType', typeVal as PokemonType);
+    } else {
+      const { teraType: _removed, ...rest } = value;
+      onChange(rest);
+    }
+  }
+
+  const evTotal = EV_IV_STATS.reduce((sum, s) => sum + (value.evs?.[s] ?? 0), 0);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -101,7 +123,7 @@ export function PokemonSlotEditor({ value, onChange }: Props) {
             ))}
           </span>
           <span style={{ color: '#aaa', marginLeft: 'auto', display: 'flex', gap: 6 }}>
-            {(['hp', 'atk', 'def', 'spa', 'spd', 'spe'] as const).map((stat) => (
+            {EV_IV_STATS.map((stat) => (
               <span key={stat}>
                 <span style={{ color: '#666', fontSize: 9 }}>{stat.toUpperCase()} </span>
                 <span style={{ color: '#ccc' }}>{currentSpecies.baseStats[stat]}</span>
@@ -162,11 +184,11 @@ export function PokemonSlotEditor({ value, onChange }: Props) {
                   <option key={a} value={a}>{a}</option>
                 ))}
               </select>
-            ) : (
-              <select disabled value={value.ability ?? ''} style={{ ...inp, width: 200 }}>
-                <option value={value.ability ?? ''}>{value.ability ?? ''}</option>
+            ) : value.speciesId ? (
+              <select disabled value={value.ability ?? ''} style={{ ...inp, width: 200, color: '#888' }}>
+                <option value={value.ability ?? ''}>{value.ability ?? ''} (loading…)</option>
               </select>
-            )}
+            ) : null}
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <label style={lbl}>Item</label>
@@ -192,6 +214,47 @@ export function PokemonSlotEditor({ value, onChange }: Props) {
               ))}
             </select>
           </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <label style={lbl}>Tera</label>
+            <select
+              aria-label="Tera type"
+              value={value.teraType ?? ''}
+              onChange={(e) => updateTeraType(e.target.value)}
+              style={{ ...inp, width: 140 }}
+            >
+              <option value="">— none —</option>
+              {TERA_TYPES.map((t) => (
+                <option key={t} value={t} style={{ background: TYPE_COLORS[t] }}>{t}</option>
+              ))}
+            </select>
+          </div>
+          <details>
+            <summary style={{ ...lbl, cursor: 'pointer', userSelect: 'none' }}>EVs / IVs</summary>
+            <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {EV_IV_STATS.map((stat) => (
+                <div key={stat} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <span style={{ ...lbl, minWidth: 32 }}>{stat.toUpperCase()}</span>
+                  <input
+                    type="number" min={0} max={252}
+                    aria-label={`${stat.toUpperCase()} EV`}
+                    value={value.evs?.[stat] ?? 0}
+                    onChange={(e) => updateField('evs', { ...(value.evs ?? DEFAULT_EVS), [stat]: +e.target.value })}
+                    style={{ ...inp, width: 56 }}
+                  />
+                  <input
+                    type="number" min={0} max={31}
+                    aria-label={`${stat.toUpperCase()} IV`}
+                    value={value.ivs?.[stat] ?? 31}
+                    onChange={(e) => updateField('ivs', { ...(value.ivs ?? DEFAULT_IVS), [stat]: +e.target.value })}
+                    style={{ ...inp, width: 48 }}
+                  />
+                </div>
+              ))}
+              <div style={{ color: evTotal > 508 ? '#e74c3c' : '#888', fontSize: 11, marginTop: 2 }}>
+                Total: {evTotal} / 508
+              </div>
+            </div>
+          </details>
           <div>
             <label style={lbl}>Moves</label>
             {(() => {

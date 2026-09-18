@@ -127,8 +127,17 @@ describe('PokemonSlotEditor', () => {
       onChange={vi.fn()}
     />);
     // Do NOT fire socket response — currentSpecies remains null
-    const select = screen.getByDisplayValue('Blaze') as HTMLSelectElement;
+    const select = screen.getByDisplayValue('Blaze (loading…)') as HTMLSelectElement;
     expect(select.disabled).toBe(true);
+  });
+
+  it('shows loading hint text in ability option while species is loading', () => {
+    render(<PokemonSlotEditor
+      value={{ speciesId: 6, nickname: 'Charizard', level: 50, nature: 'timid', moves: ['', '', '', ''], ability: 'Blaze', evs: { hp:0,atk:0,def:0,spa:0,spd:0,spe:0 }, ivs: { hp:31,atk:31,def:31,spa:31,spd:31,spe:31 } }}
+      onChange={vi.fn()}
+    />);
+    // Do NOT fire socket response — currentSpecies remains null
+    expect(screen.getByRole('option', { name: 'Blaze (loading…)' })).toBeTruthy();
   });
 
   it('renders item selector when speciesId is set', () => {
@@ -182,5 +191,105 @@ describe('PokemonSlotEditor', () => {
       onChange={vi.fn()}
     />);
     expect(screen.queryByText('⚠ No moves set')).toBeNull();
+  });
+
+  describe('EV/IV section', () => {
+    const baseValue = {
+      speciesId: 6, nickname: 'Charizard', level: 50, nature: 'timid',
+      moves: ['', '', '', ''] as [string, string, string, string],
+      ability: 'Blaze',
+      evs: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
+      ivs: { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 },
+    };
+
+    it('renders EVs / IVs collapsible section when speciesId is set', () => {
+      render(<PokemonSlotEditor value={baseValue} onChange={vi.fn()} />);
+      expect(screen.getByText('EVs / IVs')).toBeTruthy();
+    });
+
+    it('shows HP EV input with current EV value', () => {
+      render(<PokemonSlotEditor value={{ ...baseValue, evs: { hp: 84, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 } }} onChange={vi.fn()} />);
+      expect((screen.getByRole('spinbutton', { name: 'HP EV' }) as HTMLInputElement).value).toBe('84');
+    });
+
+    it('shows HP IV input with current IV value', () => {
+      render(<PokemonSlotEditor value={{ ...baseValue, ivs: { hp: 0, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 } }} onChange={vi.fn()} />);
+      expect((screen.getByRole('spinbutton', { name: 'HP IV' }) as HTMLInputElement).value).toBe('0');
+    });
+
+    it('calls onChange with updated EV when HP EV input changes', () => {
+      const onChange = vi.fn();
+      render(<PokemonSlotEditor value={baseValue} onChange={onChange} />);
+      fireEvent.change(screen.getByRole('spinbutton', { name: 'HP EV' }), { target: { value: '252' } });
+      expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+        evs: expect.objectContaining({ hp: 252 }),
+      }));
+    });
+
+    it('calls onChange with updated IV when ATK IV input changes', () => {
+      const onChange = vi.fn();
+      render(<PokemonSlotEditor value={baseValue} onChange={onChange} />);
+      fireEvent.change(screen.getByRole('spinbutton', { name: 'ATK IV' }), { target: { value: '0' } });
+      expect(onChange).toHaveBeenCalledWith(expect.objectContaining({
+        ivs: expect.objectContaining({ atk: 0 }),
+      }));
+    });
+
+    it('displays EV total out of 508', () => {
+      render(<PokemonSlotEditor value={{ ...baseValue, evs: { hp: 252, atk: 4, def: 0, spa: 252, spd: 0, spe: 0 } }} onChange={vi.fn()} />);
+      expect(screen.getByText(/508\s*\/\s*508/)).toBeTruthy();
+    });
+
+    it('shows over-limit total when EVs exceed 508', () => {
+      render(<PokemonSlotEditor value={{ ...baseValue, evs: { hp: 252, atk: 252, def: 252, spa: 0, spd: 0, spe: 0 } }} onChange={vi.fn()} />);
+      expect(screen.getByText(/756\s*\/\s*508/)).toBeTruthy();
+    });
+  });
+
+  describe('Tera Type picker', () => {
+    const baseValue = {
+      speciesId: 6, nickname: 'Charizard', level: 50, nature: 'timid',
+      moves: ['', '', '', ''] as [string, string, string, string],
+      ability: 'Blaze',
+      evs: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
+      ivs: { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 },
+    };
+
+    it('renders Tera type select when speciesId is set', () => {
+      render(<PokemonSlotEditor value={baseValue} onChange={vi.fn()} />);
+      expect(screen.getByRole('combobox', { name: /tera type/i })).toBeTruthy();
+    });
+
+    it('shows empty value when teraType is not set', () => {
+      render(<PokemonSlotEditor value={baseValue} onChange={vi.fn()} />);
+      expect((screen.getByRole('combobox', { name: /tera type/i }) as HTMLSelectElement).value).toBe('');
+    });
+
+    it('shows selected teraType in the dropdown', () => {
+      render(<PokemonSlotEditor value={{ ...baseValue, teraType: 'Dragon' }} onChange={vi.fn()} />);
+      expect((screen.getByRole('combobox', { name: /tera type/i }) as HTMLSelectElement).value).toBe('Dragon');
+    });
+
+    it('calls onChange with teraType when a type is selected', () => {
+      const onChange = vi.fn();
+      render(<PokemonSlotEditor value={baseValue} onChange={onChange} />);
+      fireEvent.change(screen.getByRole('combobox', { name: /tera type/i }), { target: { value: 'Dragon' } });
+      expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ teraType: 'Dragon' }));
+    });
+
+    it('calls onChange without teraType property when selection is cleared', () => {
+      const onChange = vi.fn();
+      render(<PokemonSlotEditor value={{ ...baseValue, teraType: 'Fire' }} onChange={onChange} />);
+      fireEvent.change(screen.getByRole('combobox', { name: /tera type/i }), { target: { value: '' } });
+      const lastCall = onChange.mock.calls.at(-1)?.[0];
+      expect(lastCall?.teraType).toBeUndefined();
+    });
+
+    it('defaults teraType to primary species type when a new species is picked', () => {
+      const onChange = vi.fn();
+      render(<PokemonSlotEditor value={{}} onChange={onChange} />);
+      fireEvent.click(screen.getByText('pick-charizard'));
+      expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ teraType: 'Fire' }));
+    });
   });
 });
