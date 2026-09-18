@@ -41,4 +41,50 @@ describe('BattleConfigurator', () => {
     // Charizard base HP=78, L50, 0 EVs, 31 IVs: floor((2*78+31+0)*50/100)+50+10 = 153
     expect(state.teams[0]!.slots[0]!.party[0]!.maxHp).toBe(153);
   });
+
+  describe('levelCap', () => {
+    const level100Set: PokemonSet = {
+      speciesId: 6, level: 100, ability: 'blaze',
+      nickname: 'Charizard',
+      moves: ['flamethrower', 'airslash', 'roost', 'willowisp'],
+      evs: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
+      ivs: { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 },
+      nature: 'hardy',
+    };
+
+    function buildWith(set: PokemonSet, levelCap?: number) {
+      return new BattleConfigurator().build({
+        battleId: 'x', label: 'x',
+        levelCap,
+        teams: [
+          { slots: [{ slotId: 'a1', displayName: 'A', isNpc: false, party: [set] }] },
+          { slots: [{ slotId: 'b1', displayName: 'B', isNpc: true, party: [set] }] },
+        ],
+      });
+    }
+
+    it('clamps level and stats when levelCap is below set level', () => {
+      const state = buildWith(level100Set, 50);
+      const member = state.teams[0]!.slots[0]!.party[0]!;
+      expect(member.level).toBe(50);
+      // Charizard base HP=78, L50, 0 EVs, 31 IVs: floor((2*78+31)*50/100)+50+10 = 153
+      expect(member.maxHp).toBe(153);
+      expect(member.currentHp).toBe(153);
+    });
+
+    it('does not upscale when levelCap is above set level', () => {
+      const state = buildWith({ ...level100Set, level: 50 }, 100);
+      const member = state.teams[0]!.slots[0]!.party[0]!;
+      expect(member.level).toBe(50);
+      expect(member.maxHp).toBe(153);
+    });
+
+    it('uses set level when no levelCap is given', () => {
+      const state = buildWith(level100Set);
+      const member = state.teams[0]!.slots[0]!.party[0]!;
+      expect(member.level).toBe(100);
+      // Charizard base HP=78, L100, 0 EVs, 31 IVs: floor((2*78+31)*100/100)+100+10 = 297
+      expect(member.maxHp).toBe(297);
+    });
+  });
 });
