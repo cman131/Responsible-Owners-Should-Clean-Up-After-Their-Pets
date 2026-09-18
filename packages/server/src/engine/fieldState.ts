@@ -6,6 +6,7 @@ export function isGrounded(
   gravityActive: boolean,
 ): boolean {
   if (gravityActive) return true;
+  if (pokemon.heldItem === 'iron-ball') return true;
   if (effectiveTypes.includes('Flying')) return false;
   if (pokemon.ability === 'levitate') return false;
   if (pokemon.volatileStatus.some(v => v.name === 'magnet-rise')) return false;
