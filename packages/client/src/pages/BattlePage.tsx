@@ -27,6 +27,9 @@ function BattleView() {
   const { state, mySlotId, actionRequest, switchRequest, turnLog, displayHp, animatingSlots, submitAction, battleResult } = useBattle();
 
   function handleGoHome() {
+    if (state && !battleResult) {
+      if (!confirm('Leave this battle? You may not be able to rejoin.')) return;
+    }
     getSocket().emit('player:leave');
     sessionStorage.removeItem('mySlotId');
     navigate('/');

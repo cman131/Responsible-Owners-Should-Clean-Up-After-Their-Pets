@@ -232,11 +232,50 @@ describe('BattlePage', () => {
   });
 
   it('clicking Home emits player:leave and clears sessionStorage.mySlotId', () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
     sessionStorage.setItem('mySlotId', 'a1');
     renderBattlePage(makeState());
     fireEvent.click(screen.getByRole('button', { name: /home/i }));
     expect(mockSocket.emit).toHaveBeenCalledWith('player:leave');
     expect(sessionStorage.getItem('mySlotId')).toBeNull();
+  });
+
+  it('Home button does not leave if confirm is cancelled during active battle', () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    sessionStorage.setItem('mySlotId', 'a1');
+    renderBattlePage(makeState());
+    fireEvent.click(screen.getByRole('button', { name: /home/i }));
+    expect(mockSocket.emit).not.toHaveBeenCalledWith('player:leave');
+    expect(sessionStorage.getItem('mySlotId')).toBe('a1');
+  });
+
+  it('Home button skips confirm when battleResult is set', () => {
+    const confirmSpy = vi.spyOn(window, 'confirm');
+    renderBattlePage(makeState());
+    // battle:end payload uses `state:` (the socket event shape)
+    // BattleContext routes it through pendingBattleEnd → flushed in queue-drain effect
+    const battleEndCall = mockSocket.on.mock.calls.find((c) => c[0] === 'battle:end');
+    expect(battleEndCall).toBeTruthy();
+    act(() => {
+      battleEndCall![1]({ winningTeamId: 'team-b', state: makeState() });
+    });
+    // Two /home/i buttons exist after battle:end — the corner button and the BattleResultPanel button.
+    // Click the first one (corner "← Home").
+    fireEvent.click(screen.getAllByRole('button', { name: /home/i })[0]!);
+    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(mockSocket.emit).toHaveBeenCalledWith('player:leave');
+  });
+
+  it('Home button skips confirm on the waiting screen (no battle state)', () => {
+    const confirmSpy = vi.spyOn(window, 'confirm');
+    render(
+      <MemoryRouter initialEntries={[{ pathname: '/battle', state: null }]}>
+        <BattlePage />
+      </MemoryRouter>
+    );
+    fireEvent.click(screen.getByRole('button', { name: /home/i }));
+    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(mockSocket.emit).toHaveBeenCalledWith('player:leave');
   });
 
   it('uses slotId from navigation state over sessionStorage when provided', () => {
