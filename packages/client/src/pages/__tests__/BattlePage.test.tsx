@@ -258,4 +258,12 @@ describe('BattlePage', () => {
     expect(screen.queryByText('Tackle')).toBeNull();
     expect(screen.getByText('Waiting for others...')).toBeTruthy();
   });
+
+  it('action-log wrapper is fluid with flex-wrap and max-width 800', () => {
+    renderBattlePage(makeState());
+    const wrapper = screen.getByTestId('action-log-wrapper');
+    expect(wrapper.style.width).toBe('100%');
+    expect(wrapper.style.maxWidth).toBe('800px');
+    expect(wrapper.style.flexWrap).toBe('wrap');
+  });
 });

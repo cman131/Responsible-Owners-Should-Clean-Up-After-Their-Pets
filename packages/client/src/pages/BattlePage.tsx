@@ -88,8 +88,8 @@ function BattleView() {
 
       {myActiveMon && <ExpBar instanceId={myActiveMon.instanceId} nickname={myActiveMon.nickname} />}
 
-      <div style={{ display: 'flex', gap: 16, width: 800 }}>
-        <div style={{ flex: 1 }}>
+      <div data-testid="action-log-wrapper" style={{ display: 'flex', flexWrap: 'wrap', gap: 16, width: '100%', maxWidth: 800 }}>
+        <div style={{ flex: '1 0 260px' }}>
           {battleResult ? (
             <BattleResultPanel
               winningTeamId={battleResult.winningTeamId}
@@ -128,7 +128,7 @@ function BattleView() {
             <div style={{ background: '#0d0d1a', border: '1px solid #333', borderRadius: 6, padding: 16, color: '#555', fontSize: 13, textAlign: 'center' }}>Waiting for others...</div>
           )}
         </div>
-        <div style={{ width: 300 }}>
+        <div style={{ flex: '0 0 300px', maxWidth: '100%' }}>
           <TurnLog messages={turnLog} />
         </div>
       </div>
