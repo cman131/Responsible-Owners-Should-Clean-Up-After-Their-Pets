@@ -79,7 +79,12 @@ export function ActionPanel({
       setTargetingMove(mv);
       setSelectedTarget(sorted[0] ?? '');
     } else if (mode === 'listed') {
-      setTargetingMove(mv);
+      if (mv.legalTargets.length <= 1) {
+        onSubmitMove(mv.index, undefined, terastallize || undefined);
+        setTerastallize(false);
+      } else {
+        setTargetingMove(mv);
+      }
     } else {
       // labeled — target is game-determined, submit immediately
       onSubmitMove(mv.index, undefined, terastallize || undefined);

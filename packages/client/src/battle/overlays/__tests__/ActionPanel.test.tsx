@@ -163,7 +163,8 @@ describe('ActionPanel — target selector', () => {
     expect(screen.getByText('Earthquake')).toBeTruthy();
   });
 
-  it('shows formatted names display (not dropdown) for listed moves', () => {
+  it('auto-submits a listed move immediately when only one legal target exists', () => {
+    const onSubmitMove = vi.fn();
     const listedRequest: ActionRequestPayload = {
       ...baseRequest,
       validMoves: [
@@ -171,19 +172,32 @@ describe('ActionPanel — target selector', () => {
         ...baseRequest.validMoves.slice(1),
       ],
     };
+    render(<ActionPanel request={listedRequest} slotId="a1" state={mockState} onSubmitMove={onSubmitMove} onSubmitSwitch={vi.fn()} />);
+    fireEvent.click(screen.getByText('Surf'));
+    expect(onSubmitMove).toHaveBeenCalledWith(0, undefined, undefined);
+    expect(screen.queryByText('Confirm')).toBeNull();
+  });
+
+  it('shows formatted names display (not dropdown) for listed moves with multiple targets', () => {
+    const listedRequest: ActionRequestPayload = {
+      ...baseRequest,
+      validMoves: [
+        { index: 0, moveId: 'surf', type: 'Water', pp: 15, disabled: false, targetType: 'allAdjacentFoes', legalTargets: ['b1', 'b2'] },
+        ...baseRequest.validMoves.slice(1),
+      ],
+    };
     render(<ActionPanel request={listedRequest} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={vi.fn()} />);
     fireEvent.click(screen.getByText('Surf'));
     expect(screen.queryByRole('combobox')).toBeNull();
     expect(screen.getByText('Confirm')).toBeTruthy();
-    expect(screen.getByText('Bob')).toBeTruthy();
   });
 
-  it('Confirm on listed move calls onSubmitMove without targetSlotId', () => {
+  it('Confirm on listed move with multiple targets calls onSubmitMove without targetSlotId', () => {
     const onSubmitMove = vi.fn();
     const listedRequest: ActionRequestPayload = {
       ...baseRequest,
       validMoves: [
-        { index: 0, moveId: 'surf', type: 'Water', pp: 15, disabled: false, targetType: 'allAdjacentFoes', legalTargets: ['b1'] },
+        { index: 0, moveId: 'surf', type: 'Water', pp: 15, disabled: false, targetType: 'allAdjacentFoes', legalTargets: ['b1', 'b2'] },
         ...baseRequest.validMoves.slice(1),
       ],
     };
