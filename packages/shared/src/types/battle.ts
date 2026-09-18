@@ -1,4 +1,4 @@
-import type { PokemonType, Stats } from './pokemon.js';
+import type { PokemonType, Stats, ExpGrowthCurve } from './pokemon.js';
 
 export type BattlePhase = 'setup' | 'action' | 'resolution' | 'switch' | 'ended';
 
@@ -62,7 +62,7 @@ export interface PartyMember {
   isEvioliteEligible?: boolean;
   fainted: boolean;
   expTotal: number;
-  growthRate: string;
+  growthRate: ExpGrowthCurve;
   ivs?: Stats;
   evs?: Stats;
   nature?: string;
