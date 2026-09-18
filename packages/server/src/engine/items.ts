@@ -48,6 +48,12 @@ export interface ItemHooks {
   onAfterDamageTakenForceSwitch?: (ctx: ItemContext & { damageTaken: number }) => boolean;
   /** White Herb (restoreStats) + Eject Pack (forceSwitch) */
   onStatDropped?: (ctx: ItemContext) => { restoreStats?: boolean; forceSwitch?: boolean; consume: boolean };
+  /** Clear Amulet: suppress all incoming negative stat deltas */
+  preventsStatDrop?: boolean;
+  /** Covert Cloak: suppress secondary effects targeting the holder */
+  preventsSecondaryEffects?: boolean;
+  /** Mirror Herb: copy positive stat boosts gained by an opponent */
+  onOpponentStatBoosted?: (ctx: ItemContext & { boostDeltas: Partial<StatBoosts> }) => { copyBoosts: boolean; consume?: boolean } | null;
   /** Terrain seeds: fires on switch-in and at end-of-turn when terrain is active */
   onSwitchIn?: (ctx: ItemContext & { terrain: string | null }) => { statBoostDeltas?: Partial<StatBoosts>; consume?: boolean } | undefined;
 }
@@ -67,6 +73,13 @@ const ITEM_HOOKS: Record<string, ItemHooks> = {
   },
   'wise-glasses': {
     onAttackerModifier: ({ isPhysical }) => !isPhysical ? 1.1 : 1,
+  },
+  'metronome': {
+    onAttackerModifier: ({ holder }) => {
+      const entry = holder.volatileStatus.find(v => v.name === 'metronome-count');
+      const count = entry?.accumulated ?? 0;
+      return Math.min(1 + count * 0.2, 2);
+    },
   },
   'choice-scarf': {
     onSpeedModifier: () => 1.5,
@@ -306,6 +319,15 @@ const ITEM_HOOKS: Record<string, ItemHooks> = {
   },
   'eject-pack': {
     onStatDropped: () => ({ forceSwitch: true, consume: true }),
+  },
+  'clear-amulet': {
+    preventsStatDrop: true,
+  },
+  'covert-cloak': {
+    preventsSecondaryEffects: true,
+  },
+  'mirror-herb': {
+    onOpponentStatBoosted: () => ({ copyBoosts: true, consume: true }),
   },
   'red-card': {
     onAfterHit: ({ totalDamage }) => totalDamage > 0 ? { forceAttackerSwitch: true, consume: true } : null,

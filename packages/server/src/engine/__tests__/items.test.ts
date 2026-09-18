@@ -726,3 +726,182 @@ describe('Loaded Dice', () => {
     expect(IMPLEMENTED_ITEM_IDS.has('loaded-dice')).toBe(true);
   });
 });
+
+describe('Clear Amulet', () => {
+  it('prevents incoming stat drops from opponent moves', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'charm', currentPp: 20, maxPp: 20 };
+    state.teams[1]!.slots[0]!.party[0]!.heldItem = 'clear-amulet';
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.statBoosts.atk).toBe(0);
+  });
+
+  it('stat drops apply normally without Clear Amulet', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'charm', currentPp: 20, maxPp: 20 };
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.statBoosts.atk).toBe(-2);
+  });
+
+  it('appears in IMPLEMENTED_ITEM_IDS', () => {
+    expect(IMPLEMENTED_ITEM_IDS.has('clear-amulet')).toBe(true);
+  });
+});
+
+describe('Covert Cloak', () => {
+  it('prevents secondary flinch from airslash', () => {
+    const state = make1v1State();
+    state.teams[1]!.slots[0]!.party[0]!.heldItem = 'covert-cloak';
+    state.teams[1]!.slots[0]!.party[0]!.moves[2] = { moveId: 'splash', currentPp: 40, maxPp: 40 };
+    const engine = new BattleEngine({ rng: () => 0 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.volatileStatus.some(v => v.name === 'flinch')).toBe(false);
+  });
+
+  it('flinch applies normally without Covert Cloak', () => {
+    const state = make1v1State();
+    state.teams[1]!.slots[0]!.party[0]!.moves[2] = { moveId: 'splash', currentPp: 40, maxPp: 40 };
+    const engine = new BattleEngine({ rng: () => 0 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.volatileStatus.some(v => v.name === 'flinch')).toBe(true);
+  });
+
+  it('prevents secondary burn from scald', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'scald', currentPp: 15, maxPp: 15 };
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    p2.heldItem = 'covert-cloak';
+    p2.speciesId = 1;
+    p2.ability = 'overgrow';
+    p2.moves[2] = { moveId: 'splash', currentPp: 40, maxPp: 40 };
+    const engine = new BattleEngine({ rng: () => 0 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    expect(newState.teams[1]!.slots[0]!.party[0]!.status).toBeUndefined();
+  });
+
+  it('appears in IMPLEMENTED_ITEM_IDS', () => {
+    expect(IMPLEMENTED_ITEM_IDS.has('covert-cloak')).toBe(true);
+  });
+});
+
+describe('Mirror Herb', () => {
+  it('copies opponent stat boosts when foe uses swords dance and consumes itself', () => {
+    const state = make1v1State();
+    state.teams[1]!.slots[0]!.party[0]!.moves[0] = { moveId: 'swordsdance', currentPp: 20, maxPp: 20 };
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'mirror-herb';
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 2 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+    const p1 = newState.teams[0]!.slots[0]!.party[0]!;
+    const p2 = newState.teams[1]!.slots[0]!.party[0]!;
+    expect(p2.statBoosts.atk).toBe(2);
+    expect(p1.statBoosts.atk).toBe(2);
+    expect(p1.heldItem).toBeUndefined();
+    expect(events.some(e => e.type === 'item-consumed' && (e.data as any).item === 'mirror-herb')).toBe(true);
+  });
+
+  it('does not trigger when foe uses a non-boosting move', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'mirror-herb';
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    expect(newState.teams[0]!.slots[0]!.party[0]!.heldItem).toBe('mirror-herb');
+    expect(newState.teams[0]!.slots[0]!.party[0]!.statBoosts.atk).toBe(0);
+  });
+
+  it('appears in IMPLEMENTED_ITEM_IDS', () => {
+    expect(IMPLEMENTED_ITEM_IDS.has('mirror-herb')).toBe(true);
+  });
+});
+
+describe('Metronome item', () => {
+  it('applies no power modifier on first use (no prior lastMoveId)', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'metronome';
+    // lastMoveId intentionally not set — this is the first use ever
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' }, // flamethrower
+      'slot-b1': { type: 'move', moveIndex: 2 }, // roost — no damage to p1
+    });
+    const attacker = newState.teams[0]!.slots[0]!.party[0]!;
+    expect(attacker.volatileStatus.find(v => v.name === 'metronome-count')).toBeUndefined();
+    const dmgEvent = events.find(e => e.type === 'damage-dealt' && (e.data as any).targetSlotId === 'slot-b1');
+    expect((dmgEvent!.data as any).damage).toBe(28); // no multiplier applied
+  });
+
+  it('adds metronome-count volatile (accumulated: 1) and boosts damage on 2nd consecutive use', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'metronome';
+    state.teams[0]!.slots[0]!.party[0]!.lastMoveId = 'flamethrower'; // used flamethrower last turn
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' }, // flamethrower again
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    const attacker = newState.teams[0]!.slots[0]!.party[0]!;
+    const v = attacker.volatileStatus.find(v => v.name === 'metronome-count');
+    expect(v).toBeDefined();
+    expect(v?.accumulated).toBe(1);
+    const dmgEvent = events.find(e => e.type === 'damage-dealt' && (e.data as any).targetSlotId === 'slot-b1');
+    expect((dmgEvent!.data as any).damage).toBe(33); // floor(28 * 1.2) = 33
+  });
+
+  it('resets metronome-count volatile when switching to a different move', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'metronome';
+    state.teams[0]!.slots[0]!.party[0]!.lastMoveId = 'airslash'; // different move used last turn
+    state.teams[0]!.slots[0]!.party[0]!.volatileStatus.push({ name: 'metronome-count', accumulated: 3 });
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' }, // flamethrower (differs from lastMoveId)
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    const attacker = newState.teams[0]!.slots[0]!.party[0]!;
+    expect(attacker.volatileStatus.find(v => v.name === 'metronome-count')).toBeUndefined();
+  });
+
+  it('caps modifier at ×2.0 regardless of streak length', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'metronome';
+    state.teams[0]!.slots[0]!.party[0]!.lastMoveId = 'flamethrower';
+    state.teams[0]!.slots[0]!.party[0]!.volatileStatus.push({ name: 'metronome-count', accumulated: 99 });
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    const dmgEvent = events.find(e => e.type === 'damage-dealt' && (e.data as any).targetSlotId === 'slot-b1');
+    expect((dmgEvent!.data as any).damage).toBe(56); // floor(28 * 2.0) = 56
+  });
+
+  it('appears in IMPLEMENTED_ITEM_IDS', () => {
+    expect(IMPLEMENTED_ITEM_IDS.has('metronome')).toBe(true);
+  });
+});

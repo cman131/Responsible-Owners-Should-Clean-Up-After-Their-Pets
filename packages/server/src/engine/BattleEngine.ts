@@ -676,6 +676,41 @@ export class BattleEngine {
           }
         }
 
+        // Mirror Herb: copy positive stat boosts gained by any target to a foe holding Mirror Herb
+        for (let tIdx = 0; tIdx < filteredTargets.length; tIdx++) {
+          const t = filteredTargets[tIdx]!;
+          const tSlotId = filteredSlotIds[tIdx]!;
+          const pre = preHandlerBoosts[tIdx]!;
+          const posDeltas: Partial<Record<keyof StatBoosts, number>> = {};
+          for (const k of Object.keys(t.statBoosts) as (keyof StatBoosts)[]) {
+            const delta = t.statBoosts[k] - pre[k]!;
+            if (delta > 0) posDeltas[k] = delta;
+          }
+          if (Object.keys(posDeltas).length === 0) continue;
+          const boostedTeam = s.teams.find(tm => tm.slots.some(sl => sl.slotId === tSlotId));
+          for (const foeTeam of s.teams) {
+            if (foeTeam === boostedTeam) continue;
+            for (const foeSlot of foeTeam.slots) {
+              const foeMon = foeSlot.party[foeSlot.activePokemonIndex];
+              if (!foeMon || foeMon.fainted) continue;
+              const herbResult = getItemHooks(foeMon.heldItem).onOpponentStatBoosted?.({
+                holder: foeMon,
+                state: s,
+                boostDeltas: posDeltas,
+              });
+              if (herbResult?.copyBoosts) {
+                events.push(applyStatBoost(foeMon, foeSlot.slotId, posDeltas));
+                if (herbResult.consume && foeMon.heldItem) {
+                  const consumed = foeMon.heldItem;
+                  foeMon.lastConsumedItem = consumed;
+                  delete foeMon.heldItem;
+                  events.push({ type: 'item-consumed', data: { slotId: foeSlot.slotId, item: consumed, reason: 'triggered' } });
+                }
+              }
+            }
+          }
+        }
+
         if (handlerResult.forceSwitch) {
           const { targetSlotId, targetInstanceId } = handlerResult.forceSwitch;
           const switchResult = this.performSwitch(s, targetSlotId, targetInstanceId, 'phased');
@@ -1428,6 +1463,19 @@ export class BattleEngine {
             : this.rollHitCount(multihitSec.hits))
         : 1;
 
+      if (attacker.heldItem === 'metronome') {
+        const existing = attacker.volatileStatus.find(v => v.name === 'metronome-count');
+        if (attacker.lastMoveId === move.id) {
+          if (existing) {
+            existing.accumulated = (existing.accumulated ?? 0) + 1;
+          } else {
+            attacker.volatileStatus.push({ name: 'metronome-count', accumulated: 1 });
+          }
+        } else {
+          attacker.volatileStatus = attacker.volatileStatus.filter(v => v.name !== 'metronome-count');
+        }
+      }
+
       const isPhysical = move.category === 'physical';
       const itemHooks = getItemHooks(attacker.heldItem);
 
@@ -1729,7 +1777,8 @@ export class BattleEngine {
       // Post-hit secondaries (applied after final hit, uses accumulated totalDamage)
       const targetHasSub = target.volatileStatus.some(v => v.name === 'substitute');
       if (totalDamage > 0) {
-        if (!target.fainted && !targetHasSub && !sheerForceActive) {
+        const covertCloakActive = getItemHooks(target.heldItem).preventsSecondaryEffects === true;
+        if (!target.fainted && !targetHasSub && !sheerForceActive && !covertCloakActive) {
           const secondaryEvent = evaluateSecondaryEffect(move, target, targetSlotId, defTypes, s, attackerAbilityForDmg);
           if (secondaryEvent) events.push(secondaryEvent);
           const volatileEvent = evaluateVolatileEffect(move.id, target, targetSlotId, attackerSlotId, attacker);
@@ -1741,7 +1790,7 @@ export class BattleEngine {
         );
         const isSoundMove = move.soundMove === true;
         const preSecBoosts = { ...target.statBoosts };
-        if (postSecs.length > 0 && !target.fainted && (!targetHasSub || isSoundMove) && !sheerForceActive) {
+        if (postSecs.length > 0 && !target.fainted && (!targetHasSub || isSoundMove) && !sheerForceActive && !covertCloakActive) {
           events.push(...applySecondaries({
             secondaries: postSecs,
             totalDamage,
