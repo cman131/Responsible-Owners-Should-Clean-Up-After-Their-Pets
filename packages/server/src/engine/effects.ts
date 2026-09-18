@@ -42,6 +42,7 @@ export function applyStatBoost(
   const changes: Record<string, number> = {};
   for (const [key, delta] of Object.entries(deltas) as [keyof StatBoosts, number][]) {
     if (delta === undefined) continue;
+    if (delta < 0 && getItemHooks(member.heldItem).preventsStatDrop) continue;
     const current = member.statBoosts[key];
     const next = Math.max(-6, Math.min(6, current + delta * multiplier));
     const actual = next - current;

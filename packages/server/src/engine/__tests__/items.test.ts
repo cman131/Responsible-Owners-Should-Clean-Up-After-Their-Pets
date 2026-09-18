@@ -762,22 +762,22 @@ describe('Covert Cloak', () => {
     state.teams[1]!.slots[0]!.party[0]!.heldItem = 'covert-cloak';
     state.teams[1]!.slots[0]!.party[0]!.moves[2] = { moveId: 'splash', currentPp: 40, maxPp: 40 };
     const engine = new BattleEngine({ rng: () => 0 });
-    const { newState } = engine.resolveTurn(state, {
+    const { events } = engine.resolveTurn(state, {
       'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },
       'slot-b1': { type: 'move', moveIndex: 2 },
     });
-    expect(newState.teams[1]!.slots[0]!.party[0]!.volatileStatus.some(v => v.name === 'flinch')).toBe(false);
+    expect(events.some(e => e.type === 'volatile-applied' && (e.data as any).volatile === 'flinch')).toBe(false);
   });
 
   it('flinch applies normally without Covert Cloak', () => {
     const state = make1v1State();
     state.teams[1]!.slots[0]!.party[0]!.moves[2] = { moveId: 'splash', currentPp: 40, maxPp: 40 };
     const engine = new BattleEngine({ rng: () => 0 });
-    const { newState } = engine.resolveTurn(state, {
+    const { events } = engine.resolveTurn(state, {
       'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },
       'slot-b1': { type: 'move', moveIndex: 2 },
     });
-    expect(newState.teams[1]!.slots[0]!.party[0]!.volatileStatus.some(v => v.name === 'flinch')).toBe(true);
+    expect(events.some(e => e.type === 'volatile-applied' && (e.data as any).volatile === 'flinch')).toBe(true);
   });
 
   it('prevents secondary burn from scald', () => {
