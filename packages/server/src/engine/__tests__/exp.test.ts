@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { calcExpYield, distributeExp, checkLevelUps, expForLevel } from '../exp.js';
+import { calcExpYield, distributeExp, checkLevelUps } from '../exp.js';
+import { expForLevel } from '@poke-fighter/shared';
 import type { PartyMember } from '@poke-fighter/shared';
 
 function makeMon(overrides: Partial<PartyMember> = {}): PartyMember {
