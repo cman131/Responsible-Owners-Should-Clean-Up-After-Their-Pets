@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { BattleState, SlotState } from '@poke-fighter/shared';
 import { toShowdownId } from './utils.js';
 import './battle-animations.css';
@@ -28,19 +29,27 @@ export function BattleScene({ state, mySlotId, animatingSlots }: Props) {
       borderRadius: 4,
       overflow: 'hidden',
     }}>
-      {mySlot && renderSprite(mySlot, 'own', 0, animatingSlots)}
-      {allySlots.map((slot, i) => renderSprite(slot, 'ally', i, animatingSlots))}
-      {foeSlots.map((slot, i) => renderSprite(slot, 'foe', i, animatingSlots))}
+      {mySlot && <SpriteSlot slot={mySlot} role="own" index={0} animatingSlots={animatingSlots} />}
+      {allySlots.map((slot, i) => (
+        <SpriteSlot key={slot.slotId} slot={slot} role="ally" index={i} animatingSlots={animatingSlots} />
+      ))}
+      {foeSlots.map((slot, i) => (
+        <SpriteSlot key={slot.slotId} slot={slot} role="foe" index={i} animatingSlots={animatingSlots} />
+      ))}
     </div>
   );
 }
 
-function renderSprite(
-  slot: SlotState,
-  role: 'own' | 'ally' | 'foe',
-  index: number,
-  animatingSlots?: Map<string, 'attack' | 'hit' | 'faint'>,
-) {
+interface SpriteSlotProps {
+  slot: SlotState;
+  role: 'own' | 'ally' | 'foe';
+  index: number;
+  animatingSlots: Map<string, 'attack' | 'hit' | 'faint'> | undefined;
+}
+
+function SpriteSlot({ slot, role, index, animatingSlots }: SpriteSlotProps) {
+  const [imgError, setImgError] = useState(false);
+
   const mon = slot.party[slot.activePokemonIndex];
   const animKind = animatingSlots?.get(slot.slotId);
   if (!mon || (mon.fainted && animKind !== 'faint')) return null;
@@ -68,14 +77,14 @@ function renderSprite(
 
   return (
     <div
-      key={slot.slotId}
       className={animClassName}
       style={{ position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center', ...pos }}
     >
-      {mon.speciesName ? (
+      {mon.speciesName && !imgError ? (
         <img
           src={url}
           alt={mon.speciesName}
+          onError={() => setImgError(true)}
           style={{ width: '100%', height: '100%', imageRendering: 'pixelated' }}
         />
       ) : (

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { BattleScene } from '../BattleScene.js';
 import type { BattleState, PartyMember, SlotState, TeamState } from '@poke-fighter/shared';
@@ -75,6 +75,18 @@ describe('BattleScene', () => {
     const imgs = screen.getAllByRole('img') as HTMLImageElement[];
     const frontSprite = imgs.find((img) => img.src.includes('charizard') && !img.src.includes('ani-back'));
     expect(frontSprite).toBeFalsy();
+  });
+
+  it('shows placeholder div when sprite image fails to load', () => {
+    const state = makeState('a1', 'b1');
+    const { container } = render(<BattleScene state={state} mySlotId="a1" />);
+    const imgs = container.querySelectorAll('img');
+    const foeImg = Array.from(imgs).find((img) => (img as HTMLImageElement).src.includes('charizard'));
+    expect(foeImg).toBeTruthy();
+    fireEvent.error(foeImg!);
+    const imgsAfter = container.querySelectorAll('img');
+    const foeImgAfter = Array.from(imgsAfter).find((img) => (img as HTMLImageElement).src.includes('charizard'));
+    expect(foeImgAfter).toBeFalsy();
   });
 
   it('renders a placeholder div when speciesName is empty', () => {
