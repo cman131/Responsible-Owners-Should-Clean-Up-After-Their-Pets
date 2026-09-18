@@ -2,7 +2,7 @@
 
 ## State
 
-New
+Complete
 
 Two bugs in `SlotRow` within `SlotAssignmentStep` where slot state is not properly initialized or cleared. They touch the same `onUpdate` calls and should be fixed together.
 

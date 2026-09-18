@@ -122,7 +122,7 @@ function SlotRow({ slot, index, onUpdate, waitingPlayers, savedPlayers, savedNpc
     <div style={{ background: '#0d0d1a', border: '1px solid #333', borderRadius: 4, padding: 12, marginBottom: 8, display: 'flex', gap: 8, alignItems: 'center' }}>
       <select
         value={slot.type}
-        onChange={(e) => onUpdate(index, { type: e.target.value, displayName: '' })}
+        onChange={(e) => onUpdate(index, { type: e.target.value as 'player' | 'npc', displayName: '', profileId: undefined, defaultTeam: undefined })}
         style={selectStyle}
       >
         <option value="player">Player</option>
@@ -135,7 +135,7 @@ function SlotRow({ slot, index, onUpdate, waitingPlayers, savedPlayers, savedNpc
           onChange={(e) => {
             const name = e.target.value;
             const player = savedPlayers.find((p: { profileId: string; displayName: string; defaultTeam?: import('@poke-fighter/shared').PokemonSet[] }) => p.displayName === name);
-            onUpdate(index, { displayName: name, defaultTeam: player?.defaultTeam });
+            onUpdate(index, { displayName: name, profileId: player?.profileId, defaultTeam: player?.defaultTeam });
           }}
           style={selectStyle}
         >
@@ -149,7 +149,7 @@ function SlotRow({ slot, index, onUpdate, waitingPlayers, savedPlayers, savedNpc
           onChange={(e) => {
             const name = e.target.value;
             const npc = savedNpcs.find((n: { profileId: string; name: string; defaultTeam?: import('@poke-fighter/shared').PokemonSet[] }) => n.name === name);
-            onUpdate(index, { displayName: name, defaultTeam: npc?.defaultTeam });
+            onUpdate(index, { displayName: name, profileId: npc?.profileId, defaultTeam: npc?.defaultTeam });
           }}
           style={selectStyle}
         >

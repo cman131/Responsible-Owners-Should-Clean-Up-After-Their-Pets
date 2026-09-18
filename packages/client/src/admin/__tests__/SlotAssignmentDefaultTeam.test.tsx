@@ -107,6 +107,70 @@ describe('SlotAssignmentStep — defaultTeam threading', () => {
   });
 });
 
+describe('SlotAssignmentStep — profileId threading', () => {
+  it('passes profileId through onNext when a saved player is selected', () => {
+    const onNext = vi.fn();
+    render(<SlotAssignmentStep teamASlots={1} teamBSlots={0} onNext={onNext} onBack={vi.fn()} />);
+
+    act(() => {
+      registryHandler?.({
+        resource: 'players',
+        data: [{
+          profileId: 'p1',
+          displayName: 'Misty',
+          defaultTeam: { templateId: 't1', name: "Misty's Team", pokemon: [staryu], createdAt: '2026-01-01T00:00:00Z' },
+          createdAt: '2026-01-01T00:00:00Z',
+        }],
+      });
+    });
+
+    const playerNameSelect = screen.getAllByRole('combobox').find(
+      (s) => Array.from((s as HTMLSelectElement).options).some((o) => o.text.includes('Misty'))
+    )!;
+    fireEvent.change(playerNameSelect, { target: { value: 'Misty' } });
+
+    fireEvent.click(screen.getByText(/next/i));
+    expect(onNext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        teamA: expect.arrayContaining([
+          expect.objectContaining({ profileId: 'p1' }),
+        ]),
+      })
+    );
+  });
+
+  it('passes profileId through onNext when a saved NPC is selected', () => {
+    const onNext = vi.fn();
+    render(<SlotAssignmentStep teamASlots={0} teamBSlots={1} onNext={onNext} onBack={vi.fn()} />);
+
+    act(() => {
+      registryHandler?.({
+        resource: 'npcs',
+        data: [{
+          profileId: 'npc1',
+          name: 'Blaine',
+          team: { templateId: 't2', name: "Blaine's Team", pokemon: [magmar], createdAt: '2026-01-01T00:00:00Z' },
+          createdAt: '2026-01-01T00:00:00Z',
+        }],
+      });
+    });
+
+    const npcNameSelect = screen.getAllByRole('combobox').find(
+      (s) => Array.from((s as HTMLSelectElement).options).some((o) => o.text.includes('Blaine'))
+    )!;
+    fireEvent.change(npcNameSelect, { target: { value: 'Blaine' } });
+
+    fireEvent.click(screen.getByText(/next/i));
+    expect(onNext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        teamB: expect.arrayContaining([
+          expect.objectContaining({ profileId: 'npc1' }),
+        ]),
+      })
+    );
+  });
+});
+
 describe('SlotAssignmentStep — duplicate slot warning', () => {
   it('shows ⚠ duplicate badge when the same NPC is selected in two slots', () => {
     render(<SlotAssignmentStep teamASlots={0} teamBSlots={2} onNext={vi.fn()} onBack={vi.fn()} />);
