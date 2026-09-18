@@ -87,6 +87,26 @@ export interface AbilityHooks {
   removesSecondaries?: true;
 }
 
+function boosterHighestStat(pokemon: PartyMember): string {
+  const candidates: [string, number][] = [
+    ['atk', pokemon.stats.atk],
+    ['def', pokemon.stats.def],
+    ['spa', pokemon.stats.spa],
+    ['spd', pokemon.stats.spd],
+    ['spe', pokemon.stats.spe],
+  ];
+  return candidates.reduce((a, b) => b[1] > a[1] ? b : a)[0];
+}
+
+function quarkProtoBattleStat(pokemon: PartyMember, conditionFromField: boolean): number {
+  const entry = !conditionFromField
+    ? pokemon.volatileStatus.find(v => v.name === 'booster-energy-active')
+    : undefined;
+  const stat = conditionFromField ? boosterHighestStat(pokemon) : (entry?.variant ?? boosterHighestStat(pokemon));
+  if (stat === 'spe') return 1;
+  return (stat === 'atk' || stat === 'def') ? 1.3 : 1.5;
+}
+
 const ABILITY_HOOKS: Record<string, AbilityHooks> = {
   intimidate: {
     onSwitchIn: () => ({ statBoostDeltas: { atk: -1 } }),
@@ -157,6 +177,44 @@ const ABILITY_HOOKS: Record<string, AbilityHooks> = {
   chlorophyll: {
     onSpeedModifier: ({ state }) =>
       state.field.weather?.type === 'sun' ? 2 : 1,
+  },
+  'quark-drive': {
+    onSpeedModifier: ({ user, state }) => {
+      const active = state.field.terrain?.type === 'electric'
+        || user.volatileStatus.some(v => v.name === 'booster-energy-active');
+      if (!active) return 1;
+      const entry = user.volatileStatus.find(v => v.name === 'booster-energy-active');
+      const boostedStat = state.field.terrain?.type === 'electric'
+        ? boosterHighestStat(user)
+        : (entry?.variant ?? boosterHighestStat(user));
+      return boostedStat === 'spe' ? 1.5 : 1;
+    },
+    onAttackerModifier: ({ user, state, moveType: _mt, basePower: _bp, target: _t }) => {
+      const active = state.field.terrain?.type === 'electric'
+        || user.volatileStatus.some(v => v.name === 'booster-energy-active');
+      if (!active) return 1;
+      return quarkProtoBattleStat(user, state.field.terrain?.type === 'electric');
+    },
+  },
+  'protosynthesis': {
+    onSpeedModifier: ({ user, state }) => {
+      const weatherActive = state.field.weather?.type === 'sun' || state.field.weather?.type === 'harsh-sun';
+      const active = weatherActive
+        || user.volatileStatus.some(v => v.name === 'booster-energy-active');
+      if (!active) return 1;
+      const entry = user.volatileStatus.find(v => v.name === 'booster-energy-active');
+      const boostedStat = weatherActive
+        ? boosterHighestStat(user)
+        : (entry?.variant ?? boosterHighestStat(user));
+      return boostedStat === 'spe' ? 1.5 : 1;
+    },
+    onAttackerModifier: ({ user, state }) => {
+      const weatherActive = state.field.weather?.type === 'sun' || state.field.weather?.type === 'harsh-sun';
+      const active = weatherActive
+        || user.volatileStatus.some(v => v.name === 'booster-energy-active');
+      if (!active) return 1;
+      return quarkProtoBattleStat(user, weatherActive);
+    },
   },
   levitate: {
     onMoveImmunity: ({ move }) => move.type === 'Ground' ? { immune: true } : null,
