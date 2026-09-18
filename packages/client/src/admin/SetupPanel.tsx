@@ -42,7 +42,7 @@ export function SetupPanel({ onBack, onWatch }: SetupPanelProps) {
     setStep('settings');
   }
 
-  function handleStart({ label }: { label: string }) {
+  function handleStart({ label, levelCap }: { label: string; levelCap?: number }) {
     const socket = getSocket();
     const id = uuidv4();
     setBattleId(id);
@@ -64,6 +64,7 @@ export function SetupPanel({ onBack, onWatch }: SetupPanelProps) {
       data: {
         battleId: id,
         label,
+        ...(levelCap !== undefined ? { levelCap } : {}),
         teams: [
           { slots: buildSlotsWithTeams(slotAssignment!.teamA) },
           { slots: buildSlotsWithTeams(slotAssignment!.teamB) },
