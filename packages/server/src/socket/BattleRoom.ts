@@ -141,6 +141,27 @@ export class BattleRoom {
     return { ok: true };
   }
 
+  submitDefaultAction(slotId: string): { ok: boolean; reason?: string } {
+    if (this.state.phase !== 'action') {
+      return { ok: false, reason: 'Battle not in action phase' };
+    }
+    if (this.awaitingForcedSwitches.has(slotId)) {
+      return { ok: false, reason: 'Slot awaiting forced switch, not action phase stall' };
+    }
+    if (this.pendingActions.has(slotId)) {
+      return { ok: false, reason: 'Action already submitted for this slot' };
+    }
+    const slot = this.findSlot(slotId);
+    if (!slot) return { ok: false, reason: 'Unknown slot' };
+    const active = slot.party[slot.activePokemonIndex];
+    if (!active || active.fainted) return { ok: false, reason: 'No active pokemon' };
+
+    const validMoves = this.buildValidMoves(slotId, active);
+    const firstMove = validMoves[0]!;
+    const action: MoveAction = { type: 'move', moveIndex: firstMove.index };
+    return this.submitAction(slotId, action);
+  }
+
   getStateSnapshot(): BattleState {
     return structuredClone(this.state);
   }

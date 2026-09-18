@@ -553,3 +553,64 @@ describe('pivot switch reason', () => {
     expect(switchedEvent!.data['reason']).toBe('phased');
   });
 });
+
+describe('submitDefaultAction', () => {
+  it('returns ok and stores a pending action for a slot that has not yet acted', () => {
+    const state = make1v1State();
+    const room = new BattleRoom({ initialState: state });
+    // slot-b1 (NPC) also needs to act before turn resolves; submit it first so
+    // we can check submitDefaultAction on slot-a1 in isolation without triggering resolveTurn
+    room.submitAction('slot-b1', { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' });
+
+    const result = room.submitDefaultAction('slot-a1');
+    expect(result.ok).toBe(true);
+  });
+
+  it('returns error when action is already pending for the slot', () => {
+    const state = make1v1State();
+    const room = new BattleRoom({ initialState: state });
+    // Submit for slot-a1 first (slot-b1 still needs to act so turn won't resolve)
+    room.submitAction('slot-a1', { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' });
+
+    const result = room.submitDefaultAction('slot-a1');
+    expect(result.ok).toBe(false);
+    expect(result.reason).toMatch(/already/i);
+  });
+
+  it('returns error when the battle phase is not action', () => {
+    const state = make1v1State();
+    state.phase = 'ended';
+    const room = new BattleRoom({ initialState: state });
+
+    const result = room.submitDefaultAction('slot-a1');
+    expect(result.ok).toBe(false);
+    expect(result.reason).toMatch(/action phase/i);
+  });
+
+  it('resolves the turn when it supplies the last missing action', () => {
+    const state = make1v1State();
+    const room = new BattleRoom({ initialState: state });
+    const events: unknown[] = [];
+    room.onTurnResolved((e) => events.push(e));
+
+    // slot-b1 submits; slot-a1 is the stalled slot
+    room.submitAction('slot-b1', { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' });
+    expect(events).toHaveLength(0); // not resolved yet
+
+    room.submitDefaultAction('slot-a1');
+    expect(events.length).toBeGreaterThan(0);
+    expect(room.getState().turnNumber).toBe(2);
+  });
+
+  it('uses moveIndex 0 (Struggle) when the active pokemon has all PP at zero', () => {
+    const state = make1v1State();
+    const activeMon = state.teams[0]!.slots[0]!.party[0]!;
+    for (const move of activeMon.moves) move.currentPp = 0;
+    const room = new BattleRoom({ initialState: state });
+    // slot-b1 submits so turn won't resolve prematurely while we check the result
+    room.submitAction('slot-b1', { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' });
+
+    const result = room.submitDefaultAction('slot-a1');
+    expect(result.ok).toBe(true);
+  });
+});
