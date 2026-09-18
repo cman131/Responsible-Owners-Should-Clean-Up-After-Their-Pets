@@ -137,6 +137,13 @@ export function registerAdminHandlers(
         if (typeof battleId === 'string') cancelRoom(battleId);
         break;
       }
+      case 'submit-default-action': {
+        const { battleId, slotId } = payload.data as { battleId: string; slotId: string };
+        if (typeof battleId === 'string' && typeof slotId === 'string') {
+          getRoom(battleId)?.submitDefaultAction(slotId);
+        }
+        break;
+      }
       case 'lobby:list': {
         const players = lobby.getWaitingPlayers().map((p) => p.displayName);
         socket.emit('lobby:players', players);

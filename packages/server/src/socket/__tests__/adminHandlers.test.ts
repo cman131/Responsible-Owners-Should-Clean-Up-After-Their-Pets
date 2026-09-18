@@ -273,3 +273,39 @@ describe('registerAdminHandlers – cancel-battle', () => {
     expect(mockCancelRoom).not.toHaveBeenCalled();
   });
 });
+
+describe('registerAdminHandlers – submit-default-action', () => {
+  function makeAdminSocket(id = 'admin-sda') {
+    const handlers: Record<string, (p: unknown) => void> = {};
+    return {
+      id,
+      data: {} as Record<string, unknown>,
+      emit: vi.fn(),
+      join: vi.fn(),
+      leave: vi.fn(),
+      on(event: string, handler: (p: unknown) => void) { handlers[event] = handler; },
+      trigger(event: string, payload: unknown) { handlers[event]?.(payload); },
+    };
+  }
+
+  it('calls submitDefaultAction on the room for the given slotId', () => {
+    const mockRoom = { submitDefaultAction: vi.fn(() => ({ ok: true })) };
+    const getRoom = vi.fn((_id: string) => mockRoom as any);
+
+    const socket = makeAdminSocket();
+    const mockIo = { sockets: { sockets: { values: () => [] } } } as any;
+    const db = new AppDatabase(':memory:');
+
+    registerAdminHandlers(socket as any, mockIo, getRoom, vi.fn(), db, { getWaitingPlayers: vi.fn(() => []), getBySlotId: vi.fn() } as any, vi.fn());
+
+    socket.trigger('admin:action', {
+      type: 'submit-default-action',
+      data: { battleId: 'b1', slotId: 'slot-a1' },
+    });
+
+    expect(getRoom).toHaveBeenCalledWith('b1');
+    expect(mockRoom.submitDefaultAction).toHaveBeenCalledWith('slot-a1');
+
+    db.close();
+  });
+});
