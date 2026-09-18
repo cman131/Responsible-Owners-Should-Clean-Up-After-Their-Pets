@@ -1422,7 +1422,11 @@ export class BattleEngine {
       }
 
       const multihitSec = secs.find(sec => sec.kind === 'multihit');
-      const hitCount = multihitSec ? this.rollHitCount(multihitSec.hits) : 1;
+      const hitCount = multihitSec
+        ? (attacker.heldItem === 'loaded-dice' && Array.isArray(multihitSec.hits)
+            ? multihitSec.hits[1]
+            : this.rollHitCount(multihitSec.hits))
+        : 1;
 
       const isPhysical = move.category === 'physical';
       const itemHooks = getItemHooks(attacker.heldItem);

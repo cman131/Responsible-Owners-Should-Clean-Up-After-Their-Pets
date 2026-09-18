@@ -688,3 +688,41 @@ describe('Punching Glove', () => {
     expect(IMPLEMENTED_ITEM_IDS.has('punching-glove')).toBe(true);
   });
 });
+
+describe('Loaded Dice', () => {
+  it('forces max hits (5) on a 2–5 hit move', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'rockblast', currentPp: 10, maxPp: 10 };
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'loaded-dice';
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    p2.currentHp = 1000; p2.maxHp = 1000; // prevent faint during multi-hit sequence
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 2 }, // roost — no damage to p1
+    });
+    const hits = events.filter(e => e.type === 'damage-dealt' && (e.data as any).targetSlotId === 'slot-b1');
+    expect(hits.length).toBe(5);
+  });
+
+  it('does not affect fixed-count multi-hit moves (hits: 2)', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'dualwingbeat', currentPp: 10, maxPp: 10 };
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'loaded-dice';
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    p2.currentHp = 1000; p2.maxHp = 1000;
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    const hits = events.filter(e => e.type === 'damage-dealt' && (e.data as any).targetSlotId === 'slot-b1');
+    expect(hits.length).toBe(2);
+  });
+
+  it('appears in IMPLEMENTED_ITEM_IDS', () => {
+    expect(IMPLEMENTED_ITEM_IDS.has('loaded-dice')).toBe(true);
+  });
+});

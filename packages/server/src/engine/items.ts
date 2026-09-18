@@ -183,6 +183,8 @@ const ITEM_HOOKS: Record<string, ItemHooks> = {
   'weakness-policy': {},
   // handled inline in registrations.ts
   'power-herb': {},
+  // handled inline in BattleEngine (hitCount guard)
+  'loaded-dice': {},
   // Type-boosting items
   'charcoal': { onAttackerModifier: ({ moveType }) => moveType === 'Fire' ? 1.2 : 1 },
   'mystic-water': { onAttackerModifier: ({ moveType }) => moveType === 'Water' ? 1.2 : 1 },
