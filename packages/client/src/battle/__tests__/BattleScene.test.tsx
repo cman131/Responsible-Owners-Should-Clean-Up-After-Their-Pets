@@ -25,6 +25,7 @@ function makeMon(overrides: Partial<PartyMember> = {}): PartyMember {
     hasTerastallized: false,
     fainted: false,
     expTotal: 0,
+    growthRate: 'MediumFast',
     ...overrides,
   };
 }
