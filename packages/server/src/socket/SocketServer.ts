@@ -120,7 +120,7 @@ export class SocketServer {
       .map((s) => ({
         slotId: s.slotId,
         displayName: s.displayName,
-        joined: !!this.lobby.getBySlotId(s.slotId),
+        joined: this.lobby.isConnected(s.slotId),
       }));
     for (const s of this.io.sockets.sockets.values()) {
       if (s.data['isAdmin']) s.emit('lobby:slot-status', { battleId, slots });

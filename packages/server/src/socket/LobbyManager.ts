@@ -90,6 +90,11 @@ export class LobbyManager {
     return undefined;
   }
 
+  isConnected(slotId: string): boolean {
+    const player = this.getBySlotId(slotId);
+    return !!player && player.disconnectedAt === undefined;
+  }
+
   setBattleSlot(socketId: string, slotId: string, battleId: string): void {
     const player = this.bySocketId.get(socketId);
     if (player) {

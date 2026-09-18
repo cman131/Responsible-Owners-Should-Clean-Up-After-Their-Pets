@@ -160,7 +160,7 @@ export function registerAdminHandlers(
           .map((s) => ({
             slotId: s.slotId,
             displayName: s.displayName,
-            joined: !!lobby.getBySlotId(s.slotId),
+            joined: lobby.isConnected(s.slotId),
           }));
         socket.emit('lobby:slot-status', { battleId, slots });
         break;
