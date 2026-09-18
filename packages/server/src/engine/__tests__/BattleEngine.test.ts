@@ -1714,6 +1714,120 @@ describe('executeSwitch — Ingrain blocks voluntary switch', () => {
   });
 });
 
+describe('Shed Shell — bypasses trapping volatiles', () => {
+  it('allows a voluntary switch when the trapped Pokémon holds Shed Shell', () => {
+    const state = make1v1State();
+    const active = state.teams[0]!.slots[0]!.party[0]!;
+    const bench = makePokemon();
+    state.teams[0]!.slots[0]!.party.push(bench);
+    active.volatileStatus.push({ name: 'trapped', sourceSlotId: 'slot-b1' });
+    active.heldItem = 'shed-shell';
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'switch', targetInstanceId: bench.instanceId },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    const blocked = events.find(e => e.type === 'move-blocked' && e.data['reason'] === 'trapped');
+    expect(blocked).toBeUndefined();
+    expect(events.some(e => e.type === 'pokemon-switched')).toBe(true);
+  });
+
+  it('blocks a voluntary switch when the trapped Pokémon does not hold Shed Shell', () => {
+    const state = make1v1State();
+    const active = state.teams[0]!.slots[0]!.party[0]!;
+    const bench = makePokemon();
+    state.teams[0]!.slots[0]!.party.push(bench);
+    active.volatileStatus.push({ name: 'trapped', sourceSlotId: 'slot-b1' });
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'switch', targetInstanceId: bench.instanceId },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    const blocked = events.find(e => e.type === 'move-blocked' && e.data['reason'] === 'trapped');
+    expect(blocked).toBeDefined();
+  });
+
+  it('allows a pivot move when the trapped Pokémon holds Shed Shell', () => {
+    const state = make1v1State();
+    const attacker = state.teams[0]!.slots[0]!.party[0]!;
+    const bench = makePokemon();
+    state.teams[0]!.slots[0]!.party.push(bench);
+    attacker.volatileStatus.push({ name: 'trapped', sourceSlotId: 'slot-b1' });
+    attacker.heldItem = 'shed-shell';
+    attacker.moves[1] = { moveId: 'teleport', currentPp: 20, maxPp: 20 };
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    const blocked = events.find(e => e.type === 'move-blocked' && e.data['reason'] === 'trapped');
+    expect(blocked).toBeUndefined();
+  });
+
+  it('blocks a pivot move when the trapped Pokémon does not hold Shed Shell', () => {
+    const state = make1v1State();
+    const attacker = state.teams[0]!.slots[0]!.party[0]!;
+    const bench = makePokemon();
+    state.teams[0]!.slots[0]!.party.push(bench);
+    attacker.volatileStatus.push({ name: 'trapped', sourceSlotId: 'slot-b1' });
+    attacker.moves[1] = { moveId: 'teleport', currentPp: 20, maxPp: 20 };
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1 },
+      'slot-b1': { type: 'move', moveIndex: 0 },
+    });
+
+    const blocked = events.find(e => e.type === 'move-blocked' && e.data['reason'] === 'trapped');
+    expect(blocked).toBeDefined();
+  });
+});
+
+describe('Grip Claw — extends bound duration to 7', () => {
+  it('sets bound counter to 7 when attacker holds Grip Claw', () => {
+    const state = make1v1State();
+    const attacker = state.teams[0]!.slots[0]!.party[0]!;
+    attacker.heldItem = 'grip-claw';
+    attacker.moves[1] = { moveId: 'bind', currentPp: 20, maxPp: 20 };
+
+    const engine = new BattleEngine({ rng: () => 0 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    const target = newState.teams[1]!.slots[0]!.party[0]!;
+    const boundEntry = target.volatileStatus.find(v => v.name === 'bound');
+    expect(boundEntry).toBeDefined();
+    // EOT decrements the counter once in the same turn, so 7 - 1 = 6
+    expect(boundEntry!.counter).toBe(6);
+  });
+
+  it('sets bound counter below 6 when attacker does not hold Grip Claw', () => {
+    const state = make1v1State();
+    const attacker = state.teams[0]!.slots[0]!.party[0]!;
+    attacker.moves[1] = { moveId: 'bind', currentPp: 20, maxPp: 20 };
+
+    const engine = new BattleEngine({ rng: () => 0 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 1, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    const target = newState.teams[1]!.slots[0]!.party[0]!;
+    const boundEntry = target.volatileStatus.find(v => v.name === 'bound');
+    expect(boundEntry).toBeDefined();
+    // Normal max is 5 - 1 (EOT) = 4, well below Grip Claw's 6
+    expect(boundEntry!.counter).toBeLessThan(6);
+  });
+});
+
 describe('BattleEngine._runSubMove — works with fewer than 4 moves', () => {
   it('does not leave a corrupted moves[3] when Pokémon has 2 moves', () => {
     const state = make1v1State();

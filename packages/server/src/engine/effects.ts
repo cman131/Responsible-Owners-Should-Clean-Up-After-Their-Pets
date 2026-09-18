@@ -111,9 +111,11 @@ export function evaluateVolatileEffect(
   target: PartyMember,
   targetSlotId: string,
   attackerSlotId: string,
+  attacker?: PartyMember,
 ): TurnResolveEvent | null {
   if (!BOUND_MOVES.has(moveId)) return null;
-  return applyVolatile(target, targetSlotId, attackerSlotId, 'bound');
+  const counter = attacker?.heldItem === 'grip-claw' ? 7 : undefined;
+  return applyVolatile(target, targetSlotId, attackerSlotId, 'bound', counter);
 }
 
 export interface SecondaryContext {

@@ -270,7 +270,9 @@ export class EffectEngine {
 
     const boundEntry = pokemon.volatileStatus.find(v => v.name === 'bound');
     if (boundEntry) {
-      this.applyDamage(pokemon, slotId, Math.max(1, Math.floor(pokemon.maxHp / 8)), 'bound', events);
+      const trapperCtx = allSlots.find(s => s.slotId === boundEntry.sourceSlotId);
+      const boundFraction = trapperCtx?.member.heldItem === 'binding-band' ? 1 / 6 : 1 / 8;
+      this.applyDamage(pokemon, slotId, Math.max(1, Math.floor(pokemon.maxHp * boundFraction)), 'bound', events);
       boundEntry.counter = (boundEntry.counter ?? 1) - 1;
       if ((boundEntry.counter ?? 0) <= 0) {
         pokemon.volatileStatus = pokemon.volatileStatus.filter(v => v.name !== 'bound');

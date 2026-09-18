@@ -309,6 +309,38 @@ describe('EffectEngine.runEndOfTurn — bind', () => {
   });
 });
 
+describe('EffectEngine.runEndOfTurn — Binding Band', () => {
+  it('deals 1/6 maxHp bound damage when the trapper holds Binding Band', () => {
+    const engine = new EffectEngine();
+    const pokemon = makePokemon({
+      currentHp: 100, maxHp: 120,
+      volatileStatus: [{ name: 'bound', counter: 4, sourceSlotId: 'slot-b1' }],
+    });
+    const trapper = makePokemon({ heldItem: 'binding-band' });
+    const slots: SlotContext[] = [
+      { member: pokemon, slotId: 'slot-a1', teamIndex: 0 },
+      { member: trapper, slotId: 'slot-b1', teamIndex: 1 },
+    ];
+    engine.runEndOfTurn(pokemon, 'slot-a1', emptyState, slots);
+    expect(pokemon.currentHp).toBe(80); // Math.floor(120 / 6) = 20 damage
+  });
+
+  it('deals 1/8 maxHp bound damage when trapper does not hold Binding Band', () => {
+    const engine = new EffectEngine();
+    const pokemon = makePokemon({
+      currentHp: 100, maxHp: 120,
+      volatileStatus: [{ name: 'bound', counter: 4, sourceSlotId: 'slot-b1' }],
+    });
+    const trapper = makePokemon();
+    const slots: SlotContext[] = [
+      { member: pokemon, slotId: 'slot-a1', teamIndex: 0 },
+      { member: trapper, slotId: 'slot-b1', teamIndex: 1 },
+    ];
+    engine.runEndOfTurn(pokemon, 'slot-a1', emptyState, slots);
+    expect(pokemon.currentHp).toBe(85); // Math.floor(120 / 8) = 15 damage
+  });
+});
+
 describe('EffectEngine.runEndOfTurn — yawn', () => {
   it('decrements the counter each turn', () => {
     const engine = new EffectEngine();
