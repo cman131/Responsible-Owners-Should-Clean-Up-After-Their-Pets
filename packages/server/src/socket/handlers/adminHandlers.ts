@@ -158,8 +158,13 @@ export function registerAdminHandlers(
         socket.emit('lobby:slot-status', { battleId, slots });
         break;
       }
-      case 'force-switch':
+      case 'force-switch': {
+        const { battleId, slotId } = payload.data as { battleId: string; slotId: string };
+        if (typeof battleId === 'string' && typeof slotId === 'string') {
+          getRoom(battleId)?.forceSwitch(slotId);
+        }
         break;
+      }
       case 'registry:list': {
         const { resource } = payload.data as { resource: 'players' | 'npcs' | 'teams' };
         const data = resource === 'players' ? db.players.list()

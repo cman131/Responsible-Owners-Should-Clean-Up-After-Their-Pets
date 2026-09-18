@@ -1,4 +1,4 @@
-import type { BattleState, MoveAction, SwitchAction, TurnResolveEvent, SlotState, PartyMember, Stats, ActionRequestPayload } from '@poke-fighter/shared';
+import type { BattleState, MoveAction, SwitchAction, TurnResolveEvent, SlotState, PartyMember, Stats, ActionRequestPayload, SwitchRequestPayload } from '@poke-fighter/shared';
 import { BattleEngine } from '../engine/index.js';
 import { getLegalTargets } from '../engine/targeting.js';
 import { calcExpYield, distributeExp, checkLevelUps, type ExpAward, type LevelUpResult } from '../engine/exp.js';
@@ -166,6 +166,14 @@ export class BattleRoom {
     };
   }
 
+  getPendingSwitchRequest(slotId: string): SwitchRequestPayload | null {
+    if (!this.awaitingForcedSwitches.has(slotId)) return null;
+    const slot = this.findSlot(slotId);
+    if (!slot) return null;
+    const availableParty = slot.party.filter((p, i) => i !== slot.activePokemonIndex && !p.fainted);
+    return { slotId, party: availableParty, reason: 'faint' };
+  }
+
   forceFaint(slotId: string): void {
     const s = structuredClone(this.state);
     let mon: import('@poke-fighter/shared').PartyMember | undefined;
@@ -215,6 +223,23 @@ export class BattleRoom {
       } catch (err) {
         console.error('[BattleRoom] forceFaint onBattleEndCb threw:', err);
       }
+    }
+  }
+
+  forceSwitch(slotId: string): void {
+    const slot = this.findSlot(slotId);
+    if (!slot || slot.isSpectator) return;
+    if (this.state.phase !== 'action') return;
+    if (this.awaitingForcedSwitches.has(slotId)) return;
+    const hasBench = slot.party.some((p, i) => i !== slot.activePokemonIndex && !p.fainted);
+    if (!hasBench) return;
+
+    this.pendingActions.delete(slotId);
+    this.awaitingForcedSwitches.set(slotId, 'forced');
+    try {
+      this.onSwitchRequestCb?.([slot]);
+    } catch (err) {
+      console.error('[BattleRoom] forceSwitch onSwitchRequestCb threw:', err);
     }
   }
 

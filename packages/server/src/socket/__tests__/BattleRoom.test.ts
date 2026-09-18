@@ -100,6 +100,57 @@ describe('getPendingActionRequest', () => {
   });
 });
 
+describe('getPendingSwitchRequest', () => {
+  it('returns null when no forced switch is pending', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.isNpc = false;
+    const room = new BattleRoom({ initialState: state });
+    expect(room.getPendingSwitchRequest('slot-a1')).toBeNull();
+  });
+
+  it('returns a SwitchRequestPayload for a slot awaiting a forced switch', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.isNpc = false;
+    const bench = makePokemon({ instanceId: 'bench-1', nickname: 'Bench' });
+    state.teams[0]!.slots[0]!.party.push(bench);
+    // Faint the active Pokémon so constructor detects a pending switch
+    state.teams[0]!.slots[0]!.party[0]!.fainted = true;
+    state.teams[0]!.slots[0]!.party[0]!.currentHp = 0;
+    const room = new BattleRoom({ initialState: state });
+    const req = room.getPendingSwitchRequest('slot-a1');
+    expect(req).not.toBeNull();
+    expect(req!.slotId).toBe('slot-a1');
+    expect(req!.party.length).toBeGreaterThan(0);
+    expect(req!.reason).toBe('faint');
+  });
+
+  it('returns null for a slot not awaiting a forced switch even when others are', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.isNpc = false;
+    const bench = makePokemon({ instanceId: 'bench-1', nickname: 'Bench' });
+    state.teams[0]!.slots[0]!.party.push(bench);
+    state.teams[0]!.slots[0]!.party[0]!.fainted = true;
+    state.teams[0]!.slots[0]!.party[0]!.currentHp = 0;
+    const room = new BattleRoom({ initialState: state });
+    expect(room.getPendingSwitchRequest('slot-b1')).toBeNull();
+  });
+
+  it('available party excludes fainted and active Pokémon', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.isNpc = false;
+    const bench1 = makePokemon({ instanceId: 'bench-1' });
+    const bench2 = makePokemon({ instanceId: 'bench-2', fainted: true, currentHp: 0 });
+    state.teams[0]!.slots[0]!.party.push(bench1, bench2);
+    state.teams[0]!.slots[0]!.party[0]!.fainted = true;
+    state.teams[0]!.slots[0]!.party[0]!.currentHp = 0;
+    const room = new BattleRoom({ initialState: state });
+    const req = room.getPendingSwitchRequest('slot-a1');
+    expect(req).not.toBeNull();
+    expect(req!.party).toHaveLength(1);
+    expect(req!.party[0]!.instanceId).toBe('bench-1');
+  });
+});
+
 describe('onPlayerActionRequired', () => {
   it('fires deferred at construction with one entry per active human slot', async () => {
     // make1v1State has slot-a1 (isNpc=false) and slot-b1 (isNpc=true)
@@ -403,6 +454,78 @@ describe('level-up stat recalculation', () => {
     const updatedP1 = room.getState().teams[0]!.slots[0]!.party[0]!;
     expect(updatedP1.level).toBe(51);
     expect(updatedP1.stats.atk).toBe(106); // recalculated, not stale 104
+  });
+});
+
+describe('forceSwitch', () => {
+  function makeRoomWithBench() {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.isNpc = false;
+    const bench = makePokemon({ instanceId: 'p1-bench', nickname: 'Bench' });
+    state.teams[0]!.slots[0]!.party.push(bench);
+    return new BattleRoom({ initialState: state });
+  }
+
+  it('fires onSwitchRequestCb with the target slot', () => {
+    const room = makeRoomWithBench();
+    const switchedSlots: import('@poke-fighter/shared').SlotState[][] = [];
+    room.onSwitchRequest((slots) => switchedSlots.push(slots));
+
+    room.forceSwitch('slot-a1');
+
+    expect(switchedSlots).toHaveLength(1);
+    expect(switchedSlots[0]![0]!.slotId).toBe('slot-a1');
+  });
+
+  it('does nothing when the slot has no bench Pokémon', () => {
+    const state = make1v1State();
+    const room = new BattleRoom({ initialState: state });
+    const switchedSlots: unknown[] = [];
+    room.onSwitchRequest((slots) => switchedSlots.push(slots));
+
+    room.forceSwitch('slot-a1');
+
+    expect(switchedSlots).toHaveLength(0);
+  });
+
+  it('does nothing if the slot is already awaiting a forced switch', () => {
+    const room = makeRoomWithBench();
+    const switchedSlots: unknown[][] = [];
+    room.onSwitchRequest((slots) => switchedSlots.push(slots));
+
+    room.forceSwitch('slot-a1');
+    room.forceSwitch('slot-a1');
+
+    expect(switchedSlots).toHaveLength(1);
+  });
+
+  it('clears any pending action for that slot before requesting switch', () => {
+    const room = makeRoomWithBench();
+    room.submitAction('slot-a1', { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' });
+
+    const switchedSlots: unknown[] = [];
+    room.onSwitchRequest((slots) => switchedSlots.push(slots));
+
+    room.forceSwitch('slot-a1');
+    expect(switchedSlots).toHaveLength(1);
+
+    const npcRequests: unknown[] = [];
+    room.onNpcActionRequired((slots) => npcRequests.push(slots));
+    room.submitAction('slot-a1', { type: 'switch', targetInstanceId: 'p1-bench' });
+    expect(npcRequests).toHaveLength(1);
+  });
+
+  it('after forceSwitch, submitting a switch processes it as a forced switch', () => {
+    const room = makeRoomWithBench();
+    const events: import('@poke-fighter/shared').TurnResolveEvent[] = [];
+    room.onTurnResolved((evts) => events.push(...evts));
+    room.onSwitchRequest(() => {});
+
+    room.forceSwitch('slot-a1');
+    room.submitAction('slot-a1', { type: 'switch', targetInstanceId: 'p1-bench' });
+
+    expect(events.some(e => e.type === 'pokemon-switched')).toBe(true);
+    expect(room.getState().teams[0]!.slots[0]!.activePokemonIndex).toBe(1);
   });
 });
 
