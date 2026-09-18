@@ -54,7 +54,7 @@ export class SocketServer {
       registerBattleHandlers(socket, this.lobby, (id) => this.rooms.get(id));
 
       if (socket.data['isAdmin']) {
-        registerAdminHandlers(socket, this.io, (id) => this.rooms.get(id), this.startBattle.bind(this), this.db, this.lobby);
+        registerAdminHandlers(socket, this.io, (id) => this.rooms.get(id), this.startBattle.bind(this), this.db, this.lobby, this.cancelBattle.bind(this));
         socket.emit('admin:authenticated');
       } else {
         const providedToken = socket.handshake.auth['token'] as string | undefined;
@@ -132,6 +132,13 @@ export class SocketServer {
     for (const s of this.io.sockets.sockets.values()) {
       if (s.data['isAdmin']) s.emit('battles:data', { battles: summaries });
     }
+  }
+
+  private cancelBattle(battleId: string): void {
+    this.rooms.delete(battleId);
+    this.db.battles.markEnded(battleId, null);
+    this.notifyAdminsOfBattles();
+    this.notifyPlayersOfBattles();
   }
 
   startBattle(initialState: BattleState): BattleRoom {
