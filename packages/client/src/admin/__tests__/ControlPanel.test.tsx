@@ -189,4 +189,26 @@ describe('ControlPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: /return/i }));
     expect(onBack).toHaveBeenCalledOnce();
   });
+
+  it('shows a SUBMIT ACTION button for each disconnected slot', () => {
+    render(<ControlPanel battleId="b1" onBack={vi.fn()} />);
+    const slotStatusCall = mockSocket.on.mock.calls.find((c) => c[0] === 'lobby:slot-status');
+    act(() => {
+      slotStatusCall![1]({ battleId: 'b1', slots: [{ slotId: 'a1', displayName: 'Alice', joined: false }] });
+    });
+    expect(screen.getByRole('button', { name: /submit action/i })).toBeTruthy();
+  });
+
+  it('emits submit-default-action when SUBMIT ACTION is clicked', () => {
+    render(<ControlPanel battleId="b1" onBack={vi.fn()} />);
+    const slotStatusCall = mockSocket.on.mock.calls.find((c) => c[0] === 'lobby:slot-status');
+    act(() => {
+      slotStatusCall![1]({ battleId: 'b1', slots: [{ slotId: 'a1', displayName: 'Alice', joined: false }] });
+    });
+    fireEvent.click(screen.getByRole('button', { name: /submit action/i }));
+    expect(mockSocket.emit).toHaveBeenCalledWith('admin:action', {
+      type: 'submit-default-action',
+      data: { battleId: 'b1', slotId: 'a1' },
+    });
+  });
 });

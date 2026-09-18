@@ -74,8 +74,14 @@ function ControlPanelInner({ battleId, onBack }: Props) {
         )}
         <span style={{ color: '#e74c3c', fontSize: 12, letterSpacing: 2 }}>ADMIN VIEW</span>
         {slotStatuses.filter(s => !s.joined).map(s => (
-          <span key={s.slotId} style={{ color: '#e74c3c', fontSize: 11 }}>
+          <span key={s.slotId} style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#e74c3c', fontSize: 11 }}>
             ⚠ {s.displayName} disconnected
+            <button
+              onClick={() => sendAdminAction('submit-default-action', { slotId: s.slotId })}
+              style={{ ...btnStyle, background: '#7a3', padding: '2px 8px', fontSize: 10 }}
+            >
+              SUBMIT ACTION
+            </button>
           </span>
         ))}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
