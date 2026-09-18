@@ -26,6 +26,7 @@ export interface ItemHooks {
     effectiveness?: number;
     moveType?: PokemonType;
     isPhysical?: boolean;
+    rng?: () => number;
   }) => {
     hpDelta: number;
     statBoostDeltas?: Partial<StatBoosts>;
@@ -57,6 +58,10 @@ export interface ItemHooks {
   onOpponentStatBoosted?: (ctx: ItemContext & { boostDeltas: Partial<StatBoosts> }) => { copyBoosts: boolean; consume?: boolean } | null;
   /** Terrain seeds: fires on switch-in and at end-of-turn when terrain is active */
   onSwitchIn?: (ctx: ItemContext & { terrain: string | null }) => { statBoostDeltas?: Partial<StatBoosts>; consume?: boolean } | undefined;
+  /** Utility Umbrella: suppresses all weather effects for the holder */
+  ignoresWeather?: boolean;
+  /** Room Service: may return { multiplier, consume } so the item can self-consume */
+  onSpeedModifierConsuming?: (ctx: ItemContext) => { multiplier: number; consume: boolean } | number;
 }
 
 function notTransformed(holder: PartyMember): boolean {
@@ -233,6 +238,24 @@ const ITEM_HOOKS: Record<string, ItemHooks> = {
   'power-herb': {},
   // handled inline in BattleEngine (hitCount guard)
   'loaded-dice': {},
+  // Species-locked type-boosting orbs (Dialga)
+  'adamant-orb': {
+    onAttackerModifier: ({ holder, moveType }) =>
+      holder.speciesName === 'dialga' && (moveType === 'Dragon' || moveType === 'Steel') ? 1.2 : 1,
+  },
+  'adamant-crystal': {
+    onAttackerModifier: ({ holder, moveType }) =>
+      holder.speciesName === 'dialga' && (moveType === 'Dragon' || moveType === 'Steel') ? 1.2 : 1,
+  },
+  // Species-locked type-boosting orbs (Palkia)
+  'lustrous-orb': {
+    onAttackerModifier: ({ holder, moveType }) =>
+      holder.speciesName === 'palkia' && (moveType === 'Water' || moveType === 'Dragon') ? 1.2 : 1,
+  },
+  'lustrous-globe': {
+    onAttackerModifier: ({ holder, moveType }) =>
+      holder.speciesName === 'palkia' && (moveType === 'Water' || moveType === 'Dragon') ? 1.2 : 1,
+  },
   // Type-boosting items
   'charcoal': { onAttackerModifier: ({ moveType }) => moveType === 'Fire' ? 1.2 : 1 },
   'mystic-water': { onAttackerModifier: ({ moveType }) => moveType === 'Water' ? 1.2 : 1 },

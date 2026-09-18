@@ -369,3 +369,221 @@ describe('Metal Powder', () => {
     expect(itemDmg).toBe(baseDmg);
   });
 });
+
+describe('Adamant Orb', () => {
+  it('boosts Dragon moves by 1.2× for Dialga', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const base = make1v1State();
+    base.teams[0]!.slots[0]!.party[0]!.speciesName = 'dialga';
+    base.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'dragonpulse', currentPp: 10, maxPp: 10 };
+    const { events: baseEvts } = new BattleEngine({ rng: () => 0.5 }).resolveTurn(base, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-a1' },
+    });
+    const baseDmg = (baseEvts.find(e => e.type === 'damage-dealt' && (e.data as any).targetSlotId === 'slot-b1')!.data as any).damage as number;
+
+    const withItem = make1v1State();
+    withItem.teams[0]!.slots[0]!.party[0]!.speciesName = 'dialga';
+    withItem.teams[0]!.slots[0]!.party[0]!.heldItem = 'adamant-orb';
+    withItem.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'dragonpulse', currentPp: 10, maxPp: 10 };
+    const { events: itemEvts } = new BattleEngine({ rng: () => 0.5 }).resolveTurn(withItem, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-a1' },
+    });
+    const boostedDmg = (itemEvts.find(e => e.type === 'damage-dealt' && (e.data as any).targetSlotId === 'slot-b1')!.data as any).damage as number;
+
+    expect(boostedDmg).toBeGreaterThan(baseDmg);
+  });
+
+  it('boosts Steel moves by 1.2× for Dialga', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const base = make1v1State();
+    base.teams[0]!.slots[0]!.party[0]!.speciesName = 'dialga';
+    base.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'ironhead', currentPp: 15, maxPp: 15 };
+    const { events: baseEvts } = new BattleEngine({ rng: () => 0.5 }).resolveTurn(base, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-a1' },
+    });
+    const baseDmg = (baseEvts.find(e => e.type === 'damage-dealt' && (e.data as any).targetSlotId === 'slot-b1')!.data as any).damage as number;
+
+    const withItem = make1v1State();
+    withItem.teams[0]!.slots[0]!.party[0]!.speciesName = 'dialga';
+    withItem.teams[0]!.slots[0]!.party[0]!.heldItem = 'adamant-orb';
+    withItem.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'ironhead', currentPp: 15, maxPp: 15 };
+    const { events: itemEvts } = new BattleEngine({ rng: () => 0.5 }).resolveTurn(withItem, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-a1' },
+    });
+    const boostedDmg = (itemEvts.find(e => e.type === 'damage-dealt' && (e.data as any).targetSlotId === 'slot-b1')!.data as any).damage as number;
+
+    expect(boostedDmg).toBeGreaterThan(baseDmg);
+  });
+
+  it('does not boost non-Dragon/Steel moves for Dialga', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const base = make1v1State();
+    base.teams[0]!.slots[0]!.party[0]!.speciesName = 'dialga';
+    const { events: baseEvts } = new BattleEngine({ rng: () => 0.5 }).resolveTurn(base, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-a1' },
+    });
+    const baseDmg = (baseEvts.find(e => e.type === 'damage-dealt' && (e.data as any).targetSlotId === 'slot-b1')!.data as any).damage as number;
+
+    const withItem = make1v1State();
+    withItem.teams[0]!.slots[0]!.party[0]!.speciesName = 'dialga';
+    withItem.teams[0]!.slots[0]!.party[0]!.heldItem = 'adamant-orb';
+    const { events: itemEvts } = new BattleEngine({ rng: () => 0.5 }).resolveTurn(withItem, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-a1' },
+    });
+    const noBoostDmg = (itemEvts.find(e => e.type === 'damage-dealt' && (e.data as any).targetSlotId === 'slot-b1')!.data as any).damage as number;
+
+    expect(noBoostDmg).toBe(baseDmg);
+  });
+
+  it('does not boost moves for non-Dialga', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const base = make1v1State();
+    base.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'dragonpulse', currentPp: 10, maxPp: 10 };
+    const { events: baseEvts } = new BattleEngine({ rng: () => 0.5 }).resolveTurn(base, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-a1' },
+    });
+    const baseDmg = (baseEvts.find(e => e.type === 'damage-dealt' && (e.data as any).targetSlotId === 'slot-b1')!.data as any).damage as number;
+
+    const withItem = make1v1State();
+    withItem.teams[0]!.slots[0]!.party[0]!.heldItem = 'adamant-orb'; // charizard, not dialga
+    withItem.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'dragonpulse', currentPp: 10, maxPp: 10 };
+    const { events: itemEvts } = new BattleEngine({ rng: () => 0.5 }).resolveTurn(withItem, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-a1' },
+    });
+    const noBoostDmg = (itemEvts.find(e => e.type === 'damage-dealt' && (e.data as any).targetSlotId === 'slot-b1')!.data as any).damage as number;
+
+    expect(noBoostDmg).toBe(baseDmg);
+  });
+});
+
+describe('Adamant Crystal', () => {
+  it('boosts Dragon moves by 1.2× for Dialga (same as Adamant Orb)', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const base = make1v1State();
+    base.teams[0]!.slots[0]!.party[0]!.speciesName = 'dialga';
+    base.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'dragonpulse', currentPp: 10, maxPp: 10 };
+    const { events: baseEvts } = new BattleEngine({ rng: () => 0.5 }).resolveTurn(base, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-a1' },
+    });
+    const baseDmg = (baseEvts.find(e => e.type === 'damage-dealt' && (e.data as any).targetSlotId === 'slot-b1')!.data as any).damage as number;
+
+    const withItem = make1v1State();
+    withItem.teams[0]!.slots[0]!.party[0]!.speciesName = 'dialga';
+    withItem.teams[0]!.slots[0]!.party[0]!.heldItem = 'adamant-crystal';
+    withItem.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'dragonpulse', currentPp: 10, maxPp: 10 };
+    const { events: itemEvts } = new BattleEngine({ rng: () => 0.5 }).resolveTurn(withItem, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-a1' },
+    });
+    const boostedDmg = (itemEvts.find(e => e.type === 'damage-dealt' && (e.data as any).targetSlotId === 'slot-b1')!.data as any).damage as number;
+
+    expect(boostedDmg).toBeGreaterThan(baseDmg);
+  });
+});
+
+describe('Lustrous Orb', () => {
+  it('boosts Water moves by 1.2× for Palkia', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const base = make1v1State();
+    base.teams[0]!.slots[0]!.party[0]!.speciesName = 'palkia';
+    base.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'surf', currentPp: 15, maxPp: 15 };
+    const { events: baseEvts } = new BattleEngine({ rng: () => 0.5 }).resolveTurn(base, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-a1' },
+    });
+    const baseDmg = (baseEvts.find(e => e.type === 'damage-dealt' && (e.data as any).targetSlotId === 'slot-b1')!.data as any).damage as number;
+
+    const withItem = make1v1State();
+    withItem.teams[0]!.slots[0]!.party[0]!.speciesName = 'palkia';
+    withItem.teams[0]!.slots[0]!.party[0]!.heldItem = 'lustrous-orb';
+    withItem.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'surf', currentPp: 15, maxPp: 15 };
+    const { events: itemEvts } = new BattleEngine({ rng: () => 0.5 }).resolveTurn(withItem, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-a1' },
+    });
+    const boostedDmg = (itemEvts.find(e => e.type === 'damage-dealt' && (e.data as any).targetSlotId === 'slot-b1')!.data as any).damage as number;
+
+    expect(boostedDmg).toBeGreaterThan(baseDmg);
+  });
+
+  it('boosts Dragon moves by 1.2× for Palkia', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const base = make1v1State();
+    base.teams[0]!.slots[0]!.party[0]!.speciesName = 'palkia';
+    base.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'dragonpulse', currentPp: 10, maxPp: 10 };
+    const { events: baseEvts } = new BattleEngine({ rng: () => 0.5 }).resolveTurn(base, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-a1' },
+    });
+    const baseDmg = (baseEvts.find(e => e.type === 'damage-dealt' && (e.data as any).targetSlotId === 'slot-b1')!.data as any).damage as number;
+
+    const withItem = make1v1State();
+    withItem.teams[0]!.slots[0]!.party[0]!.speciesName = 'palkia';
+    withItem.teams[0]!.slots[0]!.party[0]!.heldItem = 'lustrous-orb';
+    withItem.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'dragonpulse', currentPp: 10, maxPp: 10 };
+    const { events: itemEvts } = new BattleEngine({ rng: () => 0.5 }).resolveTurn(withItem, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-a1' },
+    });
+    const boostedDmg = (itemEvts.find(e => e.type === 'damage-dealt' && (e.data as any).targetSlotId === 'slot-b1')!.data as any).damage as number;
+
+    expect(boostedDmg).toBeGreaterThan(baseDmg);
+  });
+
+  it('does not boost moves for non-Palkia', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const base = make1v1State();
+    base.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'surf', currentPp: 15, maxPp: 15 };
+    const { events: baseEvts } = new BattleEngine({ rng: () => 0.5 }).resolveTurn(base, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-a1' },
+    });
+    const baseDmg = (baseEvts.find(e => e.type === 'damage-dealt' && (e.data as any).targetSlotId === 'slot-b1')!.data as any).damage as number;
+
+    const withItem = make1v1State();
+    withItem.teams[0]!.slots[0]!.party[0]!.heldItem = 'lustrous-orb'; // charizard, not palkia
+    withItem.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'surf', currentPp: 15, maxPp: 15 };
+    const { events: itemEvts } = new BattleEngine({ rng: () => 0.5 }).resolveTurn(withItem, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-a1' },
+    });
+    const noBoostDmg = (itemEvts.find(e => e.type === 'damage-dealt' && (e.data as any).targetSlotId === 'slot-b1')!.data as any).damage as number;
+
+    expect(noBoostDmg).toBe(baseDmg);
+  });
+});
+
+describe('Lustrous Globe', () => {
+  it('boosts Water moves by 1.2× for Palkia (same as Lustrous Orb)', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const base = make1v1State();
+    base.teams[0]!.slots[0]!.party[0]!.speciesName = 'palkia';
+    base.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'surf', currentPp: 15, maxPp: 15 };
+    const { events: baseEvts } = new BattleEngine({ rng: () => 0.5 }).resolveTurn(base, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-a1' },
+    });
+    const baseDmg = (baseEvts.find(e => e.type === 'damage-dealt' && (e.data as any).targetSlotId === 'slot-b1')!.data as any).damage as number;
+
+    const withItem = make1v1State();
+    withItem.teams[0]!.slots[0]!.party[0]!.speciesName = 'palkia';
+    withItem.teams[0]!.slots[0]!.party[0]!.heldItem = 'lustrous-globe';
+    withItem.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'surf', currentPp: 15, maxPp: 15 };
+    const { events: itemEvts } = new BattleEngine({ rng: () => 0.5 }).resolveTurn(withItem, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-a1' },
+    });
+    const boostedDmg = (itemEvts.find(e => e.type === 'damage-dealt' && (e.data as any).targetSlotId === 'slot-b1')!.data as any).damage as number;
+
+    expect(boostedDmg).toBeGreaterThan(baseDmg);
+  });
+});

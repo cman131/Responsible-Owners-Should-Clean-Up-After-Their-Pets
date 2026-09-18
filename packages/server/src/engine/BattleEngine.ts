@@ -136,6 +136,10 @@ const MEMORY_TYPE_MAP: Record<string, string> = {
   'steel-memory': 'Steel', 'fairy-memory': 'Fairy',
 };
 
+const DRIVE_TYPE_MAP: Record<string, string> = {
+  'burn-drive': 'Fire', 'chill-drive': 'Ice', 'douse-drive': 'Water', 'shock-drive': 'Electric',
+};
+
 const PUNCH_MOVES = new Set([
   'bulletpunch', 'cometpunch', 'dizzypunch', 'drainpunch', 'dynamicpunch',
   'firepunch', 'focuspunch', 'hammerarm', 'icepunch', 'jetpunch',
@@ -936,6 +940,11 @@ export class BattleEngine {
     if (move.id === 'multiattack') {
       const memory = (attacker as any).heldItem ?? '';
       effectiveMoveType = (MEMORY_TYPE_MAP[memory] ?? 'Normal') as any;
+    }
+    // Techno Blast: type from held Drive
+    if (move.id === 'technoblast') {
+      const drive = (attacker as any).heldItem ?? '';
+      effectiveMoveType = (DRIVE_TYPE_MAP[drive] ?? 'Normal') as any;
     }
 
     // Powder: if attacker has powder volatile and uses a Fire move, cancel move and self-damage

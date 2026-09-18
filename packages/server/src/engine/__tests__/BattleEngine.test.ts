@@ -2412,6 +2412,81 @@ describe('judgment', () => {
     const dmg = events.find(e => e.type === 'damage-dealt' && (e.data as any)['attackerSlotId'] === 'slot-a1');
     expect(dmg!.data['moveType']).toBe('Fire');
   });
+
+  it('technoblast is Normal type with no drive held', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'technoblast', currentPp: 5, maxPp: 5 };
+    delete (state.teams[0]!.slots[0]!.party[0]! as any).heldItem;
+
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    const dmg = events.find(e => e.type === 'damage-dealt' && (e.data as any)['attackerSlotId'] === 'slot-a1');
+    expect(dmg!.data['moveType']).toBe('Normal');
+  });
+
+  it('technoblast becomes Fire type with burn-drive held', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'technoblast', currentPp: 5, maxPp: 5 };
+    (state.teams[0]!.slots[0]!.party[0]! as any).heldItem = 'burn-drive';
+
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    const dmg = events.find(e => e.type === 'damage-dealt' && (e.data as any)['attackerSlotId'] === 'slot-a1');
+    expect(dmg!.data['moveType']).toBe('Fire');
+  });
+
+  it('technoblast becomes Ice type with chill-drive held', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'technoblast', currentPp: 5, maxPp: 5 };
+    (state.teams[0]!.slots[0]!.party[0]! as any).heldItem = 'chill-drive';
+
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    const dmg = events.find(e => e.type === 'damage-dealt' && (e.data as any)['attackerSlotId'] === 'slot-a1');
+    expect(dmg!.data['moveType']).toBe('Ice');
+  });
+
+  it('technoblast becomes Water type with douse-drive held', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'technoblast', currentPp: 5, maxPp: 5 };
+    (state.teams[0]!.slots[0]!.party[0]! as any).heldItem = 'douse-drive';
+
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    const dmg = events.find(e => e.type === 'damage-dealt' && (e.data as any)['attackerSlotId'] === 'slot-a1');
+    expect(dmg!.data['moveType']).toBe('Water');
+  });
+
+  it('technoblast becomes Electric type with shock-drive held', () => {
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'technoblast', currentPp: 5, maxPp: 5 };
+    (state.teams[0]!.slots[0]!.party[0]! as any).heldItem = 'shock-drive';
+
+    const { events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-a1' },
+    });
+
+    const dmg = events.find(e => e.type === 'damage-dealt' && (e.data as any)['attackerSlotId'] === 'slot-a1');
+    expect(dmg!.data['moveType']).toBe('Electric');
+  });
 });
 
 describe('naturepower', () => {
