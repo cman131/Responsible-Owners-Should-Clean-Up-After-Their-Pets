@@ -58,6 +58,12 @@ export interface ItemHooks {
   onOpponentStatBoosted?: (ctx: ItemContext & { boostDeltas: Partial<StatBoosts> }) => { copyBoosts: boolean; consume?: boolean } | null;
   /** Terrain seeds: fires on switch-in and at end-of-turn when terrain is active */
   onSwitchIn?: (ctx: ItemContext & { terrain: string | null }) => { statBoostDeltas?: Partial<StatBoosts>; consume?: boolean } | undefined;
+  /** Throat Spray: fires after the holder successfully uses a sound-based move */
+  onAfterSoundMove?: (ctx: ItemContext) => { statBoostDeltas?: Partial<StatBoosts>; consume?: boolean } | null;
+  /** Adrenaline Orb: fires when the holder's stats are lowered by a switch-in ability (Intimidate) */
+  onIntimidated?: (ctx: ItemContext) => { statBoostDeltas?: Partial<StatBoosts>; consume?: boolean } | null;
+  /** Blunder Policy: fires when the holder's move misses */
+  onMoveMissed?: (ctx: ItemContext) => { statBoostDeltas?: Partial<StatBoosts>; consume?: boolean } | null;
   /** Utility Umbrella: suppresses all weather effects for the holder */
   ignoresWeather?: boolean;
   /** Room Service: may return { multiplier, consume } so the item can self-consume */
@@ -463,6 +469,17 @@ const ITEM_HOOKS: Record<string, ItemHooks> = {
         : 1,
   },
   'booster-energy': {},
+  'throat-spray': {
+    onAfterSoundMove: () => ({ statBoostDeltas: { spa: 1 }, consume: true }),
+  },
+  'adrenaline-orb': {
+    onIntimidated: () => ({ statBoostDeltas: { spe: 1 }, consume: true }),
+  },
+  'blunder-policy': {
+    onMoveMissed: () => ({ statBoostDeltas: { spe: 2 }, consume: true }),
+  },
+  // handled inline in BattleEngine — consumes and restores 10 PP when the held move's PP hits 0
+  'leppa-berry': {},
   'electric-seed': {
     onSwitchIn: ({ terrain }) => terrain === 'electric' ? { statBoostDeltas: { def: 1 }, consume: true } : undefined,
   },

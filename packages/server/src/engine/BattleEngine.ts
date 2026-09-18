@@ -219,6 +219,24 @@ export class BattleEngine {
     // 1. Determine action order (priority, then speed)
     const order = this.buildActionOrder(s, actions);
 
+    // 1b. Consume start-of-turn speed items (Room Service) now that ordering is set
+    for (const team of s.teams) {
+      for (const slot of team.slots) {
+        const active = slot.party[slot.activePokemonIndex];
+        if (!active || active.fainted || !active.heldItem) continue;
+        const hooks = getItemHooks(active.heldItem);
+        if (hooks.onSpeedModifierConsuming) {
+          const result = hooks.onSpeedModifierConsuming({ holder: active, state: s });
+          if (typeof result !== 'number' && result.consume) {
+            const consumed = active.heldItem;
+            active.lastConsumedItem = consumed;
+            delete active.heldItem;
+            events.push({ type: 'item-consumed', data: { slotId: slot.slotId, item: consumed, reason: 'triggered' } });
+          }
+        }
+      }
+    }
+
     // 2. Execute each action
     const movedSlotIds = new Set<string>();
     for (const slotId of order) {
@@ -327,6 +345,11 @@ export class BattleEngine {
     const itemHooks = getItemHooks(pokemon.heldItem);
     if (itemHooks.onSpeedModifier) {
       spe = Math.floor(spe * itemHooks.onSpeedModifier({ holder: pokemon, state }));
+    }
+    if (itemHooks.onSpeedModifierConsuming) {
+      const result = itemHooks.onSpeedModifierConsuming({ holder: pokemon, state });
+      const mult = typeof result === 'number' ? result : result.multiplier;
+      spe = Math.floor(spe * mult);
     }
     if (state.field.sideConditions[teamIdx]!.tailwind > 0) spe *= 2;
     return spe;
@@ -452,6 +475,12 @@ export class BattleEngine {
     // Spend PP (Struggle has no PP to consume)
     if (!allPpDepleted) {
       moveSlot.currentPp = Math.max(0, moveSlot.currentPp - 1);
+      if (moveSlot.currentPp === 0 && attacker.heldItem === 'leppa-berry') {
+        moveSlot.currentPp = Math.min(10, moveSlot.maxPp);
+        attacker.lastConsumedItem = 'leppa-berry';
+        delete attacker.heldItem;
+        events.push({ type: 'item-consumed', data: { slotId: attackerSlotId, item: 'leppa-berry', reason: 'triggered' } });
+      }
     }
 
     events.push({ type: 'move-used', data: { attackerSlotId, attackerName: attacker.nickname, moveId: move.id, moveName: move.name } });
@@ -840,6 +869,20 @@ export class BattleEngine {
             attacker.fainted = true;
             attacker.currentHp = 0;
             events.push({ type: 'faint', data: { slotId: attackerSlotId, instanceId: attacker.instanceId } });
+          }
+        }
+        if (!attacker.fainted && attacker.heldItem) {
+          const missResult = getItemHooks(attacker.heldItem).onMoveMissed?.({ holder: attacker, state: s });
+          if (missResult) {
+            if (missResult.statBoostDeltas) {
+              events.push(applyStatBoost(attacker, attackerSlotId, missResult.statBoostDeltas as Partial<Record<keyof StatBoosts, number>>));
+            }
+            if (missResult.consume && attacker.heldItem) {
+              const consumed = attacker.heldItem;
+              attacker.lastConsumedItem = consumed;
+              delete attacker.heldItem;
+              events.push({ type: 'item-consumed', data: { slotId: attackerSlotId, item: consumed, reason: 'triggered' } });
+            }
           }
         }
         return { newState: s, events };
@@ -1683,7 +1726,9 @@ export class BattleEngine {
           randomFactor: randomDamageFactor(),
           isCritical,
           moveType: effectiveMoveType,
-          ...(s.field.weather ? { weather: s.field.weather.type } : {}),
+          ...(s.field.weather && !getItemHooks(attacker.heldItem).ignoresWeather && !getItemHooks(target.heldItem).ignoresWeather
+            ? { weather: s.field.weather.type }
+            : {}),
           otherModifiers,
         });
 
@@ -2081,6 +2126,7 @@ export class BattleEngine {
             effectiveness,
             moveType: effectiveMoveType,
             isPhysical,
+            rng: this.rng,
           });
           if (berryResult.hpDelta > 0) {
             const heal = Math.min(berryResult.hpDelta, target.maxHp - target.currentHp);
@@ -2129,7 +2175,7 @@ export class BattleEngine {
 
       // Life Orb recoil + attacker-held berry triggers (e.g. Custap, Micle, Figy at low HP)
       if (totalDamage > 0 && itemHooks.onAfterDamageTaken) {
-        const attackerBerryResult = itemHooks.onAfterDamageTaken({ holder: attacker, state: s, damageTaken: totalDamage });
+        const attackerBerryResult = itemHooks.onAfterDamageTaken({ holder: attacker, state: s, damageTaken: totalDamage, rng: this.rng });
         const { hpDelta } = attackerBerryResult;
         if (hpDelta < 0) {
           const recoil = Math.min(-hpDelta, attacker.currentHp);
@@ -2174,6 +2220,22 @@ export class BattleEngine {
           // Note: target/targetSlot references are stale after s update, but we're done with them
         }
         // If no bench, just skip the force-switch (target stays in)
+      }
+    }
+
+    // Throat Spray: +1 SpA after successfully using a sound-based move
+    if (move.soundMove === true && !attacker.fainted && attacker.heldItem) {
+      const sprayResult = getItemHooks(attacker.heldItem).onAfterSoundMove?.({ holder: attacker, state: s });
+      if (sprayResult) {
+        if (sprayResult.statBoostDeltas) {
+          events.push(applyStatBoost(attacker, attackerSlotId, sprayResult.statBoostDeltas as Partial<Record<keyof StatBoosts, number>>));
+        }
+        if (sprayResult.consume && attacker.heldItem) {
+          const consumed = attacker.heldItem;
+          attacker.lastConsumedItem = consumed;
+          delete attacker.heldItem;
+          events.push({ type: 'item-consumed', data: { slotId: attackerSlotId, item: consumed, reason: 'triggered' } });
+        }
       }
     }
 
@@ -2449,6 +2511,25 @@ export class BattleEngine {
       }
     }
 
+    // 5c. Booster Energy: activate Quark Drive / Protosynthesis if field condition is absent
+    if (incoming?.heldItem === 'booster-energy') {
+      const ability = incoming.ability;
+      const isQuarkDrive = ability === 'quark-drive';
+      const isProtoSynthesis = ability === 'protosynthesis';
+      if (isQuarkDrive || isProtoSynthesis) {
+        const fieldConditionMet = isQuarkDrive
+          ? s.field.terrain?.type === 'electric'
+          : s.field.weather?.type === 'sun' || s.field.weather?.type === 'harsh-sun';
+        if (!fieldConditionMet) {
+          const targetStat = this.boosterEnergyTargetStat(incoming);
+          incoming.volatileStatus.push({ name: 'booster-energy-active', variant: targetStat });
+          incoming.lastConsumedItem = incoming.heldItem;
+          delete incoming.heldItem;
+          events.push({ type: 'item-consumed', data: { slotId, item: 'booster-energy', reason: 'triggered' } });
+        }
+      }
+    }
+
     // 6. Emit pokemon-switched event
     events.push({
       type: 'pokemon-switched',
@@ -2456,6 +2537,18 @@ export class BattleEngine {
     });
 
     return { newState: s, events };
+  }
+
+  private boosterEnergyTargetStat(pokemon: PartyMember): string {
+    const candidates: [string, number][] = [
+      ['atk', pokemon.stats.atk],
+      ['def', pokemon.stats.def],
+      ['spa', pokemon.stats.spa],
+      ['spd', pokemon.stats.spd],
+      ['spe', pokemon.stats.spe],
+    ];
+    const best = candidates.reduce((a, b) => b[1] > a[1] ? b : a);
+    return best[0];
   }
 
   private applySwitchInResult(
@@ -2480,6 +2573,20 @@ export class BattleEngine {
               result.statBoostDeltas as Partial<Record<keyof StatBoosts, number>>,
             );
             events.push(event);
+            if (foePokemon.heldItem) {
+              const orbResult = getItemHooks(foePokemon.heldItem).onIntimidated?.({ holder: foePokemon, state: s });
+              if (orbResult) {
+                if (orbResult.statBoostDeltas) {
+                  events.push(applyStatBoost(foePokemon, foeSlot.slotId, orbResult.statBoostDeltas as Partial<Record<keyof StatBoosts, number>>));
+                }
+                if (orbResult.consume && foePokemon.heldItem) {
+                  const consumed = foePokemon.heldItem;
+                  foePokemon.lastConsumedItem = consumed;
+                  delete foePokemon.heldItem;
+                  events.push({ type: 'item-consumed', data: { slotId: foeSlot.slotId, item: consumed, reason: 'triggered' } });
+                }
+              }
+            }
           }
         }
       }
@@ -2621,7 +2728,8 @@ export class BattleEngine {
           const types = this.resolveEffectiveTypes(active);
           const immune =
             (activeWeather === 'sand' && types.some(t => ['Rock', 'Ground', 'Steel'].includes(t))) ||
-            (activeWeather === 'snow' && types.includes('Ice'));
+            (activeWeather === 'snow' && types.includes('Ice')) ||
+            getItemHooks(active.heldItem).ignoresWeather === true;
           if (!immune) {
             const chip = Math.floor(active.maxHp / 16);
             const actual = Math.min(chip, active.currentHp);
