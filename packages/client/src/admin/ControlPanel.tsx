@@ -60,7 +60,7 @@ function ControlPanelInner({ battleId, onBack }: Props) {
 
   return (
     <div style={{ background: '#0d0d1a', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: 16, gap: 12 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: 800 }}>
+      <div data-testid="battle-header-bar" style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', maxWidth: 800 }}>
         <button
           onClick={onBack}
           style={{ background: 'none', border: '1px solid #555', color: '#aaa', padding: '4px 12px', borderRadius: 3, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11 }}
@@ -98,8 +98,8 @@ function ControlPanelInner({ battleId, onBack }: Props) {
         </>
       )}
 
-      <div style={{ display: 'flex', gap: 16, width: 800 }}>
-        <div style={{ flex: 1 }}>
+      <div data-testid="action-log-wrapper" style={{ display: 'flex', flexWrap: 'wrap', gap: 16, width: '100%', maxWidth: 800 }}>
+        <div style={{ flex: '1 0 260px' }}>
           {battleResult ? (
             <BattleResultPanel
               winningTeamId={battleResult.winningTeamId}
@@ -115,7 +115,7 @@ function ControlPanelInner({ battleId, onBack }: Props) {
             </div>
           )}
         </div>
-        <div style={{ width: 300 }}>
+        <div style={{ flex: '0 0 300px', maxWidth: '100%' }}>
           <TurnLog messages={turnLog} />
         </div>
       </div>
