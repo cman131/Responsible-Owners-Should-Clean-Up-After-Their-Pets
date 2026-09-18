@@ -5,7 +5,7 @@ import { BattleScene } from '../battle/BattleScene.js';
 import { HpBarsRow } from '../battle/overlays/HpBarsRow.js';
 import { TurnLog } from '../battle/overlays/TurnLog.js';
 import { NpcTabPanel } from './NpcTabPanel.js';
-import type { ActionRequestPayload, AdminActionPayload } from '@poke-fighter/shared';
+import type { ActionRequestPayload, AdminActionPayload, SlotStatusPayload } from '@poke-fighter/shared';
 
 interface NpcSlotRequest {
   slotId: string;
@@ -18,6 +18,7 @@ interface Props { battleId: string; onBack: () => void }
 function ControlPanelInner({ battleId, onBack }: Props) {
   const { state, turnLog } = useBattle();
   const [npcRequests, setNpcRequests] = useState<NpcSlotRequest[]>([]);
+  const [slotStatuses, setSlotStatuses] = useState<SlotStatusPayload['slots']>([]);
 
   useEffect(() => {
     const socket = getSocket();
@@ -26,13 +27,20 @@ function ControlPanelInner({ battleId, onBack }: Props) {
       if (payload.battleId === battleId) setNpcRequests(payload.slots);
     };
     const onTurnResolve = () => setNpcRequests([]);
+    const onSlotStatus = (payload: SlotStatusPayload) => {
+      if (payload.battleId === battleId) setSlotStatuses(payload.slots);
+    };
 
     socket.on('npc:action-request', onNpcRequest);
     socket.on('turn:resolve', onTurnResolve);
+    socket.on('lobby:slot-status', onSlotStatus);
+
+    socket.emit('admin:action', { type: 'lobby:slot-status', data: { battleId } } as any);
 
     return () => {
       socket.off('npc:action-request', onNpcRequest);
       socket.off('turn:resolve', onTurnResolve);
+      socket.off('lobby:slot-status', onSlotStatus);
     };
   }, [battleId]);
 
@@ -64,6 +72,11 @@ function ControlPanelInner({ battleId, onBack }: Props) {
           </span>
         )}
         <span style={{ color: '#e74c3c', fontSize: 12, letterSpacing: 2 }}>ADMIN VIEW</span>
+        {slotStatuses.filter(s => !s.joined).map(s => (
+          <span key={s.slotId} style={{ color: '#e74c3c', fontSize: 11 }}>
+            ⚠ {s.displayName} disconnected
+          </span>
+        ))}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
           <button onClick={() => handleForfeit('team-a')} style={btnStyle}>FORFEIT TEAM A</button>
           <button onClick={() => handleForfeit('team-b')} style={btnStyle}>FORFEIT TEAM B</button>

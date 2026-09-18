@@ -124,6 +124,33 @@ describe('ControlPanel', () => {
     vi.restoreAllMocks();
   });
 
+  it('shows disconnect indicator when lobby:slot-status arrives with a disconnected slot', () => {
+    render(<ControlPanel battleId="b1" onBack={vi.fn()} />);
+    const slotStatusCall = mockSocket.on.mock.calls.find((c) => c[0] === 'lobby:slot-status');
+    act(() => {
+      slotStatusCall![1]({ battleId: 'b1', slots: [{ slotId: 'a1', displayName: 'Alice', joined: false }] });
+    });
+    expect(screen.getByText(/Alice disconnected/)).toBeTruthy();
+  });
+
+  it('does not show disconnect indicator when all slots are joined', () => {
+    render(<ControlPanel battleId="b1" onBack={vi.fn()} />);
+    const slotStatusCall = mockSocket.on.mock.calls.find((c) => c[0] === 'lobby:slot-status');
+    act(() => {
+      slotStatusCall![1]({ battleId: 'b1', slots: [{ slotId: 'a1', displayName: 'Alice', joined: true }] });
+    });
+    expect(screen.queryByText(/Alice disconnected/)).toBeNull();
+  });
+
+  it('ignores lobby:slot-status for a different battleId', () => {
+    render(<ControlPanel battleId="b1" onBack={vi.fn()} />);
+    const slotStatusCall = mockSocket.on.mock.calls.find((c) => c[0] === 'lobby:slot-status');
+    act(() => {
+      slotStatusCall![1]({ battleId: 'OTHER', slots: [{ slotId: 'a1', displayName: 'Alice', joined: false }] });
+    });
+    expect(screen.queryByText(/Alice disconnected/)).toBeNull();
+  });
+
   it('emits forfeit action for team-b when forfeit team b button is clicked and confirmed', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     render(<ControlPanel battleId="b1" onBack={vi.fn()} />);
