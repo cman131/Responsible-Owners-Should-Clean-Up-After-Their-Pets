@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { getSocket } from '../socket.js';
-import { TeamBuilder } from './TeamBuilder.js';
+import { TeamBuilder, slotStatus } from './TeamBuilder.js';
 import { BankTab } from './BankTab.js';
 import type { PlayerProfile, PokemonSet } from '@poke-fighter/shared';
 
@@ -18,7 +18,8 @@ export function PlayerProfileEditor({ profile, onBack }: Props) {
   const [teamKey, setTeamKey] = useState(0);
 
   const isNew = profile === null;
-  const isValid = name.trim().length > 0;
+  const teamComplete = team.length === 0 || team.every((p) => slotStatus(p) === 'complete');
+  const isValid = name.trim().length > 0 && teamComplete;
 
   function handleSendToBank(pokemon: PokemonSet) {
     setBank((prev) => [...prev, pokemon]);
@@ -109,7 +110,9 @@ export function PlayerProfileEditor({ profile, onBack }: Props) {
         </div>
 
         {!isValid && (
-          <div style={{ marginTop: 8, color: '#e74c3c', fontSize: 11 }}>Name is required.</div>
+          <div style={{ marginTop: 8, color: '#e74c3c', fontSize: 11 }}>
+            {name.trim().length === 0 ? 'Name is required.' : 'All Pokémon must have at least one move.'}
+          </div>
         )}
       </div>
     </div>

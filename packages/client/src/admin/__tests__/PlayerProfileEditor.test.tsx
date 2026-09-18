@@ -7,12 +7,17 @@ vi.mock('../TeamBuilder.js', () => ({
   TeamBuilder: ({ onTeamSaved, onSendToBank }: any) => (
     <div>
       <span>team-builder</span>
-      <button onClick={() => onSendToBank?.({ speciesId: 1, nickname: 'Bulbasaur', level: 5, nature: 'hardy', moves: ['','','',''], ability: 'Overgrow', evs:{hp:0,atk:0,def:0,spa:0,spd:0,spe:0}, ivs:{hp:31,atk:31,def:31,spa:31,spd:31,spe:31} })}>
+      <button onClick={() => onSendToBank?.({ speciesId: 1, nickname: 'Bulbasaur', level: 5, nature: 'hardy', moves: ['','','',''] as [string,string,string,string], ability: 'Overgrow', evs:{hp:0,atk:0,def:0,spa:0,spd:0,spe:0}, ivs:{hp:31,atk:31,def:31,spa:31,spd:31,spe:31} })}>
         send-to-bank
       </button>
       <button onClick={() => onTeamSaved([])}>clear-team</button>
     </div>
   ),
+  slotStatus: (p: any) => {
+    if (!p?.speciesId) return 'empty';
+    if (!(p.moves ?? []).some(Boolean)) return 'incomplete';
+    return 'complete';
+  },
 }));
 vi.mock('../BankTab.js', () => ({
   BankTab: ({ bank, onMoveToTeam }: any) => (
@@ -91,5 +96,51 @@ describe('PlayerProfileEditor', () => {
     expect(screen.getByDisplayValue('Misty')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /^bank/i }));
     expect(screen.getByText('bank-tab-1')).toBeTruthy();
+  });
+
+  it('SAVE is disabled when team has a pokemon with no moves', () => {
+    const profile = {
+      profileId: 'p1',
+      displayName: 'Ash',
+      createdAt: '2026-01-01T00:00:00Z',
+      defaultTeam: {
+        templateId: 't1',
+        name: "Ash's Team",
+        createdAt: '2026-01-01T00:00:00Z',
+        pokemon: [{
+          speciesId: 25, nickname: 'Pikachu', level: 36, nature: 'jolly',
+          moves: ['', '', '', ''] as [string, string, string, string],
+          ability: 'Static',
+          evs: { hp:0, atk:0, def:0, spa:0, spd:0, spe:0 },
+          ivs: { hp:31, atk:31, def:31, spa:31, spd:31, spe:31 },
+        }],
+      },
+    };
+    render(<PlayerProfileEditor profile={profile} onBack={vi.fn()} />);
+    const saveBtn = screen.getByRole('button', { name: /^save$/i });
+    expect((saveBtn as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('SAVE is enabled when team has a pokemon with at least one move', () => {
+    const profile = {
+      profileId: 'p1',
+      displayName: 'Ash',
+      createdAt: '2026-01-01T00:00:00Z',
+      defaultTeam: {
+        templateId: 't1',
+        name: "Ash's Team",
+        createdAt: '2026-01-01T00:00:00Z',
+        pokemon: [{
+          speciesId: 25, nickname: 'Pikachu', level: 36, nature: 'jolly',
+          moves: ['thunderbolt', '', '', ''] as [string, string, string, string],
+          ability: 'Static',
+          evs: { hp:0, atk:0, def:0, spa:0, spd:0, spe:0 },
+          ivs: { hp:31, atk:31, def:31, spa:31, spd:31, spe:31 },
+        }],
+      },
+    };
+    render(<PlayerProfileEditor profile={profile} onBack={vi.fn()} />);
+    const saveBtn = screen.getByRole('button', { name: /^save$/i });
+    expect((saveBtn as HTMLButtonElement).disabled).toBe(false);
   });
 });
