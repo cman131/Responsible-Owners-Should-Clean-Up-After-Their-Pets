@@ -39,6 +39,7 @@ export function computeCritStage(
   if ((moveCritRatio ?? 0) > 0) stage += 1;
   if (volatiles.some((v) => v.name === 'focusenergy')) stage += 2;
   if (volatiles.some((v) => v.name === 'laser-focus')) stage += 3;
+  if (volatiles.some((v) => v.name === 'lansat-active')) stage += 2;
   stage += itemCritBonus;
   return stage;
 }

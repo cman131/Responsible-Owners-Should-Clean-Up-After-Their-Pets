@@ -337,6 +337,57 @@ const ITEM_HOOKS: Record<string, ItemHooks> = {
       return { hpDelta: 0 };
     },
   },
+  // Lansat Berry — sets lansat-active volatile at ≤25% HP for +2 crit stage on next attack
+  'lansat-berry': {
+    onAfterDamageTaken: ({ holder, damageTaken }) => {
+      if (damageTaken > 0 && holder.currentHp <= Math.floor(holder.maxHp / 4)) {
+        holder.volatileStatus.push({ name: 'lansat-active' });
+        return { hpDelta: 0, consume: true };
+      }
+      return { hpDelta: 0 };
+    },
+  },
+  // Starf Berry — randomly boosts one combat stat by +2 at ≤25% HP
+  'starf-berry': {
+    onAfterDamageTaken: ({ holder, damageTaken, rng }) => {
+      if (damageTaken <= 0 || holder.currentHp > Math.floor(holder.maxHp / 4)) return { hpDelta: 0 };
+      const stats = ['atk', 'def', 'spa', 'spd', 'spe'] as const;
+      const stat = stats[Math.floor((rng?.() ?? Math.random()) * stats.length)]!;
+      return { hpDelta: 0, statBoostDeltas: { [stat]: 2 }, consume: true };
+    },
+  },
+  // Type-reactive items — trigger on hit by a specific move type
+  'absorb-bulb': {
+    onAfterDamageTaken: ({ damageTaken, moveType }) =>
+      damageTaken > 0 && moveType === 'Water'
+        ? { hpDelta: 0, statBoostDeltas: { spa: 1 }, consume: true }
+        : { hpDelta: 0 },
+  },
+  'cell-battery': {
+    onAfterDamageTaken: ({ damageTaken, moveType }) =>
+      damageTaken > 0 && moveType === 'Electric'
+        ? { hpDelta: 0, statBoostDeltas: { atk: 1 }, consume: true }
+        : { hpDelta: 0 },
+  },
+  'luminous-moss': {
+    onAfterDamageTaken: ({ damageTaken, moveType }) =>
+      damageTaken > 0 && moveType === 'Water'
+        ? { hpDelta: 0, statBoostDeltas: { spd: 1 }, consume: true }
+        : { hpDelta: 0 },
+  },
+  'snowball': {
+    onAfterDamageTaken: ({ damageTaken, moveType }) =>
+      damageTaken > 0 && moveType === 'Ice'
+        ? { hpDelta: 0, statBoostDeltas: { atk: 1 }, consume: true }
+        : { hpDelta: 0 },
+  },
+  // Enigma Berry — heals floor(maxHp/4) on any super-effective hit
+  'enigma-berry': {
+    onAfterDamageTaken: ({ holder, damageTaken, effectiveness }) =>
+      damageTaken > 0 && (effectiveness ?? 1) > 1
+        ? { hpDelta: Math.floor(holder.maxHp / 4), consume: true }
+        : { hpDelta: 0 },
+  },
   // Reactive berries
   'kee-berry': {
     onAfterDamageTaken: ({ damageTaken, isPhysical }) =>
@@ -402,6 +453,16 @@ const ITEM_HOOKS: Record<string, ItemHooks> = {
         ? { flinchTarget: true }
         : null,
   },
+  'utility-umbrella': {
+    ignoresWeather: true,
+  },
+  'room-service': {
+    onSpeedModifierConsuming: ({ state }) =>
+      state.field.trickroom > 0
+        ? { multiplier: 0.5, consume: true }
+        : 1,
+  },
+  'booster-energy': {},
   'electric-seed': {
     onSwitchIn: ({ terrain }) => terrain === 'electric' ? { statBoostDeltas: { def: 1 }, consume: true } : undefined,
   },
