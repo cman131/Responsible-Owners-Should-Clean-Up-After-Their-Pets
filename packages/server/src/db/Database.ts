@@ -139,7 +139,7 @@ class BattlesStore {
     `).run({ battleId, currentState: JSON.stringify(state), turnNumber: state.turnNumber });
   }
 
-  markEnded(battleId: string, winningTeamId: string): void {
+  markEnded(battleId: string, winningTeamId: string | null): void {
     this.db.prepare(`
       UPDATE battles SET status = 'ended', winningTeamId = @winningTeamId, endedAt = @endedAt WHERE battleId = @battleId
     `).run({ battleId, winningTeamId, endedAt: Date.now() });

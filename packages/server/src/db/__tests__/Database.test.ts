@@ -171,6 +171,15 @@ describe('AppDatabase.battles', () => {
     expect(summary.endedAt).toBeTypeOf('number');
   });
 
+  it('markEnded accepts null winningTeamId (cancelled battle)', () => {
+    db.battles.insert(makeBattleState());
+    db.battles.markEnded('b1', null);
+    const summary = db.battles.list()[0]!;
+    expect(summary.status).toBe('ended');
+    expect(summary.winningTeamId).toBeNull();
+    expect(summary.endedAt).toBeTypeOf('number');
+  });
+
   it('get returns current BattleState', () => {
     const state = makeBattleState();
     db.battles.insert(state);
