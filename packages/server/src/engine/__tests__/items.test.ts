@@ -598,3 +598,93 @@ describe('Expert Belt', () => {
     expect(newState.teams[1]!.slots[0]!.party[0]!.currentHp).toBe(newState2.teams[1]!.slots[0]!.party[0]!.currentHp);
   });
 });
+
+describe('Protective Pads', () => {
+  it('suppresses Rocky Helmet recoil on contact move', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'bodyslam', currentPp: 15, maxPp: 15 };
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'protective-pads';
+    state.teams[1]!.slots[0]!.party[0]!.heldItem = 'rocky-helmet';
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    expect(newState.teams[0]!.slots[0]!.party[0]!.currentHp).toBe(100);
+  });
+
+  it('suppresses Rough Skin damage on contact move', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'bodyslam', currentPp: 15, maxPp: 15 };
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'protective-pads';
+    state.teams[1]!.slots[0]!.party[0]!.ability = 'rough-skin';
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    expect(newState.teams[0]!.slots[0]!.party[0]!.currentHp).toBe(100);
+  });
+
+  it('appears in IMPLEMENTED_ITEM_IDS', () => {
+    expect(IMPLEMENTED_ITEM_IDS.has('protective-pads')).toBe(true);
+  });
+});
+
+describe('Punching Glove', () => {
+  it('suppresses Rocky Helmet recoil on punch moves', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'firepunch', currentPp: 15, maxPp: 15 };
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'punching-glove';
+    state.teams[1]!.slots[0]!.party[0]!.heldItem = 'rocky-helmet';
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    expect(newState.teams[0]!.slots[0]!.party[0]!.currentHp).toBe(100);
+  });
+
+  it('does NOT suppress Rocky Helmet on non-punch contact move', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'bodyslam', currentPp: 15, maxPp: 15 };
+    state.teams[0]!.slots[0]!.party[0]!.heldItem = 'punching-glove';
+    state.teams[1]!.slots[0]!.party[0]!.heldItem = 'rocky-helmet';
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+    // bodyslam is contact but not a punch → Rocky Helmet still fires: floor(100/6) = 16
+    expect(newState.teams[0]!.slots[0]!.party[0]!.currentHp).toBe(84);
+  });
+
+  it('gives 1.1x damage boost on punch moves', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const stateWith = make1v1State();
+    stateWith.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'firepunch', currentPp: 15, maxPp: 15 };
+    stateWith.teams[0]!.slots[0]!.party[0]!.heldItem = 'punching-glove';
+    // Use move index 3 (willowisp) so p2 doesn't heal with roost
+    const engineWith = new BattleEngine({ rng: () => 0.5 });
+    const { newState: withGlove } = engineWith.resolveTurn(stateWith, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-a1' },
+    });
+
+    const stateWithout = make1v1State();
+    stateWithout.teams[0]!.slots[0]!.party[0]!.moves[0] = { moveId: 'firepunch', currentPp: 15, maxPp: 15 };
+    const engineWithout = new BattleEngine({ rng: () => 0.5 });
+    const { newState: withoutGlove } = engineWithout.resolveTurn(stateWithout, {
+      'slot-a1': { type: 'move', moveIndex: 0, targetSlotId: 'slot-b1' },
+      'slot-b1': { type: 'move', moveIndex: 3, targetSlotId: 'slot-a1' },
+    });
+
+    const hpWithGlove = withGlove.teams[1]!.slots[0]!.party[0]!.currentHp;
+    const hpWithoutGlove = withoutGlove.teams[1]!.slots[0]!.party[0]!.currentHp;
+    expect(hpWithGlove).toBeLessThan(hpWithoutGlove);
+  });
+
+  it('appears in IMPLEMENTED_ITEM_IDS', () => {
+    expect(IMPLEMENTED_ITEM_IDS.has('punching-glove')).toBe(true);
+  });
+});

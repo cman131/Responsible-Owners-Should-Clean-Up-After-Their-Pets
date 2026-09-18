@@ -136,6 +136,17 @@ const MEMORY_TYPE_MAP: Record<string, string> = {
   'steel-memory': 'Steel', 'fairy-memory': 'Fairy',
 };
 
+const PUNCH_MOVES = new Set([
+  'bulletpunch', 'cometpunch', 'dizzypunch', 'drainpunch', 'dynamicpunch',
+  'firepunch', 'focuspunch', 'hammerarm', 'icepunch', 'jetpunch',
+  'machpunch', 'megapunch', 'meteormash', 'poweruppunch', 'shadowpunch',
+  'skyuppercut', 'suckerpunch', 'thunderpunch',
+]);
+
+function isPunchMove(move: Move): boolean {
+  return PUNCH_MOVES.has(move.id);
+}
+
 const CHOICE_LOCK_ITEMS = new Set(['choice-band', 'choice-specs', 'choice-scarf']);
 
 const THRASH_LOCK_MOVES = new Set(['outrage', 'petaldance', 'thrash']);
@@ -673,7 +684,7 @@ export class BattleEngine {
         }
         if (handlerResult.pivotSwitch) {
           const attackerSlotForPivot = this.findSlot(s, attackerSlotId);
-          const isTrapped = attacker.volatileStatus.some(
+          const isTrapped = attacker.heldItem !== 'shed-shell' && attacker.volatileStatus.some(
             v => v.name === 'trapped' || v.name === 'no-retreat'
           );
           if (isTrapped) {
@@ -1464,6 +1475,12 @@ export class BattleEngine {
         perTargetBasePower *= 2;
       }
 
+      let makesContact = move.makesContact === true;
+      if (makesContact) {
+        if (attacker.heldItem === 'protective-pads') makesContact = false;
+        if (attacker.heldItem === 'punching-glove' && isPunchMove(move)) makesContact = false;
+      }
+
       let totalDamage = 0;
       let hpDamageTaken = 0;
       let typeResistBerryToConsume = false;
@@ -1517,6 +1534,7 @@ export class BattleEngine {
             holder: attacker, state: s, moveType: effectiveMoveType, basePower: perTargetBasePower, target, isPhysical,
           });
         }
+        if (attacker.heldItem === 'punching-glove' && isPunchMove(move)) otherModifiers *= 1.1;
 
         // Terrain power modifiers
         const terrain = s.field.terrain?.type;
@@ -1569,7 +1587,7 @@ export class BattleEngine {
             moveType: effectiveMoveType,
             basePower: perTargetBasePower,
             isPhysical,
-            makesContact: move.makesContact === true,
+            makesContact,
             effectiveness,
           });
           if (defAbilityMod !== undefined) otherModifiers *= defAbilityMod;
@@ -1710,7 +1728,7 @@ export class BattleEngine {
         if (!target.fainted && !targetHasSub && !sheerForceActive) {
           const secondaryEvent = evaluateSecondaryEffect(move, target, targetSlotId, defTypes, s, attackerAbilityForDmg);
           if (secondaryEvent) events.push(secondaryEvent);
-          const volatileEvent = evaluateVolatileEffect(move.id, target, targetSlotId, attackerSlotId);
+          const volatileEvent = evaluateVolatileEffect(move.id, target, targetSlotId, attackerSlotId, attacker);
           if (volatileEvent) events.push(volatileEvent);
         }
 
@@ -1811,7 +1829,7 @@ export class BattleEngine {
           basePower: effectiveBasePower,
           target: attacker,
           isPhysical: move.category === 'physical',
-          makesContact: move.makesContact === true,
+          makesContact,
           rng: this.rng,
         };
         const afterHitResult = getAbilityHooks(effectiveAbilityId(target)).onAfterHit?.(afterHitCtx);
@@ -1887,7 +1905,7 @@ export class BattleEngine {
           basePower: effectiveBasePower,
           target: attacker,
           isPhysical,
-          makesContact: move.makesContact === true,
+          makesContact,
           totalDamage,
           rng: this.rng,
         });
@@ -2207,7 +2225,7 @@ export class BattleEngine {
     const slot = this.findSlot(state, slotId);
     const active = slot?.party[slot.activePokemonIndex];
     if (active) {
-      const isTrapped = active.volatileStatus.some(
+      const isTrapped = active.heldItem !== 'shed-shell' && active.volatileStatus.some(
         v => v.name === 'trapped' || v.name === 'no-retreat' || v.name === 'ingrain',
       );
       if (isTrapped) {

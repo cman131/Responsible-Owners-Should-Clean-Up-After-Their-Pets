@@ -172,8 +172,13 @@ const ITEM_HOOKS: Record<string, ItemHooks> = {
   'bright-powder': {
     onAccuracyModifier: () => 0.9,
   },
-  // handled inline in BattleEngine — stubs ensure they appear in IMPLEMENTED_ITEM_IDS
+  // handled inline in BattleEngine/EffectEngine — stubs ensure they appear in IMPLEMENTED_ITEM_IDS
   'focus-sash': {},
+  'shed-shell': {},
+  'binding-band': {},
+  'grip-claw': {},
+  'protective-pads': {},
+  'punching-glove': {},
   'air-balloon': {},
   'weakness-policy': {},
   // handled inline in registrations.ts
