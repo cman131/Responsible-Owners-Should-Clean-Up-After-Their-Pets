@@ -86,7 +86,7 @@ function BattleView() {
         displayHp={displayHp}
       />
 
-      {myActiveMon && <ExpBar instanceId={myActiveMon.instanceId} />}
+      {myActiveMon && <ExpBar instanceId={myActiveMon.instanceId} nickname={myActiveMon.nickname} />}
 
       <div style={{ display: 'flex', gap: 16, width: 800 }}>
         <div style={{ flex: 1 }}>
