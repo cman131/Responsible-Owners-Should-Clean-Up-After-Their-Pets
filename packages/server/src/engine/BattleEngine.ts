@@ -1161,8 +1161,12 @@ export class BattleEngine {
 
       let effectiveness = this.data.getCombinedEffectiveness(effectiveMoveType, effectiveDefTypes);
       if (effectiveness === 0) {
-        events.push({ type: 'move-used', data: { note: 'no-effect', targetSlotId, attackerName: attacker.nickname, moveName: move.name } });
-        continue;
+        if (target.heldItem === 'ring-target') {
+          effectiveness = 1;
+        } else {
+          events.push({ type: 'move-used', data: { note: 'no-effect', targetSlotId, attackerName: attacker.nickname, moveName: move.name } });
+          continue;
+        }
       }
 
       // Strong Winds: super-effective moves against Flying-type targets are reduced
@@ -1561,12 +1565,14 @@ export class BattleEngine {
         ? { ...s.field, allyFaintedTeamIndex: lastTurnFaintedTeamIndex, attackerTeamIndex: attackerTeamIdx }
         : { ...s.field, attackerTeamIndex: attackerTeamIdx };
 
+      const attackerBaseWeight = attackerSpeciesForPower?.weightkg ?? 0;
+      const targetBaseWeight = targetSpeciesForPower?.weightkg ?? 0;
       const resolvedPower = resolvePower(
         moveInputForPower,
-        { ...attacker, weightkg: attackerSpeciesForPower?.weightkg ?? 0,
+        { ...attacker, weightkg: attacker.heldItem === 'float-stone' ? attackerBaseWeight * 0.5 : attackerBaseWeight,
           fasterThanTarget,
         },
-        { ...target, weightkg: targetSpeciesForPower?.weightkg ?? 0,
+        { ...target, weightkg: target.heldItem === 'float-stone' ? targetBaseWeight * 0.5 : targetBaseWeight,
           movedThisTurn: targetMovedThisTurn,
           tookDamageThisTurn: targetTookDmgThisTurn,
         },
@@ -2467,7 +2473,9 @@ export class BattleEngine {
       const incomingSide = s.field.sideConditions[incomingTeamIndex]!;
       const incomingTypes = this.resolveEffectiveTypes(incoming);
       const grounded = isGrounded(incoming, incomingTypes, s.field.gravity > 0);
-      events.push(...applyEntryHazards(incoming, slotId, incomingSide, incomingTeamIndex, incomingTypes, grounded, this.data));
+      if (incoming.heldItem !== 'heavy-duty-boots') {
+        events.push(...applyEntryHazards(incoming, slotId, incomingSide, incomingTeamIndex, incomingTypes, grounded, this.data));
+      }
     }
 
     // Healing Wish / Lunar Dance: heal incoming Pokemon if flag is set

@@ -44,6 +44,16 @@ describe('isGrounded', () => {
     mon.volatileStatus.push({ name: 'magnet-rise' });
     expect(isGrounded(mon, ['Normal'], true)).toBe(true);
   });
+
+  it('returns true for a Flying-type Pokémon holding Iron Ball', () => {
+    const mon = makePokemon({ heldItem: 'iron-ball' });
+    expect(isGrounded(mon, ['Flying'], false)).toBe(true);
+  });
+
+  it('returns true for a Levitate Pokémon holding Iron Ball', () => {
+    const mon = makePokemon({ ability: 'levitate', heldItem: 'iron-ball' });
+    expect(isGrounded(mon, ['Normal'], false)).toBe(true);
+  });
 });
 
 describe('lookup maps', () => {

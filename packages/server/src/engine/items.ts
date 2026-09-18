@@ -465,6 +465,12 @@ const ITEM_HOOKS: Record<string, ItemHooks> = {
         ? { flinchTarget: true }
         : null,
   },
+  'heavy-duty-boots': {},
+  'iron-ball': {
+    onSpeedModifier: () => 0.5,
+  },
+  'ring-target': {},
+  'float-stone': {},
   'utility-umbrella': {
     ignoresWeather: true,
   },
