@@ -40,6 +40,7 @@ export interface ItemHooks {
   onStatusApplied?: (ctx: ItemContext & { status: string }) => { cureStatus: boolean; consume?: boolean } | null;
   onSpeedModifier?: (ctx: ItemContext) => number;
   critStageBonus?: number;
+  critStageBonusFn?: (ctx: ItemContext) => number;
   screenExtension?: number;
   drainMultiplier?: number;
   onHealAfterAttack?: (ctx: ItemAttackContext & { damageDealt: number }) => { hpDelta: number };
@@ -56,6 +57,10 @@ export interface ItemHooks {
   onOpponentStatBoosted?: (ctx: ItemContext & { boostDeltas: Partial<StatBoosts> }) => { copyBoosts: boolean; consume?: boolean } | null;
   /** Terrain seeds: fires on switch-in and at end-of-turn when terrain is active */
   onSwitchIn?: (ctx: ItemContext & { terrain: string | null }) => { statBoostDeltas?: Partial<StatBoosts>; consume?: boolean } | undefined;
+}
+
+function notTransformed(holder: PartyMember): boolean {
+  return !holder.volatileStatus.some(v => v.name === 'transformed');
 }
 
 const ITEM_HOOKS: Record<string, ItemHooks> = {
@@ -105,6 +110,36 @@ const ITEM_HOOKS: Record<string, ItemHooks> = {
   },
   'razor-claw': {
     critStageBonus: 1,
+  },
+  'lucky-punch': {
+    critStageBonusFn: ({ holder }) => holder.speciesName === 'chansey' ? 2 : 0,
+  },
+  'leek': {
+    critStageBonusFn: ({ holder }) => ['farfetchd', 'sirfetchd'].includes(holder.speciesName) ? 2 : 0,
+  },
+  'stick': {
+    critStageBonusFn: ({ holder }) => ['farfetchd', 'sirfetchd'].includes(holder.speciesName) ? 2 : 0,
+  },
+  'light-ball': {
+    onAttackerModifier: ({ holder }) => holder.speciesName === 'pikachu' ? 2 : 1,
+  },
+  'thick-club': {
+    onAttackerModifier: ({ holder, isPhysical }) =>
+      isPhysical && ['cubone', 'marowak', 'marowak-alola'].includes(holder.speciesName) ? 2 : 1,
+  },
+  'deep-sea-tooth': {
+    onAttackerModifier: ({ holder, isPhysical }) =>
+      !isPhysical && holder.speciesName === 'clamperl' ? 2 : 1,
+  },
+  'deep-sea-scale': {
+    onDefenderModifier: ({ holder, isPhysical }) =>
+      !isPhysical && holder.speciesName === 'clamperl' ? 0.5 : 1,
+  },
+  'quick-powder': {
+    onSpeedModifier: ({ holder }) => notTransformed(holder) ? 2 : 1,
+  },
+  'metal-powder': {
+    onDefenderModifier: ({ holder }) => notTransformed(holder) ? 0.5 : 1,
   },
   'light-clay': {
     screenExtension: 3,

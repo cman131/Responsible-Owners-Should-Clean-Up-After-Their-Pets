@@ -1561,7 +1561,8 @@ export class BattleEngine {
         if (move.id === 'foulplay') rawAtkStat = target.stats.atk;
         if (move.id === 'bodypress') { rawAtkStat = attacker.stats.def; boostKey = 'def'; }
 
-        const critStage = computeCritStage(move.critRatio, attacker.volatileStatus, getItemHooks(attacker.heldItem).critStageBonus ?? 0);
+        const fnCritBonus = itemHooks.critStageBonusFn ? itemHooks.critStageBonusFn({ holder: attacker, state: s }) : 0;
+        const critStage = computeCritStage(move.critRatio, attacker.volatileStatus, (itemHooks.critStageBonus ?? 0) + fnCritBonus);
         let isCritical = this.rng() < critProbability(critStage);
         const defenderTeamIndexForCrit = s.teams.findIndex((t) => t.slots.some((sl) => sl.slotId === targetSlotId)) as 0 | 1;
         if (isCritical && s.field.sideConditions[defenderTeamIndexForCrit]!.luckychant > 0) isCritical = false;
