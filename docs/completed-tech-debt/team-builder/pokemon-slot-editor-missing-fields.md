@@ -2,7 +2,7 @@
 
 ## State
 
-New
+Complete
 
 Two data fields present in `PokemonSet` are never surfaced in `PokemonSlotEditor`: EV/IV spreads and Tera type. Both can be added to the same form in the same implementation pass.
 
