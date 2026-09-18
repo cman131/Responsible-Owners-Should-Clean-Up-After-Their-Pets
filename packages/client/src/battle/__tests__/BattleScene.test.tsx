@@ -180,3 +180,28 @@ describe('animation classes', () => {
     expect(container.querySelector('.anim-attack-left')).toBeNull();
   });
 });
+
+describe('sprite positions', () => {
+  it('own slot uses percentage positions', () => {
+    const state = makeState('a1', 'b1');
+    const { container } = render(<BattleScene state={state} mySlotId="a1" />);
+    const scene = container.firstChild as HTMLElement;
+    const ownSlot = scene.firstChild as HTMLElement;
+    expect(ownSlot.style.bottom).toBe('7.5%');
+    expect(ownSlot.style.left).toBe('7.5%');
+    expect(ownSlot.style.width).toBe('9%');
+    expect(ownSlot.style.height).toBe('30%');
+  });
+
+  it('foe slot (index 0) uses percentage positions', () => {
+    const state = makeState('a1', 'b1');
+    const { container } = render(<BattleScene state={state} mySlotId="a1" />);
+    const scene = container.firstChild as HTMLElement;
+    // makeState produces one own slot, no allies, one foe — children: [0] own, [1] foe
+    const foeSlot = scene.children[1] as HTMLElement;
+    expect(foeSlot.style.top).toBe('7.5%');
+    expect(foeSlot.style.right).toBe('7.5%');
+    expect(foeSlot.style.width).toBe('8%');
+    expect(foeSlot.style.height).toBe('26.67%');
+  });
+});

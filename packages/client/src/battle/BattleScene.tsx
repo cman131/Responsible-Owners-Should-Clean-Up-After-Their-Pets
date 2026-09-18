@@ -65,12 +65,12 @@ function SpriteSlot({ slot, role, index, animatingSlots }: SpriteSlotProps) {
   }
 
   const pos: React.CSSProperties = role === 'own'
-    ? { bottom: 18, left: 60, width: 72, height: 72 }
+    ? { bottom: '7.5%', left: '7.5%', width: '9%', height: '30%' }
     : role === 'ally'
-    ? { bottom: 24, left: 155 + index * 60, width: 54, height: 54, opacity: 0.85 }
+    ? { bottom: '10%', left: `${19.375 + index * 7.5}%`, width: '6.75%', height: '22.5%', opacity: 0.85 }
     : index === 0
-    ? { top: 18, right: 60, width: 64, height: 64 }
-    : { top: 30, right: 145 + index * 60, width: 50, height: 50, opacity: 0.85 };
+    ? { top: '7.5%', right: '7.5%', width: '8%', height: '26.67%' }
+    : { top: '12.5%', right: `${18.125 + index * 7.5}%`, width: '6.25%', height: '20.83%', opacity: 0.85 };
 
   const url = role === 'foe'
     ? `https://play.pokemonshowdown.com/sprites/ani/${toShowdownId(mon.speciesName)}.gif`
