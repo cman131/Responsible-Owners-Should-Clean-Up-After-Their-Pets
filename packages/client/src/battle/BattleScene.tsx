@@ -23,8 +23,9 @@ export function BattleScene({ state, mySlotId, animatingSlots }: Props) {
   return (
     <div style={{
       position: 'relative',
-      width: 800,
-      height: 240,
+      width: '100%',
+      maxWidth: 800,
+      aspectRatio: '10/3',
       background: 'linear-gradient(to bottom, #87ceeb 55%, #5a8a3a 55%)',
       borderRadius: 4,
       overflow: 'hidden',

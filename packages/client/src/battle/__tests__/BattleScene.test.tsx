@@ -109,6 +109,15 @@ describe('BattleScene', () => {
     expect(bulbasaurImg).toBeTruthy();
     expect(charizardImg).toBeTruthy();
   });
+
+  it('scene container is fluid with max-width 800 and aspect-ratio 10/3', () => {
+    const state = makeState('a1', 'b1');
+    const { container } = render(<BattleScene state={state} mySlotId="a1" />);
+    const scene = container.firstChild as HTMLElement;
+    expect(scene.style.width).toBe('100%');
+    expect(scene.style.maxWidth).toBe('800px');
+    expect(scene.style.aspectRatio).toBe('10/3');
+  });
 });
 
 describe('animation classes', () => {
