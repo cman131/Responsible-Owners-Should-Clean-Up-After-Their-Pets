@@ -106,3 +106,71 @@ describe('SlotAssignmentStep — defaultTeam threading', () => {
     );
   });
 });
+
+describe('SlotAssignmentStep — duplicate slot warning', () => {
+  it('shows ⚠ duplicate badge when the same NPC is selected in two slots', () => {
+    render(<SlotAssignmentStep teamASlots={0} teamBSlots={2} onNext={vi.fn()} onBack={vi.fn()} />);
+
+    act(() => {
+      registryHandler?.({
+        resource: 'npcs',
+        data: [{ profileId: 'npc1', name: 'Blaine', team: { templateId: 't1', name: "Blaine's Team", pokemon: [], createdAt: '2026-01-01T00:00:00Z' }, createdAt: '2026-01-01T00:00:00Z' }],
+      });
+    });
+
+    const selects = screen.getAllByRole('combobox');
+    const npcSelects = selects.filter(
+      (s) => Array.from((s as HTMLSelectElement).options).some((o) => o.text.includes('Blaine'))
+    );
+    expect(npcSelects.length).toBe(2);
+    fireEvent.change(npcSelects[0]!, { target: { value: 'Blaine' } });
+    fireEvent.change(npcSelects[1]!, { target: { value: 'Blaine' } });
+
+    const badges = screen.getAllByText('⚠ duplicate');
+    expect(badges.length).toBe(2);
+  });
+
+  it('does not show duplicate badge when all slots have different names', () => {
+    render(<SlotAssignmentStep teamASlots={0} teamBSlots={2} onNext={vi.fn()} onBack={vi.fn()} />);
+
+    act(() => {
+      registryHandler?.({
+        resource: 'npcs',
+        data: [
+          { profileId: 'npc1', name: 'Blaine', team: { templateId: 't1', name: "Blaine's Team", pokemon: [], createdAt: '2026-01-01T00:00:00Z' }, createdAt: '2026-01-01T00:00:00Z' },
+          { profileId: 'npc2', name: 'Misty', team: { templateId: 't2', name: "Misty's Team", pokemon: [], createdAt: '2026-01-01T00:00:00Z' }, createdAt: '2026-01-01T00:00:00Z' },
+        ],
+      });
+    });
+
+    const selects = screen.getAllByRole('combobox');
+    const npcSelects = selects.filter(
+      (s) => Array.from((s as HTMLSelectElement).options).some((o) => o.text.includes('Blaine') || o.text.includes('Misty'))
+    );
+    fireEvent.change(npcSelects[0]!, { target: { value: 'Blaine' } });
+    fireEvent.change(npcSelects[1]!, { target: { value: 'Misty' } });
+
+    expect(screen.queryByText('⚠ duplicate')).toBeNull();
+  });
+
+  it('NEXT remains enabled despite duplicate selection', () => {
+    render(<SlotAssignmentStep teamASlots={0} teamBSlots={2} onNext={vi.fn()} onBack={vi.fn()} />);
+
+    act(() => {
+      registryHandler?.({
+        resource: 'npcs',
+        data: [{ profileId: 'npc1', name: 'Blaine', team: { templateId: 't1', name: "Blaine's Team", pokemon: [], createdAt: '2026-01-01T00:00:00Z' }, createdAt: '2026-01-01T00:00:00Z' }],
+      });
+    });
+
+    const selects = screen.getAllByRole('combobox');
+    const npcSelects = selects.filter(
+      (s) => Array.from((s as HTMLSelectElement).options).some((o) => o.text.includes('Blaine'))
+    );
+    fireEvent.change(npcSelects[0]!, { target: { value: 'Blaine' } });
+    fireEvent.change(npcSelects[1]!, { target: { value: 'Blaine' } });
+
+    const nextBtn = screen.getByRole('button', { name: /next/i });
+    expect((nextBtn as HTMLButtonElement).disabled).toBe(false);
+  });
+});

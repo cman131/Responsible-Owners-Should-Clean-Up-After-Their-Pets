@@ -58,6 +58,11 @@ export function SlotAssignmentStep({ teamASlots, teamBSlots, onNext, onBack }: P
 
   const allFilled = slots.every((s) => s.displayName.trim());
 
+  const usedNames = slots.map((s) => s.displayName).filter(Boolean);
+  const duplicateNames = new Set(
+    usedNames.filter((name, i) => usedNames.indexOf(name) !== i)
+  );
+
   return (
     <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}>
       <h2 style={{ color: '#f0c040', fontSize: 20 }}>Assign Slots</h2>
@@ -71,6 +76,7 @@ export function SlotAssignmentStep({ teamASlots, teamBSlots, onNext, onBack }: P
           waitingPlayers={waitingPlayers}
           savedPlayers={savedPlayers}
           savedNpcs={savedNpcs}
+          duplicateNames={duplicateNames}
         />
         <TeamColumn
           label="Team B"
@@ -80,6 +86,7 @@ export function SlotAssignmentStep({ teamASlots, teamBSlots, onNext, onBack }: P
           waitingPlayers={waitingPlayers}
           savedPlayers={savedPlayers}
           savedNpcs={savedNpcs}
+          duplicateNames={duplicateNames}
         />
       </div>
 
@@ -97,19 +104,20 @@ export function SlotAssignmentStep({ teamASlots, teamBSlots, onNext, onBack }: P
   );
 }
 
-function TeamColumn({ label, slots, startIndex, onUpdate, waitingPlayers, savedPlayers, savedNpcs }: any) {
+function TeamColumn({ label, slots, startIndex, onUpdate, waitingPlayers, savedPlayers, savedNpcs, duplicateNames }: any) {
   return (
     <div style={{ flex: 1 }}>
       <div style={{ color: '#aaa', fontSize: 12, letterSpacing: 2, marginBottom: 12 }}>{label.toUpperCase()}</div>
       {slots.map((slot: any, i: number) => (
         <SlotRow key={slot.slotId} slot={slot} index={startIndex + i} onUpdate={onUpdate}
-          waitingPlayers={waitingPlayers} savedPlayers={savedPlayers} savedNpcs={savedNpcs} />
+          waitingPlayers={waitingPlayers} savedPlayers={savedPlayers} savedNpcs={savedNpcs}
+          duplicateNames={duplicateNames} />
       ))}
     </div>
   );
 }
 
-function SlotRow({ slot, index, onUpdate, waitingPlayers, savedPlayers, savedNpcs }: any) {
+function SlotRow({ slot, index, onUpdate, waitingPlayers, savedPlayers, savedNpcs, duplicateNames }: any) {
   return (
     <div style={{ background: '#0d0d1a', border: '1px solid #333', borderRadius: 4, padding: 12, marginBottom: 8, display: 'flex', gap: 8, alignItems: 'center' }}>
       <select
@@ -153,6 +161,9 @@ function SlotRow({ slot, index, onUpdate, waitingPlayers, savedPlayers, savedNpc
       <span style={{ color: slot.displayName ? '#2ecc71' : '#555', fontSize: 12 }}>
         {slot.displayName ? '✓' : '○'}
       </span>
+      {duplicateNames?.has(slot.displayName) && (
+        <span style={{ color: '#f0c040', fontSize: 10 }}>⚠ duplicate</span>
+      )}
     </div>
   );
 }
