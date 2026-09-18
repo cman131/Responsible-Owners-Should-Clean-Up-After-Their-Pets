@@ -17,6 +17,7 @@ function makeMon(overrides: Partial<PartyMember> = {}): PartyMember {
     ],
     volatileStatus: [], statBoosts: { atk: 0, def: 0, spa: 0, spd: 0, spe: 0, accuracy: 0, evasion: 0 },
     hasTerastallized: false, fainted: false, expTotal: 0,
+    growthRate: 'MediumFast',
     ...overrides,
   };
 }
@@ -111,5 +112,40 @@ describe('HpBarsRow', () => {
       <HpBarsRow slots={[makeSlot('a1')]} label="MY TEAM" variant="own" />
     );
     expect(screen.getByText('100/200')).toBeTruthy();
+  });
+
+  it('shows EXP percentage for own-variant non-fainted Pokémon below level 100', () => {
+    // MediumFast L50: expForLevel('MediumFast', 51) = 51^3 = 132651
+    // expTotal 66325 → Math.round(66325/132651*100) = 50
+    render(
+      <HpBarsRow
+        slots={[makeSlot('a1', { expTotal: 66325, level: 50, growthRate: 'MediumFast' })]}
+        label="MY TEAM"
+        variant="own"
+      />
+    );
+    expect(screen.getByText('EXP 50%')).toBeTruthy();
+  });
+
+  it('does not show EXP percentage for enemy-variant rows', () => {
+    render(
+      <HpBarsRow
+        slots={[makeSlot('b1', { expTotal: 66325, level: 50, growthRate: 'MediumFast' })]}
+        label="ENEMY"
+        variant="enemy"
+      />
+    );
+    expect(screen.queryByText(/EXP \d+%/)).toBeNull();
+  });
+
+  it('does not show EXP percentage for level-100 Pokémon', () => {
+    render(
+      <HpBarsRow
+        slots={[makeSlot('a1', { expTotal: 999999, level: 100, growthRate: 'MediumFast' })]}
+        label="MY TEAM"
+        variant="own"
+      />
+    );
+    expect(screen.queryByText(/EXP \d+%/)).toBeNull();
   });
 });

@@ -1,4 +1,5 @@
 import type { SlotState } from '@poke-fighter/shared';
+import { expForLevel } from '@poke-fighter/shared';
 import { EffectsIndicator } from './EffectsIndicator.js';
 
 interface Props {
@@ -29,6 +30,15 @@ export function HpBarsRow({ slots, label, variant, highlightSlotId, displayHp }:
         const isHighlighted = highlightSlotId !== undefined && slot.slotId === highlightSlotId;
         const nameColor = isHighlighted ? '#fff' : (highlightSlotId !== undefined ? '#aaa' : '#fff');
         const displayCurrent = displayHp?.get(slot.slotId) ?? mon?.currentHp ?? 0;
+
+        let expPct: number | null = null;
+        if (variant === 'own' && mon && !mon.fainted && mon.level < 100) {
+          const nextThreshold = expForLevel(mon.growthRate, mon.level + 1);
+          if (nextThreshold > 0) {
+            expPct = Math.min(100, Math.round((mon.expTotal / nextThreshold) * 100));
+          }
+        }
+
         return (
           <div
             key={slot.slotId}
@@ -57,6 +67,11 @@ export function HpBarsRow({ slots, label, variant, highlightSlotId, displayHp }:
                   {displayCurrent}/{mon.maxHp}
                 </span>
                 <EffectsIndicator mon={mon} />
+                {expPct !== null && (
+                  <span style={{ color: '#9b59b6', fontSize: 9, whiteSpace: 'nowrap' }}>
+                    EXP {expPct}%
+                  </span>
+                )}
               </>
             ) : (
               <span style={{ color: '#555', fontSize: 9 }}>FAINTED</span>
