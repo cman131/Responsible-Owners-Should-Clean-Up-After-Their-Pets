@@ -32,16 +32,41 @@ const psyduck: PokemonSpecies = {
 const golduck: PokemonSpecies = { ...psyduck, id: 55, name: 'golduck', displayName: 'Golduck' };
 
 describe('PokemonSearchDropdown', () => {
-  it('emits data:query when 2+ characters are typed', () => {
+  it('emits data:query when 2+ characters are typed after debounce fires', () => {
+    vi.useFakeTimers();
     render(<PokemonSearchDropdown onSelect={vi.fn()} />);
     fireEvent.change(screen.getByPlaceholderText(/search/i), { target: { value: 'ps' } });
+    act(() => { vi.advanceTimersByTime(150); });
     expect(mockSocket.emit).toHaveBeenCalledWith('admin:action', expect.objectContaining({ type: 'data:query' }));
+    vi.useRealTimers();
   });
 
-  it('does not emit when fewer than 2 characters typed', () => {
+  it('does not emit for empty input even after debounce fires', () => {
+    vi.useFakeTimers();
+    render(<PokemonSearchDropdown onSelect={vi.fn()} />);
+    fireEvent.change(screen.getByPlaceholderText(/search/i), { target: { value: '' } });
+    act(() => { vi.advanceTimersByTime(150); });
+    expect(mockSocket.emit).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it('emits data:query after typing a single character once debounce fires', () => {
+    vi.useFakeTimers();
     render(<PokemonSearchDropdown onSelect={vi.fn()} />);
     fireEvent.change(screen.getByPlaceholderText(/search/i), { target: { value: 'p' } });
     expect(mockSocket.emit).not.toHaveBeenCalled();
+    act(() => { vi.advanceTimersByTime(150); });
+    expect(mockSocket.emit).toHaveBeenCalledWith('admin:action', expect.objectContaining({ type: 'data:query' }));
+    vi.useRealTimers();
+  });
+
+  it('does not emit immediately before debounce delay elapses', () => {
+    vi.useFakeTimers();
+    render(<PokemonSearchDropdown onSelect={vi.fn()} />);
+    fireEvent.change(screen.getByPlaceholderText(/search/i), { target: { value: 'ps' } });
+    act(() => { vi.advanceTimersByTime(100); });
+    expect(mockSocket.emit).not.toHaveBeenCalled();
+    vi.useRealTimers();
   });
 
   it('shows results from data:results event', () => {

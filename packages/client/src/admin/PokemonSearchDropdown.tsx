@@ -1,5 +1,5 @@
 // packages/client/src/admin/PokemonSearchDropdown.tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getSocket } from '../socket.js';
 import type { PokemonSpecies } from '@poke-fighter/shared';
 import { TYPE_COLORS } from '../pokemonTypeColors.js';
@@ -12,6 +12,7 @@ export function PokemonSearchDropdown({ onSelect }: Props) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<PokemonSpecies[]>([]);
   const [highlighted, setHighlighted] = useState(0);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const socket = getSocket();
@@ -24,8 +25,11 @@ export function PokemonSearchDropdown({ onSelect }: Props) {
 
   function handleChange(q: string) {
     setQuery(q);
-    if (q.length >= 2) {
-      getSocket().emit('admin:action', { type: 'data:query', data: { resource: 'pokemon', query: q } } as any);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (q.length >= 1) {
+      debounceRef.current = setTimeout(() => {
+        getSocket().emit('admin:action', { type: 'data:query', data: { resource: 'pokemon', query: q } } as any);
+      }, 150);
     } else {
       setResults([]);
     }
