@@ -64,6 +64,12 @@ export interface ItemHooks {
   onIntimidated?: (ctx: ItemContext) => { statBoostDeltas?: Partial<StatBoosts>; consume?: boolean } | null;
   /** Blunder Policy: fires when the holder's move misses */
   onMoveMissed?: (ctx: ItemContext) => { statBoostDeltas?: Partial<StatBoosts>; consume?: boolean } | null;
+  /** Mental Herb / Destiny Knot: fires immediately after a volatile is applied to the holder */
+  onVolatileApplied?: (ctx: ItemContext & { volatileName: string; sourceSlotId?: string }) => {
+    cureVolatile?: boolean;
+    applyVolatileToSource?: string;
+    consume?: boolean;
+  } | null;
   /** Utility Umbrella: suppresses all weather effects for the holder */
   ignoresWeather?: boolean;
   /** Room Service: may return { multiplier, consume } so the item can self-consume */
@@ -480,6 +486,16 @@ const ITEM_HOOKS: Record<string, ItemHooks> = {
   },
   // handled inline in BattleEngine — consumes and restores 10 PP when the held move's PP hits 0
   'leppa-berry': {},
+  'mental-herb': {
+    onVolatileApplied: ({ volatileName }) => {
+      const targets = new Set(['infatuation', 'taunt', 'encore', 'torment', 'disable', 'heal-block']);
+      return targets.has(volatileName) ? { cureVolatile: true, consume: true } : null;
+    },
+  },
+  'destiny-knot': {
+    onVolatileApplied: ({ volatileName }) =>
+      volatileName === 'infatuation' ? { applyVolatileToSource: 'infatuation' } : null,
+  },
   'electric-seed': {
     onSwitchIn: ({ terrain }) => terrain === 'electric' ? { statBoostDeltas: { def: 1 }, consume: true } : undefined,
   },

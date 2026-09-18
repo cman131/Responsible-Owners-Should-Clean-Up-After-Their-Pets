@@ -1,4 +1,4 @@
-import type { StatusCondition, WeatherType, TerrainType, StatBoosts, SideConditions, TurnResolveEvent, VolatileStatusEntry } from '@poke-fighter/shared';
+import type { StatusCondition, WeatherType, TerrainType, StatBoosts, SideConditions, TurnResolveEvent, VolatileStatusEntry, PartyMember, BattleState } from '@poke-fighter/shared';
 import { applyStatus, applyStatBoost, applyVolatile } from './effects.js';
 import type { MoveEffectHandler } from './MoveEffectRegistry.js';
 import { getItemHooks } from './items.js';
@@ -7,6 +7,41 @@ const BATON_PASS_VOLATILES = new Set([
   'focusenergy', 'substitute', 'aqua-ring', 'magnet-rise',
   'power-trick', 'laser-focus',
 ]);
+
+function fireOnVolatileApplied(
+  target: PartyMember,
+  targetSlotId: string,
+  volatileName: string,
+  sourceSlotId: string,
+  state: BattleState,
+  events: TurnResolveEvent[],
+): void {
+  const hooks = getItemHooks(target.heldItem);
+  if (!hooks.onVolatileApplied) return;
+  const result = hooks.onVolatileApplied({ holder: target, state, volatileName, sourceSlotId });
+  if (!result) return;
+  if (result.cureVolatile) {
+    target.volatileStatus = target.volatileStatus.filter(v => v.name !== volatileName);
+    events.push({ type: 'volatile-cured', data: { slotId: targetSlotId, volatile: volatileName } });
+  }
+  if (result.consume && target.heldItem) {
+    const itemId = target.heldItem;
+    target.lastConsumedItem = itemId;
+    delete target.heldItem;
+    events.push({ type: 'item-consumed', data: { slotId: targetSlotId, item: itemId, reason: 'triggered' } });
+  }
+  if (result.applyVolatileToSource) {
+    const spreadVolatile = result.applyVolatileToSource;
+    const sourceSlotState = state.teams.flatMap(t => t.slots).find(sl => sl.slotId === sourceSlotId);
+    if (sourceSlotState) {
+      const sourceMon = sourceSlotState.party[sourceSlotState.activePokemonIndex];
+      if (sourceMon && !sourceMon.fainted && !sourceMon.volatileStatus.some(v => v.name === spreadVolatile)) {
+        sourceMon.volatileStatus.push({ name: spreadVolatile });
+        events.push({ type: 'volatile-applied', data: { targetSlotId: sourceSlotId, volatile: spreadVolatile } });
+      }
+    }
+  }
+}
 
 export function statModSelf(stat: keyof StatBoosts, stages: number): MoveEffectHandler {
   return (ctx) => ({
@@ -94,10 +129,10 @@ export function applyVolatileTarget(volatile: string, counter?: number): MoveEff
       const event = applyVolatile(ctx.targets[i]!, ctx.targetSlotIds[i]!, ctx.userSlotId, volatile, counter, { bypassSub });
       if (event) {
         events.push(event);
+        const tgt = ctx.targets[i]!;
+        const tgtSlotId = ctx.targetSlotIds[i]!;
         // Persim Berry: cure confusion immediately when applied
         if (volatile === 'confusion') {
-          const tgt = ctx.targets[i]!;
-          const tgtSlotId = ctx.targetSlotIds[i]!;
           if (tgt.heldItem === 'persim-berry') {
             tgt.volatileStatus = tgt.volatileStatus.filter(v => v.name !== 'confusion');
             tgt.lastConsumedItem = 'persim-berry';
@@ -106,6 +141,7 @@ export function applyVolatileTarget(volatile: string, counter?: number): MoveEff
             events.push({ type: 'item-consumed', data: { slotId: tgtSlotId, item: 'persim-berry', reason: 'triggered' } });
           }
         }
+        fireOnVolatileApplied(tgt, tgtSlotId, volatile, ctx.userSlotId, ctx.battle, events);
       }
     }
     return { events };
@@ -251,7 +287,9 @@ export function disable(): MoveEffectHandler {
     }
     if (target.volatileStatus.some(v => v.name === 'disable')) return { events: [] };
     target.volatileStatus.push({ name: 'disable', moveId: target.lastMoveId, turnsRemaining: 4 });
-    return { events: [{ type: 'volatile-applied', data: { targetSlotId, volatile: 'disable', moveId: target.lastMoveId } }] };
+    const disableEvents: TurnResolveEvent[] = [{ type: 'volatile-applied', data: { targetSlotId, volatile: 'disable', moveId: target.lastMoveId } }];
+    fireOnVolatileApplied(target, targetSlotId, 'disable', ctx.userSlotId, ctx.battle, disableEvents);
+    return { events: disableEvents };
   };
 }
 
@@ -263,8 +301,10 @@ export function taunt(): MoveEffectHandler {
       if (target.volatileStatus.some(v => v.name === 'taunt')) continue;
       if (target.volatileStatus.some(v => v.name === 'substitute')) continue;
       // Set to 4 so that after the EoT decrement this turn, turnsRemaining is 3
+      const tgtSlotIdTaunt = ctx.targetSlotIds[i]!;
       target.volatileStatus.push({ name: 'taunt', turnsRemaining: 4 });
-      events.push({ type: 'volatile-applied', data: { targetSlotId: ctx.targetSlotIds[i]!, volatile: 'taunt' } });
+      events.push({ type: 'volatile-applied', data: { targetSlotId: tgtSlotIdTaunt, volatile: 'taunt' } });
+      fireOnVolatileApplied(target, tgtSlotIdTaunt, 'taunt', ctx.userSlotId, ctx.battle, events);
     }
     return { events };
   };
@@ -280,8 +320,10 @@ export function encore(): MoveEffectHandler {
         continue;
       }
       if (target.volatileStatus.some(v => v.name === 'encore')) continue;
+      const tgtSlotIdEncore = ctx.targetSlotIds[i]!;
       target.volatileStatus.push({ name: 'encore', moveId: target.lastMoveId, turnsRemaining: 3 });
-      events.push({ type: 'volatile-applied', data: { targetSlotId: ctx.targetSlotIds[i]!, volatile: 'encore', moveId: target.lastMoveId } });
+      events.push({ type: 'volatile-applied', data: { targetSlotId: tgtSlotIdEncore, volatile: 'encore', moveId: target.lastMoveId } });
+      fireOnVolatileApplied(target, tgtSlotIdEncore, 'encore', ctx.userSlotId, ctx.battle, events);
     }
     return { events };
   };
@@ -293,8 +335,10 @@ export function torment(): MoveEffectHandler {
     for (let i = 0; i < ctx.targets.length; i++) {
       const target = ctx.targets[i]!;
       if (target.volatileStatus.some(v => v.name === 'torment' || v.name === 'substitute')) continue;
+      const tgtSlotIdTorment = ctx.targetSlotIds[i]!;
       target.volatileStatus.push({ name: 'torment' });
-      events.push({ type: 'volatile-applied', data: { targetSlotId: ctx.targetSlotIds[i]!, volatile: 'torment' } });
+      events.push({ type: 'volatile-applied', data: { targetSlotId: tgtSlotIdTorment, volatile: 'torment' } });
+      fireOnVolatileApplied(target, tgtSlotIdTorment, 'torment', ctx.userSlotId, ctx.battle, events);
     }
     return { events };
   };
@@ -407,9 +451,11 @@ export function healBlockFactory(): MoveEffectHandler {
     for (let i = 0; i < ctx.targets.length; i++) {
       const target = ctx.targets[i]!;
       if (target.volatileStatus.some(v => v.name === 'heal-block')) continue;
+      const tgtSlotIdHB = ctx.targetSlotIds[i]!;
       // Initialize to 6 so that after the EoT decrement this same turn, turnsRemaining is 5
       target.volatileStatus.push({ name: 'heal-block', turnsRemaining: 6 });
-      events.push({ type: 'volatile-applied', data: { targetSlotId: ctx.targetSlotIds[i]!, volatile: 'heal-block' } });
+      events.push({ type: 'volatile-applied', data: { targetSlotId: tgtSlotIdHB, volatile: 'heal-block' } });
+      fireOnVolatileApplied(target, tgtSlotIdHB, 'heal-block', ctx.userSlotId, ctx.battle, events);
     }
     return { events };
   };
