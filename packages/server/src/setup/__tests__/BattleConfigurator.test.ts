@@ -42,6 +42,20 @@ describe('BattleConfigurator', () => {
     expect(state.teams[0]!.slots[0]!.party[0]!.maxHp).toBe(153);
   });
 
+  it('sets growthRate from species data', () => {
+    const config = new BattleConfigurator();
+    const state = config.build({
+      battleId: 'x', label: 'x',
+      teams: [
+        { slots: [{ slotId: 'a1', displayName: 'P', isNpc: false, party: [mockSet] }] },
+        { slots: [{ slotId: 'b1', displayName: 'Q', isNpc: true, party: [mockSet] }] },
+      ],
+    });
+    const mon = state.teams[0]!.slots[0]!.party[0]!;
+    const validGrowthRates = ['Erratic', 'Fast', 'MediumFast', 'MediumSlow', 'Slow', 'Fluctuating'];
+    expect(validGrowthRates).toContain(mon.growthRate);
+  });
+
   describe('levelCap', () => {
     const level100Set: PokemonSet = {
       speciesId: 6, level: 100, ability: 'blaze',

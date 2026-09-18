@@ -33,6 +33,7 @@ export function makePokemon(overrides: Partial<PartyMember> = {}): PartyMember {
     volatileStatus: [],
     statBoosts: { atk: 0, def: 0, spa: 0, spd: 0, spe: 0, accuracy: 0, evasion: 0 },
     hasTerastallized: false, fainted: false, expTotal: 0,
+    growthRate: 'MediumFast',
     ...overrides,
   };
 }

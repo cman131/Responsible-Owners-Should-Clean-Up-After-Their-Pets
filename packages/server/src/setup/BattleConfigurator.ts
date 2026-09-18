@@ -103,6 +103,7 @@ export class BattleConfigurator {
       hasTerastallized: false,
       fainted: false,
       expTotal: 0,
+      growthRate: species.expGrowth,
     };
 
     // Only set optional fields if defined (exactOptionalPropertyTypes)

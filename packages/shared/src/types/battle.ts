@@ -62,6 +62,7 @@ export interface PartyMember {
   isEvioliteEligible?: boolean;
   fainted: boolean;
   expTotal: number;
+  growthRate: string;
   ivs?: Stats;
   evs?: Stats;
   nature?: string;
