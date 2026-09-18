@@ -41,6 +41,29 @@ describe('BankTab', () => {
     expect(screen.getByText(/remove/i)).toBeTruthy();
   });
 
+  it('opens popup to the right (left: 90px) when card fits in viewport', () => {
+    render(<BankTab bank={[charizard]} teamSize={0} onBankChange={vi.fn()} onMoveToTeam={vi.fn()} />);
+    fireEvent.click(screen.getByText('Charizard'));
+    const popup = screen.getByTestId('bank-card-popup');
+    expect(popup.style.left).toBe('90px');
+    expect(popup.style.right).toBe('');
+  });
+
+  it('opens popup to the left (right: 90px) when card is near the right viewport edge', () => {
+    const originalGetBoundingClientRect = Element.prototype.getBoundingClientRect;
+    Element.prototype.getBoundingClientRect = vi.fn().mockReturnValue({
+      right: 950, left: 870, top: 0, bottom: 80, width: 80, height: 80, x: 870, y: 0, toJSON: () => ({}),
+    } as DOMRect);
+
+    render(<BankTab bank={[charizard]} teamSize={0} onBankChange={vi.fn()} onMoveToTeam={vi.fn()} />);
+    fireEvent.click(screen.getByText('Charizard'));
+    const popup = screen.getByTestId('bank-card-popup');
+    expect(popup.style.right).toBe('90px');
+    expect(popup.style.left).toBe('');
+
+    Element.prototype.getBoundingClientRect = originalGetBoundingClientRect;
+  });
+
   it('disables Move to Team when team is full', () => {
     render(<BankTab bank={[charizard]} teamSize={6} onBankChange={vi.fn()} onMoveToTeam={vi.fn()} />);
     fireEvent.click(screen.getByText('Charizard'));

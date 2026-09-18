@@ -2,7 +2,7 @@
 
 ## State
 
-InProgress
+Complete
 
 ## Summary
 
