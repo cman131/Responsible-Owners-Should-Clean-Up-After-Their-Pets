@@ -978,6 +978,19 @@ export class BattleEngine {
       }
     }
 
+    if (attacker.heldItem === 'metronome') {
+      const existing = attacker.volatileStatus.find(v => v.name === 'metronome-count');
+      if (attacker.lastMoveId === move.id) {
+        if (existing) {
+          existing.accumulated = (existing.accumulated ?? 0) + 1;
+        } else {
+          attacker.volatileStatus.push({ name: 'metronome-count', accumulated: 1 });
+        }
+      } else {
+        attacker.volatileStatus = attacker.volatileStatus.filter(v => v.name !== 'metronome-count');
+      }
+    }
+
     for (const targetSlotId of targetSlotIds) {
       const targetSlot = this.findSlot(s, targetSlotId);
       if (!targetSlot) continue;
@@ -1463,19 +1476,6 @@ export class BattleEngine {
             : this.rollHitCount(multihitSec.hits))
         : 1;
 
-      if (attacker.heldItem === 'metronome') {
-        const existing = attacker.volatileStatus.find(v => v.name === 'metronome-count');
-        if (attacker.lastMoveId === move.id) {
-          if (existing) {
-            existing.accumulated = (existing.accumulated ?? 0) + 1;
-          } else {
-            attacker.volatileStatus.push({ name: 'metronome-count', accumulated: 1 });
-          }
-        } else {
-          attacker.volatileStatus = attacker.volatileStatus.filter(v => v.name !== 'metronome-count');
-        }
-      }
-
       const isPhysical = move.category === 'physical';
       const itemHooks = getItemHooks(attacker.heldItem);
 
@@ -1860,6 +1860,37 @@ export class BattleEngine {
                 target.lastConsumedItem = consumed;
                 delete target.heldItem;
                 events.push({ type: 'item-consumed', data: { slotId: targetSlotId, item: consumed, reason: 'triggered' } });
+              }
+            }
+          }
+        }
+
+        // Mirror Herb: copy positive stat boosts from secondary effects to an opposing holder
+        const secPosDeltas: Partial<Record<keyof StatBoosts, number>> = {};
+        for (const k of Object.keys(target.statBoosts) as (keyof StatBoosts)[]) {
+          const delta = target.statBoosts[k] - preSecBoosts[k]!;
+          if (delta > 0) secPosDeltas[k] = delta;
+        }
+        if (Object.keys(secPosDeltas).length > 0) {
+          const boostedTeam = s.teams.find(tm => tm.slots.some(sl => sl.slotId === targetSlotId));
+          for (const foeTeam of s.teams) {
+            if (foeTeam === boostedTeam) continue;
+            for (const foeSlot of foeTeam.slots) {
+              const foeMon = foeSlot.party[foeSlot.activePokemonIndex];
+              if (!foeMon || foeMon.fainted) continue;
+              const herbResult = getItemHooks(foeMon.heldItem).onOpponentStatBoosted?.({
+                holder: foeMon,
+                state: s,
+                boostDeltas: secPosDeltas,
+              });
+              if (herbResult?.copyBoosts) {
+                events.push(applyStatBoost(foeMon, foeSlot.slotId, secPosDeltas));
+                if (herbResult.consume && foeMon.heldItem) {
+                  const consumed = foeMon.heldItem;
+                  foeMon.lastConsumedItem = consumed;
+                  delete foeMon.heldItem;
+                  events.push({ type: 'item-consumed', data: { slotId: foeSlot.slotId, item: consumed, reason: 'triggered' } });
+                }
               }
             }
           }
