@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { TeamBuilder } from '../TeamBuilder.js';
+import { TeamBuilder, slotStatus } from '../TeamBuilder.js';
 import type { PokemonSet } from '@poke-fighter/shared';
 
 interface SlotInfo { slotId: string; displayName: string; defaultTeam?: import('@poke-fighter/shared').PokemonSet[] }
@@ -28,7 +28,10 @@ export function TeamBuilderStep({ slots, onNext, onBack }: Props) {
     setTeams((prev) => ({ ...prev, [activeSlot]: team }));
   }, [activeSlot]);
 
-  const allFilled = allSlots.every((s) => (teams[s.slotId]?.length ?? 0) > 0);
+  const allFilled = allSlots.every((s) => {
+    const team = teams[s.slotId] ?? [];
+    return team.length > 0 && team.every((p) => slotStatus(p) === 'complete');
+  });
 
   return (
     <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
