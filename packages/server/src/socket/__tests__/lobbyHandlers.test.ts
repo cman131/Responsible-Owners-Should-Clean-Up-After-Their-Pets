@@ -39,7 +39,10 @@ function makeLobby() {
 
 function makeRoom(
   slotOverrides: Partial<{ isNpc: boolean; isSpectator: boolean }> = {},
-  methodOverrides: Partial<{ getPendingActionRequest: ReturnType<typeof vi.fn> }> = {},
+  methodOverrides: Partial<{
+    getPendingActionRequest: ReturnType<typeof vi.fn>;
+    getPendingSwitchRequest: ReturnType<typeof vi.fn>;
+  }> = {},
 ) {
   const defaultSlotA = {
     slotId: 'slot-a1',
@@ -58,6 +61,7 @@ function makeRoom(
       ],
     })),
     getPendingActionRequest: methodOverrides.getPendingActionRequest ?? vi.fn(() => null),
+    getPendingSwitchRequest: methodOverrides.getPendingSwitchRequest ?? vi.fn(() => null),
   };
 }
 
@@ -212,6 +216,66 @@ describe('registerLobbyHandlers – player:join', () => {
     socket.trigger('player:join', { battleId: 'battle-1', slotId: 'slot-a1' });
 
     expect(socket.emit).toHaveBeenCalledWith('action:request', pendingRequest);
+  });
+
+  it('emits switch:request when getPendingActionRequest returns null but getPendingSwitchRequest returns a request', () => {
+    const pendingSwitch = {
+      slotId: 'slot-a1',
+      party: [{ instanceId: 'bench-1' }],
+      reason: 'faint' as const,
+    };
+
+    const roomWithPendingSwitch = makeRoom({}, {
+      getPendingActionRequest: vi.fn(() => null),
+      getPendingSwitchRequest: vi.fn<any[], any>(() => pendingSwitch),
+    });
+    registerLobbyHandlers(
+      socket as any,
+      lobby as any,
+      (id) => (id === 'battle-1' ? (roomWithPendingSwitch as any) : undefined),
+      notifyAdmins,
+      notifyAdminsOfSlotStatus,
+      notifyPlayersOfBattles,
+      vi.fn(() => []),
+    );
+
+    lobby.getBySlotId.mockReturnValue(undefined);
+    lobby.registerPlayer.mockReturnValue({ ok: true, player: { displayName: 'Conor', battleId: null, battleSlotId: null } });
+    socket.trigger('player:join', { battleId: 'battle-1', slotId: 'slot-a1' });
+
+    expect(socket.emit).toHaveBeenCalledWith('switch:request', pendingSwitch);
+  });
+
+  it('does not emit switch:request when action:request is pending', () => {
+    const pendingAction = {
+      slotId: 'slot-a1',
+      validMoves: [],
+      canSwitch: false,
+      switchTargets: [],
+      canTerastallize: false,
+    };
+    const pendingSwitch = { slotId: 'slot-a1', party: [], reason: 'faint' as const };
+
+    const roomWithBoth = makeRoom({}, {
+      getPendingActionRequest: vi.fn<any[], any>(() => pendingAction),
+      getPendingSwitchRequest: vi.fn<any[], any>(() => pendingSwitch),
+    });
+    registerLobbyHandlers(
+      socket as any,
+      lobby as any,
+      (id) => (id === 'battle-1' ? (roomWithBoth as any) : undefined),
+      notifyAdmins,
+      notifyAdminsOfSlotStatus,
+      notifyPlayersOfBattles,
+      vi.fn(() => []),
+    );
+
+    lobby.getBySlotId.mockReturnValue(undefined);
+    lobby.registerPlayer.mockReturnValue({ ok: true, player: { displayName: 'Conor', battleId: null, battleSlotId: null } });
+    socket.trigger('player:join', { battleId: 'battle-1', slotId: 'slot-a1' });
+
+    expect(socket.emit).toHaveBeenCalledWith('action:request', pendingAction);
+    expect(socket.emit).not.toHaveBeenCalledWith('switch:request', expect.anything());
   });
 
   it('emits battle:history after state:sync on successful join', () => {

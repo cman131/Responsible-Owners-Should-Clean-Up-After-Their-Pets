@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { eventsToPlaybackEntries } from '../BattleContext.js';
+import { eventsToPlaybackEntries, eventToText } from '../BattleContext.js';
 import type { TurnResolveEvent, BattleState } from '@poke-fighter/shared';
 
 describe('eventsToPlaybackEntries', () => {
@@ -659,5 +659,44 @@ describe('eventsToPlaybackEntries — Pokémon name resolution', () => {
     const events: TurnResolveEvent[] = [{ type: 'faint', data: { slotId: 'slot-a1' } }];
     const entries = eventsToPlaybackEntries(events);
     expect(entries[0]!.text).toContain('slot-a1');
+  });
+});
+
+describe('eventToText — missing reconnect history handlers', () => {
+  it('returns status-blocked text for status-blocked event', () => {
+    const event: TurnResolveEvent = { type: 'status-blocked', data: { slotId: 'a1' } };
+    const result = eventToText(event);
+    const text = Array.isArray(result) ? result[0] : result;
+    expect(text).toBeTruthy();
+    expect(typeof text).toBe('string');
+    expect(text).toContain('block');
+  });
+
+  it('returns move-blocked paralysis text for reconnect history', () => {
+    const event: TurnResolveEvent = { type: 'move-blocked', data: { slotId: 'a1', pokemonName: 'Pikachu', reason: 'paralysis' } };
+    const result = eventToText(event);
+    const text = Array.isArray(result) ? result[0] : result;
+    expect(text).toBe('Pikachu is fully paralyzed!');
+  });
+
+  it('returns move-blocked flinch text for reconnect history', () => {
+    const event: TurnResolveEvent = { type: 'move-blocked', data: { slotId: 'a1', pokemonName: 'Snorlax', reason: 'flinch' } };
+    const result = eventToText(event);
+    const text = Array.isArray(result) ? result[0] : result;
+    expect(text).toBe('Snorlax flinched!');
+  });
+
+  it('returns move-blocked protect text using targetSlotId for reconnect history', () => {
+    const event: TurnResolveEvent = { type: 'move-blocked', data: { attackerSlotId: 'a1', targetSlotId: 'b1', reason: 'protect' } };
+    const result = eventToText(event);
+    const text = Array.isArray(result) ? result[0] : result;
+    expect(text).toBe('b1 was protected!');
+  });
+
+  it('returns move-blocked frozen text for reconnect history', () => {
+    const event: TurnResolveEvent = { type: 'move-blocked', data: { slotId: 'a1', pokemonName: 'Glaceon', reason: 'frozen' } };
+    const result = eventToText(event);
+    const text = Array.isArray(result) ? result[0] : result;
+    expect(text).toBe('Glaceon is frozen solid!');
   });
 });

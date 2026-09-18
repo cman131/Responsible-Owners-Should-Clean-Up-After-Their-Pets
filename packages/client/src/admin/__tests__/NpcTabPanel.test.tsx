@@ -96,6 +96,20 @@ describe('NpcTabPanel', () => {
     const { container } = render(<NpcTabPanel battleId="test" npcRequests={[]} state={state} />);
     expect(container.firstChild).toBeNull();
   });
+
+  it('includes terastallize:true in emitted action when Tera checkbox is checked', () => {
+    const teraRequest: ActionRequestPayload = { ...makeRequest('b1', ['a1']), canTerastallize: true };
+    const requests = [{ slotId: 'b1', displayName: 'Blastoise', request: teraRequest }];
+    render(<NpcTabPanel battleId="test" npcRequests={requests} state={state} />);
+
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByText('Surf'));
+
+    expect(mockSocket.emit).toHaveBeenCalledWith('admin:action', {
+      type: 'npc-action',
+      data: { battleId: 'test', slotId: 'b1', action: { type: 'move', moveIndex: 0, targetSlotId: 'a1', terastallize: true } },
+    });
+  });
 });
 
 const makeSwitchableRequest = (slotId: string, legalTargets: string[], switchTargets: string[]): ActionRequestPayload => ({

@@ -236,4 +236,24 @@ describe('BattlePage', () => {
     expect(mockSocket.emit).toHaveBeenCalledWith('player:leave');
     expect(sessionStorage.getItem('mySlotId')).toBeNull();
   });
+
+  it('uses slotId from navigation state over sessionStorage when provided', () => {
+    sessionStorage.setItem('mySlotId', 'a1');
+    render(
+      <MemoryRouter initialEntries={[{ pathname: '/battle', state: { battleState: makeState(), slotId: 'b1' } }]}>
+        <BattlePage />
+      </MemoryRouter>
+    );
+    // action:request arrives for 'a1' — that matches sessionStorage but NOT nav-state slotId ('b1')
+    const onCall = mockSocket.on.mock.calls.find((c) => c[0] === 'action:request');
+    act(() => {
+      onCall![1]({
+        slotId: 'a1',
+        validMoves: [{ index: 0, moveId: 'tackle', pp: 35, disabled: false, targetType: 'normal', legalTargets: ['b1'] }],
+        canSwitch: false, switchTargets: [], canTerastallize: false,
+      });
+    });
+    expect(screen.queryByText('Tackle')).toBeNull();
+    expect(screen.getByText('Waiting for others...')).toBeTruthy();
+  });
 });

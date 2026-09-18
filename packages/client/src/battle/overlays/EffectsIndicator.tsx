@@ -15,7 +15,7 @@ const STATUS_COLORS: Record<StatusCondition, string> = {
 
 const VOLATILE_ABBREV: Record<string, string> = {
   confusion: 'CNF',
-  leechseed: 'SEED',
+  'leech-seed': 'SEED',
   encore: 'ENC',
 };
 

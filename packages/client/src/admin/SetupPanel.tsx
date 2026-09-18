@@ -3,11 +3,10 @@ import { v4 as uuidv4 } from 'uuid';
 import { getSocket } from '../socket.js';
 import { TeamStructureStep } from './steps/TeamStructureStep.js';
 import { SlotAssignmentStep } from './steps/SlotAssignmentStep.js';
-import { TeamBuilderStep } from './steps/TeamBuilderStep.js';
 import { BattleSettingsStep } from './steps/BattleSettingsStep.js';
 import { BattleWaitingScreen } from './BattleWaitingScreen.js';
 
-type Step = 'structure' | 'assignment' | 'teams' | 'settings' | 'started';
+type Step = 'structure' | 'assignment' | 'settings' | 'started';
 
 interface SlotConfig {
   slotId: string;
@@ -24,7 +23,6 @@ export function SetupPanel({ onBack, onWatch }: SetupPanelProps) {
   const [step, setStep] = useState<Step>('structure');
   const [structure, setStructure] = useState({ teamASlots: 1, teamBSlots: 1 });
   const [slotAssignment, setSlotAssignment] = useState<{ teamA: any[]; teamB: any[] } | null>(null);
-  const [slotTeams, setSlotTeams] = useState<any[]>([]);
   const [battleId, setBattleId] = useState<string | null>(null);
 
   function handleStructureNext(config: { teamASlots: number; teamBSlots: number }) {
@@ -34,11 +32,6 @@ export function SetupPanel({ onBack, onWatch }: SetupPanelProps) {
 
   function handleAssignmentNext(slots: { teamA: any[]; teamB: any[] }) {
     setSlotAssignment(slots);
-    setStep('teams');
-  }
-
-  function handleTeamsNext(st: any[]) {
-    setSlotTeams(st);
     setStep('settings');
   }
 
@@ -47,16 +40,13 @@ export function SetupPanel({ onBack, onWatch }: SetupPanelProps) {
     const id = uuidv4();
     setBattleId(id);
 
-    function buildSlotsWithTeams(slots: any[]) {
-      return slots.map((slot: any) => {
-        const teamData = slotTeams.find((st) => st.slotId === slot.slotId);
-        return {
-          slotId: slot.slotId,
-          displayName: slot.displayName,
-          isNpc: slot.type === 'npc',
-          party: teamData?.team ?? [],
-        };
-      });
+    function buildSlots(slots: any[]) {
+      return slots.map((slot: any) => ({
+        slotId: slot.slotId,
+        displayName: slot.displayName,
+        isNpc: slot.type === 'npc',
+        party: slot.defaultTeam ?? [],
+      }));
     }
 
     socket.emit('admin:action', {
@@ -66,8 +56,8 @@ export function SetupPanel({ onBack, onWatch }: SetupPanelProps) {
         label,
         ...(levelCap !== undefined ? { levelCap } : {}),
         teams: [
-          { slots: buildSlotsWithTeams(slotAssignment!.teamA) },
-          { slots: buildSlotsWithTeams(slotAssignment!.teamB) },
+          { slots: buildSlots(slotAssignment!.teamA) },
+          { slots: buildSlots(slotAssignment!.teamB) },
         ],
       },
     } as any);
@@ -86,10 +76,9 @@ export function SetupPanel({ onBack, onWatch }: SetupPanelProps) {
   }
 
   const stepTitles = {
-    structure: '1 / 4 — Structure',
-    assignment: '2 / 4 — Assign Slots',
-    teams: '3 / 4 — Build Teams',
-    settings: '4 / 4 — Settings',
+    structure: '1 / 3 — Structure',
+    assignment: '2 / 3 — Assign Slots',
+    settings: '3 / 3 — Settings',
   };
 
   return (
@@ -110,17 +99,10 @@ export function SetupPanel({ onBack, onWatch }: SetupPanelProps) {
               onBack={() => setStep('structure')}
             />
           )}
-          {step === 'teams' && slotAssignment && (
-            <TeamBuilderStep
-              slots={slotAssignment}
-              onNext={handleTeamsNext}
-              onBack={() => setStep('assignment')}
-            />
-          )}
           {step === 'settings' && (
             <BattleSettingsStep
               onStart={handleStart}
-              onBack={() => setStep('teams')}
+              onBack={() => setStep('assignment')}
             />
           )}
         </div>

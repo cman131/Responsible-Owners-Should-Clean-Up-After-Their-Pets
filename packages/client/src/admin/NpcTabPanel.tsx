@@ -42,10 +42,13 @@ export function NpcTabPanel({ battleId, npcRequests, state }: Props) {
     return slotId;
   }
 
-  function submitNpcAction(slotId: string, moveIndex: 0 | 1 | 2 | 3, targetSlotId?: string) {
-    const action = targetSlotId
-      ? { type: 'move' as const, moveIndex, targetSlotId }
-      : { type: 'move' as const, moveIndex };
+  function submitNpcAction(slotId: string, moveIndex: 0 | 1 | 2 | 3, targetSlotId?: string, terastallize?: boolean) {
+    const action = {
+      type: 'move' as const,
+      moveIndex,
+      ...(targetSlotId ? { targetSlotId } : {}),
+      ...(terastallize ? { terastallize: true } : {}),
+    };
     getSocket().emit('admin:action', { type: 'npc-action', data: { battleId, slotId, action } });
     setSubmitted((prev) => new Set([...prev, slotId]));
   }
@@ -114,8 +117,8 @@ export function NpcTabPanel({ battleId, npcRequests, state }: Props) {
             request={activeRequest.request}
             slotId={activeRequest.slotId}
             state={state}
-            onSubmitMove={(moveIndex, targetSlotId) =>
-              submitNpcAction(activeRequest.slotId, moveIndex, targetSlotId)
+            onSubmitMove={(moveIndex, targetSlotId, tera) =>
+              submitNpcAction(activeRequest.slotId, moveIndex, targetSlotId, tera)
             }
             onSubmitSwitch={(instanceId) =>
               submitNpcSwitch(activeRequest.slotId, instanceId)

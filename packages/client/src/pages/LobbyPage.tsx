@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getSocket, connectAsPlayer } from '../socket.js';
 import type { LobbyErrorPayload, BattleJoinOption, BattleState } from '@poke-fighter/shared';
@@ -13,6 +13,7 @@ export function LobbyPage() {
   const [error, setError] = useState<string | null>(null);
   const [joinedDisplayName, setJoinedDisplayName] = useState<string>('');
   const navigate = useNavigate();
+  const selectedSlotIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (selectedBattleId === null) return;
@@ -28,6 +29,7 @@ export function LobbyPage() {
   }, [battles, selectedBattleId, selectedSlotId]);
 
   useEffect(() => {
+    sessionStorage.removeItem('mySlotId');
     connectAsPlayer();
     const socket = getSocket();
 
@@ -41,7 +43,10 @@ export function LobbyPage() {
     });
 
     socket.on('state:sync', (state: BattleState) => {
-      navigate('/battle', { state: { battleState: state } });
+      const slotId = selectedSlotIdRef.current;
+      const navState: { battleState: BattleState; slotId?: string } = { battleState: state };
+      if (slotId !== null) navState.slotId = slotId;
+      navigate('/battle', { state: navState });
     });
 
     return () => {
@@ -60,6 +65,7 @@ export function LobbyPage() {
 
     setError(null);
     setJoinedDisplayName(slot.displayName);
+    selectedSlotIdRef.current = selectedSlotId;
     sessionStorage.setItem('mySlotId', selectedSlotId);
     getSocket().emit('player:join', { battleId: selectedBattleId, slotId: selectedSlotId });
     setPhase('waiting');

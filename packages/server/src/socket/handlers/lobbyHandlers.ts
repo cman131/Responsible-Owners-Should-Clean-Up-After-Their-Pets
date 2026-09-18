@@ -50,7 +50,12 @@ export function registerLobbyHandlers(
     socket.emit('battle:history', { turns: getEventLog(battleId) });
 
     const pending = room.getPendingActionRequest(slotId);
-    if (pending) socket.emit('action:request', pending);
+    if (pending) {
+      socket.emit('action:request', pending);
+    } else {
+      const pendingSwitch = room.getPendingSwitchRequest(slotId);
+      if (pendingSwitch) socket.emit('switch:request', pendingSwitch);
+    }
 
     notifyAdminsOfSlotStatus(battleId);
     notifyPlayersOfBattles();

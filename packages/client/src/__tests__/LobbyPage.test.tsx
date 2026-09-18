@@ -2,6 +2,12 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 
+const mockNavigate = vi.fn();
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return { ...(actual as object), useNavigate: () => mockNavigate };
+});
+
 let socketHandlers: Record<string, (payload: unknown) => void> = {};
 const mockSocket = {
   emit: vi.fn(),
@@ -17,6 +23,7 @@ vi.mock('../socket.js', () => ({
 }));
 
 import { LobbyPage } from '../pages/LobbyPage.js';
+import type { BattleState } from '@poke-fighter/shared';
 
 const mockBattles = [
   {
@@ -35,6 +42,8 @@ describe('LobbyPage', () => {
     mockSocket.emit.mockClear();
     mockSocket.on.mockClear();
     mockSocket.off.mockClear();
+    mockNavigate.mockClear();
+    sessionStorage.clear();
   });
 
   it('shows empty state when no battles are available', () => {
@@ -215,5 +224,28 @@ describe('LobbyPage', () => {
     expect(screen.getByRole('combobox')).toBeTruthy();
     expect(screen.queryByText(/Conor/)).toBeNull();
     expect(screen.getByText('Kyle')).toBeTruthy();
+  });
+
+  it('clears mySlotId from sessionStorage on mount', () => {
+    sessionStorage.setItem('mySlotId', 'previous-slot');
+    render(<MemoryRouter><LobbyPage /></MemoryRouter>);
+    expect(sessionStorage.getItem('mySlotId')).toBeNull();
+  });
+
+  it('navigates to /battle with selected slotId in state when state:sync fires', () => {
+    render(<MemoryRouter><LobbyPage /></MemoryRouter>);
+    act(() => {
+      socketHandlers['lobby:battles']?.({ battles: mockBattles });
+    });
+    fireEvent.click(screen.getByText('Friday Night Brawl'));
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'slot-a1' } });
+    fireEvent.click(screen.getByRole('button', { name: /join battle/i }));
+    const fakeState = { battleId: 'b1' } as unknown as BattleState;
+    act(() => {
+      socketHandlers['state:sync']?.(fakeState);
+    });
+    expect(mockNavigate).toHaveBeenCalledWith('/battle', {
+      state: expect.objectContaining({ slotId: 'slot-a1' }),
+    });
   });
 });

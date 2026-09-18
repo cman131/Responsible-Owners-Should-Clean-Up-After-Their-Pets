@@ -2,7 +2,7 @@
 
 ## State
 
-InProgress
+Complete
 
 Two related bugs in the "Move to Team" flow in `PlayerProfileEditor`. Both manifest when the admin moves a Pokémon from the bank to the team, and both can be addressed in the same implementation pass.
 

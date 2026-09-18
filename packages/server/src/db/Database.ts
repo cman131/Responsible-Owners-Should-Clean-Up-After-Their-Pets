@@ -115,6 +115,7 @@ class BattlesStore {
 
   insert(state: BattleState): void {
     const teamsSummary = state.teams.map((team) => ({
+      teamId: team.teamId,
       slots: team.slots.map((s) => ({ displayName: s.displayName, isNpc: s.isNpc })),
     }));
     this.db.prepare(`

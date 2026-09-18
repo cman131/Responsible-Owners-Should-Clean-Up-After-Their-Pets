@@ -17,6 +17,8 @@ export function RegistryPanel({ onBack }: Props) {
   const [players, setPlayers] = useState<PlayerProfile[]>([]);
   const [activeTab, setActiveTab] = useState<ActiveTab>('npcs');
   const [view, setView] = useState<View>({ kind: 'list' });
+  const [filter, setFilter] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   useEffect(() => {
     const socket = getSocket();
@@ -38,6 +40,7 @@ export function RegistryPanel({ onBack }: Props) {
   const getName = (item: NpcProfile | PlayerProfile) => 'name' in item ? item.name : item.displayName;
   const getPokemonCount = (item: NpcProfile | PlayerProfile) =>
     'team' in item ? item.team.pokemon.length : (item.defaultTeam?.pokemon.length ?? 0);
+  const visible = items.filter((p) => getName(p).toLowerCase().includes(filter.toLowerCase()));
 
   return (
     <div style={{ minHeight: '100vh', background: '#0d0d1a', padding: 32 }}>
@@ -65,23 +68,38 @@ export function RegistryPanel({ onBack }: Props) {
           </button>
         </div>
 
+        <input
+          placeholder="Search…"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          style={{ width: '100%', background: '#111', border: '1px solid #333', borderRadius: 4, color: '#fff', padding: '6px 10px', fontSize: 12, fontFamily: 'inherit', marginBottom: 10, boxSizing: 'border-box' }}
+        />
+
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {items.map((item) => (
+          {visible.map((item) => (
             <div key={item.profileId} style={{ background: '#111', border: '1px solid #333', borderRadius: 4, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
               <span style={{ color: '#fff', flex: 1, fontSize: 13 }}>{getName(item)}</span>
               <span style={{ color: '#f0c040', fontSize: 11, background: '#1a1a00', padding: '2px 8px', borderRadius: 3 }}>
                 {getPokemonCount(item)} Pokémon
               </span>
               <button onClick={() => setView({ kind: 'editor', type: activeTab === 'npcs' ? 'npc' : 'player', profile: item as any })} style={{ ...actionBtn, background: '#2980b9' }}>EDIT</button>
-              <button
-                onClick={() => getSocket().emit('admin:action', { type: activeTab === 'npcs' ? 'registry:delete-npc' : 'registry:delete-player', data: { profileId: item.profileId } } as any)}
-                style={{ ...actionBtn, background: '#c0392b' }}
-              >DEL</button>
+              {confirmDelete === item.profileId ? (
+                <span>
+                  Delete {getName(item)}?{' '}
+                  <button onClick={() => { getSocket().emit('admin:action', { type: activeTab === 'npcs' ? 'registry:delete-npc' : 'registry:delete-player', data: { profileId: item.profileId } } as any); setConfirmDelete(null); }} style={{ ...actionBtn, background: '#c0392b' }}>Yes</button>
+                  {' '}
+                  <button onClick={() => setConfirmDelete(null)} style={{ ...actionBtn, background: '#555' }}>No</button>
+                </span>
+              ) : (
+                <button onClick={() => setConfirmDelete(item.profileId)} style={{ ...actionBtn, background: '#c0392b' }}>DEL</button>
+              )}
             </div>
           ))}
-          {items.length === 0 && (
+          {visible.length === 0 && (
             <div style={{ color: '#555', textAlign: 'center', padding: 32, fontSize: 13 }}>
-              No {activeTab === 'npcs' ? 'NPCs' : 'Players'} yet. Click + NEW to add one.
+              {items.length === 0
+                ? `No ${activeTab === 'npcs' ? 'NPCs' : 'Players'} yet. Click + NEW to add one.`
+                : 'No results match your search.'}
             </div>
           )}
         </div>

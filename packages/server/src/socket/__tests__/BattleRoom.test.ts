@@ -63,6 +63,7 @@ describe('getPendingActionRequest', () => {
     expect(req!.validMoves).toHaveLength(4);
     expect(req!.validMoves[0]!.legalTargets).toContain('slot-b1');
     expect(req!.validMoves[0]!.targetType).toBe('normal'); // flamethrower targets normal
+    expect(req!.validMoves[0]!.type).toBe('Fire'); // flamethrower is Fire type
   });
 
   it('returns null after the slot has submitted an action', () => {

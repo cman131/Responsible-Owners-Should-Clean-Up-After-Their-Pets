@@ -57,11 +57,50 @@ describe('RegistryPanel', () => {
     expect(screen.getByText('1 Pokémon')).toBeTruthy();
   });
 
-  it('emits registry:delete-npc when Delete clicked', () => {
+  it('DEL click shows confirmation prompt without immediately deleting', () => {
     render(<RegistryPanel onBack={vi.fn()} />);
     act(() => { registryDataHandler?.({ resource: 'npcs', data: [mockNpc] }); });
     fireEvent.click(screen.getByText('DEL'));
+    expect(mockSocket.emit).not.toHaveBeenCalledWith('admin:action', expect.objectContaining({ type: 'registry:delete-npc' }));
+    expect(screen.getByText(/yes/i)).toBeTruthy();
+  });
+
+  it('emits registry:delete-npc after confirming deletion', () => {
+    render(<RegistryPanel onBack={vi.fn()} />);
+    act(() => { registryDataHandler?.({ resource: 'npcs', data: [mockNpc] }); });
+    fireEvent.click(screen.getByText('DEL'));
+    fireEvent.click(screen.getByText(/yes/i));
     expect(mockSocket.emit).toHaveBeenCalledWith('admin:action', expect.objectContaining({ type: 'registry:delete-npc', data: { profileId: 'npc-1' } }));
+  });
+
+  it('cancelling delete confirmation hides prompt and skips deletion', () => {
+    render(<RegistryPanel onBack={vi.fn()} />);
+    act(() => { registryDataHandler?.({ resource: 'npcs', data: [mockNpc] }); });
+    fireEvent.click(screen.getByText('DEL'));
+    fireEvent.click(screen.getByText(/no/i));
+    expect(mockSocket.emit).not.toHaveBeenCalledWith('admin:action', expect.objectContaining({ type: 'registry:delete-npc' }));
+    expect(screen.queryByText(/yes/i)).toBeNull();
+  });
+
+  it('renders a search input above the profile list', () => {
+    render(<RegistryPanel onBack={vi.fn()} />);
+    expect(screen.getByPlaceholderText(/search/i)).toBeTruthy();
+  });
+
+  it('filters NPC list by name as user types in search input', () => {
+    const mockNpc2 = { profileId: 'npc-2', name: 'Elite Four Lorelei', team: { templateId: 't2', name: 'Lorelei Team', pokemon: [], createdAt: '2024-01-01' }, createdAt: '2024-01-01' };
+    render(<RegistryPanel onBack={vi.fn()} />);
+    act(() => { registryDataHandler?.({ resource: 'npcs', data: [mockNpc, mockNpc2] }); });
+    fireEvent.change(screen.getByPlaceholderText(/search/i), { target: { value: 'misty' } });
+    expect(screen.getByText('Gym Leader Misty')).toBeTruthy();
+    expect(screen.queryByText('Elite Four Lorelei')).toBeNull();
+  });
+
+  it('search filter is case-insensitive', () => {
+    render(<RegistryPanel onBack={vi.fn()} />);
+    act(() => { registryDataHandler?.({ resource: 'npcs', data: [mockNpc] }); });
+    fireEvent.change(screen.getByPlaceholderText(/search/i), { target: { value: 'GYM LEADER' } });
+    expect(screen.getByText('Gym Leader Misty')).toBeTruthy();
   });
 
   it('shows editor when Edit clicked and returns to list on back', () => {

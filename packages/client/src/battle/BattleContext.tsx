@@ -666,7 +666,7 @@ export function BattleProvider({ mySlotId, initialState, children }: Props) {
   );
 }
 
-function eventToText(event: TurnResolveEvent): string | string[] {
+export function eventToText(event: TurnResolveEvent): string | string[] {
   switch (event.type) {
     case 'move-used': return `${String(event.data['attackerName'])} used ${String(event.data['moveName'])}!`;
     case 'damage-dealt': {
@@ -746,6 +746,25 @@ function eventToText(event: TurnResolveEvent): string | string[] {
         moveNoteText = `Its PP was reduced by ${n}!`;
       }
       return moveNoteText || note;
+    }
+    case 'status-blocked': return 'The status condition was blocked!';
+    case 'move-blocked': {
+      const reason = String(event.data['reason']);
+      const name = String(event.data['pokemonName'] ?? event.data['slotId'] ?? '');
+      const targetSlotId = event.data['targetSlotId'];
+      if (reason === 'paralysis') return `${name} is fully paralyzed!`;
+      if (reason === 'flinch') return `${name} flinched!`;
+      if (reason === 'frozen') return `${name} is frozen solid!`;
+      if (reason === 'asleep') return `${name} is fast asleep!`;
+      if (reason === 'infatuation') return `${name} is in love and can't move!`;
+      if (reason === 'protect' || reason === 'crafty-shield' || reason === 'mat-block' || reason === 'wide-guard' || reason === 'quick-guard')
+        return `${String(targetSlotId ?? name)} was protected!`;
+      if (reason === 'disabled') return `${name}'s move is disabled!`;
+      if (reason === 'taunted') return `${name} is taunted!`;
+      if (reason === 'imprison') return `${name} is imprisoned!`;
+      if (reason === 'torment') return `${name} is tormented!`;
+      if (reason === 'trapped') return `${name} can't switch out!`;
+      return `${name} can't move!`;
     }
     default: return '';
   }

@@ -59,26 +59,32 @@ This single-line edit is the only modification made to the document before imple
 
 Invoke `superpowers:using-superpowers` via the `Skill` tool with this prompt:
 
-> Implement the tech-debt plan at `<resolved-path>`. Its `## State` has been set to `InProgress`. Read the full document — pay particular attention to `## Problem Details`, `## Suggested Fix`, and `## Related Files`. Use whatever superpowers apply (brainstorming, TDD, systematic-debugging, etc.) to complete the fix described in `## Suggested Fix`. **Your final action after all work is complete — including any branch decisions via `superpowers:finishing-a-development-branch` — must be to edit `<resolved-path>` and change `## State` from `InProgress` to `Complete`.**
+> Implement the tech-debt plan at `<resolved-path>`. Its `## State` has been set to `InProgress`. Read the full document — pay particular attention to `## Problem Details`, `## Suggested Fix`, and `## Related Files`. Use whatever superpowers apply (brainstorming, TDD, systematic-debugging, etc.) to complete the fix described in `## Suggested Fix`. **Your final two actions after all work is complete — including any branch decisions via `superpowers:finishing-a-development-branch` — must be: (1) edit `<resolved-path>` and change `## State` from `InProgress` to `Complete`; (2) move `<resolved-path>` to `docs/completed-tech-debt/<area>/<filename>` (same subdirectory name, same filename), creating the destination directory if it doesn't exist.**
 
-> **Why this matters:** The `execute-tech-debt-plan` wrapper that set the state to `InProgress` cannot resume after a multi-turn workflow — this delegation is not a coroutine. You are responsible for the final state update.
+> **Why this matters:** The `execute-tech-debt-plan` wrapper that set the state to `InProgress` cannot resume after a multi-turn workflow — this delegation is not a coroutine. You are responsible for the final state update and file move.
 
-### Step 6 — Verify state (safety net)
+### Step 6 — Verify state and location (safety net)
 
-This step runs only if the implementation did not update the state itself (e.g., the workflow was interrupted mid-run).
+This step runs only if the implementation did not complete the final actions itself (e.g., the workflow was interrupted mid-run).
 
-Check the current `## State` value in the document:
-- If already `Complete`: nothing to do.
-- If still `InProgress`: edit the document to replace `InProgress` → `Complete`.
+1. **State check:** Read the current `## State` value in the document (check both `docs/tech-debt/` and `docs/completed-tech-debt/` locations):
+   - If already `Complete`: proceed to location check.
+   - If still `InProgress`: edit the document to replace `InProgress` → `Complete`.
 
-**On abort or unrecoverable failure:** Leave `State` as `InProgress`. Report what was done and what remains so the plan can be resumed later with `/execute-tech-debt-plan <path>`.
+2. **Location check:** If the file is still under `docs/tech-debt/`, move it to `docs/completed-tech-debt/<area>/<filename>`, creating the destination subdirectory if it doesn't exist:
+   ```bash
+   mkdir -p docs/completed-tech-debt/<area>
+   mv docs/tech-debt/<area>/<filename> docs/completed-tech-debt/<area>/<filename>
+   ```
+
+**On abort or unrecoverable failure:** Leave `State` as `InProgress` and the file in place. Report what was done and what remains so the plan can be resumed later with `/execute-tech-debt-plan <path>`.
 
 ### Step 7 — Report
 
 One-line summary:
 
 ```
-✓ docs/tech-debt/<area>/<file>.md → Complete
+✓ docs/completed-tech-debt/<area>/<file>.md → Complete
   Changed: <brief description of what was fixed>
 ```
 
@@ -129,3 +135,4 @@ The `## State` section must contain exactly one of: `New`, `InProgress`, `Comple
 - Does not implement the fix itself — `superpowers:using-superpowers` does that
 - Does not commit changes or open PRs
 - Does not modify any section of the document other than `## State`
+- Does not move docs to `docs/completed-tech-debt/` until `## State` reaches `Complete`

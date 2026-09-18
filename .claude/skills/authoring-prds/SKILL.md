@@ -1,6 +1,6 @@
 ---
 name: authoring-prds
-description: Use when creating a new PRD from a feature idea — acting as a Scrum Product Owner to interview a stakeholder, fill gaps, and resolve open questions before writing. For plans in the dha-ai-plans repo.
+description: Use when creating a new PRD from a feature idea — acting as a Scrum Product Owner to interview a stakeholder, fill gaps, and resolve open questions before writing. For plans in the poke-fighter repo.
 ---
 
 # Authoring PRDs
@@ -18,7 +18,7 @@ Invite the user to describe the feature freely — what it is, why it's needed, 
 Note any local repositories relevant to this feature — the SPAs, services, or sibling repos it will touch or resemble. These give real code for architecture patterns, integration points, and naming — and let you *answer* questions from code that you'd otherwise leave open. **If the Step 1 brain-dump already named or linked them, capture those and move on — don't re-ask.** Only prompt the user if none were offered and the feature clearly touches code outside this repo. Captured paths become explicit grep/read targets in Step 2.
 
 **2. Explore before asking. (Always — regardless of how detailed the brief is.)**
-Read `README.md`, `product-vision.md`, and the most recent existing PRD (style reference). Grep sibling repos for prior art on technical dependencies named in the brief. Then brief the user: *"I found X already exists in Y — does it apply here?"* Also check whether the brief's proposed solution is the right one — a brief saying "add an email feature" might be solving a notification-volume problem that has a better solution. Also scan the other PRDs under `plans/`: does this feature depend on another initiative shipping first (a **prerequisite**), or share a surface or data source with one? Note candidate dependencies and confirm them in the interview, same as other prior art.
+Read `README.md`, and the most recent existing PRD (style reference). Grep sibling repos for prior art on technical dependencies named in the brief. Then brief the user: *"I found X already exists in Y — does it apply here?"* Also check whether the brief's proposed solution is the right one — a brief saying "add an email feature" might be solving a notification-volume problem that has a better solution. Also scan the other PRDs under `plans/`: does this feature depend on another initiative shipping first (a **prerequisite**), or share a surface or data source with one? Note candidate dependencies and confirm them in the interview, same as other prior art.
 
 **3. Batched interview.**
 Use `AskUserQuestion` in rounds of 3–5 questions. Every question must:

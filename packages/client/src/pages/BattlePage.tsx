@@ -12,8 +12,9 @@ import type { BattleState } from '@poke-fighter/shared';
 
 export function BattlePage() {
   const location = useLocation();
-  const initialState = (location.state as { battleState?: BattleState } | null)?.battleState ?? null;
-  const mySlotId = sessionStorage.getItem('mySlotId') ?? 'a1';
+  const locationState = location.state as { battleState?: BattleState; slotId?: string } | null;
+  const initialState = locationState?.battleState ?? null;
+  const mySlotId = locationState?.slotId ?? sessionStorage.getItem('mySlotId') ?? 'a1';
   return (
     <BattleProvider mySlotId={mySlotId} initialState={initialState}>
       <BattleView />

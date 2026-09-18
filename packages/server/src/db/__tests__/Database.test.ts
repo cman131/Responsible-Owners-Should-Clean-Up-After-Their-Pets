@@ -149,8 +149,8 @@ describe('AppDatabase.battles', () => {
     db.battles.insert(makeBattleState());
     const summary = db.battles.list()[0]!;
     expect(summary.teams).toEqual([
-      { slots: [{ displayName: 'Conor', isNpc: false }] },
-      { slots: [{ displayName: 'Ash', isNpc: true }] },
+      { teamId: 'team-a', slots: [{ displayName: 'Conor', isNpc: false }] },
+      { teamId: 'team-b', slots: [{ displayName: 'Ash', isNpc: true }] },
     ]);
     expect(summary).not.toHaveProperty('currentState');
     expect(summary).not.toHaveProperty('initialState');

@@ -61,8 +61,7 @@ function participantSummary(teams: BattleSummary['teams']): string {
 
 function winnerLabel(battle: BattleSummary): string {
   if (!battle.winningTeamId) return '—';
-  const teamIndex = battle.winningTeamId === 'team-a' ? 0 : 1;
-  const team = battle.teams[teamIndex];
+  const team = battle.teams.find((t) => t.teamId === battle.winningTeamId);
   return team ? team.slots.map((s) => s.displayName).join(' & ') : battle.winningTeamId;
 }
 

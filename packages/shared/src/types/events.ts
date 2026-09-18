@@ -70,6 +70,7 @@ export interface ActionRequestPayload {
   validMoves: Array<{
     index: 0 | 1 | 2 | 3;
     moveId: string;
+    type: string;
     pp: number;
     disabled: boolean;
     targetType: MoveTarget;
