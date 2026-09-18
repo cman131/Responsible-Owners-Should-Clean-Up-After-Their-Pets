@@ -2,7 +2,7 @@
 
 ## State
 
-InProgress
+Complete
 
 Two small, independent UX fixes in the Pokémon slot editing flow. Neither is complex on its own; grouping them avoids two separate one-line PRs.
 
