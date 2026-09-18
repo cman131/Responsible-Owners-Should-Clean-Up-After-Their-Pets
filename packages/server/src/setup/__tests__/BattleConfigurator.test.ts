@@ -53,14 +53,19 @@ describe('BattleConfigurator', () => {
     };
 
     function buildWith(set: PokemonSet, levelCap?: number) {
-      return new BattleConfigurator().build({
-        battleId: 'x', label: 'x',
-        levelCap,
-        teams: [
-          { slots: [{ slotId: 'a1', displayName: 'A', isNpc: false, party: [set] }] },
-          { slots: [{ slotId: 'b1', displayName: 'B', isNpc: true, party: [set] }] },
-        ],
-      });
+      const teams: [{ slots: Array<{ slotId: string; displayName: string; isNpc: boolean; party: PokemonSet[] }> }, { slots: Array<{ slotId: string; displayName: string; isNpc: boolean; party: PokemonSet[] }> }] = [
+        { slots: [{ slotId: 'a1', displayName: 'A', isNpc: false, party: [set] }] },
+        { slots: [{ slotId: 'b1', displayName: 'B', isNpc: true, party: [set] }] },
+      ];
+      const baseConfig = {
+        battleId: 'x',
+        label: 'x',
+        teams,
+      };
+      if (levelCap !== undefined) {
+        return new BattleConfigurator().build({ ...baseConfig, levelCap });
+      }
+      return new BattleConfigurator().build(baseConfig);
     }
 
     it('clamps level and stats when levelCap is below set level', () => {

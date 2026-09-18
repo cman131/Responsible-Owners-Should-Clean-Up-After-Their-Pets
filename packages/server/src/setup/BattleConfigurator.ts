@@ -19,6 +19,7 @@ interface BuildConfig {
   battleId: string;
   label: string;
   teams: [TeamConfig, TeamConfig];
+  levelCap?: number;
 }
 
 function defaultSideConditions(): SideConditions {
@@ -38,7 +39,7 @@ export class BattleConfigurator {
   private readonly data = new DataLoader();
 
   build(config: BuildConfig): BattleState {
-    const teams = config.teams.map((teamConfig, teamIdx) => this.buildTeam(teamConfig, teamIdx)) as [TeamState, TeamState];
+    const teams = config.teams.map((teamConfig, teamIdx) => this.buildTeam(teamConfig, teamIdx, config.levelCap)) as [TeamState, TeamState];
 
     return {
       battleId: config.battleId,
@@ -50,33 +51,35 @@ export class BattleConfigurator {
     };
   }
 
-  private buildTeam(teamConfig: TeamConfig, teamIdx: number): TeamState {
+  private buildTeam(teamConfig: TeamConfig, teamIdx: number, levelCap?: number): TeamState {
     return {
       teamId: `team-${teamIdx === 0 ? 'a' : 'b'}`,
-      slots: teamConfig.slots.map((slotConfig) => this.buildSlot(slotConfig)),
+      slots: teamConfig.slots.map((slotConfig) => this.buildSlot(slotConfig, levelCap)),
     };
   }
 
-  private buildSlot(slotConfig: SlotConfig): SlotState {
+  private buildSlot(slotConfig: SlotConfig, levelCap?: number): SlotState {
     return {
       slotId: slotConfig.slotId,
       displayName: slotConfig.displayName,
       isNpc: slotConfig.isNpc,
       isSpectator: false,
-      party: slotConfig.party.map((set) => this.buildPartyMember(set)),
+      party: slotConfig.party.map((set) => this.buildPartyMember(set, levelCap)),
       activePokemonIndex: 0,
     };
   }
 
-  private buildPartyMember(set: PokemonSet): PartyMember {
+  private buildPartyMember(set: PokemonSet, levelCap?: number): PartyMember {
     const species = this.data.getSpecies(set.speciesId);
     if (!species) throw new Error(`Unknown species id: ${set.speciesId}`);
+
+    const effectiveLevel = levelCap !== undefined ? Math.min(set.level, levelCap) : set.level;
 
     const stats = calcAllStats({
       baseStats: species.baseStats,
       ivs: set.ivs,
       evs: set.evs,
-      level: set.level,
+      level: effectiveLevel,
       nature: set.nature,
     });
 
@@ -84,7 +87,7 @@ export class BattleConfigurator {
       instanceId: uuidv4(),
       speciesId: set.speciesId,
       speciesName: species.name,
-      level: set.level,
+      level: effectiveLevel,
       currentHp: stats.hp,
       maxHp: stats.hp,
       stats,
