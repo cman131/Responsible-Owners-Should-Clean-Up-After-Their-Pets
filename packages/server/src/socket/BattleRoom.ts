@@ -157,6 +157,7 @@ export class BattleRoom {
     if (!active || active.fainted) return { ok: false, reason: 'No active pokemon' };
 
     const validMoves = this.buildValidMoves(slotId, active);
+    if (validMoves.length === 0) return { ok: false, reason: 'No valid moves available' };
     const firstMove = validMoves[0]!;
     const action: MoveAction = { type: 'move', moveIndex: firstMove.index };
     return this.submitAction(slotId, action);
