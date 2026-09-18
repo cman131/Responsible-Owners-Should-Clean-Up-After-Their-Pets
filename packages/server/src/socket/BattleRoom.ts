@@ -399,6 +399,7 @@ export class BattleRoom {
       return [{
         index: 0,
         moveId: 'struggle',
+        type: 'Normal',
         pp: 1,
         disabled: false,
         targetType: 'normal',
@@ -430,6 +431,7 @@ export class BattleRoom {
       return {
         index: i as 0 | 1 | 2 | 3,
         moveId: m.moveId,
+        type: moveData?.type ?? 'Normal',
         pp: m.currentPp,
         disabled,
         targetType,
@@ -442,6 +444,7 @@ export class BattleRoom {
       return [{
         index: 0,
         moveId: 'struggle',
+        type: 'Normal',
         pp: 1,
         disabled: false,
         targetType: 'normal',

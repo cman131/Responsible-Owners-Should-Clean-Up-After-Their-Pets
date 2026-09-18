@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { getSocket } from '../socket.js';
 import type { Move } from '@poke-fighter/shared';
-import { TYPE_COLORS } from './pokemonTypeColors.js';
+import { TYPE_COLORS } from '../pokemonTypeColors.js';
 
 interface Props {
   speciesId: number;

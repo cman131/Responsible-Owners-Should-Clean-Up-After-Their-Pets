@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { classifyTarget, sortLegalTargets, getSlotDisplayName, formatTargetNames } from '../targeting.js';
 import { SwitchPanel } from './SwitchPanel.js';
+import { TYPE_COLORS } from '../../pokemonTypeColors.js';
 import type { ActionRequestPayload, BattleState, PartyMember } from '@poke-fighter/shared';
 
 type ValidMove = ActionRequestPayload['validMoves'][number];
@@ -121,11 +122,18 @@ export function ActionPanel({
               style={{
                 background: '#1a1a2e', border: `1px solid ${accent}`, color: '#fff',
                 padding: '10px 12px', borderRadius: 4, fontFamily: 'inherit',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4,
                 opacity: disabled ? 0.4 : 1, cursor: disabled ? 'not-allowed' : 'pointer',
               }}
             >
-              <span style={{ fontSize: 13 }}>{formatMoveName(mv.moveId)}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%' }}>
+                <span style={{
+                  background: TYPE_COLORS[mv.type] ?? '#666',
+                  borderRadius: 3, padding: '1px 5px', fontSize: 10, color: '#fff',
+                  flexShrink: 0,
+                }}>{mv.type}</span>
+                <span style={{ fontSize: 13 }}>{formatMoveName(mv.moveId)}</span>
+              </div>
               <span style={{ fontSize: 11, color: '#aaa' }}>PP {mv.pp}</span>
             </button>
           );
@@ -135,43 +143,66 @@ export function ActionPanel({
       {targetingMove && (() => {
         const mode = classifyTarget(targetingMove.targetType);
         return (
-          <div style={{ marginTop: 8, background: '#0d0d1a', border: `1px solid ${accent}`, borderRadius: 4, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ color: '#aaa', fontSize: 11 }}>
-              {mode === 'choose' ? 'Target:' : 'Targets:'}
-            </span>
-            {mode === 'choose' ? (
-              <select
-                value={selectedTarget}
-                onChange={(e) => setSelectedTarget(e.target.value)}
-                style={{ flex: 1, background: '#111', border: '1px solid #555', color: '#fff', padding: '4px 8px', borderRadius: 3, fontFamily: 'inherit', fontSize: 12 }}
-              >
-                {sortLegalTargets(targetingMove.legalTargets, slotId, state).map((t) => (
-                  <option key={t} value={t}>{getSlotDisplayName(state, t)}</option>
-                ))}
-              </select>
-            ) : (
-              <span style={{ flex: 1, color: '#fff', fontSize: 12 }}>
-                {formatTargetNames(targetingMove.legalTargets, state)}
+          <div style={{ marginTop: 8, background: '#0d0d1a', border: `1px solid ${accent}`, borderRadius: 4, padding: '8px 12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: mode === 'choose' ? 6 : 0 }}>
+              <span style={{ color: '#aaa', fontSize: 11 }}>
+                {mode === 'choose' ? 'Target:' : 'Targets:'}
               </span>
+              {mode === 'listed' && (
+                <span style={{ flex: 1, color: '#fff', fontSize: 12 }}>
+                  {formatTargetNames(targetingMove.legalTargets, state)}
+                </span>
+              )}
+              {mode === 'listed' && (
+                <button
+                  onClick={() => {
+                    onSubmitMove(targetingMove.index, undefined, terastallize || undefined);
+                    setTargetingMove(null);
+                    setTerastallize(false);
+                  }}
+                  style={{ background: accent, color: '#fff', border: 'none', padding: '4px 14px', borderRadius: 3, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12 }}
+                >
+                  Confirm
+                </button>
+              )}
+              <button
+                onClick={() => { setTargetingMove(null); setSelectedTarget(''); }}
+                style={{ background: 'none', border: '1px solid #555', color: '#aaa', padding: '4px 10px', borderRadius: 3, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12 }}
+              >
+                ✕
+              </button>
+            </div>
+            {mode === 'choose' && (
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {sortLegalTargets(targetingMove.legalTargets, slotId, state).map((targetSlotId) => {
+                  const targetSlot = state.teams.flatMap(t => t.slots).find(s => s.slotId === targetSlotId);
+                  const activeMon = targetSlot?.party[targetSlot.activePokemonIndex];
+                  const hpPct = activeMon ? Math.round((activeMon.currentHp / activeMon.maxHp) * 100) : null;
+                  const hpColor = hpPct === null ? '#aaa' : hpPct > 50 ? '#27ae60' : hpPct > 25 ? '#f39c12' : '#e74c3c';
+                  return (
+                    <button
+                      key={targetSlotId}
+                      onClick={() => {
+                        onSubmitMove(targetingMove.index, targetSlotId, terastallize || undefined);
+                        setTargetingMove(null);
+                        setSelectedTarget('');
+                        setTerastallize(false);
+                      }}
+                      style={{
+                        background: '#1a1a2e', border: `1px solid ${accent}`, color: '#fff',
+                        padding: '6px 12px', borderRadius: 4, cursor: 'pointer',
+                        fontFamily: 'inherit', fontSize: 12, display: 'flex', alignItems: 'center', gap: 8,
+                      }}
+                    >
+                      {getSlotDisplayName(state, targetSlotId)}
+                      {hpPct !== null && (
+                        <span style={{ color: hpColor, fontSize: 11 }}>{hpPct}% HP</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             )}
-            <button
-              onClick={() => {
-                const m = classifyTarget(targetingMove.targetType);
-                onSubmitMove(targetingMove.index, m === 'choose' ? selectedTarget : undefined, terastallize || undefined);
-                setTargetingMove(null);
-                setSelectedTarget('');
-                setTerastallize(false);
-              }}
-              style={{ background: accent, color: '#fff', border: 'none', padding: '4px 14px', borderRadius: 3, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12 }}
-            >
-              Confirm
-            </button>
-            <button
-              onClick={() => { setTargetingMove(null); setSelectedTarget(''); }}
-              style={{ background: 'none', border: '1px solid #555', color: '#aaa', padding: '4px 10px', borderRadius: 3, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12 }}
-            >
-              ✕
-            </button>
           </div>
         );
       })()}

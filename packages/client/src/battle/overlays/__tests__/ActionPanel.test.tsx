@@ -58,10 +58,10 @@ const mockState: BattleState = {
 const baseRequest: ActionRequestPayload = {
   slotId: 'a1',
   validMoves: [
-    { index: 0, moveId: 'flamethrower', pp: 15, disabled: false, targetType: 'normal', legalTargets: ['b1'] },
-    { index: 1, moveId: 'airslash', pp: 15, disabled: false, targetType: 'normal', legalTargets: ['b1'] },
-    { index: 2, moveId: 'roost', pp: 10, disabled: false, targetType: 'self', legalTargets: ['a1'] },
-    { index: 3, moveId: 'willowisp', pp: 15, disabled: false, targetType: 'normal', legalTargets: ['b1'] },
+    { index: 0, moveId: 'flamethrower', type: 'Fire', pp: 15, disabled: false, targetType: 'normal', legalTargets: ['b1'] },
+    { index: 1, moveId: 'airslash', type: 'Flying', pp: 15, disabled: false, targetType: 'normal', legalTargets: ['b1'] },
+    { index: 2, moveId: 'roost', type: 'Flying', pp: 10, disabled: false, targetType: 'self', legalTargets: ['a1'] },
+    { index: 3, moveId: 'willowisp', type: 'Fire', pp: 15, disabled: false, targetType: 'normal', legalTargets: ['b1'] },
   ],
   canSwitch: false,
   switchTargets: [],
@@ -135,22 +135,23 @@ describe('ActionPanel — target selector', () => {
   const multiTargetRequest: ActionRequestPayload = {
     ...baseRequest,
     validMoves: [
-      { index: 0, moveId: 'earthquake', pp: 10, disabled: false, targetType: 'normal', legalTargets: ['b1', 'b2'] },
+      { index: 0, moveId: 'earthquake', type: 'Ground', pp: 10, disabled: false, targetType: 'normal', legalTargets: ['b1', 'b2'] },
       ...baseRequest.validMoves.slice(1),
     ],
   };
 
-  it('shows target dropdown when choose move has multiple legal targets', () => {
+  it('shows target buttons (not combobox) when choose move has multiple legal targets', () => {
     render(<ActionPanel request={multiTargetRequest} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={vi.fn()} />);
     fireEvent.click(screen.getByText('Earthquake'));
-    expect(screen.getByRole('combobox')).toBeTruthy();
+    expect(screen.queryByRole('combobox')).toBeNull();
+    expect(screen.getByText('Bob')).toBeTruthy();
   });
 
-  it('clicking Confirm submits with the selected target', () => {
+  it('clicking a target button submits the move with that target', () => {
     const onSubmitMove = vi.fn();
     render(<ActionPanel request={multiTargetRequest} slotId="a1" state={mockState} onSubmitMove={onSubmitMove} onSubmitSwitch={vi.fn()} />);
     fireEvent.click(screen.getByText('Earthquake'));
-    fireEvent.click(screen.getByText('Confirm'));
+    fireEvent.click(screen.getByRole('button', { name: /Bob/ }));
     expect(onSubmitMove).toHaveBeenCalledWith(0, 'b1', undefined);
   });
 
@@ -158,7 +159,7 @@ describe('ActionPanel — target selector', () => {
     render(<ActionPanel request={multiTargetRequest} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={vi.fn()} />);
     fireEvent.click(screen.getByText('Earthquake'));
     fireEvent.click(screen.getByText('✕'));
-    expect(screen.queryByRole('combobox')).toBeNull();
+    expect(screen.queryByText('Bob')).toBeNull();
     expect(screen.getByText('Earthquake')).toBeTruthy();
   });
 
@@ -166,7 +167,7 @@ describe('ActionPanel — target selector', () => {
     const listedRequest: ActionRequestPayload = {
       ...baseRequest,
       validMoves: [
-        { index: 0, moveId: 'surf', pp: 15, disabled: false, targetType: 'allAdjacentFoes', legalTargets: ['b1'] },
+        { index: 0, moveId: 'surf', type: 'Water', pp: 15, disabled: false, targetType: 'allAdjacentFoes', legalTargets: ['b1'] },
         ...baseRequest.validMoves.slice(1),
       ],
     };
@@ -182,7 +183,7 @@ describe('ActionPanel — target selector', () => {
     const listedRequest: ActionRequestPayload = {
       ...baseRequest,
       validMoves: [
-        { index: 0, moveId: 'surf', pp: 15, disabled: false, targetType: 'allAdjacentFoes', legalTargets: ['b1'] },
+        { index: 0, moveId: 'surf', type: 'Water', pp: 15, disabled: false, targetType: 'allAdjacentFoes', legalTargets: ['b1'] },
         ...baseRequest.validMoves.slice(1),
       ],
     };
@@ -263,7 +264,7 @@ describe('ActionPanel — move name formatting', () => {
     const hyphenatedRequest: ActionRequestPayload = {
       ...baseRequest,
       validMoves: [
-        { index: 0, moveId: 'ice-beam', pp: 10, disabled: false, targetType: 'normal', legalTargets: ['b1'] },
+        { index: 0, moveId: 'ice-beam', type: 'Ice', pp: 10, disabled: false, targetType: 'normal', legalTargets: ['b1'] },
         ...baseRequest.validMoves.slice(1),
       ],
     };
@@ -283,5 +284,47 @@ describe('ActionPanel — submitted prop', () => {
   it('hides SWITCH POKÉMON button when submitted=true', () => {
     render(<ActionPanel request={switchableRequest} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={vi.fn()} submitted={true} />);
     expect(screen.queryByText('SWITCH POKÉMON')).toBeNull();
+  });
+});
+
+describe('ActionPanel — type badges', () => {
+  it('shows the move type as a badge on each move button', () => {
+    render(<ActionPanel request={baseRequest} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={vi.fn()} />);
+    // flamethrower + willowisp = 2 Fire badges; airslash + roost = 2 Flying badges
+    expect(screen.getAllByText('Fire').length).toBe(2);
+    expect(screen.getAllByText('Flying').length).toBe(2);
+  });
+});
+
+describe('ActionPanel — target buttons with HP', () => {
+  const multiTargetRequest2: ActionRequestPayload = {
+    ...baseRequest,
+    validMoves: [
+      { index: 0, moveId: 'earthquake', type: 'Ground', pp: 10, disabled: false, targetType: 'normal', legalTargets: ['b1', 'a1'] },
+      ...baseRequest.validMoves.slice(1),
+    ],
+  };
+
+  it('shows target buttons (not combobox) when choose move has multiple legal targets', () => {
+    render(<ActionPanel request={multiTargetRequest2} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={vi.fn()} />);
+    fireEvent.click(screen.getByText('Earthquake'));
+    expect(screen.queryByRole('combobox')).toBeNull();
+    expect(screen.getByText('Bob')).toBeTruthy();
+    expect(screen.getByText('Alice')).toBeTruthy();
+  });
+
+  it('shows HP percentage next to each target', () => {
+    render(<ActionPanel request={multiTargetRequest2} slotId="a1" state={mockState} onSubmitMove={vi.fn()} onSubmitSwitch={vi.fn()} />);
+    fireEvent.click(screen.getByText('Earthquake'));
+    // both slots have 180/200 HP = 90%
+    expect(screen.getAllByText('90% HP').length).toBe(2);
+  });
+
+  it('clicking a target button submits with that target', () => {
+    const onSubmitMove = vi.fn();
+    render(<ActionPanel request={multiTargetRequest2} slotId="a1" state={mockState} onSubmitMove={onSubmitMove} onSubmitSwitch={vi.fn()} />);
+    fireEvent.click(screen.getByText('Earthquake'));
+    fireEvent.click(screen.getByText('Bob'));
+    expect(onSubmitMove).toHaveBeenCalledWith(0, 'b1', undefined);
   });
 });

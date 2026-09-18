@@ -96,14 +96,16 @@ describe('BattlePage', () => {
     expect(screen.getByText('Tackle')).toBeTruthy();
   });
 
-  it('shows target dropdown when move has multiple legal targets', () => {
+  it('shows target buttons when move has multiple legal targets', () => {
     renderBattlePage(makeState());
     const onCall = mockSocket.on.mock.calls.find((c) => c[0] === 'action:request');
     act(() => {
-      onCall![1]({ slotId: 'a1', validMoves: [{ index: 0, moveId: 'tackle', pp: 35, disabled: false, targetType: 'normal', legalTargets: ['b1', 'b2'] }], canSwitch: false, switchTargets: [], canTerastallize: false });
+      onCall![1]({ slotId: 'a1', validMoves: [{ index: 0, moveId: 'tackle', type: 'Normal', pp: 35, disabled: false, targetType: 'normal', legalTargets: ['b1', 'b2'] }], canSwitch: false, switchTargets: [], canTerastallize: false });
     });
     fireEvent.click(screen.getByText('Tackle'));
-    expect(screen.getByRole('combobox')).toBeTruthy();
+    expect(screen.queryByRole('combobox')).toBeNull();
+    // b1 has displayName 'Charizard' in makeState; target buttons should appear
+    expect(screen.getAllByText('Charizard').length).toBeGreaterThanOrEqual(1);
   });
 
   it('auto-submits self-targeting move without showing targeting UI', () => {

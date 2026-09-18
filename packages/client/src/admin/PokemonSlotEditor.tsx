@@ -3,7 +3,7 @@ import type { PokemonSpecies, PokemonSet } from '@poke-fighter/shared';
 import { PokemonSearchDropdown } from './PokemonSearchDropdown.js';
 import { MoveSearchDropdown } from './MoveSearchDropdown.js';
 import { ItemSearchDropdown } from './ItemSearchDropdown.js';
-import { TYPE_COLORS } from './pokemonTypeColors.js';
+import { TYPE_COLORS } from '../pokemonTypeColors.js';
 import { getSocket } from '../socket.js';
 import { toShowdownId } from '../battle/utils.js';
 

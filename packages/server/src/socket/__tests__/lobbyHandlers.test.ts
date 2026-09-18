@@ -194,7 +194,7 @@ describe('registerLobbyHandlers – player:join', () => {
   it('emits action:request when getPendingActionRequest returns a pending request', () => {
     const pendingRequest = {
       slotId: 'slot-a1',
-      validMoves: [{ index: 0 as const, moveId: 'tackle', pp: 35, disabled: false, targetType: 'normal' as const, legalTargets: ['slot-b1'] }],
+      validMoves: [{ index: 0 as const, moveId: 'tackle', type: 'Normal', pp: 35, disabled: false, targetType: 'normal' as const, legalTargets: ['slot-b1'] }],
       canSwitch: false,
       switchTargets: [],
       canTerastallize: false,

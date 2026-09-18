@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { getSocket } from '../socket.js';
 import type { PokemonSpecies } from '@poke-fighter/shared';
-import { TYPE_COLORS } from './pokemonTypeColors.js';
+import { TYPE_COLORS } from '../pokemonTypeColors.js';
 
 interface Props {
   onSelect: (species: PokemonSpecies) => void;

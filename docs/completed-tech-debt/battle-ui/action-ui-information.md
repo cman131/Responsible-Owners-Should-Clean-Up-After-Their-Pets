@@ -2,7 +2,7 @@
 
 ## State
 
-InProgress
+Complete
 
 Two gaps in the information shown to players when selecting moves. Both involve surfacing existing battle state that the UI already has access to but doesn't display.
 

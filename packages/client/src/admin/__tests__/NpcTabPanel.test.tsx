@@ -15,10 +15,10 @@ beforeEach(() => {
 const makeRequest = (slotId: string, legalTargets: string[]): ActionRequestPayload => ({
   slotId,
   validMoves: [
-    { index: 0, moveId: 'surf', pp: 15, disabled: false, targetType: 'normal', legalTargets },
-    { index: 1, moveId: 'icebeam', pp: 10, disabled: false, targetType: 'normal', legalTargets },
-    { index: 2, moveId: 'blizzard', pp: 5, disabled: false, targetType: 'allAdjacentFoes', legalTargets },
-    { index: 3, moveId: 'flash', pp: 20, disabled: false, targetType: 'normal', legalTargets },
+    { index: 0, moveId: 'surf', type: 'Water', pp: 15, disabled: false, targetType: 'normal', legalTargets },
+    { index: 1, moveId: 'icebeam', type: 'Ice', pp: 10, disabled: false, targetType: 'normal', legalTargets },
+    { index: 2, moveId: 'blizzard', type: 'Ice', pp: 5, disabled: false, targetType: 'allAdjacentFoes', legalTargets },
+    { index: 3, moveId: 'flash', type: 'Normal', pp: 20, disabled: false, targetType: 'normal', legalTargets },
   ],
   canSwitch: false,
   switchTargets: [],
@@ -68,23 +68,24 @@ describe('NpcTabPanel', () => {
     expect(screen.getByText('Blastoise ✓')).toBeTruthy();
   });
 
-  it('shows target dropdown for multi-target moves', () => {
+  it('shows target buttons for multi-target moves', () => {
     const multiTargetRequests = [
       { slotId: 'b1', displayName: 'Blastoise', request: makeRequest('b1', ['a1', 'a2']) },
     ];
     render(<NpcTabPanel battleId="test" npcRequests={multiTargetRequests} state={state} />);
     fireEvent.click(screen.getByText('Surf'));
-    expect(screen.getByRole('combobox')).toBeTruthy();
+    expect(screen.queryByRole('combobox')).toBeNull();
+    expect(screen.getByRole('button', { name: /Alice/ })).toBeTruthy();
     expect(screen.queryByText('Blastoise ✓')).toBeFalsy(); // not yet submitted
   });
 
-  it('submits after selecting target and clicking Confirm', () => {
+  it('submits after clicking a target button', () => {
     const multiTargetRequests = [
       { slotId: 'b1', displayName: 'Blastoise', request: makeRequest('b1', ['a1', 'a2']) },
     ];
     render(<NpcTabPanel battleId="test" npcRequests={multiTargetRequests} state={state} />);
     fireEvent.click(screen.getByText('Surf'));
-    fireEvent.click(screen.getByText('Confirm'));
+    fireEvent.click(screen.getByRole('button', { name: /Alice/ }));
     expect(mockSocket.emit).toHaveBeenCalledWith('admin:action', expect.objectContaining({
       type: 'npc-action',
       data: expect.objectContaining({ slotId: 'b1', action: expect.objectContaining({ type: 'move', moveIndex: 0 }) }),
@@ -115,10 +116,10 @@ describe('NpcTabPanel', () => {
 const makeSwitchableRequest = (slotId: string, legalTargets: string[], switchTargets: string[]): ActionRequestPayload => ({
   slotId,
   validMoves: [
-    { index: 0, moveId: 'surf', pp: 15, disabled: false, targetType: 'normal', legalTargets },
-    { index: 1, moveId: 'icebeam', pp: 10, disabled: false, targetType: 'normal', legalTargets },
-    { index: 2, moveId: 'blizzard', pp: 5, disabled: false, targetType: 'allAdjacentFoes', legalTargets },
-    { index: 3, moveId: 'flash', pp: 20, disabled: false, targetType: 'normal', legalTargets },
+    { index: 0, moveId: 'surf', type: 'Water', pp: 15, disabled: false, targetType: 'normal', legalTargets },
+    { index: 1, moveId: 'icebeam', type: 'Ice', pp: 10, disabled: false, targetType: 'normal', legalTargets },
+    { index: 2, moveId: 'blizzard', type: 'Ice', pp: 5, disabled: false, targetType: 'allAdjacentFoes', legalTargets },
+    { index: 3, moveId: 'flash', type: 'Normal', pp: 20, disabled: false, targetType: 'normal', legalTargets },
   ],
   canSwitch: true,
   switchTargets,
