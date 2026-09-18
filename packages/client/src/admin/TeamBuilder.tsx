@@ -11,12 +11,13 @@ export function slotStatus(p: Partial<PokemonSet> | undefined): 'empty' | 'incom
 interface Props {
   onTeamSaved: (team: PokemonSet[]) => void;
   initialTeam?: PokemonSet[];
+  initialSelectedSlot?: number;
   onSendToBank?: (pokemon: PokemonSet) => void;
 }
 
-export function TeamBuilder({ onTeamSaved, initialTeam = [], onSendToBank }: Props) {
+export function TeamBuilder({ onTeamSaved, initialTeam = [], initialSelectedSlot, onSendToBank }: Props) {
   const [team, setTeam] = useState<Partial<PokemonSet>[]>(initialTeam.length > 0 ? initialTeam : [{}]);
-  const [selectedSlot, setSelectedSlot] = useState(0);
+  const [selectedSlot, setSelectedSlot] = useState(initialSelectedSlot ?? 0);
 
   function handleSlotChange(updated: Partial<PokemonSet>) {
     if (!updated.speciesId) {

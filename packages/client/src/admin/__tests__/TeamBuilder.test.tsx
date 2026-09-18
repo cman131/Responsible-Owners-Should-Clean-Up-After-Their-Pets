@@ -101,6 +101,13 @@ describe('TeamBuilder nature field', () => {
   });
 });
 
+describe('TeamBuilder initialSelectedSlot', () => {
+  it('starts on the specified slot when initialSelectedSlot is provided', () => {
+    render(<TeamBuilder onTeamSaved={vi.fn()} initialTeam={[pikachu, charizard]} initialSelectedSlot={1} />);
+    expect(screen.getByDisplayValue('Charizard')).toBeTruthy();
+  });
+});
+
 describe('TeamBuilder slot compaction', () => {
   it('collapses the gap when a slot is cleared from a multi-pokemon team', () => {
     render(<TeamBuilder onTeamSaved={vi.fn()} initialTeam={[pikachu, charizard]} />);

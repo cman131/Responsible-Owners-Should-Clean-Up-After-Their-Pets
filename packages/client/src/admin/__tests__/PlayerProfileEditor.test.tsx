@@ -74,6 +74,14 @@ describe('PlayerProfileEditor', () => {
     expect(screen.getByText('bank-tab-1')).toBeTruthy();
   });
 
+  it('switches to team tab after moving a pokemon from bank to team', () => {
+    render(<PlayerProfileEditor profile={null} onBack={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /^bank/i }));
+    fireEvent.click(screen.getByText('move-to-team'));
+    const teamSection = screen.getByText('team-builder').closest('div[style]') as HTMLElement;
+    expect(teamSection.style.display).toBe('block');
+  });
+
   it('pre-fills name and bank from existing profile', () => {
     const profile = {
       profileId: 'p1', displayName: 'Misty', createdAt: '2026-01-01T00:00:00Z',

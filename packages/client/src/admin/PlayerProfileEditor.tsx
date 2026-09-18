@@ -30,6 +30,7 @@ export function PlayerProfileEditor({ profile, onBack }: Props) {
     setTeam(next);
     setBank((prev) => prev.filter((p) => p !== pokemon));
     setTeamKey((k) => k + 1);
+    setTab('team');
   }
 
   function handleSave() {
@@ -92,6 +93,7 @@ export function PlayerProfileEditor({ profile, onBack }: Props) {
             <TeamBuilder
               key={teamKey}
               initialTeam={team}
+              initialSelectedSlot={team.length > 0 ? team.length - 1 : 0}
               onTeamSaved={setTeam}
               onSendToBank={handleSendToBank}
             />
