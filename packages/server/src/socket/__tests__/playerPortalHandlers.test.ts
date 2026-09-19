@@ -32,6 +32,45 @@ const makePlayer = (overrides: Partial<PlayerProfile> = {}): PlayerProfile => ({
   ...overrides,
 });
 
+describe('registerPlayerPortalHandlers – player:portal-roster-request', () => {
+  let db: AppDatabase;
+  let socket: ReturnType<typeof makeSocket>;
+
+  beforeEach(() => {
+    db = new AppDatabase(':memory:');
+    socket = makeSocket();
+    registerPlayerPortalHandlers(socket as any, db);
+  });
+
+  afterEach(() => { db.close(); });
+
+  it('emits player:portal-roster with all players when no players exist', async () => {
+    await socket.trigger('player:portal-roster-request', undefined);
+    expect(socket.emit).toHaveBeenCalledWith('player:portal-roster', { players: [] });
+  });
+
+  it('emits player:portal-roster with profileId and displayName for each player', async () => {
+    db.players.save(makePlayer({ profileId: 'p1', displayName: 'Ash' }));
+    db.players.save(makePlayer({ profileId: 'p2', displayName: 'Misty' }));
+    await socket.trigger('player:portal-roster-request', undefined);
+    expect(socket.emit).toHaveBeenCalledWith('player:portal-roster', {
+      players: expect.arrayContaining([
+        { profileId: 'p1', displayName: 'Ash' },
+        { profileId: 'p2', displayName: 'Misty' },
+      ]),
+    });
+  });
+
+  it('includes players even when they have no playerKey set', async () => {
+    db.players.save(makePlayer({ profileId: 'p1', displayName: 'Ash' }));
+    await socket.trigger('player:portal-roster-request', undefined);
+    const call = (socket.emit as ReturnType<typeof vi.fn>).mock.calls
+      .find(([event]: string[]) => event === 'player:portal-roster');
+    const payload = call?.[1] as { players: { profileId: string }[] };
+    expect(payload.players).toHaveLength(1);
+  });
+});
+
 describe('registerPlayerPortalHandlers – player:portal-auth', () => {
   let db: AppDatabase;
   let socket: ReturnType<typeof makeSocket>;
@@ -44,35 +83,48 @@ describe('registerPlayerPortalHandlers – player:portal-auth', () => {
 
   afterEach(() => { db.close(); });
 
-  it('sets portalProfileId and emits player:portal-data when key matches', async () => {
-    db.players.save(makePlayer({ playerKey: 'secret-key' }));
-    await socket.trigger('player:portal-auth', { playerKey: 'secret-key' });
+  it('sets portalProfileId and emits player:portal-data when profileId and key match', async () => {
+    db.players.save(makePlayer({ profileId: 'p1', playerKey: 'secret-key' }));
+    await socket.trigger('player:portal-auth', { profileId: 'p1', playerKey: 'secret-key' });
     expect(socket.data['portalProfileId']).toBe('p1');
     expect(socket.emit).toHaveBeenCalledWith('player:portal-data', expect.objectContaining({
       profile: expect.objectContaining({ profileId: 'p1' }),
     }));
   });
 
-  it('emits player:portal-error when no player has the given key', async () => {
-    await socket.trigger('player:portal-auth', { playerKey: 'wrong-key' });
+  it('emits player:portal-error when profileId does not exist', async () => {
+    await socket.trigger('player:portal-auth', { profileId: 'unknown', playerKey: 'any-key' });
     expect(socket.data['portalProfileId']).toBeUndefined();
     expect(socket.emit).toHaveBeenCalledWith('player:portal-error', expect.objectContaining({
       message: expect.any(String),
     }));
   });
 
-  it('does not set portalProfileId on failed auth', async () => {
-    db.players.save(makePlayer({ playerKey: 'correct' }));
-    await socket.trigger('player:portal-auth', { playerKey: 'incorrect' });
+  it('emits player:portal-error when key does not match the specified profile', async () => {
+    db.players.save(makePlayer({ profileId: 'p1', playerKey: 'correct' }));
+    await socket.trigger('player:portal-auth', { profileId: 'p1', playerKey: 'wrong' });
     expect(socket.data['portalProfileId']).toBeUndefined();
+    expect(socket.emit).toHaveBeenCalledWith('player:portal-error', expect.objectContaining({
+      message: expect.any(String),
+    }));
   });
 
-  it('replaces existing portalProfileId when re-authenticating with a different key', async () => {
+  it('allows two players to share the same key when selected by profileId', async () => {
+    db.players.save(makePlayer({ profileId: 'p1', displayName: 'Ash', playerKey: 'shared-key' }));
+    db.players.save(makePlayer({ profileId: 'p2', displayName: 'Misty', playerKey: 'shared-key' }));
+    await socket.trigger('player:portal-auth', { profileId: 'p2', playerKey: 'shared-key' });
+    expect(socket.data['portalProfileId']).toBe('p2');
+    expect(socket.emit).toHaveBeenCalledWith('player:portal-data', expect.objectContaining({
+      profile: expect.objectContaining({ profileId: 'p2' }),
+    }));
+  });
+
+  it('replaces existing portalProfileId when re-authenticating with a different profile', async () => {
     db.players.save(makePlayer({ profileId: 'p1', playerKey: 'key-a' }));
     db.players.save(makePlayer({ profileId: 'p2', playerKey: 'key-b' }));
-    await socket.trigger('player:portal-auth', { playerKey: 'key-a' });
+    await socket.trigger('player:portal-auth', { profileId: 'p1', playerKey: 'key-a' });
     expect(socket.data['portalProfileId']).toBe('p1');
-    await socket.trigger('player:portal-auth', { playerKey: 'key-b' });
+    await socket.trigger('player:portal-auth', { profileId: 'p2', playerKey: 'key-b' });
     expect(socket.data['portalProfileId']).toBe('p2');
   });
 });

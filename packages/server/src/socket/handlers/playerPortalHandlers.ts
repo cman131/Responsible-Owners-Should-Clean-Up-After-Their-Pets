@@ -20,9 +20,14 @@ export function registerPlayerPortalHandlers(
   socket: Socket<ClientToServerEvents, ServerToClientEvents>,
   db: AppDatabase
 ): void {
-  socket.on('player:portal-auth', ({ playerKey }) => {
-    const match = db.players.list().find((p) => p.playerKey === playerKey);
-    if (!match) {
+  socket.on('player:portal-roster-request', () => {
+    const players = db.players.list().map((p) => ({ profileId: p.profileId, displayName: p.displayName }));
+    socket.emit('player:portal-roster', { players });
+  });
+
+  socket.on('player:portal-auth', ({ profileId, playerKey }) => {
+    const match = db.players.list().find((p) => p.profileId === profileId);
+    if (!match || match.playerKey !== playerKey) {
       socket.emit('player:portal-error', { message: 'Invalid player key.' });
       return;
     }

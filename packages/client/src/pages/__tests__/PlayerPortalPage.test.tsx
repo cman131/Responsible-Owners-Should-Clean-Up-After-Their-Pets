@@ -87,6 +87,18 @@ const mockProfileWithTeam: PlayerProfile = {
   bank: [],
 };
 
+const rosterWith = (players: Array<{ profileId: string; displayName: string }>) => {
+  act(() => {
+    socketHandlers['player:portal-roster']?.({ players });
+  });
+};
+
+const selectPlayer = (displayName: string) => {
+  fireEvent.change(screen.getByRole('combobox'), {
+    target: { value: screen.getByRole('option', { name: displayName }).getAttribute('value') },
+  });
+};
+
 describe('PlayerPortalPage', () => {
   beforeEach(() => {
     socketHandlers = {};
@@ -99,29 +111,74 @@ describe('PlayerPortalPage', () => {
     capturedTeamLeasedItems = undefined;
   });
 
-  it('shows key input and ENTER button in entry phase', () => {
+  it('calls connectAsPlayerPortal and emits player:portal-roster-request on mount', () => {
     render(<MemoryRouter><PlayerPortalPage /></MemoryRouter>);
+    expect(vi.mocked(connectAsPlayerPortal)).toHaveBeenCalled();
+    expect(mockSocket.emit).toHaveBeenCalledWith('player:portal-roster-request');
+  });
+
+  it('shows player dropdown and key input in entry phase after roster loads', () => {
+    render(<MemoryRouter><PlayerPortalPage /></MemoryRouter>);
+    rosterWith([{ profileId: 'p1', displayName: 'Ash Ketchum' }]);
+    expect(screen.getByRole('combobox')).toBeTruthy();
     expect(screen.getByPlaceholderText(/player key/i)).toBeTruthy();
     expect(screen.getByRole('button', { name: /enter/i })).toBeTruthy();
   });
 
-  it('shows loading state after submitting a key', () => {
+  it('populates dropdown with player names from roster', () => {
     render(<MemoryRouter><PlayerPortalPage /></MemoryRouter>);
+    rosterWith([
+      { profileId: 'p1', displayName: 'Ash Ketchum' },
+      { profileId: 'p2', displayName: 'Misty' },
+    ]);
+    expect(screen.getByRole('option', { name: /ash ketchum/i })).toBeTruthy();
+    expect(screen.getByRole('option', { name: /misty/i })).toBeTruthy();
+  });
+
+  it('ENTER is disabled when no player is selected', () => {
+    render(<MemoryRouter><PlayerPortalPage /></MemoryRouter>);
+    rosterWith([{ profileId: 'p1', displayName: 'Ash Ketchum' }]);
+    fireEvent.change(screen.getByPlaceholderText(/player key/i), { target: { value: 'somekey' } });
+    expect(screen.getByRole('button', { name: /enter/i })).toHaveProperty('disabled', true);
+  });
+
+  it('ENTER is disabled when no key is entered', () => {
+    render(<MemoryRouter><PlayerPortalPage /></MemoryRouter>);
+    rosterWith([{ profileId: 'p1', displayName: 'Ash Ketchum' }]);
+    selectPlayer('Ash Ketchum');
+    expect(screen.getByRole('button', { name: /enter/i })).toHaveProperty('disabled', true);
+  });
+
+  it('ENTER is enabled when player is selected and key is entered', () => {
+    render(<MemoryRouter><PlayerPortalPage /></MemoryRouter>);
+    rosterWith([{ profileId: 'p1', displayName: 'Ash Ketchum' }]);
+    selectPlayer('Ash Ketchum');
+    fireEvent.change(screen.getByPlaceholderText(/player key/i), { target: { value: 'my-key' } });
+    expect(screen.getByRole('button', { name: /enter/i })).toHaveProperty('disabled', false);
+  });
+
+  it('emits player:portal-auth with profileId and playerKey on submit', () => {
+    render(<MemoryRouter><PlayerPortalPage /></MemoryRouter>);
+    rosterWith([{ profileId: 'p1', displayName: 'Ash Ketchum' }]);
+    selectPlayer('Ash Ketchum');
+    fireEvent.change(screen.getByPlaceholderText(/player key/i), { target: { value: 'my-key' } });
+    fireEvent.click(screen.getByRole('button', { name: /enter/i }));
+    expect(mockSocket.emit).toHaveBeenCalledWith('player:portal-auth', { profileId: 'p1', playerKey: 'my-key' });
+  });
+
+  it('shows loading state after submitting', () => {
+    render(<MemoryRouter><PlayerPortalPage /></MemoryRouter>);
+    rosterWith([{ profileId: 'p1', displayName: 'Ash Ketchum' }]);
+    selectPlayer('Ash Ketchum');
     fireEvent.change(screen.getByPlaceholderText(/player key/i), { target: { value: 'abc123' } });
     fireEvent.click(screen.getByRole('button', { name: /enter/i }));
     expect(screen.getByText(/authenticating/i)).toBeTruthy();
   });
 
-  it('calls connectAsPlayerPortal and emits player:portal-auth on submit', () => {
-    render(<MemoryRouter><PlayerPortalPage /></MemoryRouter>);
-    fireEvent.change(screen.getByPlaceholderText(/player key/i), { target: { value: 'my-key' } });
-    fireEvent.click(screen.getByRole('button', { name: /enter/i }));
-    expect(vi.mocked(connectAsPlayerPortal)).toHaveBeenCalled();
-    expect(mockSocket.emit).toHaveBeenCalledWith('player:portal-auth', { playerKey: 'my-key' });
-  });
-
   it('shows portal with displayName when player:portal-data fires', () => {
     render(<MemoryRouter><PlayerPortalPage /></MemoryRouter>);
+    rosterWith([{ profileId: 'p1', displayName: 'Ash Ketchum' }]);
+    selectPlayer('Ash Ketchum');
     fireEvent.change(screen.getByPlaceholderText(/player key/i), { target: { value: 'my-key' } });
     fireEvent.click(screen.getByRole('button', { name: /enter/i }));
     act(() => {
@@ -132,6 +189,8 @@ describe('PlayerPortalPage', () => {
 
   it('shows Team, Bank, and Inventory tab buttons in portal phase', () => {
     render(<MemoryRouter><PlayerPortalPage /></MemoryRouter>);
+    rosterWith([{ profileId: 'p1', displayName: 'Ash Ketchum' }]);
+    selectPlayer('Ash Ketchum');
     fireEvent.change(screen.getByPlaceholderText(/player key/i), { target: { value: 'my-key' } });
     fireEvent.click(screen.getByRole('button', { name: /enter/i }));
     act(() => {
@@ -144,6 +203,8 @@ describe('PlayerPortalPage', () => {
 
   it('shows back to lobby link in portal phase', () => {
     render(<MemoryRouter><PlayerPortalPage /></MemoryRouter>);
+    rosterWith([{ profileId: 'p1', displayName: 'Ash Ketchum' }]);
+    selectPlayer('Ash Ketchum');
     fireEvent.change(screen.getByPlaceholderText(/player key/i), { target: { value: 'my-key' } });
     fireEvent.click(screen.getByRole('button', { name: /enter/i }));
     act(() => {
@@ -154,18 +215,22 @@ describe('PlayerPortalPage', () => {
 
   it('returns to entry phase with error message when player:portal-error fires during auth', () => {
     render(<MemoryRouter><PlayerPortalPage /></MemoryRouter>);
+    rosterWith([{ profileId: 'p1', displayName: 'Ash Ketchum' }]);
+    selectPlayer('Ash Ketchum');
     fireEvent.change(screen.getByPlaceholderText(/player key/i), { target: { value: 'bad-key' } });
     fireEvent.click(screen.getByRole('button', { name: /enter/i }));
     act(() => {
       socketHandlers['player:portal-error']?.({ message: 'Invalid player key.' });
     });
     expect(screen.getByText(/invalid player key/i)).toBeTruthy();
-    expect(screen.getByPlaceholderText(/player key/i)).toBeTruthy();
+    expect(screen.getByRole('combobox')).toBeTruthy();
   });
 
   describe('portal save/discard', () => {
     function renderPortalWithTeam() {
       render(<MemoryRouter><PlayerPortalPage /></MemoryRouter>);
+      rosterWith([{ profileId: 'p2', displayName: 'Red' }]);
+      selectPlayer('Red');
       fireEvent.change(screen.getByPlaceholderText(/player key/i), { target: { value: 'my-key' } });
       fireEvent.click(screen.getByRole('button', { name: /enter/i }));
       act(() => {
@@ -236,6 +301,8 @@ describe('PlayerPortalPage', () => {
 
     function enterPortalWithInventory() {
       render(<MemoryRouter><PlayerPortalPage /></MemoryRouter>);
+      rosterWith([{ profileId: 'p3', displayName: 'Misty' }]);
+      selectPlayer('Misty');
       fireEvent.change(screen.getByPlaceholderText(/player key/i), { target: { value: 'key' } });
       fireEvent.click(screen.getByRole('button', { name: /enter/i }));
       act(() => { socketHandlers['player:portal-data']?.({ profile: mockProfileWithInventory }); });
@@ -250,6 +317,8 @@ describe('PlayerPortalPage', () => {
 
     it('shows empty message when profile has no inventory', () => {
       render(<MemoryRouter><PlayerPortalPage /></MemoryRouter>);
+      rosterWith([{ profileId: 'p1', displayName: 'Ash Ketchum' }]);
+      selectPlayer('Ash Ketchum');
       fireEvent.change(screen.getByPlaceholderText(/player key/i), { target: { value: 'key' } });
       fireEvent.click(screen.getByRole('button', { name: /enter/i }));
       act(() => { socketHandlers['player:portal-data']?.({ profile: mockProfile }); });
@@ -274,6 +343,8 @@ describe('PlayerPortalPage', () => {
         bank: [],
       };
       render(<MemoryRouter><PlayerPortalPage /></MemoryRouter>);
+      rosterWith([{ profileId: 'p3', displayName: 'Misty' }]);
+      selectPlayer('Misty');
       fireEvent.change(screen.getByPlaceholderText(/player key/i), { target: { value: 'key' } });
       fireEvent.click(screen.getByRole('button', { name: /enter/i }));
       act(() => { socketHandlers['player:portal-data']?.({ profile: profileWithItemsEquipped }); });

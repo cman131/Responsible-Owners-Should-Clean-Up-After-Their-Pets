@@ -223,6 +223,7 @@ export interface ServerToClientEvents {
   'player:portal-data': (payload: { profile: PlayerProfile }) => void;
   'player:portal-error': (payload: { message: string }) => void;
   'player:portal-items': (payload: { results: HeldItem[] }) => void;
+  'player:portal-roster': (payload: { players: Array<{ profileId: string; displayName: string }> }) => void;
 }
 
 export interface ClientToServerEvents {
@@ -232,7 +233,8 @@ export interface ClientToServerEvents {
   'switch:submit': (payload: SwitchSubmitPayload) => void;
   'admin:action': (payload: AdminActionPayload) => void;
   'player:leave': () => void;
-  'player:portal-auth': (payload: { playerKey: string }) => void;
+  'player:portal-auth': (payload: { profileId: string; playerKey: string }) => void;
   'player:portal-save': (payload: { profileId: string; team: PokemonSet[]; bank: PokemonSet[] }) => void;
   'player:portal-items-query': (payload: { speciesName?: string }) => void;
+  'player:portal-roster-request': () => void;
 }

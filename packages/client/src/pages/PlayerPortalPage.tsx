@@ -12,6 +12,8 @@ type SaveStatus = 'idle' | 'saving' | 'saved';
 export function PlayerPortalPage() {
   const [phase, setPhase] = useState<Phase>('entry');
   const [playerKey, setPlayerKey] = useState('');
+  const [selectedProfileId, setSelectedProfileId] = useState('');
+  const [roster, setRoster] = useState<Array<{ profileId: string; displayName: string }>>([]);
   const [authError, setAuthError] = useState<string | null>(null);
   const [profile, setProfile] = useState<PlayerProfile | null>(null);
   const [localTeam, setLocalTeam] = useState<PokemonSet[]>([]);
@@ -32,7 +34,13 @@ export function PlayerPortalPage() {
   }, [localTeam, localBank]);
 
   useEffect(() => {
+    connectAsPlayerPortal();
     const socket = getSocket();
+    socket.emit('player:portal-roster-request');
+
+    socket.on('player:portal-roster', (payload: { players: Array<{ profileId: string; displayName: string }> }) => {
+      setRoster(payload.players);
+    });
 
     socket.on('player:portal-data', (payload: { profile: PlayerProfile }) => {
       const p = payload.profile;
@@ -59,6 +67,7 @@ export function PlayerPortalPage() {
     });
 
     return () => {
+      socket.off('player:portal-roster');
       socket.off('player:portal-data');
       socket.off('player:portal-error');
     };
@@ -67,8 +76,7 @@ export function PlayerPortalPage() {
   function handleSubmit() {
     setAuthError(null);
     setPhase('loading');
-    connectAsPlayerPortal();
-    getSocket().emit('player:portal-auth', { playerKey });
+    getSocket().emit('player:portal-auth', { profileId: selectedProfileId, playerKey });
   }
 
   function handleSave() {
@@ -191,23 +199,35 @@ export function PlayerPortalPage() {
     );
   }
 
+  const canSubmit = selectedProfileId !== '' && playerKey.trim() !== '';
+
   return (
     <div style={styles.container}>
       <h1 style={styles.title}>POKE FIGHTER</h1>
       <div style={styles.box}>
         <div style={styles.sectionLabel}>Player Portal</div>
+        <select
+          style={styles.select}
+          value={selectedProfileId}
+          onChange={(e) => setSelectedProfileId(e.target.value)}
+        >
+          <option value="">— Select Player —</option>
+          {roster.map((p) => (
+            <option key={p.profileId} value={p.profileId}>{p.displayName}</option>
+          ))}
+        </select>
         <input
           style={styles.input}
           type="text"
           placeholder="Player Key"
           value={playerKey}
           onChange={(e) => setPlayerKey(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter' && playerKey.trim()) handleSubmit(); }}
+          onKeyDown={(e) => { if (e.key === 'Enter' && canSubmit) handleSubmit(); }}
         />
         {authError && <p style={styles.error}>{authError}</p>}
         <button
-          style={{ ...styles.button, opacity: playerKey.trim() ? 1 : 0.5 }}
-          disabled={!playerKey.trim()}
+          style={{ ...styles.button, opacity: canSubmit ? 1 : 0.5 }}
+          disabled={!canSubmit}
           onClick={handleSubmit}
         >
           ENTER
@@ -222,6 +242,7 @@ const styles = {
   title: { fontSize: 48, letterSpacing: 8, color: '#f0c040' },
   box: { background: '#0d0d1a', border: '2px solid #3498db', borderRadius: 8, padding: 32, display: 'flex', flexDirection: 'column' as const, gap: 14, minWidth: 320, maxWidth: 400 },
   sectionLabel: { color: '#aaa', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase' as const },
+  select: { width: '100%', padding: 8, background: '#1a1a2e', color: '#fff', border: '1px solid #3498db', borderRadius: 4, fontFamily: 'inherit', boxSizing: 'border-box' as const },
   input: { width: '100%', padding: 8, background: '#1a1a2e', color: '#fff', border: '1px solid #3498db', borderRadius: 4, fontFamily: 'inherit', boxSizing: 'border-box' as const },
   error: { color: '#e74c3c', fontSize: 12 },
   button: { background: '#2980b9', color: '#fff', border: 'none', padding: '10px 20px', fontSize: 14, letterSpacing: 2, cursor: 'pointer', borderRadius: 4, fontFamily: 'inherit' },
