@@ -25,6 +25,11 @@ export function connectAsPlayer(): void {
   if (!s.connected) s.connect();
 }
 
+export function connectAsPlayerPortal(): void {
+  const s = getSocket();
+  if (!s.connected) s.connect();
+}
+
 export function disconnectSocket(): void {
   socket?.disconnect();
   socket = null;

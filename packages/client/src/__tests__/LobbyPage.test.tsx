@@ -259,4 +259,15 @@ describe('LobbyPage', () => {
       state: expect.objectContaining({ slotId: 'slot-a1' }),
     });
   });
+
+  it('shows a MANAGE TEAM button', () => {
+    render(<MemoryRouter><LobbyPage /></MemoryRouter>);
+    expect(screen.getByRole('button', { name: /manage team/i })).toBeTruthy();
+  });
+
+  it('navigates to /player when MANAGE TEAM is clicked', () => {
+    render(<MemoryRouter><LobbyPage /></MemoryRouter>);
+    fireEvent.click(screen.getByRole('button', { name: /manage team/i }));
+    expect(mockNavigate).toHaveBeenCalledWith('/player');
+  });
 });

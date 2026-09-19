@@ -150,6 +150,12 @@ export function LobbyPage() {
         >
           JOIN BATTLE
         </button>
+        <button
+          style={styles.secondaryButton}
+          onClick={() => navigate('/player')}
+        >
+          MANAGE TEAM
+        </button>
       </div>
     </div>
   );
@@ -168,6 +174,7 @@ const styles = {
   select: { width: '100%', padding: 8, background: '#1a1a2e', color: '#fff', border: '1px solid #3498db', borderRadius: 4, fontFamily: 'inherit' },
   error: { color: '#e74c3c', fontSize: 12 },
   button: { background: '#2980b9', color: '#fff', border: 'none', padding: '10px 20px', fontSize: 14, letterSpacing: 2, cursor: 'pointer', borderRadius: 4, fontFamily: 'inherit' },
+  secondaryButton: { background: '#555', color: '#ccc', border: 'none', padding: '8px 20px', fontSize: 12, letterSpacing: 2, cursor: 'pointer', borderRadius: 4, fontFamily: 'inherit' },
   waiting: { color: '#fff', fontSize: 18 },
   subtitle: { color: '#aaa', fontSize: 14 },
   spinner: { color: '#3498db', fontSize: 24, textAlign: 'center' as const },
