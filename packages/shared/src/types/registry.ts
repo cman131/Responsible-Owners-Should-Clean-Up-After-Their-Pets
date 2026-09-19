@@ -23,6 +23,7 @@ export interface TeamTemplate {
 export interface PlayerProfile {
   profileId: string;
   displayName: string;
+  playerKey?: string;
   defaultTeam?: TeamTemplate;
   bank?: PokemonSet[];
   inventory?: Record<string, number>;

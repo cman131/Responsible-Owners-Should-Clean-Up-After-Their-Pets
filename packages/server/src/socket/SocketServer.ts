@@ -7,6 +7,7 @@ import { BattleRoom } from './BattleRoom.js';
 import { registerLobbyHandlers } from './handlers/lobbyHandlers.js';
 import { registerBattleHandlers } from './handlers/battleHandlers.js';
 import { registerAdminHandlers } from './handlers/adminHandlers.js';
+import { registerPlayerPortalHandlers } from './handlers/playerPortalHandlers.js';
 import { AppDatabase } from '../db/Database.js';
 
 interface SocketServerOptions { adminToken: string }
@@ -64,6 +65,7 @@ export class SocketServer {
         socket.on('admin:action', () => {
           socket.emit('admin:error', { message: 'Unauthorized' });
         });
+        registerPlayerPortalHandlers(socket, this.db);
         // Push current battle list immediately to this new non-admin connection
         const battles = this.getBattleJoinOptions();
         socket.emit('lobby:battles', { battles });

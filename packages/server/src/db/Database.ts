@@ -8,11 +8,13 @@ class PlayersStore {
     const rows = this.db.prepare('SELECT * FROM players').all() as Array<{
       profileId: string; displayName: string; createdAt: string;
       defaultTeam: string | null; bank: string | null; inventory: string | null;
+      playerKey: string | null;
     }>;
     return rows.map((r) => ({
       profileId: r.profileId,
       displayName: r.displayName,
       createdAt: r.createdAt,
+      ...(r.playerKey !== null ? { playerKey: r.playerKey } : {}),
       ...(r.defaultTeam !== null ? { defaultTeam: JSON.parse(r.defaultTeam) as TeamTemplate } : {}),
       ...(r.bank !== null ? { bank: JSON.parse(r.bank) as PokemonSet[] } : {}),
       ...(r.inventory !== null ? { inventory: JSON.parse(r.inventory) as Record<string, number> } : {}),
@@ -21,13 +23,14 @@ class PlayersStore {
 
   save(profile: PlayerProfile): void {
     this.db.prepare(`
-      INSERT INTO players (profileId, displayName, createdAt, defaultTeam, bank, inventory)
-      VALUES (@profileId, @displayName, @createdAt, @defaultTeam, @bank, @inventory)
+      INSERT INTO players (profileId, displayName, createdAt, defaultTeam, bank, inventory, playerKey)
+      VALUES (@profileId, @displayName, @createdAt, @defaultTeam, @bank, @inventory, @playerKey)
       ON CONFLICT(profileId) DO UPDATE SET
         displayName = excluded.displayName,
         defaultTeam = excluded.defaultTeam,
         bank        = excluded.bank,
-        inventory   = excluded.inventory
+        inventory   = excluded.inventory,
+        playerKey   = excluded.playerKey
     `).run({
       profileId: profile.profileId,
       displayName: profile.displayName,
@@ -35,6 +38,7 @@ class PlayersStore {
       defaultTeam: profile.defaultTeam !== undefined ? JSON.stringify(profile.defaultTeam) : null,
       bank: profile.bank !== undefined ? JSON.stringify(profile.bank) : null,
       inventory: profile.inventory !== undefined ? JSON.stringify(profile.inventory) : null,
+      playerKey: profile.playerKey ?? null,
     });
   }
 
@@ -241,6 +245,11 @@ export class AppDatabase {
     }
     try {
       this.conn.exec(`ALTER TABLE players ADD COLUMN inventory TEXT`);
+    } catch {
+      // column already exists — safe to ignore
+    }
+    try {
+      this.conn.exec(`ALTER TABLE players ADD COLUMN playerKey TEXT`);
     } catch {
       // column already exists — safe to ignore
     }

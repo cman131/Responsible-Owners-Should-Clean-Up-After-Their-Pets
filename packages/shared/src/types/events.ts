@@ -1,5 +1,7 @@
 import type { BattleState, PartyMember } from './battle.js';
 import type { MoveTarget } from './pokemon.js';
+import type { PlayerProfile, PokemonSet } from './registry.js';
+import type { HeldItem } from './pokemon.js';
 
 // ── Client → Server ──────────────────────────────────────────────────────────
 
@@ -217,6 +219,9 @@ export interface ServerToClientEvents {
     battleId: string;
     slots: Array<{ slotId: string; displayName: string; request: ActionRequestPayload }>;
   }) => void;
+  'player:portal-data': (payload: { profile: PlayerProfile }) => void;
+  'player:portal-error': (payload: { message: string }) => void;
+  'player:portal-items': (payload: { results: HeldItem[] }) => void;
 }
 
 export interface ClientToServerEvents {
@@ -226,4 +231,7 @@ export interface ClientToServerEvents {
   'switch:submit': (payload: SwitchSubmitPayload) => void;
   'admin:action': (payload: AdminActionPayload) => void;
   'player:leave': () => void;
+  'player:portal-auth': (payload: { playerKey: string }) => void;
+  'player:portal-save': (payload: { profileId: string; team: PokemonSet[]; bank: PokemonSet[] }) => void;
+  'player:portal-items-query': (payload: { speciesName?: string }) => void;
 }

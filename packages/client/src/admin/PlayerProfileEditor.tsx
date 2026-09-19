@@ -21,6 +21,7 @@ function computeLeased(team: PokemonSet[], bank: PokemonSet[]): Record<string, n
 
 export function PlayerProfileEditor({ profile, onBack }: Props) {
   const [name, setName] = useState(profile?.displayName ?? '');
+  const [playerKey, setPlayerKey] = useState(profile?.playerKey ?? '');
   const [team, setTeam] = useState<PokemonSet[]>(profile?.defaultTeam?.pokemon ?? []);
   const [bank, setBank] = useState<PokemonSet[]>(profile?.bank ?? []);
   const [inventory, setInventory] = useState<Record<string, number>>(profile?.inventory ?? {});
@@ -52,6 +53,7 @@ export function PlayerProfileEditor({ profile, onBack }: Props) {
     const playerProfile: PlayerProfile = {
       profileId: profile?.profileId ?? uuidv4(),
       displayName: name.trim(),
+      ...(playerKey.trim().length > 0 ? { playerKey: playerKey.trim() } : {}),
       ...(team.length > 0 ? {
         defaultTeam: {
           templateId: profile?.defaultTeam?.templateId ?? uuidv4(),
@@ -86,6 +88,16 @@ export function PlayerProfileEditor({ profile, onBack }: Props) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Ash Ketchum"
+            style={{ background: '#1a1a2e', border: '1px solid #555', color: '#fff', padding: '8px 12px', borderRadius: 4, fontFamily: 'inherit', fontSize: 14, width: '100%', boxSizing: 'border-box' }}
+          />
+        </div>
+
+        <div style={{ background: '#111', border: '1px solid #333', borderRadius: 4, padding: 16, marginBottom: 16 }}>
+          <label style={{ color: '#aaa', fontSize: 11, letterSpacing: 2, display: 'block', marginBottom: 8 }}>PLAYER KEY</label>
+          <input
+            value={playerKey}
+            onChange={(e) => setPlayerKey(e.target.value)}
+            placeholder="Plaintext key for player portal access"
             style={{ background: '#1a1a2e', border: '1px solid #555', color: '#fff', padding: '8px 12px', borderRadius: 4, fontFamily: 'inherit', fontSize: 14, width: '100%', boxSizing: 'border-box' }}
           />
         </div>
