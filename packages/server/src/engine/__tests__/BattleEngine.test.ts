@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { BattleEngine } from '../BattleEngine.js';
 import { MoveEffectRegistry } from '../MoveEffectRegistry.js';
 import { make1v1State, makePokemon } from './fixtures.js';
-import type { MoveAction, SwitchAction } from '@poke-fighter/shared';
+import type { MoveAction, SwitchAction, BattleState } from '@poke-fighter/shared';
 
 describe('BattleEngine.resolveTurn', () => {
   it('deals damage when a damaging move is used', () => {

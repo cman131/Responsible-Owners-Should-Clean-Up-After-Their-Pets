@@ -176,6 +176,7 @@ export class BattleRoom {
     const active = slot.party[slot.activePokemonIndex];
     if (!active || active.fainted) return null;
     const hasIngrain = active.volatileStatus.some(v => v.name === 'ingrain');
+    const lockedReason = this.getLockedReason(active);
     return {
       slotId: slot.slotId,
       validMoves: this.buildValidMoves(slotId, active),
@@ -184,7 +185,7 @@ export class BattleRoom {
         .filter((p, i) => i !== slot.activePokemonIndex && !p.fainted)
         .map((p) => p.instanceId),
       canTerastallize: !active.hasTerastallized && !!active.teraType,
-      lockedReason: this.getLockedReason(active),
+      ...(lockedReason !== undefined ? { lockedReason } : {}),
     };
   }
 
@@ -475,6 +476,7 @@ export class BattleRoom {
         const active = slot.party[slot.activePokemonIndex];
         if (!active || active.fainted) continue;
         const hasIngrain = active.volatileStatus.some(v => v.name === 'ingrain');
+        const npcLockedReason = this.getLockedReason(active);
         result.push({
           slotId: slot.slotId,
           displayName: slot.displayName,
@@ -486,7 +488,7 @@ export class BattleRoom {
               .filter((p, i) => i !== slot.activePokemonIndex && !p.fainted)
               .map((p) => p.instanceId),
             canTerastallize: !active.hasTerastallized && !!active.teraType,
-            lockedReason: this.getLockedReason(active),
+            ...(npcLockedReason !== undefined ? { lockedReason: npcLockedReason } : {}),
           },
         });
       }
@@ -502,6 +504,7 @@ export class BattleRoom {
         const active = slot.party[slot.activePokemonIndex];
         if (!active || active.fainted) continue;
         const hasIngrain = active.volatileStatus.some(v => v.name === 'ingrain');
+        const playerLockedReason = this.getLockedReason(active);
         result.push({
           slotId: slot.slotId,
           request: {
@@ -512,7 +515,7 @@ export class BattleRoom {
               .filter((p, i) => i !== slot.activePokemonIndex && !p.fainted)
               .map((p) => p.instanceId),
             canTerastallize: !active.hasTerastallized && !!active.teraType,
-            lockedReason: this.getLockedReason(active),
+            ...(playerLockedReason !== undefined ? { lockedReason: playerLockedReason } : {}),
           },
         });
       }

@@ -12,6 +12,7 @@ function makeCtx(overrides: Partial<MoveContext> = {}): MoveContext {
     user: state.teams[0]!.slots[0]!.party[0]!,
     userSlotId: 'slot-a1',
     userTeamIndex: 0,
+    userTypes: [],
     targets: [state.teams[1]!.slots[0]!.party[0]!],
     targetSlotIds: ['slot-b1'],
     targetTypes: [['Normal']],
@@ -546,10 +547,15 @@ describe('laserfocus', () => {
     state.teams[0]!.slots[0]!.party[0]!.moves = [
       { moveId: 'laserfocus', currentPp: 5, maxPp: 5 },
       { moveId: 'flamethrower', currentPp: 15, maxPp: 15 },
+      { moveId: 'tackle', currentPp: 35, maxPp: 35 },
+      { moveId: 'tackle', currentPp: 35, maxPp: 35 },
     ];
     // p2 uses any move
     state.teams[1]!.slots[0]!.party[0]!.moves = [
       { moveId: 'flamethrower', currentPp: 15, maxPp: 15 },
+      { moveId: 'tackle', currentPp: 35, maxPp: 35 },
+      { moveId: 'tackle', currentPp: 35, maxPp: 35 },
+      { moveId: 'tackle', currentPp: 35, maxPp: 35 },
     ];
 
     const engine = new BattleEngine({ rng: () => 0.5 });

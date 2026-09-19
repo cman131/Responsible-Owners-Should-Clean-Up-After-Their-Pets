@@ -53,6 +53,7 @@ function makeProtectCtx(overrides: Partial<MoveContext> = {}): MoveContext {
     user,
     userSlotId: 'slot-a1',
     userTeamIndex: 0,
+    userTypes: [],
     targets: [],
     targetSlotIds: [],
     targetTypes: [],

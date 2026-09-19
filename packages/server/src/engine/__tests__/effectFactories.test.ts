@@ -10,6 +10,7 @@ function makeCtx(overrides: Partial<MoveContext> = {}): MoveContext {
     user: makePokemon(),
     userSlotId: 'slot-a1',
     userTeamIndex: 0,
+    userTypes: [],
     targets: [makePokemon()],
     targetSlotIds: ['slot-b1'],
     targetTypes: [['Normal']],

@@ -3,7 +3,7 @@ import { BattleEngine } from '../BattleEngine.js';
 import { make1v1State } from './fixtures.js';
 import type { MoveAction } from '@poke-fighter/shared';
 
-function actions(aIdx = 0, bIdx = 0): Record<string, MoveAction> {
+function actions(aIdx: 0 | 1 | 2 | 3 = 0, bIdx: 0 | 1 | 2 | 3 = 0): Record<string, MoveAction> {
   return {
     'slot-a1': { type: 'move', moveIndex: aIdx, targetSlotId: 'slot-b1' },
     'slot-b1': { type: 'move', moveIndex: bIdx, targetSlotId: 'slot-a1' },

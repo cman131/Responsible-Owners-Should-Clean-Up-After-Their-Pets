@@ -27,7 +27,7 @@ const psyduck: PokemonSpecies = {
   id: 54, name: 'psyduck', displayName: 'Psyduck', types: ['Water'],
   baseStats: { hp: 50, atk: 52, def: 48, spa: 65, spd: 50, spe: 55 },
   abilities: { 0: 'Damp', 1: 'Cloud Nine', H: 'Swift Swim' },
-  baseExpYield: 64, expGrowth: 'MediumFast', learnset: [], evolutionStage: 1,
+  baseExpYield: 64, expGrowth: 'MediumFast', learnset: [], evolutionStage: 1, weightkg: 19.6,
 };
 const golduck: PokemonSpecies = { ...psyduck, id: 55, name: 'golduck', displayName: 'Golduck' };
 

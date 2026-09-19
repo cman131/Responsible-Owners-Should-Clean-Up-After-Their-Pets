@@ -39,9 +39,9 @@ const state: BattleState = {
       { slotId: 'b2', displayName: 'Snorlax', isNpc: true, isSpectator: false, party: [{ instanceId: 'p3', speciesId: 143, speciesName: 'snorlax', nickname: 'Snorlax', level: 50, currentHp: 300, maxHp: 400, stats: { hp: 400, atk: 100, def: 100, spa: 100, spd: 100, spe: 100 }, ability: 'immunity', moves: [{ moveId: 'bodyslam', currentPp: 15, maxPp: 15 }, { moveId: 'earthquake', currentPp: 10, maxPp: 10 }, { moveId: 'crunch', currentPp: 15, maxPp: 15 }, { moveId: 'rest', currentPp: 10, maxPp: 10 }], volatileStatus: [], statBoosts: { atk: 0, def: 0, spa: 0, spd: 0, spe: 0, accuracy: 0, evasion: 0 }, hasTerastallized: false, fainted: false, expTotal: 0, growthRate: 'MediumFast' }], activePokemonIndex: 0 },
     ]},
   ],
-  field: { trickroom: 0, gravity: 0, sideConditions: [
-    { stealthRock: false, spikes: 0, toxicSpikes: 0, stickyWeb: false, reflect: 0, lightScreen: 0, auroraVeil: 0 },
-    { stealthRock: false, spikes: 0, toxicSpikes: 0, stickyWeb: false, reflect: 0, lightScreen: 0, auroraVeil: 0 },
+  field: { trickroom: 0, gravity: 0, wonderroom: 0, magicroom: 0, mudSport: 0, waterSport: 0, ionDeluge: false, fairyLock: 0, sideConditions: [
+    { stealthRock: false, spikes: 0, toxicSpikes: 0, stickyWeb: false, reflect: 0, lightScreen: 0, auroraVeil: 0, tailwind: 0, safeguard: 0, mist: 0, luckychant: 0 },
+    { stealthRock: false, spikes: 0, toxicSpikes: 0, stickyWeb: false, reflect: 0, lightScreen: 0, auroraVeil: 0, tailwind: 0, safeguard: 0, mist: 0, luckychant: 0 },
   ]},
 };
 

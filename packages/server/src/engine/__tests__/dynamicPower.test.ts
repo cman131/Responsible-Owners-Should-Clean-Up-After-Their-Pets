@@ -70,7 +70,7 @@ describe('resolvePower', () => {
     const fieldWithFaint = { ...field(), allyFaintedTeamIndex: 0, attackerTeamIndex: 0 };
     expect(resolvePower(move('retaliate', 70), attacker, mon(), fieldWithFaint)).toBe(140);
 
-    const fieldNoFaint = { ...field(), allyFaintedTeamIndex: undefined, attackerTeamIndex: 0 };
+    const fieldNoFaint = { ...field(), attackerTeamIndex: 0 };
     expect(resolvePower(move('retaliate', 70), attacker, mon(), fieldNoFaint)).toBe(70);
 
     // ally fainted on opposite team — should NOT double

@@ -226,7 +226,7 @@ describe('registerLobbyHandlers – player:join', () => {
     };
 
     const roomWithPendingSwitch = makeRoom({}, {
-      getPendingActionRequest: vi.fn(() => null),
+      getPendingActionRequest: vi.fn<any[], any>(() => null),
       getPendingSwitchRequest: vi.fn<any[], any>(() => pendingSwitch),
     });
     registerLobbyHandlers(

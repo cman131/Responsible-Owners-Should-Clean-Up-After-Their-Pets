@@ -12,6 +12,7 @@ function makeCtx(overrides: Partial<MoveContext> = {}): MoveContext {
     user: state.teams[0]!.slots[0]!.party[0]!,
     userSlotId: 'slot-a1',
     userTeamIndex: 0,
+    userTypes: [],
     targets: [state.teams[1]!.slots[0]!.party[0]!],
     targetSlotIds: ['slot-b1'],
     targetTypes: [['Normal']],

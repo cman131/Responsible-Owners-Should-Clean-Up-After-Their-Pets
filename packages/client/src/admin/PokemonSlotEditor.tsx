@@ -212,7 +212,7 @@ export function PokemonSlotEditor({ value, onChange, inventory, leasedItems }: P
                 value={value.heldItem ?? ''}
                 onChange={(itemId) => updateField('heldItem', itemId || undefined)}
                 equippableOnly
-                speciesName={currentSpecies?.name}
+                {...(currentSpecies?.name !== undefined ? { speciesName: currentSpecies.name } : {})}
                 {...(availabilityMap !== undefined ? { availabilityMap } : {})}
               />
             </div>

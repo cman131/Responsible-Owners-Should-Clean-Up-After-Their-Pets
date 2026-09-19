@@ -493,7 +493,7 @@ export function BattleProvider({ mySlotId, initialState, children }: Props) {
     const entry = eventQueue[0]!;
     const timer = setTimeout(() => {
       if (entry.text) {
-        setTurnLog((prev) => [...prev, { type: 'normal', text: entry.text! }].slice(-150));
+        setTurnLog((prev) => [...prev, { type: 'normal' as const, text: entry.text! }].slice(-150));
       }
       if (entry.hpDelta) {
         const { slotId, delta } = entry.hpDelta;
@@ -546,7 +546,7 @@ export function BattleProvider({ mySlotId, initialState, children }: Props) {
       const { winningTeamId, finalState } = pendingBattleEnd!;
       const winnerTeam = finalState.teams.find(t => t.teamId === winningTeamId);
       const winnerNames = winnerTeam?.slots.filter(s => !s.isSpectator).map(s => s.displayName).join(', ') ?? winningTeamId;
-      setTurnLog(prev => [...prev, { type: 'normal', text: `Battle over! Winner: ${winnerNames}` }].slice(-150));
+      setTurnLog(prev => [...prev, { type: 'normal' as const, text: `Battle over! Winner: ${winnerNames}` }].slice(-150));
       setBattleResult(pendingBattleEnd!);
       setPendingBattleEnd(null);
       setPendingActionRequest(null);

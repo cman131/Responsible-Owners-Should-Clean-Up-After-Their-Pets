@@ -1779,7 +1779,7 @@ export function buildDefaultRegistry(data: DataLoader = new DataLoader()): MoveE
     };
     const terrain = ctx.battle.field.terrain?.type;
     const subMoveId = terrain ? (NATUREPOWER_MOVE[terrain] ?? 'triattack') : 'triattack';
-    return { events: ctx.executeSubMove(subMoveId) };
+    return { events: ctx.executeSubMove?.(subMoveId) ?? [] };
   });
 
   // Tidy Up: removes entry hazards + substitutes, boosts ATK and SPE

@@ -127,6 +127,7 @@ export interface TurnResolveEvent {
     | 'magicroom-ended'
     | 'fairylock-started'
     | 'iondeluge-started'
+    | 'side-condition-ended'
     | 'move-note';
   data: Record<string, unknown>;
 }

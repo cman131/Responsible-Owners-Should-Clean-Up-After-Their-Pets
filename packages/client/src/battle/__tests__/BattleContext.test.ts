@@ -613,7 +613,7 @@ describe('eventsToPlaybackEntries — Pokémon name resolution', () => {
             slotId, displayName: 'Player', isNpc: false, isSpectator: false,
             activePokemonIndex: 0,
             party: [{
-              instanceId: 'i1', speciesId: 'charizard', speciesName: 'Charizard',
+              instanceId: 'i1', speciesId: 6, speciesName: 'Charizard',
               level: 50, nickname, currentHp: 100, maxHp: 100,
               stats: { hp: 100, atk: 80, def: 80, spa: 80, spd: 80, spe: 80 },
               ability: 'blaze', moves: [], volatileStatus: [],
@@ -624,7 +624,7 @@ describe('eventsToPlaybackEntries — Pokémon name resolution', () => {
         },
         { teamId: 'team-b', slots: [] },
       ],
-    } as BattleState;
+    } as unknown as BattleState;
   }
 
   it('uses Pokémon nickname in faint text when state is provided', () => {
