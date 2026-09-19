@@ -35,6 +35,10 @@ pnpm --filter @poke-fighter/server build
 echo "==> Building client"
 pnpm --filter @poke-fighter/client build
 
+echo "==> Setting permissions for nginx (www-data)"
+chmod o+x "$HOME" "$PROJECT_DIR" "$PROJECT_DIR/packages/client" "$PROJECT_DIR/packages/client/dist"
+chmod -R o+r "$PROJECT_DIR/packages/client/dist"
+
 echo "==> Configuring environment"
 if [[ -f "$PROJECT_DIR/.env" ]]; then
   echo ".env already exists — skipping. Edit $PROJECT_DIR/.env to change ADMIN_TOKEN."
@@ -56,9 +60,9 @@ pm2 start "$PROJECT_DIR/packages/server/dist/index.js" \
   --cwd "$PROJECT_DIR"
 
 echo "==> Configuring PM2 startup (auto-start on reboot)"
-PM2_STARTUP=$(pm2 startup | grep "sudo" | tail -1)
+PM2_STARTUP=$(pm2 startup 2>&1 | grep "sudo" | tail -1)
 if [[ -n "$PM2_STARTUP" ]]; then
-  eval "$PM2_STARTUP"  # PM2-recommended pattern: runs the generated sudo command to register systemd hook
+  eval "$PM2_STARTUP" || true
 fi
 pm2 save
 

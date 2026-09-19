@@ -24,6 +24,10 @@ pnpm --filter @poke-fighter/server build
 echo "==> Building client"
 pnpm --filter @poke-fighter/client build
 
+echo "==> Setting permissions for nginx (www-data)"
+chmod o+x "$HOME" "$PROJECT_DIR" "$PROJECT_DIR/packages/client" "$PROJECT_DIR/packages/client/dist"
+chmod -R o+r "$PROJECT_DIR/packages/client/dist"
+
 echo "==> Restarting server"
 pm2 restart poke-fighter-server
 
