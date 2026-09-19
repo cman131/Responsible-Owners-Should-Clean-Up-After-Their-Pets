@@ -60,7 +60,7 @@ pm2 start "$PROJECT_DIR/packages/server/dist/index.js" \
   --cwd "$PROJECT_DIR"
 
 echo "==> Configuring PM2 startup (auto-start on reboot)"
-PM2_STARTUP=$(pm2 startup 2>&1 | grep "sudo" | tail -1)
+PM2_STARTUP=$(pm2 startup 2>&1 | grep "sudo" | tail -1 || true)
 if [[ -n "$PM2_STARTUP" ]]; then
   eval "$PM2_STARTUP" || true
 fi
