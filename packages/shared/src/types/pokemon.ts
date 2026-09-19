@@ -84,4 +84,5 @@ export interface HeldItem {
   name: string;
   effectId: string;
   isBerry: boolean;
+  equippable: boolean;
 }

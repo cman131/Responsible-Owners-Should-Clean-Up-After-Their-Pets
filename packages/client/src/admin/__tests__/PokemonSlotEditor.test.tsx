@@ -18,10 +18,11 @@ vi.mock('../MoveSearchDropdown.js', () => ({
   ),
 }));
 vi.mock('../ItemSearchDropdown.js', () => ({
-  ItemSearchDropdown: ({ value, onChange }: any) => (
+  ItemSearchDropdown: ({ value, onChange, equippableOnly }: any) => (
     <>
       <button onClick={() => onChange('leftovers')}>item-{value || 'none'}</button>
       <button onClick={() => onChange('')}>item-clear</button>
+      {equippableOnly && <span>equippable-only</span>}
     </>
   ),
 }));
@@ -138,6 +139,14 @@ describe('PokemonSlotEditor', () => {
     />);
     // Do NOT fire socket response — currentSpecies remains null
     expect(screen.getByRole('option', { name: 'Blaze (loading…)' })).toBeTruthy();
+  });
+
+  it('passes equippableOnly: true to ItemSearchDropdown', () => {
+    render(<PokemonSlotEditor
+      value={{ speciesId: 6, nickname: 'Charizard', level: 50, nature: 'timid', moves: ['', '', '', ''], ability: 'Blaze', evs: { hp:0,atk:0,def:0,spa:0,spd:0,spe:0 }, ivs: { hp:31,atk:31,def:31,spa:31,spd:31,spe:31 } }}
+      onChange={vi.fn()}
+    />);
+    expect(screen.getByText('equippable-only')).toBeTruthy();
   });
 
   it('renders item selector when speciesId is set', () => {

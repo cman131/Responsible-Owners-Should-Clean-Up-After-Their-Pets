@@ -33,6 +33,14 @@ describe('ItemSearchDropdown', () => {
     });
   });
 
+  it('includes equippableOnly: true in the data:query payload when equippableOnly prop is set', () => {
+    render(<ItemSearchDropdown value="" onChange={vi.fn()} equippableOnly />);
+    expect(mockSocket.emit).toHaveBeenCalledWith('admin:action', {
+      type: 'data:query',
+      data: { resource: 'items', equippableOnly: true },
+    });
+  });
+
   it('shows all items in dropdown when input is focused after items load', () => {
     render(<ItemSearchDropdown value="" onChange={vi.fn()} />);
     fireItemResults();

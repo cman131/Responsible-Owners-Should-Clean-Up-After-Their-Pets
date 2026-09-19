@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { PokemonSpeciesSchema, MoveSchema } from '@poke-fighter/shared';
+import { PokemonSpeciesSchema, HeldItemSchema, MoveSchema } from '@poke-fighter/shared';
 import { z } from 'zod';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -34,6 +34,7 @@ function validate<T>(
 
 validate('pokemon', PokemonSpeciesSchema, loadJson('pokemon.json'));
 validate('moves', MoveSchema, loadJson('moves.json'));
+validate('items', HeldItemSchema, loadJson('items.json'));
 
 if (errors > 0) {
   console.error(`\n✗ Validation failed with ${errors} errors`);

@@ -1,5 +1,13 @@
 import { z } from 'zod';
 
+export const HeldItemSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  effectId: z.string().min(1),
+  isBerry: z.boolean(),
+  equippable: z.boolean(),
+});
+
 const StatsSchema = z.object({
   hp: z.number().int().min(1).max(255),
   atk: z.number().int().min(1).max(255),

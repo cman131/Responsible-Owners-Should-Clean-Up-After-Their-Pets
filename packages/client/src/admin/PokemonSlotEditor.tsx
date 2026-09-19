@@ -196,6 +196,7 @@ export function PokemonSlotEditor({ value, onChange }: Props) {
               <ItemSearchDropdown
                 value={value.heldItem ?? ''}
                 onChange={(itemId) => updateField('heldItem', itemId || undefined)}
+                equippableOnly
               />
             </div>
           </div>

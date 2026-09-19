@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { pokemonMatchesQuery, moveMatchesQuery, itemMatchesQuery, registerAdminHandlers } from '../handlers/adminHandlers.js';
+import { pokemonMatchesQuery, moveMatchesQuery, itemMatchesQuery, filterItemsQuery, registerAdminHandlers } from '../handlers/adminHandlers.js';
 import { IMPLEMENTED_ITEM_IDS } from '../../engine/items.js';
 import type { PokemonSpecies, Move, HeldItem, BattleState } from '@poke-fighter/shared';
 import { AppDatabase } from '../../db/Database.js';
@@ -23,6 +23,7 @@ const makeItem = (overrides: Partial<HeldItem> = {}): HeldItem => ({
   name: 'Leftovers',
   effectId: 'leftovers',
   isBerry: false,
+  equippable: true,
   ...overrides,
 });
 
@@ -38,6 +39,32 @@ describe('moveMatchesQuery', () => {
 
   it('does not match an unrelated query', () => {
     expect(moveMatchesQuery(makeMove({ id: 'flamethrower', name: 'Flamethrower' }), 'tackle')).toBe(false);
+  });
+});
+
+describe('filterItemsQuery', () => {
+  const equippableItem = makeItem({ id: 'leftovers', name: 'Leftovers', equippable: true });
+  const nonEquippableItem = makeItem({ id: 'potion', name: 'Potion', equippable: false });
+
+  it('returns all items when equippableOnly is not set', () => {
+    expect(filterItemsQuery([equippableItem, nonEquippableItem], {})).toHaveLength(2);
+  });
+
+  it('returns only items with equippable: true when equippableOnly is true', () => {
+    const results = filterItemsQuery([equippableItem, nonEquippableItem], { equippableOnly: true });
+    expect(results).toHaveLength(1);
+    expect(results[0]?.id).toBe('leftovers');
+  });
+
+  it('filters by query on top of equippableOnly', () => {
+    const band = makeItem({ id: 'choiceband', name: 'Choice Band', equippable: true });
+    const results = filterItemsQuery([equippableItem, nonEquippableItem, band], { equippableOnly: true, query: 'choice' });
+    expect(results).toHaveLength(1);
+    expect(results[0]?.id).toBe('choiceband');
+  });
+
+  it('returns empty when equippableOnly is false equivalent (undefined)', () => {
+    expect(filterItemsQuery([], {})).toHaveLength(0);
   });
 });
 

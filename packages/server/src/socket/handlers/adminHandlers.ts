@@ -23,6 +23,11 @@ export function itemMatchesQuery(i: HeldItem, query: string): boolean {
   return i.id.toLowerCase().includes(q) || i.name.toLowerCase().includes(q);
 }
 
+export function filterItemsQuery(items: HeldItem[], opts: { equippableOnly?: boolean; query?: string }): HeldItem[] {
+  const base = opts.equippableOnly ? items.filter((i) => i.equippable) : items;
+  return opts.query ? base.filter((i) => itemMatchesQuery(i, opts.query!)) : base;
+}
+
 export function registerAdminHandlers(
   socket: Socket<ClientToServerEvents, ServerToClientEvents>,
   io: Server<ClientToServerEvents, ServerToClientEvents>,
@@ -99,16 +104,14 @@ export function registerAdminHandlers(
               break;
             }
             case 'items': {
-              const { query: itemQuery } = payload.data as { query?: string };
+              const { query: itemQuery, equippableOnly } = payload.data as { query?: string; equippableOnly?: boolean };
               const allImplemented = data.getAllItems().filter((i) => {
                 // Normalise via item NAME to match ITEM_HOOKS hyphenated keys
                 // (items.json ids are camelCase and don't match ITEM_HOOKS keys directly)
                 const normByName = i.name.toLowerCase().replace(/\s+/g, '-');
                 return IMPLEMENTED_ITEM_IDS.has(normByName);
               });
-              results = itemQuery
-                ? allImplemented.filter((i) => itemMatchesQuery(i, itemQuery))
-                : allImplemented;
+              results = filterItemsQuery(allImplemented, { equippableOnly, query: itemQuery });
               break;
             }
             default:

@@ -3,3222 +3,3759 @@
     "id": "abilityshield",
     "name": "Ability Shield",
     "effectId": "abilityshield",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "abomasite",
     "name": "Abomasite",
     "effectId": "abomasite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "absolite",
     "name": "Absolite",
     "effectId": "absolite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "absorbbulb",
     "name": "Absorb Bulb",
     "effectId": "absorbbulb",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "adamantcrystal",
     "name": "Adamant Crystal",
     "effectId": "adamantcrystal",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "adamantorb",
     "name": "Adamant Orb",
     "effectId": "adamantorb",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "adrenalineorb",
     "name": "Adrenaline Orb",
     "effectId": "adrenalineorb",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "aerodactylite",
     "name": "Aerodactylite",
     "effectId": "aerodactylite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "aggronite",
     "name": "Aggronite",
     "effectId": "aggronite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "aguavberry",
     "name": "Aguav Berry",
     "effectId": "aguavberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "airballoon",
     "name": "Air Balloon",
     "effectId": "airballoon",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "alakazite",
     "name": "Alakazite",
     "effectId": "alakazite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "aloraichiumz",
     "name": "Aloraichium Z",
     "effectId": "aloraichiumz",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "altarianite",
     "name": "Altarianite",
     "effectId": "altarianite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "ampharosite",
     "name": "Ampharosite",
     "effectId": "ampharosite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "apicotberry",
     "name": "Apicot Berry",
     "effectId": "apicotberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "armorfossil",
     "name": "Armor Fossil",
     "effectId": "armorfossil",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "aspearberry",
     "name": "Aspear Berry",
     "effectId": "aspearberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "assaultvest",
     "name": "Assault Vest",
     "effectId": "assaultvest",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "audinite",
     "name": "Audinite",
     "effectId": "audinite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "auspiciousarmor",
     "name": "Auspicious Armor",
     "effectId": "auspiciousarmor",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "babiriberry",
     "name": "Babiri Berry",
     "effectId": "babiriberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "banettite",
     "name": "Banettite",
     "effectId": "banettite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "beastball",
     "name": "Beast Ball",
     "effectId": "beastball",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "beedrillite",
     "name": "Beedrillite",
     "effectId": "beedrillite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "belueberry",
     "name": "Belue Berry",
     "effectId": "belueberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "berryjuice",
     "name": "Berry Juice",
     "effectId": "berryjuice",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "berrysweet",
     "name": "Berry Sweet",
     "effectId": "berrysweet",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "bignugget",
     "name": "Big Nugget",
     "effectId": "bignugget",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "bigroot",
     "name": "Big Root",
     "effectId": "bigroot",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "bindingband",
     "name": "Binding Band",
     "effectId": "bindingband",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "blackbelt",
     "name": "Black Belt",
     "effectId": "blackbelt",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "blackglasses",
     "name": "Black Glasses",
     "effectId": "blackglasses",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "blacksludge",
     "name": "Black Sludge",
     "effectId": "blacksludge",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "blastoisinite",
     "name": "Blastoisinite",
     "effectId": "blastoisinite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "blazikenite",
     "name": "Blazikenite",
     "effectId": "blazikenite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "blueorb",
     "name": "Blue Orb",
     "effectId": "blueorb",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "blukberry",
     "name": "Bluk Berry",
     "effectId": "blukberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "blunderpolicy",
     "name": "Blunder Policy",
     "effectId": "blunderpolicy",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "boosterenergy",
     "name": "Booster Energy",
     "effectId": "boosterenergy",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "bottlecap",
     "name": "Bottle Cap",
     "effectId": "bottlecap",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "brightpowder",
     "name": "Bright Powder",
     "effectId": "brightpowder",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "buggem",
     "name": "Bug Gem",
     "effectId": "buggem",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "bugmemory",
     "name": "Bug Memory",
     "effectId": "bugmemory",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "buginiumz",
     "name": "Buginium Z",
     "effectId": "buginiumz",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "burndrive",
     "name": "Burn Drive",
     "effectId": "burndrive",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "cameruptite",
     "name": "Cameruptite",
     "effectId": "cameruptite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "cellbattery",
     "name": "Cell Battery",
     "effectId": "cellbattery",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "charcoal",
     "name": "Charcoal",
     "effectId": "charcoal",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "charizarditex",
     "name": "Charizardite X",
     "effectId": "charizarditex",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "charizarditey",
     "name": "Charizardite Y",
     "effectId": "charizarditey",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "chartiberry",
     "name": "Charti Berry",
     "effectId": "chartiberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "cheriberry",
     "name": "Cheri Berry",
     "effectId": "cheriberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "cherishball",
     "name": "Cherish Ball",
     "effectId": "cherishball",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "chestoberry",
     "name": "Chesto Berry",
     "effectId": "chestoberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "chilanberry",
     "name": "Chilan Berry",
     "effectId": "chilanberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "chilldrive",
     "name": "Chill Drive",
     "effectId": "chilldrive",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "chippedpot",
     "name": "Chipped Pot",
     "effectId": "chippedpot",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "choiceband",
     "name": "Choice Band",
     "effectId": "choiceband",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "choicescarf",
     "name": "Choice Scarf",
     "effectId": "choicescarf",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "choicespecs",
     "name": "Choice Specs",
     "effectId": "choicespecs",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "chopleberry",
     "name": "Chople Berry",
     "effectId": "chopleberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "clawfossil",
     "name": "Claw Fossil",
     "effectId": "clawfossil",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "clearamulet",
     "name": "Clear Amulet",
     "effectId": "clearamulet",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "cloversweet",
     "name": "Clover Sweet",
     "effectId": "cloversweet",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "cobaberry",
     "name": "Coba Berry",
     "effectId": "cobaberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "colburberry",
     "name": "Colbur Berry",
     "effectId": "colburberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "cornerstonemask",
     "name": "Cornerstone Mask",
     "effectId": "cornerstonemask",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "cornnberry",
     "name": "Cornn Berry",
     "effectId": "cornnberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "coverfossil",
     "name": "Cover Fossil",
     "effectId": "coverfossil",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "covertcloak",
     "name": "Covert Cloak",
     "effectId": "covertcloak",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "crackedpot",
     "name": "Cracked Pot",
     "effectId": "crackedpot",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "custapberry",
     "name": "Custap Berry",
     "effectId": "custapberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "damprock",
     "name": "Damp Rock",
     "effectId": "damprock",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "darkgem",
     "name": "Dark Gem",
     "effectId": "darkgem",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "darkmemory",
     "name": "Dark Memory",
     "effectId": "darkmemory",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "darkiniumz",
     "name": "Darkinium Z",
     "effectId": "darkiniumz",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "dawnstone",
     "name": "Dawn Stone",
     "effectId": "dawnstone",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "decidiumz",
     "name": "Decidium Z",
     "effectId": "decidiumz",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "deepseascale",
     "name": "Deep Sea Scale",
     "effectId": "deepseascale",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "deepseatooth",
     "name": "Deep Sea Tooth",
     "effectId": "deepseatooth",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "destinyknot",
     "name": "Destiny Knot",
     "effectId": "destinyknot",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "diancite",
     "name": "Diancite",
     "effectId": "diancite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "diveball",
     "name": "Dive Ball",
     "effectId": "diveball",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "domefossil",
     "name": "Dome Fossil",
     "effectId": "domefossil",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "dousedrive",
     "name": "Douse Drive",
     "effectId": "dousedrive",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "dracoplate",
     "name": "Draco Plate",
     "effectId": "dracoplate",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "dragonfang",
     "name": "Dragon Fang",
     "effectId": "dragonfang",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "dragongem",
     "name": "Dragon Gem",
     "effectId": "dragongem",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "dragonmemory",
     "name": "Dragon Memory",
     "effectId": "dragonmemory",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "dragonscale",
     "name": "Dragon Scale",
     "effectId": "dragonscale",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "dragoniumz",
     "name": "Dragonium Z",
     "effectId": "dragoniumz",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "dreadplate",
     "name": "Dread Plate",
     "effectId": "dreadplate",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "dreamball",
     "name": "Dream Ball",
     "effectId": "dreamball",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "dubiousdisc",
     "name": "Dubious Disc",
     "effectId": "dubiousdisc",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "durinberry",
     "name": "Durin Berry",
     "effectId": "durinberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "duskball",
     "name": "Dusk Ball",
     "effectId": "duskball",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "duskstone",
     "name": "Dusk Stone",
     "effectId": "duskstone",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "earthplate",
     "name": "Earth Plate",
     "effectId": "earthplate",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "eeviumz",
     "name": "Eevium Z",
     "effectId": "eeviumz",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "ejectbutton",
     "name": "Eject Button",
     "effectId": "ejectbutton",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "ejectpack",
     "name": "Eject Pack",
     "effectId": "ejectpack",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "electirizer",
     "name": "Electirizer",
     "effectId": "electirizer",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "electricgem",
     "name": "Electric Gem",
     "effectId": "electricgem",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "electricmemory",
     "name": "Electric Memory",
     "effectId": "electricmemory",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "electricseed",
     "name": "Electric Seed",
     "effectId": "electricseed",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "electriumz",
     "name": "Electrium Z",
     "effectId": "electriumz",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "enigmaberry",
     "name": "Enigma Berry",
     "effectId": "enigmaberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "eviolite",
     "name": "Eviolite",
     "effectId": "eviolite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "expertbelt",
     "name": "Expert Belt",
     "effectId": "expertbelt",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "fairiumz",
     "name": "Fairium Z",
     "effectId": "fairiumz",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "fairyfeather",
     "name": "Fairy Feather",
     "effectId": "fairyfeather",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "fairygem",
     "name": "Fairy Gem",
     "effectId": "fairygem",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "fairymemory",
     "name": "Fairy Memory",
     "effectId": "fairymemory",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "fastball",
     "name": "Fast Ball",
     "effectId": "fastball",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "fightinggem",
     "name": "Fighting Gem",
     "effectId": "fightinggem",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "fightingmemory",
     "name": "Fighting Memory",
     "effectId": "fightingmemory",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "fightiniumz",
     "name": "Fightinium Z",
     "effectId": "fightiniumz",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "figyberry",
     "name": "Figy Berry",
     "effectId": "figyberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "firegem",
     "name": "Fire Gem",
     "effectId": "firegem",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "firememory",
     "name": "Fire Memory",
     "effectId": "firememory",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "firestone",
     "name": "Fire Stone",
     "effectId": "firestone",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "firiumz",
     "name": "Firium Z",
     "effectId": "firiumz",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "fistplate",
     "name": "Fist Plate",
     "effectId": "fistplate",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "flameorb",
     "name": "Flame Orb",
     "effectId": "flameorb",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "flameplate",
     "name": "Flame Plate",
     "effectId": "flameplate",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "floatstone",
     "name": "Float Stone",
     "effectId": "floatstone",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "flowersweet",
     "name": "Flower Sweet",
     "effectId": "flowersweet",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "flyinggem",
     "name": "Flying Gem",
     "effectId": "flyinggem",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "flyingmemory",
     "name": "Flying Memory",
     "effectId": "flyingmemory",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "flyiniumz",
     "name": "Flyinium Z",
     "effectId": "flyiniumz",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "focusband",
     "name": "Focus Band",
     "effectId": "focusband",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "focussash",
     "name": "Focus Sash",
     "effectId": "focussash",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "fossilizedbird",
     "name": "Fossilized Bird",
     "effectId": "fossilizedbird",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "fossilizeddino",
     "name": "Fossilized Dino",
     "effectId": "fossilizeddino",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "fossilizeddrake",
     "name": "Fossilized Drake",
     "effectId": "fossilizeddrake",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "fossilizedfish",
     "name": "Fossilized Fish",
     "effectId": "fossilizedfish",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "friendball",
     "name": "Friend Ball",
     "effectId": "friendball",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "fullincense",
     "name": "Full Incense",
     "effectId": "fullincense",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "galaricacuff",
     "name": "Galarica Cuff",
     "effectId": "galaricacuff",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "galaricawreath",
     "name": "Galarica Wreath",
     "effectId": "galaricawreath",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "galladite",
     "name": "Galladite",
     "effectId": "galladite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "ganlonberry",
     "name": "Ganlon Berry",
     "effectId": "ganlonberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "garchompite",
     "name": "Garchompite",
     "effectId": "garchompite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "gardevoirite",
     "name": "Gardevoirite",
     "effectId": "gardevoirite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "gengarite",
     "name": "Gengarite",
     "effectId": "gengarite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "ghostgem",
     "name": "Ghost Gem",
     "effectId": "ghostgem",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "ghostmemory",
     "name": "Ghost Memory",
     "effectId": "ghostmemory",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "ghostiumz",
     "name": "Ghostium Z",
     "effectId": "ghostiumz",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "glalitite",
     "name": "Glalitite",
     "effectId": "glalitite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "goldbottlecap",
     "name": "Gold Bottle Cap",
     "effectId": "goldbottlecap",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "grassgem",
     "name": "Grass Gem",
     "effectId": "grassgem",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "grassmemory",
     "name": "Grass Memory",
     "effectId": "grassmemory",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "grassiumz",
     "name": "Grassium Z",
     "effectId": "grassiumz",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "grassyseed",
     "name": "Grassy Seed",
     "effectId": "grassyseed",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "greatball",
     "name": "Great Ball",
     "effectId": "greatball",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "grepaberry",
     "name": "Grepa Berry",
     "effectId": "grepaberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "gripclaw",
     "name": "Grip Claw",
     "effectId": "gripclaw",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "griseouscore",
     "name": "Griseous Core",
     "effectId": "griseouscore",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "griseousorb",
     "name": "Griseous Orb",
     "effectId": "griseousorb",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "groundgem",
     "name": "Ground Gem",
     "effectId": "groundgem",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "groundmemory",
     "name": "Ground Memory",
     "effectId": "groundmemory",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "groundiumz",
     "name": "Groundium Z",
     "effectId": "groundiumz",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "gyaradosite",
     "name": "Gyaradosite",
     "effectId": "gyaradosite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "habanberry",
     "name": "Haban Berry",
     "effectId": "habanberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "hardstone",
     "name": "Hard Stone",
     "effectId": "hardstone",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "healball",
     "name": "Heal Ball",
     "effectId": "healball",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "hearthflamemask",
     "name": "Hearthflame Mask",
     "effectId": "hearthflamemask",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "heatrock",
     "name": "Heat Rock",
     "effectId": "heatrock",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "heavyball",
     "name": "Heavy Ball",
     "effectId": "heavyball",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "heavydutyboots",
     "name": "Heavy-Duty Boots",
     "effectId": "heavydutyboots",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "helixfossil",
     "name": "Helix Fossil",
     "effectId": "helixfossil",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "heracronite",
     "name": "Heracronite",
     "effectId": "heracronite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "hondewberry",
     "name": "Hondew Berry",
     "effectId": "hondewberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "houndoominite",
     "name": "Houndoominite",
     "effectId": "houndoominite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "iapapaberry",
     "name": "Iapapa Berry",
     "effectId": "iapapaberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "icegem",
     "name": "Ice Gem",
     "effectId": "icegem",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "icememory",
     "name": "Ice Memory",
     "effectId": "icememory",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "icestone",
     "name": "Ice Stone",
     "effectId": "icestone",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "icicleplate",
     "name": "Icicle Plate",
     "effectId": "icicleplate",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "iciumz",
     "name": "Icium Z",
     "effectId": "iciumz",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "icyrock",
     "name": "Icy Rock",
     "effectId": "icyrock",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "inciniumz",
     "name": "Incinium Z",
     "effectId": "inciniumz",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "insectplate",
     "name": "Insect Plate",
     "effectId": "insectplate",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "ironball",
     "name": "Iron Ball",
     "effectId": "ironball",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "ironplate",
     "name": "Iron Plate",
     "effectId": "ironplate",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "jabocaberry",
     "name": "Jaboca Berry",
     "effectId": "jabocaberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "jawfossil",
     "name": "Jaw Fossil",
     "effectId": "jawfossil",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "kasibberry",
     "name": "Kasib Berry",
     "effectId": "kasibberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "kebiaberry",
     "name": "Kebia Berry",
     "effectId": "kebiaberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "keeberry",
     "name": "Kee Berry",
     "effectId": "keeberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "kelpsyberry",
     "name": "Kelpsy Berry",
     "effectId": "kelpsyberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "kangaskhanite",
     "name": "Kangaskhanite",
     "effectId": "kangaskhanite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "kingsrock",
     "name": "King's Rock",
     "effectId": "kingsrock",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "kommoniumz",
     "name": "Kommonium Z",
     "effectId": "kommoniumz",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "laggingtail",
     "name": "Lagging Tail",
     "effectId": "laggingtail",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "lansatberry",
     "name": "Lansat Berry",
     "effectId": "lansatberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "latiasite",
     "name": "Latiasite",
     "effectId": "latiasite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "latiosite",
     "name": "Latiosite",
     "effectId": "latiosite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "laxincense",
     "name": "Lax Incense",
     "effectId": "laxincense",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "leafstone",
     "name": "Leaf Stone",
     "effectId": "leafstone",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "leek",
     "name": "Leek",
     "effectId": "leek",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "leftovers",
     "name": "Leftovers",
     "effectId": "leftovers",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "leppaberry",
     "name": "Leppa Berry",
     "effectId": "leppaberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "levelball",
     "name": "Level Ball",
     "effectId": "levelball",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "liechiberry",
     "name": "Liechi Berry",
     "effectId": "liechiberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "lifeorb",
     "name": "Life Orb",
     "effectId": "lifeorb",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "lightball",
     "name": "Light Ball",
     "effectId": "lightball",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "lightclay",
     "name": "Light Clay",
     "effectId": "lightclay",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "loadeddice",
     "name": "Loaded Dice",
     "effectId": "loadeddice",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "lopunnite",
     "name": "Lopunnite",
     "effectId": "lopunnite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "loveball",
     "name": "Love Ball",
     "effectId": "loveball",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "lovesweet",
     "name": "Love Sweet",
     "effectId": "lovesweet",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "lucarionite",
     "name": "Lucarionite",
     "effectId": "lucarionite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "luckypunch",
     "name": "Lucky Punch",
     "effectId": "luckypunch",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "lumberry",
     "name": "Lum Berry",
     "effectId": "lumberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "luminousmoss",
     "name": "Luminous Moss",
     "effectId": "luminousmoss",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "lunaliumz",
     "name": "Lunalium Z",
     "effectId": "lunaliumz",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "lureball",
     "name": "Lure Ball",
     "effectId": "lureball",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "lustrousglobe",
     "name": "Lustrous Globe",
     "effectId": "lustrousglobe",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "lustrousorb",
     "name": "Lustrous Orb",
     "effectId": "lustrousorb",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "luxuryball",
     "name": "Luxury Ball",
     "effectId": "luxuryball",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "lycaniumz",
     "name": "Lycanium Z",
     "effectId": "lycaniumz",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "machobrace",
     "name": "Macho Brace",
     "effectId": "machobrace",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "magmarizer",
     "name": "Magmarizer",
     "effectId": "magmarizer",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "magnet",
     "name": "Magnet",
     "effectId": "magnet",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "magoberry",
     "name": "Mago Berry",
     "effectId": "magoberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "magostberry",
     "name": "Magost Berry",
     "effectId": "magostberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "mail",
     "name": "Mail",
     "effectId": "mail",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "maliciousarmor",
     "name": "Malicious Armor",
     "effectId": "maliciousarmor",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "manectite",
     "name": "Manectite",
     "effectId": "manectite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "marangaberry",
     "name": "Maranga Berry",
     "effectId": "marangaberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "marshadiumz",
     "name": "Marshadium Z",
     "effectId": "marshadiumz",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "masterball",
     "name": "Master Ball",
     "effectId": "masterball",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "masterpieceteacup",
     "name": "Masterpiece Teacup",
     "effectId": "masterpieceteacup",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "mawilite",
     "name": "Mawilite",
     "effectId": "mawilite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "meadowplate",
     "name": "Meadow Plate",
     "effectId": "meadowplate",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "medichamite",
     "name": "Medichamite",
     "effectId": "medichamite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "mentalherb",
     "name": "Mental Herb",
     "effectId": "mentalherb",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "metagrossite",
     "name": "Metagrossite",
     "effectId": "metagrossite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "metalalloy",
     "name": "Metal Alloy",
     "effectId": "metalalloy",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "metalcoat",
     "name": "Metal Coat",
     "effectId": "metalcoat",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "metalpowder",
     "name": "Metal Powder",
     "effectId": "metalpowder",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "metronome",
     "name": "Metronome",
     "effectId": "metronome",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "mewniumz",
     "name": "Mewnium Z",
     "effectId": "mewniumz",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "mewtwonitex",
     "name": "Mewtwonite X",
     "effectId": "mewtwonitex",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "mewtwonitey",
     "name": "Mewtwonite Y",
     "effectId": "mewtwonitey",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "micleberry",
     "name": "Micle Berry",
     "effectId": "micleberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "mimikiumz",
     "name": "Mimikium Z",
     "effectId": "mimikiumz",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "mindplate",
     "name": "Mind Plate",
     "effectId": "mindplate",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "miracleseed",
     "name": "Miracle Seed",
     "effectId": "miracleseed",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "mirrorherb",
     "name": "Mirror Herb",
     "effectId": "mirrorherb",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "mistyseed",
     "name": "Misty Seed",
     "effectId": "mistyseed",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "moonball",
     "name": "Moon Ball",
     "effectId": "moonball",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "moonstone",
     "name": "Moon Stone",
     "effectId": "moonstone",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "muscleband",
     "name": "Muscle Band",
     "effectId": "muscleband",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "mysticwater",
     "name": "Mystic Water",
     "effectId": "mysticwater",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "nanabberry",
     "name": "Nanab Berry",
     "effectId": "nanabberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "nestball",
     "name": "Nest Ball",
     "effectId": "nestball",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "netball",
     "name": "Net Ball",
     "effectId": "netball",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "nevermeltice",
     "name": "Never-Melt Ice",
     "effectId": "nevermeltice",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "nomelberry",
     "name": "Nomel Berry",
     "effectId": "nomelberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "normalgem",
     "name": "Normal Gem",
     "effectId": "normalgem",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "normaliumz",
     "name": "Normalium Z",
     "effectId": "normaliumz",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "occaberry",
     "name": "Occa Berry",
     "effectId": "occaberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "oddincense",
     "name": "Odd Incense",
     "effectId": "oddincense",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "oldamber",
     "name": "Old Amber",
     "effectId": "oldamber",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "oranberry",
     "name": "Oran Berry",
     "effectId": "oranberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "ovalstone",
     "name": "Oval Stone",
     "effectId": "ovalstone",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "pamtreberry",
     "name": "Pamtre Berry",
     "effectId": "pamtreberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "parkball",
     "name": "Park Ball",
     "effectId": "parkball",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "passhoberry",
     "name": "Passho Berry",
     "effectId": "passhoberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "payapaberry",
     "name": "Payapa Berry",
     "effectId": "payapaberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "pechaberry",
     "name": "Pecha Berry",
     "effectId": "pechaberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "persimberry",
     "name": "Persim Berry",
     "effectId": "persimberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "petayaberry",
     "name": "Petaya Berry",
     "effectId": "petayaberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "pidgeotite",
     "name": "Pidgeotite",
     "effectId": "pidgeotite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "pikaniumz",
     "name": "Pikanium Z",
     "effectId": "pikaniumz",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "pikashuniumz",
     "name": "Pikashunium Z",
     "effectId": "pikashuniumz",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "pinapberry",
     "name": "Pinap Berry",
     "effectId": "pinapberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "pinsirite",
     "name": "Pinsirite",
     "effectId": "pinsirite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "pixieplate",
     "name": "Pixie Plate",
     "effectId": "pixieplate",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "plumefossil",
     "name": "Plume Fossil",
     "effectId": "plumefossil",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "poisonbarb",
     "name": "Poison Barb",
     "effectId": "poisonbarb",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "poisongem",
     "name": "Poison Gem",
     "effectId": "poisongem",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "poisonmemory",
     "name": "Poison Memory",
     "effectId": "poisonmemory",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "poisoniumz",
     "name": "Poisonium Z",
     "effectId": "poisoniumz",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "pokeball",
     "name": "Poke Ball",
     "effectId": "pokeball",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "pomegberry",
     "name": "Pomeg Berry",
     "effectId": "pomegberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "poweranklet",
     "name": "Power Anklet",
     "effectId": "poweranklet",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "powerband",
     "name": "Power Band",
     "effectId": "powerband",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "powerbelt",
     "name": "Power Belt",
     "effectId": "powerbelt",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "powerbracer",
     "name": "Power Bracer",
     "effectId": "powerbracer",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "powerherb",
     "name": "Power Herb",
     "effectId": "powerherb",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "powerlens",
     "name": "Power Lens",
     "effectId": "powerlens",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "powerweight",
     "name": "Power Weight",
     "effectId": "powerweight",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "premierball",
     "name": "Premier Ball",
     "effectId": "premierball",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "primariumz",
     "name": "Primarium Z",
     "effectId": "primariumz",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "prismscale",
     "name": "Prism Scale",
     "effectId": "prismscale",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "protectivepads",
     "name": "Protective Pads",
     "effectId": "protectivepads",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "protector",
     "name": "Protector",
     "effectId": "protector",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "psychicgem",
     "name": "Psychic Gem",
     "effectId": "psychicgem",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "psychicmemory",
     "name": "Psychic Memory",
     "effectId": "psychicmemory",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "psychicseed",
     "name": "Psychic Seed",
     "effectId": "psychicseed",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "psychiumz",
     "name": "Psychium Z",
     "effectId": "psychiumz",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "punchingglove",
     "name": "Punching Glove",
     "effectId": "punchingglove",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "qualotberry",
     "name": "Qualot Berry",
     "effectId": "qualotberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "quickball",
     "name": "Quick Ball",
     "effectId": "quickball",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "quickclaw",
     "name": "Quick Claw",
     "effectId": "quickclaw",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "quickpowder",
     "name": "Quick Powder",
     "effectId": "quickpowder",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "rabutaberry",
     "name": "Rabuta Berry",
     "effectId": "rabutaberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "rarebone",
     "name": "Rare Bone",
     "effectId": "rarebone",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "rawstberry",
     "name": "Rawst Berry",
     "effectId": "rawstberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "razorclaw",
     "name": "Razor Claw",
     "effectId": "razorclaw",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "razorfang",
     "name": "Razor Fang",
     "effectId": "razorfang",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "razzberry",
     "name": "Razz Berry",
     "effectId": "razzberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "reapercloth",
     "name": "Reaper Cloth",
     "effectId": "reapercloth",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "redcard",
     "name": "Red Card",
     "effectId": "redcard",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "redorb",
     "name": "Red Orb",
     "effectId": "redorb",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "repeatball",
     "name": "Repeat Ball",
     "effectId": "repeatball",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "ribbonsweet",
     "name": "Ribbon Sweet",
     "effectId": "ribbonsweet",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "rindoberry",
     "name": "Rindo Berry",
     "effectId": "rindoberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "ringtarget",
     "name": "Ring Target",
     "effectId": "ringtarget",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "rockgem",
     "name": "Rock Gem",
     "effectId": "rockgem",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "rockincense",
     "name": "Rock Incense",
     "effectId": "rockincense",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "rockmemory",
     "name": "Rock Memory",
     "effectId": "rockmemory",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "rockiumz",
     "name": "Rockium Z",
     "effectId": "rockiumz",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "rockyhelmet",
     "name": "Rocky Helmet",
     "effectId": "rockyhelmet",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "roomservice",
     "name": "Room Service",
     "effectId": "roomservice",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "rootfossil",
     "name": "Root Fossil",
     "effectId": "rootfossil",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "roseincense",
     "name": "Rose Incense",
     "effectId": "roseincense",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "roseliberry",
     "name": "Roseli Berry",
     "effectId": "roseliberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "rowapberry",
     "name": "Rowap Berry",
     "effectId": "rowapberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "rustedshield",
     "name": "Rusted Shield",
     "effectId": "rustedshield",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "rustedsword",
     "name": "Rusted Sword",
     "effectId": "rustedsword",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "sablenite",
     "name": "Sablenite",
     "effectId": "sablenite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "sachet",
     "name": "Sachet",
     "effectId": "sachet",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "safariball",
     "name": "Safari Ball",
     "effectId": "safariball",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "safetygoggles",
     "name": "Safety Goggles",
     "effectId": "safetygoggles",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "sailfossil",
     "name": "Sail Fossil",
     "effectId": "sailfossil",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "salacberry",
     "name": "Salac Berry",
     "effectId": "salacberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "salamencite",
     "name": "Salamencite",
     "effectId": "salamencite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "sceptilite",
     "name": "Sceptilite",
     "effectId": "sceptilite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "scizorite",
     "name": "Scizorite",
     "effectId": "scizorite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "scopelens",
     "name": "Scope Lens",
     "effectId": "scopelens",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "seaincense",
     "name": "Sea Incense",
     "effectId": "seaincense",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "sharpbeak",
     "name": "Sharp Beak",
     "effectId": "sharpbeak",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "sharpedonite",
     "name": "Sharpedonite",
     "effectId": "sharpedonite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "shedshell",
     "name": "Shed Shell",
     "effectId": "shedshell",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "shellbell",
     "name": "Shell Bell",
     "effectId": "shellbell",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "shinystone",
     "name": "Shiny Stone",
     "effectId": "shinystone",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "shockdrive",
     "name": "Shock Drive",
     "effectId": "shockdrive",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "shucaberry",
     "name": "Shuca Berry",
     "effectId": "shucaberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "silkscarf",
     "name": "Silk Scarf",
     "effectId": "silkscarf",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "silverpowder",
     "name": "Silver Powder",
     "effectId": "silverpowder",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "sitrusberry",
     "name": "Sitrus Berry",
     "effectId": "sitrusberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "skullfossil",
     "name": "Skull Fossil",
     "effectId": "skullfossil",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "skyplate",
     "name": "Sky Plate",
     "effectId": "skyplate",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "slowbronite",
     "name": "Slowbronite",
     "effectId": "slowbronite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "smoothrock",
     "name": "Smooth Rock",
     "effectId": "smoothrock",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "snorliumz",
     "name": "Snorlium Z",
     "effectId": "snorliumz",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "snowball",
     "name": "Snowball",
     "effectId": "snowball",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "softsand",
     "name": "Soft Sand",
     "effectId": "softsand",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "solganiumz",
     "name": "Solganium Z",
     "effectId": "solganiumz",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "souldew",
     "name": "Soul Dew",
     "effectId": "souldew",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "spelltag",
     "name": "Spell Tag",
     "effectId": "spelltag",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "spelonberry",
     "name": "Spelon Berry",
     "effectId": "spelonberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "splashplate",
     "name": "Splash Plate",
     "effectId": "splashplate",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "spookyplate",
     "name": "Spooky Plate",
     "effectId": "spookyplate",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "sportball",
     "name": "Sport Ball",
     "effectId": "sportball",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "starfberry",
     "name": "Starf Berry",
     "effectId": "starfberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "starsweet",
     "name": "Star Sweet",
     "effectId": "starsweet",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "steelixite",
     "name": "Steelixite",
     "effectId": "steelixite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "steelgem",
     "name": "Steel Gem",
     "effectId": "steelgem",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "steelmemory",
     "name": "Steel Memory",
     "effectId": "steelmemory",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "steeliumz",
     "name": "Steelium Z",
     "effectId": "steeliumz",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "stick",
     "name": "Stick",
     "effectId": "stick",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "stickybarb",
     "name": "Sticky Barb",
     "effectId": "stickybarb",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "stoneplate",
     "name": "Stone Plate",
     "effectId": "stoneplate",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "strangeball",
     "name": "Strange Ball",
     "effectId": "strangeball",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "strawberrysweet",
     "name": "Strawberry Sweet",
     "effectId": "strawberrysweet",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "sunstone",
     "name": "Sun Stone",
     "effectId": "sunstone",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "swampertite",
     "name": "Swampertite",
     "effectId": "swampertite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "sweetapple",
     "name": "Sweet Apple",
     "effectId": "sweetapple",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "syrupyapple",
     "name": "Syrupy Apple",
     "effectId": "syrupyapple",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tamatoberry",
     "name": "Tamato Berry",
     "effectId": "tamatoberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "tangaberry",
     "name": "Tanga Berry",
     "effectId": "tangaberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "tapuniumz",
     "name": "Tapunium Z",
     "effectId": "tapuniumz",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tartapple",
     "name": "Tart Apple",
     "effectId": "tartapple",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "terrainextender",
     "name": "Terrain Extender",
     "effectId": "terrainextender",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "thickclub",
     "name": "Thick Club",
     "effectId": "thickclub",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "throatspray",
     "name": "Throat Spray",
     "effectId": "throatspray",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "thunderstone",
     "name": "Thunder Stone",
     "effectId": "thunderstone",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "timerball",
     "name": "Timer Ball",
     "effectId": "timerball",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "toxicorb",
     "name": "Toxic Orb",
     "effectId": "toxicorb",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "toxicplate",
     "name": "Toxic Plate",
     "effectId": "toxicplate",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr00",
     "name": "TR00",
     "effectId": "tr00",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr01",
     "name": "TR01",
     "effectId": "tr01",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr02",
     "name": "TR02",
     "effectId": "tr02",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr03",
     "name": "TR03",
     "effectId": "tr03",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr04",
     "name": "TR04",
     "effectId": "tr04",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr05",
     "name": "TR05",
     "effectId": "tr05",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr06",
     "name": "TR06",
     "effectId": "tr06",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr07",
     "name": "TR07",
     "effectId": "tr07",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr08",
     "name": "TR08",
     "effectId": "tr08",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr09",
     "name": "TR09",
     "effectId": "tr09",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr10",
     "name": "TR10",
     "effectId": "tr10",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr11",
     "name": "TR11",
     "effectId": "tr11",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr12",
     "name": "TR12",
     "effectId": "tr12",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr13",
     "name": "TR13",
     "effectId": "tr13",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr14",
     "name": "TR14",
     "effectId": "tr14",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr15",
     "name": "TR15",
     "effectId": "tr15",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr16",
     "name": "TR16",
     "effectId": "tr16",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr17",
     "name": "TR17",
     "effectId": "tr17",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr18",
     "name": "TR18",
     "effectId": "tr18",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr19",
     "name": "TR19",
     "effectId": "tr19",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr20",
     "name": "TR20",
     "effectId": "tr20",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr21",
     "name": "TR21",
     "effectId": "tr21",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr22",
     "name": "TR22",
     "effectId": "tr22",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr23",
     "name": "TR23",
     "effectId": "tr23",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr24",
     "name": "TR24",
     "effectId": "tr24",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr25",
     "name": "TR25",
     "effectId": "tr25",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr26",
     "name": "TR26",
     "effectId": "tr26",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr27",
     "name": "TR27",
     "effectId": "tr27",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr28",
     "name": "TR28",
     "effectId": "tr28",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr29",
     "name": "TR29",
     "effectId": "tr29",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr30",
     "name": "TR30",
     "effectId": "tr30",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr31",
     "name": "TR31",
     "effectId": "tr31",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr32",
     "name": "TR32",
     "effectId": "tr32",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr33",
     "name": "TR33",
     "effectId": "tr33",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr34",
     "name": "TR34",
     "effectId": "tr34",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr35",
     "name": "TR35",
     "effectId": "tr35",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr36",
     "name": "TR36",
     "effectId": "tr36",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr37",
     "name": "TR37",
     "effectId": "tr37",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr38",
     "name": "TR38",
     "effectId": "tr38",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr39",
     "name": "TR39",
     "effectId": "tr39",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr40",
     "name": "TR40",
     "effectId": "tr40",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr41",
     "name": "TR41",
     "effectId": "tr41",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr42",
     "name": "TR42",
     "effectId": "tr42",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr43",
     "name": "TR43",
     "effectId": "tr43",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr44",
     "name": "TR44",
     "effectId": "tr44",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr45",
     "name": "TR45",
     "effectId": "tr45",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr46",
     "name": "TR46",
     "effectId": "tr46",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr47",
     "name": "TR47",
     "effectId": "tr47",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr48",
     "name": "TR48",
     "effectId": "tr48",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr49",
     "name": "TR49",
     "effectId": "tr49",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr50",
     "name": "TR50",
     "effectId": "tr50",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr51",
     "name": "TR51",
     "effectId": "tr51",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr52",
     "name": "TR52",
     "effectId": "tr52",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr53",
     "name": "TR53",
     "effectId": "tr53",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr54",
     "name": "TR54",
     "effectId": "tr54",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr55",
     "name": "TR55",
     "effectId": "tr55",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr56",
     "name": "TR56",
     "effectId": "tr56",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr57",
     "name": "TR57",
     "effectId": "tr57",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr58",
     "name": "TR58",
     "effectId": "tr58",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr59",
     "name": "TR59",
     "effectId": "tr59",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr60",
     "name": "TR60",
     "effectId": "tr60",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr61",
     "name": "TR61",
     "effectId": "tr61",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr62",
     "name": "TR62",
     "effectId": "tr62",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr63",
     "name": "TR63",
     "effectId": "tr63",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr64",
     "name": "TR64",
     "effectId": "tr64",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr65",
     "name": "TR65",
     "effectId": "tr65",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr66",
     "name": "TR66",
     "effectId": "tr66",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr67",
     "name": "TR67",
     "effectId": "tr67",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr68",
     "name": "TR68",
     "effectId": "tr68",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr69",
     "name": "TR69",
     "effectId": "tr69",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr70",
     "name": "TR70",
     "effectId": "tr70",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr71",
     "name": "TR71",
     "effectId": "tr71",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr72",
     "name": "TR72",
     "effectId": "tr72",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr73",
     "name": "TR73",
     "effectId": "tr73",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr74",
     "name": "TR74",
     "effectId": "tr74",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr75",
     "name": "TR75",
     "effectId": "tr75",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr76",
     "name": "TR76",
     "effectId": "tr76",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr77",
     "name": "TR77",
     "effectId": "tr77",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr78",
     "name": "TR78",
     "effectId": "tr78",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr79",
     "name": "TR79",
     "effectId": "tr79",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr80",
     "name": "TR80",
     "effectId": "tr80",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr81",
     "name": "TR81",
     "effectId": "tr81",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr82",
     "name": "TR82",
     "effectId": "tr82",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr83",
     "name": "TR83",
     "effectId": "tr83",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr84",
     "name": "TR84",
     "effectId": "tr84",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr85",
     "name": "TR85",
     "effectId": "tr85",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr86",
     "name": "TR86",
     "effectId": "tr86",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr87",
     "name": "TR87",
     "effectId": "tr87",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr88",
     "name": "TR88",
     "effectId": "tr88",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr89",
     "name": "TR89",
     "effectId": "tr89",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr90",
     "name": "TR90",
     "effectId": "tr90",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr91",
     "name": "TR91",
     "effectId": "tr91",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr92",
     "name": "TR92",
     "effectId": "tr92",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr93",
     "name": "TR93",
     "effectId": "tr93",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr94",
     "name": "TR94",
     "effectId": "tr94",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr95",
     "name": "TR95",
     "effectId": "tr95",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr96",
     "name": "TR96",
     "effectId": "tr96",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr97",
     "name": "TR97",
     "effectId": "tr97",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr98",
     "name": "TR98",
     "effectId": "tr98",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tr99",
     "name": "TR99",
     "effectId": "tr99",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "twistedspoon",
     "name": "Twisted Spoon",
     "effectId": "twistedspoon",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "tyranitarite",
     "name": "Tyranitarite",
     "effectId": "tyranitarite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "ultraball",
     "name": "Ultra Ball",
     "effectId": "ultraball",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "ultranecroziumz",
     "name": "Ultranecrozium Z",
     "effectId": "ultranecroziumz",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "unremarkableteacup",
     "name": "Unremarkable Teacup",
     "effectId": "unremarkableteacup",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "upgrade",
     "name": "Up-Grade",
     "effectId": "upgrade",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "utilityumbrella",
     "name": "Utility Umbrella",
     "effectId": "utilityumbrella",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "venusaurite",
     "name": "Venusaurite",
     "effectId": "venusaurite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "wacanberry",
     "name": "Wacan Berry",
     "effectId": "wacanberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "watergem",
     "name": "Water Gem",
     "effectId": "watergem",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "watermemory",
     "name": "Water Memory",
     "effectId": "watermemory",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "waterstone",
     "name": "Water Stone",
     "effectId": "waterstone",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "wateriumz",
     "name": "Waterium Z",
     "effectId": "wateriumz",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "watmelberry",
     "name": "Watmel Berry",
     "effectId": "watmelberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "waveincense",
     "name": "Wave Incense",
     "effectId": "waveincense",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "weaknesspolicy",
     "name": "Weakness Policy",
     "effectId": "weaknesspolicy",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "wellspringmask",
     "name": "Wellspring Mask",
     "effectId": "wellspringmask",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "wepearberry",
     "name": "Wepear Berry",
     "effectId": "wepearberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "whippeddream",
     "name": "Whipped Dream",
     "effectId": "whippeddream",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "whiteherb",
     "name": "White Herb",
     "effectId": "whiteherb",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "widelens",
     "name": "Wide Lens",
     "effectId": "widelens",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "wikiberry",
     "name": "Wiki Berry",
     "effectId": "wikiberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "wiseglasses",
     "name": "Wise Glasses",
     "effectId": "wiseglasses",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "yacheberry",
     "name": "Yache Berry",
     "effectId": "yacheberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "zapplate",
     "name": "Zap Plate",
     "effectId": "zapplate",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "zoomlens",
     "name": "Zoom Lens",
     "effectId": "zoomlens",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "berserkgene",
     "name": "Berserk Gene",
     "effectId": "berserkgene",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "berry",
     "name": "Berry",
     "effectId": "berry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "bitterberry",
     "name": "Bitter Berry",
     "effectId": "bitterberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "burntberry",
     "name": "Burnt Berry",
     "effectId": "burntberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "goldberry",
     "name": "Gold Berry",
     "effectId": "goldberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "iceberry",
     "name": "Ice Berry",
     "effectId": "iceberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "mintberry",
     "name": "Mint Berry",
     "effectId": "mintberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "miracleberry",
     "name": "Miracle Berry",
     "effectId": "miracleberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "mysteryberry",
     "name": "Mystery Berry",
     "effectId": "mysteryberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "pinkbow",
     "name": "Pink Bow",
     "effectId": "pinkbow",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "polkadotbow",
     "name": "Polkadot Bow",
     "effectId": "polkadotbow",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "przcureberry",
     "name": "PRZ Cure Berry",
     "effectId": "przcureberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "psncureberry",
     "name": "PSN Cure Berry",
     "effectId": "psncureberry",
-    "isBerry": true
+    "isBerry": true,
+    "equippable": true
   },
   {
     "id": "crucibellite",
     "name": "Crucibellite",
     "effectId": "crucibellite",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   },
   {
     "id": "vilevial",
     "name": "Vile Vial",
     "effectId": "vilevial",
-    "isBerry": false
+    "isBerry": false,
+    "equippable": true
   }
 ]

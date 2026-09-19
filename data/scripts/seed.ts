@@ -162,6 +162,7 @@ const allItems = gen9.items.all().map((i) => ({
   name: i.name,
   effectId: i.id,
   isBerry: !!i.isBerry,
+  equippable: true,
 }));
 
 writeFileSync(join(dataDir, 'items.json'), JSON.stringify(allItems, null, 2));

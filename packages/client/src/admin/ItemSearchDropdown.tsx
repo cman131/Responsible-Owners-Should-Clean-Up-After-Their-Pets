@@ -5,13 +5,14 @@ import type { HeldItem } from '@poke-fighter/shared';
 interface Props {
   value: string;   // hyphenated id, e.g. 'focus-sash', '' if none
   onChange: (itemId: string) => void;  // emits hyphenated id or '' to clear
+  equippableOnly?: boolean;
 }
 
 function normalizeItemId(item: HeldItem): string {
   return item.name.toLowerCase().replace(/\s+/g, '-');
 }
 
-export function ItemSearchDropdown({ value, onChange }: Props) {
+export function ItemSearchDropdown({ value, onChange, equippableOnly }: Props) {
   const [items, setItems] = useState<HeldItem[]>([]);
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
@@ -24,9 +25,9 @@ export function ItemSearchDropdown({ value, onChange }: Props) {
       setItems(payload.results as HeldItem[]);
     }
     socket.on('data:results', handleResults);
-    socket.emit('admin:action', { type: 'data:query', data: { resource: 'items' } } as any);
+    socket.emit('admin:action', { type: 'data:query', data: equippableOnly ? { resource: 'items', equippableOnly: true } : { resource: 'items' } } as any);
     return () => { socket.off('data:results', handleResults); };
-  }, []);
+  }, [equippableOnly]);
 
   const selectedItem = items.find((i) => normalizeItemId(i) === value) ?? null;
   const filtered = query
