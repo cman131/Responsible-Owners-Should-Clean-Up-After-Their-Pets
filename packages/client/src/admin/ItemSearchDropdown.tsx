@@ -6,13 +6,14 @@ interface Props {
   value: string;   // hyphenated id, e.g. 'focus-sash', '' if none
   onChange: (itemId: string) => void;  // emits hyphenated id or '' to clear
   equippableOnly?: boolean;
+  speciesName?: string;
 }
 
 function normalizeItemId(item: HeldItem): string {
   return item.name.toLowerCase().replace(/\s+/g, '-');
 }
 
-export function ItemSearchDropdown({ value, onChange, equippableOnly }: Props) {
+export function ItemSearchDropdown({ value, onChange, equippableOnly, speciesName }: Props) {
   const [items, setItems] = useState<HeldItem[]>([]);
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
@@ -22,12 +23,19 @@ export function ItemSearchDropdown({ value, onChange, equippableOnly }: Props) {
     const socket = getSocket();
     function handleResults(payload: { resource: string; results: unknown[] }) {
       if (payload.resource !== 'items') return;
-      setItems(payload.results as HeldItem[]);
+      const received = payload.results as HeldItem[];
+      const localFiltered = speciesName !== undefined
+        ? received.filter((i) => !i.speciesRestriction || i.speciesRestriction === speciesName)
+        : received;
+      setItems(localFiltered);
     }
     socket.on('data:results', handleResults);
-    socket.emit('admin:action', { type: 'data:query', data: equippableOnly ? { resource: 'items', equippableOnly: true } : { resource: 'items' } } as any);
+    const data: Record<string, unknown> = { resource: 'items' };
+    if (equippableOnly) data['equippableOnly'] = true;
+    if (speciesName !== undefined) data['speciesName'] = speciesName;
+    socket.emit('admin:action', { type: 'data:query', data } as any);
     return () => { socket.off('data:results', handleResults); };
-  }, [equippableOnly]);
+  }, [equippableOnly, speciesName]);
 
   const selectedItem = items.find((i) => normalizeItemId(i) === value) ?? null;
   const filtered = query

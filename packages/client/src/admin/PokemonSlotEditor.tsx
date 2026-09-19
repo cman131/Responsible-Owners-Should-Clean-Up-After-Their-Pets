@@ -197,6 +197,7 @@ export function PokemonSlotEditor({ value, onChange }: Props) {
                 value={value.heldItem ?? ''}
                 onChange={(itemId) => updateField('heldItem', itemId || undefined)}
                 equippableOnly
+                speciesName={currentSpecies?.name}
               />
             </div>
           </div>

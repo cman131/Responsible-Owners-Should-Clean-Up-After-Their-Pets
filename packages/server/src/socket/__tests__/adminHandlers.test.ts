@@ -66,6 +66,25 @@ describe('filterItemsQuery', () => {
   it('returns empty when equippableOnly is false equivalent (undefined)', () => {
     expect(filterItemsQuery([], {})).toHaveLength(0);
   });
+
+  it('excludes species-restricted items when speciesName does not match', () => {
+    const abomasite = makeItem({ id: 'abomasite', name: 'Abomasite', equippable: true, speciesRestriction: 'abomasnow' });
+    const results = filterItemsQuery([equippableItem, abomasite], { speciesName: 'charizard' });
+    expect(results).toHaveLength(1);
+    expect(results[0]?.id).toBe('leftovers');
+  });
+
+  it('includes species-restricted items when speciesName matches', () => {
+    const abomasite = makeItem({ id: 'abomasite', name: 'Abomasite', equippable: true, speciesRestriction: 'abomasnow' });
+    const results = filterItemsQuery([equippableItem, abomasite], { speciesName: 'abomasnow' });
+    expect(results).toHaveLength(2);
+  });
+
+  it('includes species-restricted items when no speciesName is given', () => {
+    const abomasite = makeItem({ id: 'abomasite', name: 'Abomasite', equippable: true, speciesRestriction: 'abomasnow' });
+    const results = filterItemsQuery([equippableItem, abomasite], {});
+    expect(results).toHaveLength(2);
+  });
 });
 
 describe('itemMatchesQuery', () => {

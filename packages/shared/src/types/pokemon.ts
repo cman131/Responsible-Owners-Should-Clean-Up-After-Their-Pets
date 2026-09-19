@@ -85,4 +85,5 @@ export interface HeldItem {
   effectId: string;
   isBerry: boolean;
   equippable: boolean;
+  speciesRestriction?: string;
 }
