@@ -3,6 +3,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { PokemonSet } from '@poke-fighter/shared';
 import { PlayerBankTab } from '../PlayerBankTab.js';
 
+vi.mock('../ItemEquipDropdown.js', () => ({
+  ItemEquipDropdown: ({ onEquip, onClose }: { onEquip: (id: string) => void; onClose: () => void }) => (
+    <div data-testid="item-equip-dropdown">
+      <button onClick={() => onEquip('leftovers')}>Pick Leftovers</button>
+      <button onClick={onClose}>Close Dropdown</button>
+    </div>
+  ),
+}));
+
 const pikachu: PokemonSet = {
   speciesId: 25, nickname: 'Pikachu', level: 50, ability: 'Static',
   moves: ['thunderbolt', '', '', ''],
@@ -140,5 +149,91 @@ describe('PlayerBankTab', () => {
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Sparky' } });
     fireEvent.click(screen.getByRole('button', { name: /save/i }));
     expect(onBankChange).toHaveBeenCalledWith([{ ...pikachu, nickname: 'Sparky' }]);
+  });
+
+  describe('item equip/unequip in popup', () => {
+    const pikachuWithItem: PokemonSet = { ...pikachu, heldItem: 'focus-sash' };
+
+    it('shows the held item id in the popup when pokemon has a heldItem', () => {
+      render(
+        <PlayerBankTab bank={[pikachuWithItem]} partySize={0} onBankChange={onBankChange} onMoveToParty={onMoveToParty} />
+      );
+      fireEvent.click(screen.getByText('Pikachu'));
+      expect(screen.getByText('focus-sash')).toBeTruthy();
+    });
+
+    it('shows UNEQUIP button in popup when pokemon has a held item', () => {
+      render(
+        <PlayerBankTab bank={[pikachuWithItem]} partySize={0} onBankChange={onBankChange} onMoveToParty={onMoveToParty} />
+      );
+      fireEvent.click(screen.getByText('Pikachu'));
+      expect(screen.getByRole('button', { name: /unequip/i })).toBeTruthy();
+    });
+
+    it('calls onBankChange without heldItem when UNEQUIP is clicked in popup', () => {
+      render(
+        <PlayerBankTab bank={[pikachuWithItem]} partySize={0} onBankChange={onBankChange} onMoveToParty={onMoveToParty} />
+      );
+      fireEvent.click(screen.getByText('Pikachu'));
+      fireEvent.click(screen.getByRole('button', { name: /unequip/i }));
+      const { heldItem: _removed, ...pikachuNoItem } = pikachuWithItem;
+      expect(onBankChange).toHaveBeenCalledWith([pikachuNoItem]);
+    });
+
+    it('shows EQUIP button in popup when no heldItem and inventory prop is provided', () => {
+      render(
+        <PlayerBankTab
+          bank={[pikachu]}
+          partySize={0}
+          onBankChange={onBankChange}
+          onMoveToParty={onMoveToParty}
+          inventory={{}}
+          leasedItems={{}}
+        />
+      );
+      fireEvent.click(screen.getByText('Pikachu'));
+      expect(screen.getByRole('button', { name: /^equip$/i })).toBeTruthy();
+    });
+
+    it('does not show EQUIP button in popup when inventory prop is not provided', () => {
+      render(
+        <PlayerBankTab bank={[pikachu]} partySize={0} onBankChange={onBankChange} onMoveToParty={onMoveToParty} />
+      );
+      fireEvent.click(screen.getByText('Pikachu'));
+      expect(screen.queryByRole('button', { name: /^equip$/i })).toBeNull();
+    });
+
+    it('opens ItemEquipDropdown when EQUIP is clicked in popup', () => {
+      render(
+        <PlayerBankTab
+          bank={[pikachu]}
+          partySize={0}
+          onBankChange={onBankChange}
+          onMoveToParty={onMoveToParty}
+          inventory={{}}
+          leasedItems={{}}
+        />
+      );
+      fireEvent.click(screen.getByText('Pikachu'));
+      fireEvent.click(screen.getByRole('button', { name: /^equip$/i }));
+      expect(screen.getByTestId('item-equip-dropdown')).toBeTruthy();
+    });
+
+    it('calls onBankChange with heldItem when item is selected from dropdown in popup', () => {
+      render(
+        <PlayerBankTab
+          bank={[pikachu]}
+          partySize={0}
+          onBankChange={onBankChange}
+          onMoveToParty={onMoveToParty}
+          inventory={{ leftovers: 1 }}
+          leasedItems={{}}
+        />
+      );
+      fireEvent.click(screen.getByText('Pikachu'));
+      fireEvent.click(screen.getByRole('button', { name: /^equip$/i }));
+      fireEvent.click(screen.getByRole('button', { name: /pick leftovers/i }));
+      expect(onBankChange).toHaveBeenCalledWith([{ ...pikachu, heldItem: 'leftovers' }]);
+    });
   });
 });

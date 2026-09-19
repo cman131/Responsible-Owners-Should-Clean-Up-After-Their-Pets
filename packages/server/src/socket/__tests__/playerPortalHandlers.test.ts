@@ -114,9 +114,12 @@ describe('registerPlayerPortalHandlers – player:portal-save', () => {
     }));
   });
 
-  it('allows changing heldItem and nickname on a pokemon', async () => {
+  it('allows changing heldItem and nickname on a pokemon when item is in inventory', async () => {
     const original = makeSet({ nickname: 'Old' });
-    const player = makePlayer({ defaultTeam: { templateId: 't1', name: 'Team', createdAt: '2026-01-01', pokemon: [original] } });
+    const player = makePlayer({
+      defaultTeam: { templateId: 't1', name: 'Team', createdAt: '2026-01-01', pokemon: [original] },
+      inventory: { leftovers: 1 },
+    });
     db.players.save(player);
     socket.data['portalProfileId'] = 'p1';
     const updated = makeSet({ nickname: 'New', heldItem: 'leftovers' });
@@ -219,5 +222,76 @@ describe('registerPlayerPortalHandlers – player:portal-items-query', () => {
     const payload = call?.[1] as { results: { speciesRestriction?: string }[] };
     const speciesRestricted = payload.results.filter((i) => i.speciesRestriction !== undefined);
     expect(speciesRestricted.every((i) => i.speciesRestriction === 'charizard')).toBe(true);
+  });
+});
+
+describe('registerPlayerPortalHandlers – player:portal-save leasing validation', () => {
+  let db: AppDatabase;
+  let socket: ReturnType<typeof makeSocket>;
+
+  beforeEach(() => {
+    db = new AppDatabase(':memory:');
+    socket = makeSocket();
+    registerPlayerPortalHandlers(socket as any, db);
+  });
+
+  afterEach(() => { db.close(); });
+
+  it('rejects save when a held item appears more times than the player owns', async () => {
+    const poke1 = makeSet({ nickname: 'A', heldItem: 'leftovers' });
+    const poke2 = makeSet({ nickname: 'B', speciesId: 4, heldItem: 'leftovers' });
+    const player = makePlayer({
+      defaultTeam: { templateId: 't1', name: 'Team', createdAt: '2026-01-01', pokemon: [poke1, poke2] },
+      inventory: { leftovers: 1 },
+    });
+    db.players.save(player);
+    socket.data['portalProfileId'] = 'p1';
+    await socket.trigger('player:portal-save', { profileId: 'p1', team: [poke1, poke2], bank: [] });
+    expect(socket.emit).toHaveBeenCalledWith('player:portal-error', expect.objectContaining({
+      message: expect.any(String),
+    }));
+  });
+
+  it('allows save when held item count equals inventory quantity', async () => {
+    const poke = makeSet({ heldItem: 'leftovers' });
+    const player = makePlayer({
+      defaultTeam: { templateId: 't1', name: 'Team', createdAt: '2026-01-01', pokemon: [poke] },
+      inventory: { leftovers: 1 },
+    });
+    db.players.save(player);
+    socket.data['portalProfileId'] = 'p1';
+    await socket.trigger('player:portal-save', { profileId: 'p1', team: [poke], bank: [] });
+    expect(socket.emit).not.toHaveBeenCalledWith('player:portal-error', expect.anything());
+    expect(socket.emit).toHaveBeenCalledWith('player:portal-data', expect.anything());
+  });
+
+  it('counts held items across team and bank combined', async () => {
+    const poke1 = makeSet({ nickname: 'A', heldItem: 'focus-sash' });
+    const poke2 = makeSet({ nickname: 'B', speciesId: 4, heldItem: 'focus-sash' });
+    const player = makePlayer({
+      defaultTeam: { templateId: 't1', name: 'Team', createdAt: '2026-01-01', pokemon: [poke1] },
+      bank: [poke2],
+      inventory: { 'focus-sash': 1 },
+    });
+    db.players.save(player);
+    socket.data['portalProfileId'] = 'p1';
+    await socket.trigger('player:portal-save', { profileId: 'p1', team: [poke1], bank: [poke2] });
+    expect(socket.emit).toHaveBeenCalledWith('player:portal-error', expect.objectContaining({
+      message: expect.any(String),
+    }));
+  });
+
+  it('rejects save when a pokemon holds an item not in inventory', async () => {
+    const poke = makeSet({ heldItem: 'leftovers' });
+    const player = makePlayer({
+      defaultTeam: { templateId: 't1', name: 'Team', createdAt: '2026-01-01', pokemon: [poke] },
+      inventory: {},
+    });
+    db.players.save(player);
+    socket.data['portalProfileId'] = 'p1';
+    await socket.trigger('player:portal-save', { profileId: 'p1', team: [poke], bank: [] });
+    expect(socket.emit).toHaveBeenCalledWith('player:portal-error', expect.objectContaining({
+      message: expect.any(String),
+    }));
   });
 });

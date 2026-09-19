@@ -61,6 +61,20 @@ export function registerPlayerPortalHandlers(
       }
     }
 
+    const heldCounts: Record<string, number> = {};
+    for (const p of incoming) {
+      if (p.heldItem) {
+        heldCounts[p.heldItem] = (heldCounts[p.heldItem] ?? 0) + 1;
+      }
+    }
+    const inventory = existing.inventory ?? {};
+    for (const [itemId, count] of Object.entries(heldCounts)) {
+      if (count > (inventory[itemId] ?? 0)) {
+        socket.emit('player:portal-error', { message: `Insufficient inventory: cannot hold ${count}× ${itemId} (owned: ${inventory[itemId] ?? 0}).` });
+        return;
+      }
+    }
+
     const updated = {
       ...existing,
       ...(existing.defaultTeam !== undefined || team.length > 0 ? {

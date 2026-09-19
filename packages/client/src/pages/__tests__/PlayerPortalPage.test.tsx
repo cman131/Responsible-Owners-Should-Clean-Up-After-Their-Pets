@@ -24,17 +24,24 @@ vi.mock('../../socket.js', () => ({
 
 import { connectAsPlayerPortal } from '../../socket.js';
 
+let capturedTeamInventory: Record<string, number> | undefined;
+let capturedTeamLeasedItems: Record<string, number> | undefined;
+
 vi.mock('../../player/PlayerTeamView.js', () => ({
-  PlayerTeamView: ({ team, onBankMove }: any) => (
-    <div data-testid="player-team-view">
-      {team.map((p: any, i: number) => (
-        <div key={i}>
-          <span>{p.nickname}</span>
-          <button onClick={() => onBankMove(p, i)}>→ BANK {p.nickname}</button>
-        </div>
-      ))}
-    </div>
-  ),
+  PlayerTeamView: ({ team, onBankMove, inventory, leasedItems }: any) => {
+    capturedTeamInventory = inventory;
+    capturedTeamLeasedItems = leasedItems;
+    return (
+      <div data-testid="player-team-view">
+        {team.map((p: any, i: number) => (
+          <div key={i}>
+            <span>{p.nickname}</span>
+            <button onClick={() => onBankMove(p, i)}>→ BANK {p.nickname}</button>
+          </div>
+        ))}
+      </div>
+    );
+  },
 }));
 
 vi.mock('../../player/PlayerBankTab.js', () => ({
@@ -88,6 +95,8 @@ describe('PlayerPortalPage', () => {
     mockSocket.off.mockClear();
     vi.mocked(connectAsPlayerPortal).mockClear();
     mockNavigate.mockClear();
+    capturedTeamInventory = undefined;
+    capturedTeamLeasedItems = undefined;
   });
 
   it('shows key input and ENTER button in entry phase', () => {
@@ -207,6 +216,68 @@ describe('PlayerPortalPage', () => {
       fireEvent.click(screen.getByRole('button', { name: /discard/i }));
       expect(screen.getByTestId('player-team-view')).toBeTruthy();
       expect(mockSocket.emit).not.toHaveBeenCalledWith('player:portal-save', expect.anything());
+    });
+  });
+
+  describe('inventory tab', () => {
+    const mockProfileWithInventory: PlayerProfile = {
+      profileId: 'p3',
+      displayName: 'Misty',
+      createdAt: '2024-01-01',
+      defaultTeam: {
+        templateId: 'p3-team',
+        name: "Misty's Team",
+        createdAt: '2024-01-01',
+        pokemon: [pikachu],
+      },
+      bank: [],
+      inventory: { leftovers: 2, 'focus-sash': 1 },
+    };
+
+    function enterPortalWithInventory() {
+      render(<MemoryRouter><PlayerPortalPage /></MemoryRouter>);
+      fireEvent.change(screen.getByPlaceholderText(/player key/i), { target: { value: 'key' } });
+      fireEvent.click(screen.getByRole('button', { name: /enter/i }));
+      act(() => { socketHandlers['player:portal-data']?.({ profile: mockProfileWithInventory }); });
+    }
+
+    it('shows item names and quantities when inventory tab is clicked', () => {
+      enterPortalWithInventory();
+      fireEvent.click(screen.getByRole('button', { name: /^inventory$/i }));
+      expect(screen.getByText(/leftovers/i)).toBeTruthy();
+      expect(screen.getByText(/focus-sash/i)).toBeTruthy();
+    });
+
+    it('shows empty message when profile has no inventory', () => {
+      render(<MemoryRouter><PlayerPortalPage /></MemoryRouter>);
+      fireEvent.change(screen.getByPlaceholderText(/player key/i), { target: { value: 'key' } });
+      fireEvent.click(screen.getByRole('button', { name: /enter/i }));
+      act(() => { socketHandlers['player:portal-data']?.({ profile: mockProfile }); });
+      fireEvent.click(screen.getByRole('button', { name: /^inventory$/i }));
+      expect(screen.getByText(/no items/i)).toBeTruthy();
+    });
+
+    it('passes inventory from profile to PlayerTeamView', () => {
+      enterPortalWithInventory();
+      expect(capturedTeamInventory).toEqual({ leftovers: 2, 'focus-sash': 1 });
+    });
+
+    it('passes leasedItems computed from held items to PlayerTeamView', () => {
+      const profileWithItemsEquipped: PlayerProfile = {
+        ...mockProfileWithInventory,
+        defaultTeam: {
+          templateId: 'p3-team',
+          name: "Misty's Team",
+          createdAt: '2024-01-01',
+          pokemon: [{ ...pikachu, heldItem: 'leftovers' }],
+        },
+        bank: [],
+      };
+      render(<MemoryRouter><PlayerPortalPage /></MemoryRouter>);
+      fireEvent.change(screen.getByPlaceholderText(/player key/i), { target: { value: 'key' } });
+      fireEvent.click(screen.getByRole('button', { name: /enter/i }));
+      act(() => { socketHandlers['player:portal-data']?.({ profile: profileWithItemsEquipped }); });
+      expect(capturedTeamLeasedItems).toEqual({ leftovers: 1 });
     });
   });
 });

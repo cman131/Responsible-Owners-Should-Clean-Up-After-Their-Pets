@@ -3,6 +3,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { PokemonSet } from '@poke-fighter/shared';
 import { PlayerTeamView } from '../PlayerTeamView.js';
 
+vi.mock('../ItemEquipDropdown.js', () => ({
+  ItemEquipDropdown: ({ onEquip, onClose }: { onEquip: (id: string) => void; onClose: () => void }) => (
+    <div data-testid="item-equip-dropdown">
+      <button onClick={() => onEquip('focus-sash')}>Pick Focus Sash</button>
+      <button onClick={onClose}>Close Dropdown</button>
+    </div>
+  ),
+}));
+
 const pikachu: PokemonSet = {
   speciesId: 25, nickname: 'Pikachu', level: 50, ability: 'Static',
   moves: ['thunderbolt', '', '', ''],
@@ -145,5 +154,97 @@ describe('PlayerTeamView', () => {
     expect(screen.queryByRole('button', { name: /edit/i })).toBeNull();
     expect(screen.queryByText(/ability/i)).toBeNull();
     expect(screen.queryByText(/nature/i)).toBeNull();
+  });
+
+  describe('item equip/unequip', () => {
+    const pikachuWithItem: PokemonSet = { ...pikachu, heldItem: 'focus-sash' };
+
+    it('shows the held item id when pokemon has a heldItem', () => {
+      render(
+        <PlayerTeamView team={[pikachuWithItem]} onTeamChange={onTeamChange} onBankMove={onBankMove} />
+      );
+      expect(screen.getByText('focus-sash')).toBeTruthy();
+    });
+
+    it('shows UNEQUIP button when pokemon has a held item', () => {
+      render(
+        <PlayerTeamView team={[pikachuWithItem]} onTeamChange={onTeamChange} onBankMove={onBankMove} />
+      );
+      expect(screen.getByRole('button', { name: /unequip/i })).toBeTruthy();
+    });
+
+    it('calls onTeamChange without heldItem when UNEQUIP is clicked', () => {
+      render(
+        <PlayerTeamView team={[pikachuWithItem]} onTeamChange={onTeamChange} onBankMove={onBankMove} />
+      );
+      fireEvent.click(screen.getByRole('button', { name: /unequip/i }));
+      const { heldItem: _removed, ...pikachuNoItem } = pikachuWithItem;
+      expect(onTeamChange).toHaveBeenCalledWith([pikachuNoItem]);
+    });
+
+    it('does not show EQUIP button when inventory prop is not provided', () => {
+      render(
+        <PlayerTeamView team={[pikachu]} onTeamChange={onTeamChange} onBankMove={onBankMove} />
+      );
+      expect(screen.queryByRole('button', { name: /^equip$/i })).toBeNull();
+    });
+
+    it('shows EQUIP button when no heldItem and inventory prop is provided', () => {
+      render(
+        <PlayerTeamView
+          team={[pikachu]}
+          onTeamChange={onTeamChange}
+          onBankMove={onBankMove}
+          inventory={{}}
+          leasedItems={{}}
+        />
+      );
+      expect(screen.getByRole('button', { name: /^equip$/i })).toBeTruthy();
+    });
+
+    it('opens ItemEquipDropdown when EQUIP button is clicked', () => {
+      render(
+        <PlayerTeamView
+          team={[pikachu]}
+          onTeamChange={onTeamChange}
+          onBankMove={onBankMove}
+          inventory={{}}
+          leasedItems={{}}
+        />
+      );
+      fireEvent.click(screen.getByRole('button', { name: /^equip$/i }));
+      expect(screen.getByTestId('item-equip-dropdown')).toBeTruthy();
+    });
+
+    it('calls onTeamChange with new heldItem when item is selected from dropdown', () => {
+      render(
+        <PlayerTeamView
+          team={[pikachu]}
+          onTeamChange={onTeamChange}
+          onBankMove={onBankMove}
+          inventory={{ 'focus-sash': 1 }}
+          leasedItems={{}}
+        />
+      );
+      fireEvent.click(screen.getByRole('button', { name: /^equip$/i }));
+      fireEvent.click(screen.getByRole('button', { name: /pick focus sash/i }));
+      expect(onTeamChange).toHaveBeenCalledWith([{ ...pikachu, heldItem: 'focus-sash' }]);
+    });
+
+    it('closes the dropdown without changes when Close Dropdown is clicked', () => {
+      render(
+        <PlayerTeamView
+          team={[pikachu]}
+          onTeamChange={onTeamChange}
+          onBankMove={onBankMove}
+          inventory={{}}
+          leasedItems={{}}
+        />
+      );
+      fireEvent.click(screen.getByRole('button', { name: /^equip$/i }));
+      fireEvent.click(screen.getByRole('button', { name: /close dropdown/i }));
+      expect(screen.queryByTestId('item-equip-dropdown')).toBeNull();
+      expect(onTeamChange).not.toHaveBeenCalled();
+    });
   });
 });

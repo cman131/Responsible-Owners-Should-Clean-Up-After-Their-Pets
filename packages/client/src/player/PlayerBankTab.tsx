@@ -1,12 +1,15 @@
 import { useState, useRef } from 'react';
 import type { PokemonSet } from '@poke-fighter/shared';
 import { NicknameModal } from './NicknameModal.js';
+import { ItemEquipDropdown } from './ItemEquipDropdown.js';
 
 interface Props {
   bank: PokemonSet[];
   partySize: number;
   onBankChange: (bank: PokemonSet[]) => void;
   onMoveToParty: (pokemon: PokemonSet, index: number) => void;
+  inventory?: Record<string, number>;
+  leasedItems?: Record<string, number>;
 }
 
 interface CardProps {
@@ -17,11 +20,16 @@ interface CardProps {
   onSelect: (index: number | null) => void;
   onRename: (index: number) => void;
   onMoveToParty: (index: number) => void;
+  onUnequip: (index: number) => void;
+  onEquip: (index: number, itemId: string) => void;
+  inventory?: Record<string, number>;
+  leasedItems?: Record<string, number>;
 }
 
-function BankCard({ pokemon, index, isSelected, partyFull, onSelect, onRename, onMoveToParty }: CardProps) {
+function BankCard({ pokemon, index, isSelected, partyFull, onSelect, onRename, onMoveToParty, onUnequip, onEquip, inventory, leasedItems }: CardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [openLeft, setOpenLeft] = useState(false);
+  const [showEquipDropdown, setShowEquipDropdown] = useState(false);
 
   function handleClick() {
     if (cardRef.current) {
@@ -29,6 +37,7 @@ function BankCard({ pokemon, index, isSelected, partyFull, onSelect, onRename, o
       setOpenLeft(rect.right + 140 >= window.innerWidth);
     }
     onSelect(isSelected ? null : index);
+    setShowEquipDropdown(false);
   }
 
   return (
@@ -44,22 +53,44 @@ function BankCard({ pokemon, index, isSelected, partyFull, onSelect, onRename, o
         />
         <div style={{ color: '#fff', fontSize: 9, marginTop: 2 }}>{pokemon.nickname}</div>
         <div style={{ color: '#aaa', fontSize: 8 }}>Lv.{pokemon.level}</div>
+        {pokemon.heldItem && (
+          <div style={{ color: '#f0c040', fontSize: 8, marginTop: 2 }}>●</div>
+        )}
       </div>
 
       {isSelected && (
         <>
-          <div style={{ position: 'fixed', inset: 0, zIndex: 9 }} onClick={() => onSelect(null)} />
+          <div style={{ position: 'fixed', inset: 0, zIndex: 9 }} onClick={() => { onSelect(null); setShowEquipDropdown(false); }} />
           <div
             style={{
               position: 'absolute', top: 0,
               ...(openLeft ? { right: 90 } : { left: 90 }),
               background: '#1a1a2e', border: '1px solid #3498db', borderRadius: 5,
-              padding: 6, width: 130, zIndex: 10,
+              padding: 6, width: 140, zIndex: 10,
             }}
           >
             <div style={{ color: '#3498db', fontSize: 9, letterSpacing: 1, marginBottom: 5 }}>
               {pokemon.nickname.toUpperCase()}
             </div>
+            {pokemon.heldItem ? (
+              <>
+                <div style={{ color: '#f0c040', fontSize: 9, marginBottom: 4 }}>{pokemon.heldItem}</div>
+                <button onClick={() => onUnequip(index)} style={popBtn('#7f8c8d')}>UNEQUIP</button>
+              </>
+            ) : inventory !== undefined ? (
+              <>
+                <button onClick={() => setShowEquipDropdown(true)} style={popBtn('#8e44ad')}>EQUIP</button>
+                {showEquipDropdown && (
+                  <ItemEquipDropdown
+                    {...(pokemon.heldItem !== undefined ? { currentHeldItem: pokemon.heldItem } : {})}
+                    inventory={inventory}
+                    leasedItems={leasedItems ?? {}}
+                    onEquip={(itemId) => { onEquip(index, itemId); setShowEquipDropdown(false); }}
+                    onClose={() => setShowEquipDropdown(false)}
+                  />
+                )}
+              </>
+            ) : null}
             <button onClick={() => onRename(index)} style={popBtn('#2980b9')}>RENAME</button>
             <button
               onClick={() => !partyFull && onMoveToParty(index)}
@@ -73,7 +104,7 @@ function BankCard({ pokemon, index, isSelected, partyFull, onSelect, onRename, o
   );
 }
 
-export function PlayerBankTab({ bank, partySize, onBankChange, onMoveToParty }: Props) {
+export function PlayerBankTab({ bank, partySize, onBankChange, onMoveToParty, inventory, leasedItems }: Props) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [renamingIndex, setRenamingIndex] = useState<number | null>(null);
 
@@ -99,6 +130,21 @@ export function PlayerBankTab({ bank, partySize, onBankChange, onMoveToParty }: 
     setSelectedIndex(null);
   }
 
+  function handleUnequip(index: number) {
+    const next = [...bank];
+    const { heldItem: _removed, ...rest } = next[index]!;
+    next[index] = rest as PokemonSet;
+    onBankChange(next);
+    setSelectedIndex(null);
+  }
+
+  function handleEquip(index: number, itemId: string) {
+    const next = [...bank];
+    next[index] = { ...next[index]!, heldItem: itemId };
+    onBankChange(next);
+    setSelectedIndex(null);
+  }
+
   return (
     <div>
       <div style={{ color: '#27ae60', fontSize: 11, letterSpacing: 2, marginBottom: 12 }}>
@@ -121,6 +167,10 @@ export function PlayerBankTab({ bank, partySize, onBankChange, onMoveToParty }: 
               onSelect={setSelectedIndex}
               onRename={handleRename}
               onMoveToParty={handleMoveToParty}
+              onUnequip={handleUnequip}
+              onEquip={handleEquip}
+              {...(inventory !== undefined ? { inventory } : {})}
+              {...(leasedItems !== undefined ? { leasedItems } : {})}
             />
           ))}
         </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getSocket, connectAsPlayerPortal } from '../socket.js';
 import type { PlayerProfile, PokemonSet } from '@poke-fighter/shared';
@@ -20,6 +20,16 @@ export function PlayerPortalPage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ActiveTab>('team');
   const navigate = useNavigate();
+
+  const leasedItems = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const p of [...localTeam, ...localBank]) {
+      if (p.heldItem) {
+        map[p.heldItem] = (map[p.heldItem] ?? 0) + 1;
+      }
+    }
+    return map;
+  }, [localTeam, localBank]);
 
   useEffect(() => {
     const socket = getSocket();
@@ -101,6 +111,9 @@ export function PlayerPortalPage() {
   }
 
   if (phase === 'portal' && profile !== null) {
+    const inventory = profile.inventory ?? {};
+    const inventoryEntries = Object.entries(inventory);
+
     return (
       <div style={styles.container}>
         <h1 style={styles.title}>POKE FIGHTER</h1>
@@ -128,6 +141,8 @@ export function PlayerPortalPage() {
                     team={localTeam}
                     onTeamChange={setLocalTeam}
                     onBankMove={handleBankMoveFromTeam}
+                    inventory={inventory}
+                    leasedItems={leasedItems}
                   />
             )}
             {activeTab === 'bank' && (
@@ -136,9 +151,24 @@ export function PlayerPortalPage() {
                 partySize={localTeam.length}
                 onBankChange={setLocalBank}
                 onMoveToParty={handleMoveToPartyFromBank}
+                inventory={inventory}
+                leasedItems={leasedItems}
               />
             )}
-            {activeTab === 'inventory' && <p style={styles.placeholder}>Inventory coming soon.</p>}
+            {activeTab === 'inventory' && (
+              inventoryEntries.length === 0
+                ? <p style={styles.placeholder}>No items in inventory.</p>
+                : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {inventoryEntries.map(([itemId, qty]) => (
+                      <div key={itemId} style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', fontSize: 12, padding: '4px 0', borderBottom: '1px solid #222' }}>
+                        <span>{itemId}</span>
+                        <span style={{ color: '#aaa' }}>×{qty}</span>
+                      </div>
+                    ))}
+                  </div>
+                )
+            )}
           </div>
 
           {saveError && <p style={styles.error}>{saveError}</p>}

@@ -1,15 +1,19 @@
 import { useState } from 'react';
 import type { PokemonSet } from '@poke-fighter/shared';
 import { NicknameModal } from './NicknameModal.js';
+import { ItemEquipDropdown } from './ItemEquipDropdown.js';
 
 interface Props {
   team: PokemonSet[];
   onTeamChange: (team: PokemonSet[]) => void;
   onBankMove: (pokemon: PokemonSet, index: number) => void;
+  inventory?: Record<string, number>;
+  leasedItems?: Record<string, number>;
 }
 
-export function PlayerTeamView({ team, onTeamChange, onBankMove }: Props) {
+export function PlayerTeamView({ team, onTeamChange, onBankMove, inventory, leasedItems }: Props) {
   const [renamingIndex, setRenamingIndex] = useState<number | null>(null);
+  const [equippingIndex, setEquippingIndex] = useState<number | null>(null);
 
   function swap(i: number, j: number) {
     const next = [...team];
@@ -24,6 +28,20 @@ export function PlayerTeamView({ team, onTeamChange, onBankMove }: Props) {
     next[index] = { ...next[index]!, nickname };
     onTeamChange(next);
     setRenamingIndex(null);
+  }
+
+  function handleUnequip(index: number) {
+    const next = [...team];
+    const { heldItem: _removed, ...rest } = next[index]!;
+    next[index] = rest as PokemonSet;
+    onTeamChange(next);
+  }
+
+  function handleEquip(index: number, itemId: string) {
+    const next = [...team];
+    next[index] = { ...next[index]!, heldItem: itemId };
+    onTeamChange(next);
+    setEquippingIndex(null);
   }
 
   return (
@@ -54,7 +72,29 @@ export function PlayerTeamView({ team, onTeamChange, onBankMove }: Props) {
           <div style={{ flex: 1 }}>
             <div style={{ color: '#fff', fontSize: 12 }}>{pokemon.nickname}</div>
             <div style={{ color: '#aaa', fontSize: 10 }}>Lv.{pokemon.level}</div>
+            {pokemon.heldItem && (
+              <div style={{ color: '#f0c040', fontSize: 9 }}>{pokemon.heldItem}</div>
+            )}
           </div>
+
+          {pokemon.heldItem ? (
+            <button onClick={() => handleUnequip(i)} style={actionBtn('#7f8c8d')}>UNEQUIP</button>
+          ) : inventory !== undefined ? (
+            <div style={{ position: 'relative' }}>
+              <button onClick={() => setEquippingIndex(i)} style={actionBtn('#8e44ad')}>EQUIP</button>
+              {equippingIndex === i && (
+                <div style={{ position: 'absolute', right: 0, top: '100%', width: 180, zIndex: 20 }}>
+                  <ItemEquipDropdown
+                    {...(pokemon.heldItem !== undefined ? { currentHeldItem: pokemon.heldItem } : {})}
+                    inventory={inventory}
+                    leasedItems={leasedItems ?? {}}
+                    onEquip={(itemId) => handleEquip(i, itemId)}
+                    onClose={() => setEquippingIndex(null)}
+                  />
+                </div>
+              )}
+            </div>
+          ) : null}
 
           <button onClick={() => setRenamingIndex(i)} style={actionBtn('#2980b9')}>RENAME</button>
           <button onClick={() => onBankMove(pokemon, i)} style={actionBtn('#c0392b')}>→ BANK</button>
