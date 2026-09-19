@@ -6,13 +6,14 @@ interface Props {
   value: string;   // hyphenated id, e.g. 'focus-sash', '' if none
   onChange: (itemId: string) => void;  // emits hyphenated id or '' to clear
   equippableOnly?: boolean;
+  availabilityMap?: Record<string, number>;
 }
 
 function normalizeItemId(item: HeldItem): string {
   return item.name.toLowerCase().replace(/\s+/g, '-');
 }
 
-export function ItemSearchDropdown({ value, onChange, equippableOnly }: Props) {
+export function ItemSearchDropdown({ value, onChange, equippableOnly, availabilityMap }: Props) {
   const [items, setItems] = useState<HeldItem[]>([]);
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
@@ -86,18 +87,26 @@ export function ItemSearchDropdown({ value, onChange, equippableOnly }: Props) {
       />
       {open && filtered.length > 0 && (
         <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#111', border: '1px solid #333', borderRadius: 4, maxHeight: 200, overflowY: 'auto', zIndex: 10 }}>
-          {filtered.map((item, i) => (
-            <div
-              key={item.id}
-              onClick={() => pick(item)}
-              style={{ padding: '5px 10px', cursor: 'pointer', background: i === highlighted ? '#1a2a3a' : 'transparent', display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#fff', borderBottom: '1px solid #1a1a2e' }}
-            >
-              <span style={{ flex: 1 }}>{item.name}</span>
-              {item.isBerry && (
-                <span style={{ background: '#27ae60', color: '#fff', padding: '1px 5px', borderRadius: 3, fontSize: 10 }}>Berry</span>
-              )}
-            </div>
-          ))}
+          {filtered.map((item, i) => {
+            const normalizedId = normalizeItemId(item);
+            const available = availabilityMap !== undefined ? (availabilityMap[normalizedId] ?? Infinity) : Infinity;
+            const unavailable = available <= 0;
+            return (
+              <div
+                key={item.id}
+                onClick={() => pick(item)}
+                style={{ padding: '5px 10px', cursor: 'pointer', background: i === highlighted ? '#1a2a3a' : 'transparent', display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: unavailable ? '#666' : '#fff', borderBottom: '1px solid #1a1a2e' }}
+              >
+                <span style={{ flex: 1 }}>{item.name}</span>
+                {item.isBerry && (
+                  <span style={{ background: '#27ae60', color: '#fff', padding: '1px 5px', borderRadius: 3, fontSize: 10 }}>Berry</span>
+                )}
+                {unavailable && (
+                  <span style={{ color: '#e74c3c', fontSize: 10 }}>0 available</span>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

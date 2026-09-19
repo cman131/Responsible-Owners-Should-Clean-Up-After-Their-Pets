@@ -4,11 +4,16 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('../../socket.js', () => ({ getSocket: vi.fn() }));
 vi.mock('uuid', () => ({ v4: vi.fn(() => 'test-uuid') }));
 vi.mock('../TeamBuilder.js', () => ({
-  TeamBuilder: ({ onTeamSaved, onSendToBank }: any) => (
+  TeamBuilder: ({ onTeamSaved, onSendToBank, inventory, leasedItems }: any) => (
     <div>
       <span>team-builder</span>
+      {inventory && <span>team-inventory-{JSON.stringify(inventory)}</span>}
+      {leasedItems && <span>team-leased-{JSON.stringify(leasedItems)}</span>}
       <button onClick={() => onSendToBank?.({ speciesId: 1, nickname: 'Bulbasaur', level: 5, nature: 'hardy', moves: ['','','',''] as [string,string,string,string], ability: 'Overgrow', evs:{hp:0,atk:0,def:0,spa:0,spd:0,spe:0}, ivs:{hp:31,atk:31,def:31,spa:31,spd:31,spe:31} })}>
         send-to-bank
+      </button>
+      <button onClick={() => onTeamSaved([{ speciesId: 1, nickname: 'Bulbasaur', heldItem: 'choice-band', level: 5, nature: 'hardy', moves: ['tackle','','',''] as [string,string,string,string], ability: 'Overgrow', evs:{hp:0,atk:0,def:0,spa:0,spd:0,spe:0}, ivs:{hp:31,atk:31,def:31,spa:31,spd:31,spe:31} }])}>
+        set-team-with-item
       </button>
       <button onClick={() => onTeamSaved([])}>clear-team</button>
     </div>
@@ -20,9 +25,11 @@ vi.mock('../TeamBuilder.js', () => ({
   },
 }));
 vi.mock('../BankTab.js', () => ({
-  BankTab: ({ bank, onMoveToTeam }: any) => (
+  BankTab: ({ bank, onMoveToTeam, inventory, leasedItems }: any) => (
     <div>
       <span>bank-tab-{bank.length}</span>
+      {inventory && <span>bank-inventory-{JSON.stringify(inventory)}</span>}
+      {leasedItems && <span>bank-leased-{JSON.stringify(leasedItems)}</span>}
       <button onClick={() => onMoveToTeam({ speciesId: 2, nickname: 'Ivysaur', level: 16, nature: 'bold', moves: ['','','',''], ability: 'Overgrow', evs:{hp:0,atk:0,def:0,spa:0,spd:0,spe:0}, ivs:{hp:31,atk:31,def:31,spa:31,spd:31,spe:31} })}>
         move-to-team
       </button>
@@ -148,5 +155,50 @@ describe('PlayerProfileEditor', () => {
     render(<PlayerProfileEditor profile={profile} onBack={vi.fn()} />);
     const saveBtn = screen.getByRole('button', { name: /^save$/i });
     expect((saveBtn as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('passes inventory and computed leasedItems to TeamBuilder', () => {
+    const profile = {
+      profileId: 'p1', displayName: 'Ash', createdAt: '2026-01-01T00:00:00Z',
+      inventory: { 'choice-band': 2 },
+    };
+    render(<PlayerProfileEditor profile={profile} onBack={vi.fn()} />);
+    expect(screen.getByText('team-inventory-{"choice-band":2}')).toBeTruthy();
+  });
+
+  it('passes inventory and computed leasedItems to BankTab', () => {
+    const profile = {
+      profileId: 'p1', displayName: 'Ash', createdAt: '2026-01-01T00:00:00Z',
+      inventory: { 'leftovers': 1 },
+    };
+    render(<PlayerProfileEditor profile={profile} onBack={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /^bank/i }));
+    expect(screen.getByText('bank-inventory-{"leftovers":1}')).toBeTruthy();
+  });
+
+  it('leasedItems reflects held items across team and bank', () => {
+    const profile = {
+      profileId: 'p1', displayName: 'Ash', createdAt: '2026-01-01T00:00:00Z',
+      inventory: { 'choice-band': 2 },
+      bank: [{ speciesId: 7, nickname: 'Squirtle', heldItem: 'choice-band', level: 5, nature: 'hardy', moves: ['tackle','','',''] as [string,string,string,string], ability: 'Torrent', evs:{hp:0,atk:0,def:0,spa:0,spd:0,spe:0}, ivs:{hp:31,atk:31,def:31,spa:31,spd:31,spe:31} }],
+    };
+    render(<PlayerProfileEditor profile={profile} onBack={vi.fn()} />);
+    // bank has 1 choice-band, team has 0 → leasedItems = {'choice-band': 1}
+    expect(screen.getByText('team-leased-{"choice-band":1}')).toBeTruthy();
+  });
+
+  it('blocks SAVE and shows error when a pokemon holds an item exceeding inventory', () => {
+    const profile = {
+      profileId: 'p1', displayName: 'Ash', createdAt: '2026-01-01T00:00:00Z',
+      inventory: { 'choice-band': 1 },
+      bank: [{ speciesId: 7, nickname: 'Squirtle', heldItem: 'choice-band', level: 5, nature: 'hardy', moves: ['tackle','','',''] as [string,string,string,string], ability: 'Torrent', evs:{hp:0,atk:0,def:0,spa:0,spd:0,spe:0}, ivs:{hp:31,atk:31,def:31,spa:31,spd:31,spe:31} }],
+    };
+    render(<PlayerProfileEditor profile={profile} onBack={vi.fn()} />);
+    // Simulate set-team-with-item button: adds a team pokemon also holding choice-band
+    fireEvent.click(screen.getByText('set-team-with-item'));
+    // Now: team has 1 choice-band, bank has 1 choice-band → leased=2, inventory=1 → over-leased
+    const saveBtn = screen.getByRole('button', { name: /^save$/i });
+    expect((saveBtn as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByText(/item exceeds inventory/i)).toBeTruthy();
   });
 });

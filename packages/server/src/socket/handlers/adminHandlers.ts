@@ -187,6 +187,20 @@ export function registerAdminHandlers(
       }
       case 'registry:save-player': {
         const { profile } = payload.data as { profile: import('@poke-fighter/shared').PlayerProfile };
+        const allPokemon = [
+          ...(profile.defaultTeam?.pokemon ?? []),
+          ...(profile.bank ?? []),
+        ];
+        const leased: Record<string, number> = {};
+        for (const p of allPokemon) {
+          if (p.heldItem) leased[p.heldItem] = (leased[p.heldItem] ?? 0) + 1;
+        }
+        const inventory = profile.inventory ?? {};
+        const violation = Object.entries(leased).find(([itemId, count]) => count > (inventory[itemId] ?? 0));
+        if (violation) {
+          socket.emit('registry:error', { type: 'registry:save-player', message: `Item '${violation[0]}' is held by more Pokémon than owned (${violation[1]} held, ${inventory[violation[0]] ?? 0} owned).` });
+          break;
+        }
         db.players.save(profile);
         socket.emit('registry:data', { resource: 'players', data: db.players.list() });
         break;

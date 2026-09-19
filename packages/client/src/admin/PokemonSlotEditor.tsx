@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { PokemonSpecies, PokemonSet, PokemonType } from '@poke-fighter/shared';
 import { PokemonSearchDropdown } from './PokemonSearchDropdown.js';
 import { MoveSearchDropdown } from './MoveSearchDropdown.js';
@@ -48,10 +48,25 @@ const DEFAULT_IVS = { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 };
 interface Props {
   value: Partial<PokemonSet>;
   onChange: (updated: Partial<PokemonSet>) => void;
+  inventory?: Record<string, number>;
+  leasedItems?: Record<string, number>;
 }
 
-export function PokemonSlotEditor({ value, onChange }: Props) {
+export function PokemonSlotEditor({ value, onChange, inventory, leasedItems }: Props) {
   const [currentSpecies, setCurrentSpecies] = useState<PokemonSpecies | null>(null);
+
+  const availabilityMap = useMemo(() => {
+    if (!inventory) return undefined;
+    const map: Record<string, number> = {};
+    const allKeys = new Set([...Object.keys(inventory), ...Object.keys(leasedItems ?? {})]);
+    for (const itemId of allKeys) {
+      const owned = inventory[itemId] ?? 0;
+      const leased = leasedItems?.[itemId] ?? 0;
+      const ownHeld = value.heldItem === itemId ? 1 : 0;
+      map[itemId] = owned - leased + ownHeld;
+    }
+    return map;
+  }, [inventory, leasedItems, value.heldItem]);
 
   useEffect(() => {
     if (!value.speciesId || currentSpecies?.id === value.speciesId) return;
@@ -197,6 +212,7 @@ export function PokemonSlotEditor({ value, onChange }: Props) {
                 value={value.heldItem ?? ''}
                 onChange={(itemId) => updateField('heldItem', itemId || undefined)}
                 equippableOnly
+                {...(availabilityMap !== undefined ? { availabilityMap } : {})}
               />
             </div>
           </div>

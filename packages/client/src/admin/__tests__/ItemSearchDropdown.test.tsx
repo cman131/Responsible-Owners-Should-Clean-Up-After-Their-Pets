@@ -110,4 +110,26 @@ describe('ItemSearchDropdown', () => {
     unmount();
     expect(mockSocket.off).toHaveBeenCalledWith('data:results', expect.any(Function));
   });
+
+  it('shows "0 available" label for items at availability zero in the dropdown', () => {
+    // 'choice-band' is the normalized id for 'Choice Band'
+    render(<ItemSearchDropdown value="" onChange={vi.fn()} availabilityMap={{ 'choice-band': 0 }} />);
+    fireItemResults();
+    fireEvent.focus(screen.getByPlaceholderText('Search items...'));
+    expect(screen.getByText('0 available')).toBeTruthy();
+  });
+
+  it('does not show "0 available" for items with availability above zero', () => {
+    render(<ItemSearchDropdown value="" onChange={vi.fn()} availabilityMap={{ 'leftovers': 2 }} />);
+    fireItemResults();
+    fireEvent.focus(screen.getByPlaceholderText('Search items...'));
+    expect(screen.queryByText('0 available')).toBeNull();
+  });
+
+  it('still shows zero-availability items in the list (not hidden)', () => {
+    render(<ItemSearchDropdown value="" onChange={vi.fn()} availabilityMap={{ 'choice-band': 0 }} />);
+    fireItemResults();
+    fireEvent.focus(screen.getByPlaceholderText('Search items...'));
+    expect(screen.getByText('Choice Band')).toBeTruthy();
+  });
 });
