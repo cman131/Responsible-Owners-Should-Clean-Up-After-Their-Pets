@@ -15,9 +15,11 @@ echo "==> Checking pnpm"
 if ! command -v pnpm &>/dev/null; then
   echo "Installing pnpm..."
   sudo npm install -g pnpm
+  hash -r
 fi
 
 echo "==> Installing build dependencies (required for better-sqlite3 native addon)"
+sudo apt-get update -y
 sudo apt-get install -y build-essential python3-dev
 
 echo "==> Installing workspace dependencies"
@@ -40,10 +42,11 @@ else
   read -rsp "Enter ADMIN_TOKEN: " ADMIN_TOKEN
   echo
   cat > "$PROJECT_DIR/.env" <<ENV
-ADMIN_TOKEN=$ADMIN_TOKEN
+ADMIN_TOKEN="$ADMIN_TOKEN"
 PORT=$SERVER_PORT
 ENV
   echo ".env created at $PROJECT_DIR/.env"
+  chmod 600 "$PROJECT_DIR/.env"
 fi
 
 echo "==> Starting app with PM2"
@@ -51,13 +54,13 @@ pm2 delete poke-fighter-server 2>/dev/null || true
 pm2 start "$PROJECT_DIR/packages/server/dist/index.js" \
   --name poke-fighter-server \
   --cwd "$PROJECT_DIR"
-pm2 save
 
 echo "==> Configuring PM2 startup (auto-start on reboot)"
 PM2_STARTUP=$(pm2 startup | grep "sudo" | tail -1)
 if [[ -n "$PM2_STARTUP" ]]; then
-  eval "$PM2_STARTUP"
+  eval "$PM2_STARTUP"  # PM2-recommended pattern: runs the generated sudo command to register systemd hook
 fi
+pm2 save
 
 echo "==> Configuring nginx"
 sudo tee /etc/nginx/sites-available/pokefighter > /dev/null <<NGINX
