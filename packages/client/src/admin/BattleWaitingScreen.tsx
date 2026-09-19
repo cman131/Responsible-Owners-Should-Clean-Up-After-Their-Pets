@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getSocket } from '../socket.js';
+import { QrCodeModal } from '../components/QrCodeModal.js';
 import type { SlotStatusPayload } from '@poke-fighter/shared';
 
 interface SlotConfig {
@@ -17,6 +18,7 @@ interface Props {
 
 export function BattleWaitingScreen({ battleId, slotAssignment, onBack, onWatch }: Props) {
   const [joinedSlots, setJoinedSlots] = useState<Set<string>>(new Set());
+  const [showQr, setShowQr] = useState(false);
 
   useEffect(() => {
     const socket = getSocket();
@@ -75,8 +77,11 @@ export function BattleWaitingScreen({ battleId, slotAssignment, onBack, onWatch 
     );
   }
 
+  const qrUrl = `${window.location.origin}/?battleId=${battleId}`;
+
   return (
     <div style={styles.container}>
+      {showQr && <QrCodeModal url={qrUrl} onClose={() => setShowQr(false)} />}
       <div style={styles.header}>
         <button onClick={onBack} style={styles.backButton}>← HUB</button>
         <div style={styles.headerTitle}>BATTLE SETUP</div>
@@ -102,6 +107,7 @@ export function BattleWaitingScreen({ battleId, slotAssignment, onBack, onWatch 
           >
             Cancel Battle
           </button>
+          <button onClick={() => setShowQr(true)} style={styles.qrButton}>Share QR</button>
           <button onClick={() => onWatch(battleId)} style={styles.watchButton}>WATCH BATTLE →</button>
         </div>
       </div>
@@ -129,4 +135,5 @@ const styles = {
   footer: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px', borderTop: '1px solid #222' },
   countText: { color: '#aaa', fontSize: 11 },
   watchButton: { background: '#27ae60', color: '#000', border: 'none', padding: '5px 14px', fontSize: 11, letterSpacing: 2, cursor: 'pointer', borderRadius: 3, fontFamily: 'inherit' },
+  qrButton: { background: '#2980b9', color: '#fff', border: 'none', padding: '5px 14px', fontSize: 11, letterSpacing: 1, cursor: 'pointer', borderRadius: 3, fontFamily: 'inherit' },
 };

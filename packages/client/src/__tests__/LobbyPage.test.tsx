@@ -232,6 +232,17 @@ describe('LobbyPage', () => {
     expect(sessionStorage.getItem('mySlotId')).toBeNull();
   });
 
+  it('pre-selects a battle when battleId query parameter matches an available battle', () => {
+    window.history.pushState(null, '', '/?battleId=battle-1');
+    render(<MemoryRouter><LobbyPage /></MemoryRouter>);
+    act(() => {
+      socketHandlers['lobby:battles']?.({ battles: mockBattles });
+    });
+    // Slot dropdown should appear without clicking the battle card
+    expect(screen.getByRole('combobox')).toBeTruthy();
+    window.history.pushState(null, '', '/');
+  });
+
   it('navigates to /battle with selected slotId in state when state:sync fires', () => {
     render(<MemoryRouter><LobbyPage /></MemoryRouter>);
     act(() => {

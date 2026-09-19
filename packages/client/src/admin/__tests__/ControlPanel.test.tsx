@@ -2,6 +2,14 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('../../socket.js', () => ({ getSocket: vi.fn() }));
+
+vi.mock('../../components/QrCodeModal.js', () => ({
+  QrCodeModal: ({ url, onClose }: { url: string; onClose: () => void }) => (
+    <div data-testid="qr-modal" data-url={url}>
+      <button onClick={onClose}>close-modal</button>
+    </div>
+  ),
+}));
 import { getSocket } from '../../socket.js';
 
 vi.mock('../../battle/BattleScene.js', () => ({
@@ -225,5 +233,29 @@ describe('ControlPanel', () => {
     expect(wrapper.style.width).toBe('100%');
     expect(wrapper.style.maxWidth).toBe('800px');
     expect(wrapper.style.flexWrap).toBe('wrap');
+  });
+
+  it('renders a Join QR button', () => {
+    render(<ControlPanel battleId="b1" onBack={vi.fn()} />);
+    expect(screen.getByRole('button', { name: /join qr/i })).toBeTruthy();
+  });
+
+  it('opens QR modal when Join QR button is clicked', () => {
+    render(<ControlPanel battleId="b1" onBack={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /join qr/i }));
+    expect(screen.getByTestId('qr-modal')).toBeTruthy();
+  });
+
+  it('QR modal URL contains the battleId', () => {
+    render(<ControlPanel battleId="b1" onBack={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /join qr/i }));
+    expect(screen.getByTestId('qr-modal').getAttribute('data-url')).toContain('battleId=b1');
+  });
+
+  it('closes QR modal when modal close is triggered', () => {
+    render(<ControlPanel battleId="b1" onBack={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /join qr/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'close-modal' }));
+    expect(screen.queryByTestId('qr-modal')).toBeNull();
   });
 });

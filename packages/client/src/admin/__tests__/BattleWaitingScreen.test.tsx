@@ -1,5 +1,13 @@
-import { render, screen, act } from '@testing-library/react';
+import { render, screen, act, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+vi.mock('../../components/QrCodeModal.js', () => ({
+  QrCodeModal: ({ url, onClose }: { url: string; onClose: () => void }) => (
+    <div data-testid="qr-modal" data-url={url}>
+      <button onClick={onClose}>close-modal</button>
+    </div>
+  ),
+}));
 
 // Capture event handlers registered on the socket mock
 let socketHandlers: Record<string, (payload: unknown) => void> = {};
@@ -189,5 +197,57 @@ describe('BattleWaitingScreen', () => {
     );
     unmount();
     expect(mockSocket.off).toHaveBeenCalledWith('lobby:slot-status', expect.any(Function));
+  });
+
+  it('renders a Share QR button', () => {
+    render(
+      <BattleWaitingScreen
+        battleId="battle-1"
+        slotAssignment={slotAssignment}
+        onBack={vi.fn()}
+        onWatch={vi.fn()}
+      />
+    );
+    expect(screen.getByRole('button', { name: /share qr/i })).toBeTruthy();
+  });
+
+  it('opens the QR modal when Share QR is clicked', () => {
+    render(
+      <BattleWaitingScreen
+        battleId="battle-1"
+        slotAssignment={slotAssignment}
+        onBack={vi.fn()}
+        onWatch={vi.fn()}
+      />
+    );
+    fireEvent.click(screen.getByRole('button', { name: /share qr/i }));
+    expect(screen.getByTestId('qr-modal')).toBeTruthy();
+  });
+
+  it('QR modal URL contains the battleId', () => {
+    render(
+      <BattleWaitingScreen
+        battleId="battle-1"
+        slotAssignment={slotAssignment}
+        onBack={vi.fn()}
+        onWatch={vi.fn()}
+      />
+    );
+    fireEvent.click(screen.getByRole('button', { name: /share qr/i }));
+    expect(screen.getByTestId('qr-modal').getAttribute('data-url')).toContain('battleId=battle-1');
+  });
+
+  it('closes the QR modal when modal close is triggered', () => {
+    render(
+      <BattleWaitingScreen
+        battleId="battle-1"
+        slotAssignment={slotAssignment}
+        onBack={vi.fn()}
+        onWatch={vi.fn()}
+      />
+    );
+    fireEvent.click(screen.getByRole('button', { name: /share qr/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'close-modal' }));
+    expect(screen.queryByTestId('qr-modal')).toBeNull();
   });
 });

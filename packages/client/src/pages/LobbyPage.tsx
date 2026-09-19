@@ -8,7 +8,9 @@ type Phase = 'browse' | 'waiting';
 export function LobbyPage() {
   const [phase, setPhase] = useState<Phase>('browse');
   const [battles, setBattles] = useState<BattleJoinOption[]>([]);
-  const [selectedBattleId, setSelectedBattleId] = useState<string | null>(null);
+  const [selectedBattleId, setSelectedBattleId] = useState<string | null>(
+    new URLSearchParams(window.location.search).get('battleId')
+  );
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [joinedDisplayName, setJoinedDisplayName] = useState<string>('');
@@ -17,6 +19,7 @@ export function LobbyPage() {
 
   useEffect(() => {
     if (selectedBattleId === null) return;
+    if (battles.length === 0) return;
     const battle = battles.find((b) => b.battleId === selectedBattleId);
     if (!battle) {
       setSelectedBattleId(null);

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getSocket } from '../socket.js';
 import { BattleProvider, useBattle } from '../battle/BattleContext.js';
+import { QrCodeModal } from '../components/QrCodeModal.js';
 import { BattleScene } from '../battle/BattleScene.js';
 import { HpBarsRow } from '../battle/overlays/HpBarsRow.js';
 import { TurnLog } from '../battle/overlays/TurnLog.js';
@@ -20,6 +21,7 @@ function ControlPanelInner({ battleId, onBack }: Props) {
   const { state, turnLog, battleResult } = useBattle();
   const [npcRequests, setNpcRequests] = useState<NpcSlotRequest[]>([]);
   const [slotStatuses, setSlotStatuses] = useState<SlotStatusPayload['slots']>([]);
+  const [showQr, setShowQr] = useState(false);
 
   useEffect(() => {
     const socket = getSocket();
@@ -58,8 +60,11 @@ function ControlPanelInner({ battleId, onBack }: Props) {
   const teamASlots = state?.teams[0]?.slots.filter((s) => !s.isSpectator) ?? [];
   const teamBSlots = state?.teams[1]?.slots.filter((s) => !s.isSpectator) ?? [];
 
+  const qrUrl = `${window.location.origin}/?battleId=${battleId}`;
+
   return (
     <div style={{ background: '#0d0d1a', minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: 16, gap: 12 }}>
+      {showQr && <QrCodeModal url={qrUrl} onClose={() => setShowQr(false)} />}
       <div data-testid="battle-header-bar" style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', maxWidth: 800 }}>
         <button
           onClick={onBack}
@@ -85,6 +90,7 @@ function ControlPanelInner({ battleId, onBack }: Props) {
           </span>
         ))}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+          <button onClick={() => setShowQr(true)} style={{ ...btnStyle, background: '#2980b9' }}>Join QR</button>
           <button onClick={() => handleForfeit('team-a')} style={btnStyle}>FORFEIT TEAM A</button>
           <button onClick={() => handleForfeit('team-b')} style={btnStyle}>FORFEIT TEAM B</button>
         </div>
