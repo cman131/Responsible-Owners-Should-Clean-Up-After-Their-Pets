@@ -7,6 +7,8 @@ interface Props {
   teamSize: number;
   onBankChange: (bank: PokemonSet[]) => void;
   onMoveToTeam: (pokemon: PokemonSet) => void;
+  inventory?: Record<string, number>;
+  leasedItems?: Record<string, number>;
 }
 
 interface BankCardProps {
@@ -81,7 +83,7 @@ function BankCard({ pokemon, index, isSelected, teamFull, onSelect, onEdit, onMo
 
 type ModalState = { kind: 'closed' } | { kind: 'add' } | { kind: 'edit'; index: number };
 
-export function BankTab({ bank, teamSize, onBankChange, onMoveToTeam }: Props) {
+export function BankTab({ bank, teamSize, onBankChange, onMoveToTeam, inventory, leasedItems }: Props) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [modal, setModal] = useState<ModalState>({ kind: 'closed' });
   const [draft, setDraft] = useState<Partial<PokemonSet>>({});
@@ -162,7 +164,7 @@ export function BankTab({ bank, teamSize, onBankChange, onMoveToTeam }: Props) {
               <button onClick={() => setModal({ kind: 'closed' })} style={{ background: 'none', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: 16 }}>✕</button>
             </div>
             <div style={{ padding: 16 }}>
-              <PokemonSlotEditor value={draft} onChange={setDraft} />
+              <PokemonSlotEditor value={draft} onChange={setDraft} {...(inventory !== undefined ? { inventory, leasedItems } : {})} />
             </div>
             <div style={{ padding: '8px 16px 16px', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
               <button onClick={() => setModal({ kind: 'closed' })} style={{ background: '#333', border: 'none', color: '#fff', padding: '6px 16px', borderRadius: 3, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11 }}>CANCEL</button>

@@ -13,9 +13,11 @@ interface Props {
   initialTeam?: PokemonSet[];
   initialSelectedSlot?: number;
   onSendToBank?: (pokemon: PokemonSet) => void;
+  inventory?: Record<string, number>;
+  leasedItems?: Record<string, number>;
 }
 
-export function TeamBuilder({ onTeamSaved, initialTeam = [], initialSelectedSlot, onSendToBank }: Props) {
+export function TeamBuilder({ onTeamSaved, initialTeam = [], initialSelectedSlot, onSendToBank, inventory, leasedItems }: Props) {
   const [team, setTeam] = useState<Partial<PokemonSet>[]>(initialTeam.length > 0 ? initialTeam : [{}]);
   const [selectedSlot, setSelectedSlot] = useState(initialSelectedSlot ?? 0);
 
@@ -116,6 +118,7 @@ export function TeamBuilder({ onTeamSaved, initialTeam = [], initialSelectedSlot
         key={selectedSlot}
         value={team[selectedSlot] ?? {}}
         onChange={handleSlotChange}
+        {...(inventory !== undefined ? { inventory, leasedItems } : {})}
       />
 
       {onSendToBank && team[selectedSlot]?.speciesId && (

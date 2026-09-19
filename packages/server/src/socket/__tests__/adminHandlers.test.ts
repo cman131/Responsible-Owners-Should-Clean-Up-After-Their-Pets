@@ -320,6 +320,93 @@ describe('registerAdminHandlers – cancel-battle', () => {
   });
 });
 
+describe('registerAdminHandlers – registry:save-player item validation', () => {
+  function makeAdminSocket(id = 'admin-save') {
+    const handlers: Record<string, (p: unknown) => void> = {};
+    return {
+      id,
+      data: {} as Record<string, unknown>,
+      emit: vi.fn(),
+      join: vi.fn(),
+      leave: vi.fn(),
+      on(event: string, handler: (p: unknown) => void) { handlers[event] = handler; },
+      trigger(event: string, payload: unknown) { handlers[event]?.(payload); },
+    };
+  }
+
+  const mockIo = { sockets: { sockets: { values: () => [] } } } as any;
+  const mockStartBattle = vi.fn();
+  const mockLobby = { getWaitingPlayers: vi.fn(() => []), getBySlotId: vi.fn() } as any;
+
+  let db: AppDatabase;
+  let socket: ReturnType<typeof makeAdminSocket>;
+
+  beforeEach(() => {
+    db = new AppDatabase(':memory:');
+    socket = makeAdminSocket();
+    registerAdminHandlers(socket as any, mockIo, () => undefined, mockStartBattle, db, mockLobby, vi.fn());
+  });
+
+  afterEach(() => { db.close(); });
+
+  const makeMinimalSet = (heldItem?: string): import('@poke-fighter/shared').PokemonSet => ({
+    speciesId: 1, nickname: 'Bulbasaur', level: 5, nature: 'hardy',
+    moves: ['tackle', '', '', ''],
+    ability: 'Overgrow',
+    evs: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
+    ivs: { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 },
+    ...(heldItem ? { heldItem } : {}),
+  });
+
+  it('saves the profile when all held items are within inventory limits', () => {
+    const profile: import('@poke-fighter/shared').PlayerProfile = {
+      profileId: 'p1', displayName: 'Ash', createdAt: '2026-01-01T00:00:00Z',
+      inventory: { 'leftovers': 1 },
+      bank: [],
+      defaultTeam: { templateId: 't1', name: "Ash's Team", createdAt: '2026-01-01T00:00:00Z', pokemon: [makeMinimalSet('leftovers')] },
+    };
+    socket.trigger('admin:action', { type: 'registry:save-player', data: { profile } });
+    expect(socket.emit).toHaveBeenCalledWith('registry:data', expect.objectContaining({ resource: 'players' }));
+  });
+
+  it('emits registry:error when a held item count exceeds inventory', () => {
+    const profile: import('@poke-fighter/shared').PlayerProfile = {
+      profileId: 'p1', displayName: 'Ash', createdAt: '2026-01-01T00:00:00Z',
+      inventory: { 'choice-band': 1 },
+      bank: [makeMinimalSet('choice-band')],
+      defaultTeam: { templateId: 't1', name: "Ash's Team", createdAt: '2026-01-01T00:00:00Z', pokemon: [makeMinimalSet('choice-band')] },
+    };
+    socket.trigger('admin:action', { type: 'registry:save-player', data: { profile } });
+    expect(socket.emit).toHaveBeenCalledWith('registry:error', expect.objectContaining({
+      type: 'registry:save-player',
+      message: expect.stringContaining('choice-band'),
+    }));
+  });
+
+  it('does not save to DB when item count exceeds inventory', () => {
+    const profile: import('@poke-fighter/shared').PlayerProfile = {
+      profileId: 'p2', displayName: 'Misty', createdAt: '2026-01-01T00:00:00Z',
+      inventory: { 'choice-band': 1 },
+      bank: [makeMinimalSet('choice-band'), makeMinimalSet('choice-band')],
+    };
+    socket.trigger('admin:action', { type: 'registry:save-player', data: { profile } });
+    const saved = db.players.list();
+    expect(saved.find((p) => p.profileId === 'p2')).toBeUndefined();
+  });
+
+  it('saves successfully when a pokemon with no held item is in team', () => {
+    const profile: import('@poke-fighter/shared').PlayerProfile = {
+      profileId: 'p3', displayName: 'Brock', createdAt: '2026-01-01T00:00:00Z',
+      inventory: {},
+      bank: [],
+      defaultTeam: { templateId: 't1', name: "Brock's Team", createdAt: '2026-01-01T00:00:00Z', pokemon: [makeMinimalSet()] },
+    };
+    socket.trigger('admin:action', { type: 'registry:save-player', data: { profile } });
+    expect(socket.emit).toHaveBeenCalledWith('registry:data', expect.objectContaining({ resource: 'players' }));
+    expect(socket.emit).not.toHaveBeenCalledWith('registry:error', expect.anything());
+  });
+});
+
 describe('registerAdminHandlers – submit-default-action', () => {
   function makeAdminSocket(id = 'admin-sda') {
     const handlers: Record<string, (p: unknown) => void> = {};

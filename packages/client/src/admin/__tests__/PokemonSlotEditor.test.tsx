@@ -18,11 +18,12 @@ vi.mock('../MoveSearchDropdown.js', () => ({
   ),
 }));
 vi.mock('../ItemSearchDropdown.js', () => ({
-  ItemSearchDropdown: ({ value, onChange, equippableOnly }: any) => (
+  ItemSearchDropdown: ({ value, onChange, equippableOnly, availabilityMap }: any) => (
     <>
       <button onClick={() => onChange('leftovers')}>item-{value || 'none'}</button>
       <button onClick={() => onChange('')}>item-clear</button>
       {equippableOnly && <span>equippable-only</span>}
+      {availabilityMap && <span>avail-map-{JSON.stringify(availabilityMap)}</span>}
     </>
   ),
 }));
@@ -299,6 +300,47 @@ describe('PokemonSlotEditor', () => {
       render(<PokemonSlotEditor value={{}} onChange={onChange} />);
       fireEvent.click(screen.getByText('pick-charizard'));
       expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ teraType: 'Fire' }));
+    });
+  });
+
+  describe('inventory/leasedItems availability forwarding', () => {
+    const baseValue = {
+      speciesId: 6, nickname: 'Charizard', level: 50, nature: 'timid',
+      moves: ['', '', '', ''] as [string, string, string, string],
+      ability: 'Blaze',
+      evs: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
+      ivs: { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 },
+    };
+
+    it('passes computed availabilityMap to ItemSearchDropdown when inventory and leasedItems are provided', () => {
+      render(
+        <PokemonSlotEditor
+          value={baseValue}
+          onChange={vi.fn()}
+          inventory={{ 'choice-band': 1 }}
+          leasedItems={{ 'choice-band': 0 }}
+        />
+      );
+      expect(screen.getByText(/avail-map-/)).toBeTruthy();
+      expect(screen.getByText('avail-map-{"choice-band":1}')).toBeTruthy();
+    });
+
+    it('accounts for the current pokemon own held item when computing availability', () => {
+      // Charizard holds choice-band; inventory=1, leasedItems=1 → available = 1 - 1 + 1 = 1 (own item not double-counted)
+      render(
+        <PokemonSlotEditor
+          value={{ ...baseValue, heldItem: 'choice-band' }}
+          onChange={vi.fn()}
+          inventory={{ 'choice-band': 1 }}
+          leasedItems={{ 'choice-band': 1 }}
+        />
+      );
+      expect(screen.getByText('avail-map-{"choice-band":1}')).toBeTruthy();
+    });
+
+    it('does not pass availabilityMap when inventory is not provided', () => {
+      render(<PokemonSlotEditor value={baseValue} onChange={vi.fn()} />);
+      expect(screen.queryByText(/avail-map-/)).toBeNull();
     });
   });
 });

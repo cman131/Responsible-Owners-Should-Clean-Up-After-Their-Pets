@@ -11,6 +11,14 @@ interface Props {
   onBack: () => void;
 }
 
+function computeLeased(team: PokemonSet[], bank: PokemonSet[]): Record<string, number> {
+  const leased: Record<string, number> = {};
+  for (const p of [...team, ...bank]) {
+    if (p.heldItem) leased[p.heldItem] = (leased[p.heldItem] ?? 0) + 1;
+  }
+  return leased;
+}
+
 export function PlayerProfileEditor({ profile, onBack }: Props) {
   const [name, setName] = useState(profile?.displayName ?? '');
   const [team, setTeam] = useState<PokemonSet[]>(profile?.defaultTeam?.pokemon ?? []);
@@ -21,7 +29,9 @@ export function PlayerProfileEditor({ profile, onBack }: Props) {
 
   const isNew = profile === null;
   const teamComplete = team.length === 0 || team.every((p) => slotStatus(p) === 'complete');
-  const isValid = name.trim().length > 0 && teamComplete;
+  const leasedItems = computeLeased(team, bank);
+  const overLeased = Object.entries(leasedItems).some(([itemId, count]) => count > (inventory[itemId] ?? 0));
+  const isValid = name.trim().length > 0 && teamComplete && !overLeased;
 
   function handleSendToBank(pokemon: PokemonSet) {
     setBank((prev) => [...prev, pokemon]);
@@ -100,6 +110,8 @@ export function PlayerProfileEditor({ profile, onBack }: Props) {
               initialSelectedSlot={team.length > 0 ? team.length - 1 : 0}
               onTeamSaved={setTeam}
               onSendToBank={handleSendToBank}
+              inventory={inventory}
+              leasedItems={leasedItems}
             />
           </div>
           <div style={{ display: tab === 'bank' ? 'block' : 'none', padding: 16 }}>
@@ -108,6 +120,8 @@ export function PlayerProfileEditor({ profile, onBack }: Props) {
               teamSize={team.length}
               onBankChange={setBank}
               onMoveToTeam={handleMoveToTeam}
+              inventory={inventory}
+              leasedItems={leasedItems}
             />
           </div>
           <div style={{ display: tab === 'inventory' ? 'block' : 'none', padding: 16 }}>
@@ -117,7 +131,11 @@ export function PlayerProfileEditor({ profile, onBack }: Props) {
 
         {!isValid && (
           <div style={{ marginTop: 8, color: '#e74c3c', fontSize: 11 }}>
-            {name.trim().length === 0 ? 'Name is required.' : 'All Pokémon must have at least one move.'}
+            {name.trim().length === 0
+              ? 'Name is required.'
+              : overLeased
+              ? 'A held item exceeds inventory — reduce usage or add more to inventory.'
+              : 'All Pokémon must have at least one move.'}
           </div>
         )}
       </div>
