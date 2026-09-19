@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getSocket } from '../socket.js';
 import { TeamBuilder, slotStatus } from './TeamBuilder.js';
 import { BankTab } from './BankTab.js';
+import { InventoryTab } from './InventoryTab.js';
 import type { PlayerProfile, PokemonSet } from '@poke-fighter/shared';
 
 interface Props {
@@ -14,7 +15,8 @@ export function PlayerProfileEditor({ profile, onBack }: Props) {
   const [name, setName] = useState(profile?.displayName ?? '');
   const [team, setTeam] = useState<PokemonSet[]>(profile?.defaultTeam?.pokemon ?? []);
   const [bank, setBank] = useState<PokemonSet[]>(profile?.bank ?? []);
-  const [tab, setTab] = useState<'team' | 'bank'>('team');
+  const [inventory, setInventory] = useState<Record<string, number>>(profile?.inventory ?? {});
+  const [tab, setTab] = useState<'team' | 'bank' | 'inventory'>('team');
   const [teamKey, setTeamKey] = useState(0);
 
   const isNew = profile === null;
@@ -49,6 +51,7 @@ export function PlayerProfileEditor({ profile, onBack }: Props) {
         },
       } : {}),
       bank,
+      inventory,
       createdAt: profile?.createdAt ?? now,
     };
     socket.emit('admin:action', { type: 'registry:save-player', data: { profile: playerProfile } } as any);
@@ -78,13 +81,13 @@ export function PlayerProfileEditor({ profile, onBack }: Props) {
         </div>
 
         <div style={{ display: 'flex', borderBottom: '1px solid #333' }}>
-          {(['team', 'bank'] as const).map((t) => (
+          {(['team', 'bank', 'inventory'] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
-              style={{ padding: '8px 20px', background: tab === t ? (t === 'team' ? '#2980b9' : '#27ae60') : '#1a1a2e', color: tab === t ? '#fff' : '#888', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, letterSpacing: 2 }}
+              style={{ padding: '8px 20px', background: tab === t ? TAB_COLOR[t] : '#1a1a2e', color: tab === t ? '#fff' : '#888', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, letterSpacing: 2 }}
             >
-              {t === 'team' ? `TEAM (${team.length}/6)` : `BANK (${bank.length})`}
+              {t === 'team' ? `TEAM (${team.length}/6)` : t === 'bank' ? `BANK (${bank.length})` : `INVENTORY (${Object.keys(inventory).length})`}
             </button>
           ))}
         </div>
@@ -107,6 +110,9 @@ export function PlayerProfileEditor({ profile, onBack }: Props) {
               onMoveToTeam={handleMoveToTeam}
             />
           </div>
+          <div style={{ display: tab === 'inventory' ? 'block' : 'none', padding: 16 }}>
+            <InventoryTab inventory={inventory} onInventoryChange={setInventory} />
+          </div>
         </div>
 
         {!isValid && (
@@ -119,5 +125,6 @@ export function PlayerProfileEditor({ profile, onBack }: Props) {
   );
 }
 
+const TAB_COLOR: Record<'team' | 'bank' | 'inventory', string> = { team: '#2980b9', bank: '#27ae60', inventory: '#8e44ad' };
 const backBtn: React.CSSProperties = { background: 'none', border: '1px solid #555', color: '#aaa', padding: '5px 12px', borderRadius: 3, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11 };
 const actionBtn: React.CSSProperties = { border: 'none', color: '#fff', padding: '6px 16px', borderRadius: 3, fontFamily: 'inherit', fontSize: 12, letterSpacing: 1 };

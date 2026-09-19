@@ -7,7 +7,7 @@ class PlayersStore {
   list(): PlayerProfile[] {
     const rows = this.db.prepare('SELECT * FROM players').all() as Array<{
       profileId: string; displayName: string; createdAt: string;
-      defaultTeam: string | null; bank: string | null;
+      defaultTeam: string | null; bank: string | null; inventory: string | null;
     }>;
     return rows.map((r) => ({
       profileId: r.profileId,
@@ -15,23 +15,26 @@ class PlayersStore {
       createdAt: r.createdAt,
       ...(r.defaultTeam !== null ? { defaultTeam: JSON.parse(r.defaultTeam) as TeamTemplate } : {}),
       ...(r.bank !== null ? { bank: JSON.parse(r.bank) as PokemonSet[] } : {}),
+      ...(r.inventory !== null ? { inventory: JSON.parse(r.inventory) as Record<string, number> } : {}),
     }));
   }
 
   save(profile: PlayerProfile): void {
     this.db.prepare(`
-      INSERT INTO players (profileId, displayName, createdAt, defaultTeam, bank)
-      VALUES (@profileId, @displayName, @createdAt, @defaultTeam, @bank)
+      INSERT INTO players (profileId, displayName, createdAt, defaultTeam, bank, inventory)
+      VALUES (@profileId, @displayName, @createdAt, @defaultTeam, @bank, @inventory)
       ON CONFLICT(profileId) DO UPDATE SET
         displayName = excluded.displayName,
         defaultTeam = excluded.defaultTeam,
-        bank        = excluded.bank
+        bank        = excluded.bank,
+        inventory   = excluded.inventory
     `).run({
       profileId: profile.profileId,
       displayName: profile.displayName,
       createdAt: profile.createdAt,
       defaultTeam: profile.defaultTeam !== undefined ? JSON.stringify(profile.defaultTeam) : null,
       bank: profile.bank !== undefined ? JSON.stringify(profile.bank) : null,
+      inventory: profile.inventory !== undefined ? JSON.stringify(profile.inventory) : null,
     });
   }
 
@@ -233,6 +236,11 @@ export class AppDatabase {
     `);
     try {
       this.conn.exec(`ALTER TABLE battles ADD COLUMN eventLog TEXT NOT NULL DEFAULT '[]'`);
+    } catch {
+      // column already exists — safe to ignore
+    }
+    try {
+      this.conn.exec(`ALTER TABLE players ADD COLUMN inventory TEXT`);
     } catch {
       // column already exists — safe to ignore
     }

@@ -29,6 +29,11 @@ vi.mock('../BankTab.js', () => ({
     </div>
   ),
 }));
+vi.mock('../InventoryTab.js', () => ({
+  InventoryTab: ({ inventory }: any) => (
+    <div><span>inventory-tab-{Object.keys(inventory).length}</span></div>
+  ),
+}));
 
 import { getSocket } from '../../socket.js';
 import { PlayerProfileEditor } from '../PlayerProfileEditor.js';
@@ -41,11 +46,12 @@ beforeEach(() => {
 });
 
 describe('PlayerProfileEditor', () => {
-  it('renders name field and TEAM / BANK tabs', () => {
+  it('renders name field and TEAM / BANK / INVENTORY tabs', () => {
     render(<PlayerProfileEditor profile={null} onBack={vi.fn()} />);
     expect(screen.getByPlaceholderText(/ash ketchum/i)).toBeTruthy();
     expect(screen.getByRole('button', { name: /^team/i })).toBeTruthy();
     expect(screen.getByRole('button', { name: /^bank/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^inventory/i })).toBeTruthy();
   });
 
   it('shows bank tab content when BANK tab is clicked', () => {
