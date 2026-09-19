@@ -1,16 +1,23 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getSocket, connectAsPlayerPortal } from '../socket.js';
-import type { PlayerProfile } from '@poke-fighter/shared';
+import type { PlayerProfile, PokemonSet } from '@poke-fighter/shared';
+import { PlayerTeamView } from '../player/PlayerTeamView.js';
+import { PlayerBankTab } from '../player/PlayerBankTab.js';
 
 type Phase = 'entry' | 'loading' | 'portal';
 type ActiveTab = 'team' | 'bank' | 'inventory';
+type SaveStatus = 'idle' | 'saving' | 'saved';
 
 export function PlayerPortalPage() {
   const [phase, setPhase] = useState<Phase>('entry');
   const [playerKey, setPlayerKey] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [profile, setProfile] = useState<PlayerProfile | null>(null);
+  const [localTeam, setLocalTeam] = useState<PokemonSet[]>([]);
+  const [localBank, setLocalBank] = useState<PokemonSet[]>([]);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ActiveTab>('team');
   const navigate = useNavigate();
 
@@ -18,26 +25,68 @@ export function PlayerPortalPage() {
     const socket = getSocket();
 
     socket.on('player:portal-data', (payload: { profile: PlayerProfile }) => {
-      setProfile(payload.profile);
-      setPhase('portal');
+      const p = payload.profile;
+      setProfile(p);
+      setLocalTeam(p.defaultTeam?.pokemon ?? []);
+      setLocalBank(p.bank ?? []);
+      setSaveError(null);
+      if (phase === 'loading') {
+        setPhase('portal');
+      } else {
+        setSaveStatus('saved');
+        setTimeout(() => setSaveStatus('idle'), 2000);
+      }
     });
 
     socket.on('player:portal-error', (payload: { message: string }) => {
-      setError(payload.message);
-      setPhase('entry');
+      if (phase === 'loading') {
+        setAuthError(payload.message);
+        setPhase('entry');
+      } else {
+        setSaveError(payload.message);
+        setSaveStatus('idle');
+      }
     });
 
     return () => {
       socket.off('player:portal-data');
       socket.off('player:portal-error');
     };
-  }, []);
+  }, [phase]);
 
   function handleSubmit() {
-    setError(null);
+    setAuthError(null);
     setPhase('loading');
     connectAsPlayerPortal();
     getSocket().emit('player:portal-auth', { playerKey });
+  }
+
+  function handleSave() {
+    if (!profile) return;
+    setSaveStatus('saving');
+    setSaveError(null);
+    getSocket().emit('player:portal-save', {
+      profileId: profile.profileId,
+      team: localTeam,
+      bank: localBank,
+    });
+  }
+
+  function handleDiscard() {
+    if (!profile) return;
+    setLocalTeam(profile.defaultTeam?.pokemon ?? []);
+    setLocalBank(profile.bank ?? []);
+    setSaveError(null);
+  }
+
+  function handleBankMoveFromTeam(pokemon: PokemonSet, index: number) {
+    setLocalTeam(localTeam.filter((_, i) => i !== index));
+    setLocalBank([...localBank, pokemon]);
+  }
+
+  function handleMoveToPartyFromBank(pokemon: PokemonSet, index: number) {
+    setLocalBank(localBank.filter((_, i) => i !== index));
+    setLocalTeam([...localTeam, pokemon]);
   }
 
   if (phase === 'loading') {
@@ -55,33 +104,55 @@ export function PlayerPortalPage() {
     return (
       <div style={styles.container}>
         <h1 style={styles.title}>POKE FIGHTER</h1>
-        <div style={styles.box}>
+        <div style={{ ...styles.box, maxWidth: 600, minWidth: 400 }}>
           <h2 style={styles.displayName}>{profile.displayName}</h2>
           <div style={styles.tabs}>
             <button
               style={{ ...styles.tabButton, ...(activeTab === 'team' ? styles.tabActive : {}) }}
               onClick={() => setActiveTab('team')}
-            >
-              Team
-            </button>
+            >Team</button>
             <button
               style={{ ...styles.tabButton, ...(activeTab === 'bank' ? styles.tabActive : {}) }}
               onClick={() => setActiveTab('bank')}
-            >
-              Bank
-            </button>
+            >Bank</button>
             <button
               style={{ ...styles.tabButton, ...(activeTab === 'inventory' ? styles.tabActive : {}) }}
               onClick={() => setActiveTab('inventory')}
-            >
-              Inventory
-            </button>
+            >Inventory</button>
           </div>
           <div style={styles.tabContent}>
-            {activeTab === 'team' && <p style={styles.placeholder}>Team management coming soon.</p>}
-            {activeTab === 'bank' && <p style={styles.placeholder}>Bank management coming soon.</p>}
+            {activeTab === 'team' && (
+              localTeam.length === 0
+                ? <p style={styles.placeholder}>No Pokémon in party.</p>
+                : <PlayerTeamView
+                    team={localTeam}
+                    onTeamChange={setLocalTeam}
+                    onBankMove={handleBankMoveFromTeam}
+                  />
+            )}
+            {activeTab === 'bank' && (
+              <PlayerBankTab
+                bank={localBank}
+                partySize={localTeam.length}
+                onBankChange={setLocalBank}
+                onMoveToParty={handleMoveToPartyFromBank}
+              />
+            )}
             {activeTab === 'inventory' && <p style={styles.placeholder}>Inventory coming soon.</p>}
           </div>
+
+          {saveError && <p style={styles.error}>{saveError}</p>}
+
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', alignItems: 'center' }}>
+            {saveStatus === 'saved' && <span style={styles.savedIndicator}>Saved!</span>}
+            <button onClick={handleDiscard} style={styles.discardBtn}>DISCARD</button>
+            <button
+              onClick={handleSave}
+              disabled={saveStatus === 'saving'}
+              style={{ ...styles.saveBtn, opacity: saveStatus === 'saving' ? 0.6 : 1 }}
+            >SAVE CHANGES</button>
+          </div>
+
           <button style={styles.backLink} onClick={() => navigate('/')}>
             ← Back to Lobby
           </button>
@@ -103,7 +174,7 @@ export function PlayerPortalPage() {
           onChange={(e) => setPlayerKey(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter' && playerKey.trim()) handleSubmit(); }}
         />
-        {error && <p style={styles.error}>{error}</p>}
+        {authError && <p style={styles.error}>{authError}</p>}
         <button
           style={{ ...styles.button, opacity: playerKey.trim() ? 1 : 0.5 }}
           disabled={!playerKey.trim()}
@@ -132,4 +203,7 @@ const styles = {
   tabContent: { minHeight: 80 },
   placeholder: { color: '#555', fontSize: 13 },
   backLink: { background: 'transparent', color: '#aaa', border: 'none', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' as const, padding: 0, marginTop: 8 },
+  saveBtn: { background: '#27ae60', border: 'none', color: '#fff', padding: '6px 14px', borderRadius: 3, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, letterSpacing: 1 },
+  discardBtn: { background: '#555', border: 'none', color: '#fff', padding: '6px 14px', borderRadius: 3, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, letterSpacing: 1 },
+  savedIndicator: { color: '#27ae60', fontSize: 11, letterSpacing: 1 },
 };
