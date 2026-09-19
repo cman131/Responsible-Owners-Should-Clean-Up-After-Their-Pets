@@ -23,9 +23,12 @@ export function itemMatchesQuery(i: HeldItem, query: string): boolean {
   return i.id.toLowerCase().includes(q) || i.name.toLowerCase().includes(q);
 }
 
-export function filterItemsQuery(items: HeldItem[], opts: { equippableOnly?: boolean; query?: string }): HeldItem[] {
+export function filterItemsQuery(items: HeldItem[], opts: { equippableOnly?: boolean; query?: string; speciesName?: string }): HeldItem[] {
   const base = opts.equippableOnly ? items.filter((i) => i.equippable) : items;
-  return opts.query ? base.filter((i) => itemMatchesQuery(i, opts.query!)) : base;
+  const speciesFiltered = opts.speciesName !== undefined
+    ? base.filter((i) => !i.speciesRestriction || i.speciesRestriction === opts.speciesName)
+    : base;
+  return opts.query ? speciesFiltered.filter((i) => itemMatchesQuery(i, opts.query!)) : speciesFiltered;
 }
 
 export function registerAdminHandlers(
@@ -104,14 +107,18 @@ export function registerAdminHandlers(
               break;
             }
             case 'items': {
-              const { query: itemQuery, equippableOnly } = payload.data as { query?: string; equippableOnly?: boolean };
+              const { query: itemQuery, equippableOnly, speciesName } = payload.data as { query?: string; equippableOnly?: boolean; speciesName?: string };
               const allImplemented = data.getAllItems().filter((i) => {
                 // Normalise via item NAME to match ITEM_HOOKS hyphenated keys
                 // (items.json ids are camelCase and don't match ITEM_HOOKS keys directly)
                 const normByName = i.name.toLowerCase().replace(/\s+/g, '-');
                 return IMPLEMENTED_ITEM_IDS.has(normByName);
               });
-              results = filterItemsQuery(allImplemented, { equippableOnly, query: itemQuery });
+              results = filterItemsQuery(allImplemented, {
+                ...(equippableOnly !== undefined ? { equippableOnly } : {}),
+                ...(itemQuery !== undefined ? { query: itemQuery } : {}),
+                ...(speciesName !== undefined ? { speciesName } : {}),
+              });
               break;
             }
             default:

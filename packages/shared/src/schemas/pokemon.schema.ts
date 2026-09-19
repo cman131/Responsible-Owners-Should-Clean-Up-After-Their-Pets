@@ -6,6 +6,7 @@ export const HeldItemSchema = z.object({
   effectId: z.string().min(1),
   isBerry: z.boolean(),
   equippable: z.boolean(),
+  speciesRestriction: z.string().optional(),
 });
 
 const StatsSchema = z.object({

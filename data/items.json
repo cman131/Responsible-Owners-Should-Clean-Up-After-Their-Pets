@@ -11,14 +11,16 @@
     "name": "Abomasite",
     "effectId": "abomasite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "abomasnow"
   },
   {
     "id": "absolite",
     "name": "Absolite",
     "effectId": "absolite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "absol"
   },
   {
     "id": "absorbbulb",
@@ -53,14 +55,16 @@
     "name": "Aerodactylite",
     "effectId": "aerodactylite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "aerodactyl"
   },
   {
     "id": "aggronite",
     "name": "Aggronite",
     "effectId": "aggronite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "aggron"
   },
   {
     "id": "aguavberry",
@@ -81,7 +85,8 @@
     "name": "Alakazite",
     "effectId": "alakazite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "alakazam"
   },
   {
     "id": "aloraichiumz",
@@ -95,14 +100,16 @@
     "name": "Altarianite",
     "effectId": "altarianite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "altaria"
   },
   {
     "id": "ampharosite",
     "name": "Ampharosite",
     "effectId": "ampharosite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "ampharos"
   },
   {
     "id": "apicotberry",
@@ -137,7 +144,8 @@
     "name": "Audinite",
     "effectId": "audinite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "audino"
   },
   {
     "id": "auspiciousarmor",
@@ -158,7 +166,8 @@
     "name": "Banettite",
     "effectId": "banettite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "banette"
   },
   {
     "id": "beastball",
@@ -172,7 +181,8 @@
     "name": "Beedrillite",
     "effectId": "beedrillite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "beedrill"
   },
   {
     "id": "belueberry",
@@ -242,14 +252,16 @@
     "name": "Blastoisinite",
     "effectId": "blastoisinite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "blastoise"
   },
   {
     "id": "blazikenite",
     "name": "Blazikenite",
     "effectId": "blazikenite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "blaziken"
   },
   {
     "id": "blueorb",
@@ -326,7 +338,8 @@
     "name": "Cameruptite",
     "effectId": "cameruptite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "camerupt"
   },
   {
     "id": "cellbattery",
@@ -347,14 +360,16 @@
     "name": "Charizardite X",
     "effectId": "charizarditex",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "charizard"
   },
   {
     "id": "charizarditey",
     "name": "Charizardite Y",
     "effectId": "charizarditey",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "charizard"
   },
   {
     "id": "chartiberry",
@@ -578,7 +593,8 @@
     "name": "Diancite",
     "effectId": "diancite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "diancie"
   },
   {
     "id": "diveball",
@@ -991,7 +1007,8 @@
     "name": "Galladite",
     "effectId": "galladite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "gallade"
   },
   {
     "id": "ganlonberry",
@@ -1005,21 +1022,24 @@
     "name": "Garchompite",
     "effectId": "garchompite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "garchomp"
   },
   {
     "id": "gardevoirite",
     "name": "Gardevoirite",
     "effectId": "gardevoirite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "gardevoir"
   },
   {
     "id": "gengarite",
     "name": "Gengarite",
     "effectId": "gengarite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "gengar"
   },
   {
     "id": "ghostgem",
@@ -1047,7 +1067,8 @@
     "name": "Glalitite",
     "effectId": "glalitite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "glalie"
   },
   {
     "id": "goldbottlecap",
@@ -1145,7 +1166,8 @@
     "name": "Gyaradosite",
     "effectId": "gyaradosite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "gyarados"
   },
   {
     "id": "habanberry",
@@ -1208,7 +1230,8 @@
     "name": "Heracronite",
     "effectId": "heracronite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "heracross"
   },
   {
     "id": "hondewberry",
@@ -1222,7 +1245,8 @@
     "name": "Houndoominite",
     "effectId": "houndoominite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "houndoom"
   },
   {
     "id": "iapapaberry",
@@ -1348,7 +1372,8 @@
     "name": "Kangaskhanite",
     "effectId": "kangaskhanite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "kangaskhan"
   },
   {
     "id": "kingsrock",
@@ -1383,14 +1408,16 @@
     "name": "Latiasite",
     "effectId": "latiasite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "latias"
   },
   {
     "id": "latiosite",
     "name": "Latiosite",
     "effectId": "latiosite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "latios"
   },
   {
     "id": "laxincense",
@@ -1474,7 +1501,8 @@
     "name": "Lopunnite",
     "effectId": "lopunnite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "lopunny"
   },
   {
     "id": "loveball",
@@ -1495,7 +1523,8 @@
     "name": "Lucarionite",
     "effectId": "lucarionite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "lucario"
   },
   {
     "id": "luckypunch",
@@ -1614,7 +1643,8 @@
     "name": "Manectite",
     "effectId": "manectite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "manectric"
   },
   {
     "id": "marangaberry",
@@ -1649,7 +1679,8 @@
     "name": "Mawilite",
     "effectId": "mawilite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "mawile"
   },
   {
     "id": "meadowplate",
@@ -1663,7 +1694,8 @@
     "name": "Medichamite",
     "effectId": "medichamite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "medicham"
   },
   {
     "id": "mentalherb",
@@ -1677,7 +1709,8 @@
     "name": "Metagrossite",
     "effectId": "metagrossite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "metagross"
   },
   {
     "id": "metalalloy",
@@ -1719,14 +1752,16 @@
     "name": "Mewtwonite X",
     "effectId": "mewtwonitex",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "mewtwo"
   },
   {
     "id": "mewtwonitey",
     "name": "Mewtwonite Y",
     "effectId": "mewtwonitey",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "mewtwo"
   },
   {
     "id": "micleberry",
@@ -1936,7 +1971,8 @@
     "name": "Pidgeotite",
     "effectId": "pidgeotite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "pidgeot"
   },
   {
     "id": "pikaniumz",
@@ -1964,7 +2000,8 @@
     "name": "Pinsirite",
     "effectId": "pinsirite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "pinsir"
   },
   {
     "id": "pixieplate",
@@ -2349,7 +2386,8 @@
     "name": "Sablenite",
     "effectId": "sablenite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "sableye"
   },
   {
     "id": "sachet",
@@ -2391,21 +2429,24 @@
     "name": "Salamencite",
     "effectId": "salamencite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "salamence"
   },
   {
     "id": "sceptilite",
     "name": "Sceptilite",
     "effectId": "sceptilite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "sceptile"
   },
   {
     "id": "scizorite",
     "name": "Scizorite",
     "effectId": "scizorite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "scizor"
   },
   {
     "id": "scopelens",
@@ -2433,7 +2474,8 @@
     "name": "Sharpedonite",
     "effectId": "sharpedonite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "sharpedo"
   },
   {
     "id": "shedshell",
@@ -2510,7 +2552,8 @@
     "name": "Slowbronite",
     "effectId": "slowbronite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "slowbro"
   },
   {
     "id": "smoothrock",
@@ -2608,7 +2651,8 @@
     "name": "Steelixite",
     "effectId": "steelixite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "steelix"
   },
   {
     "id": "steelgem",
@@ -2678,7 +2722,8 @@
     "name": "Swampertite",
     "effectId": "swampertite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "swampert"
   },
   {
     "id": "sweetapple",
@@ -3483,7 +3528,8 @@
     "name": "Tyranitarite",
     "effectId": "tyranitarite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "tyranitar"
   },
   {
     "id": "ultraball",
@@ -3525,7 +3571,8 @@
     "name": "Venusaurite",
     "effectId": "venusaurite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "venusaur"
   },
   {
     "id": "wacanberry",
@@ -3749,7 +3796,8 @@
     "name": "Crucibellite",
     "effectId": "crucibellite",
     "isBerry": false,
-    "equippable": true
+    "equippable": true,
+    "speciesRestriction": "crucibelle"
   },
   {
     "id": "vilevial",

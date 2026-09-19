@@ -163,6 +163,7 @@ const allItems = gen9.items.all().map((i) => ({
   effectId: i.id,
   isBerry: !!i.isBerry,
   equippable: true,
+  ...(i.megaEvolves ? { speciesRestriction: i.megaEvolves.toLowerCase() } : {}),
 }));
 
 writeFileSync(join(dataDir, 'items.json'), JSON.stringify(allItems, null, 2));
