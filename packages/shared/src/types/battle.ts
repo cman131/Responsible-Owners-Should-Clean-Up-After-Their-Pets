@@ -66,6 +66,12 @@ export interface PartyMember {
   ivs?: Stats;
   evs?: Stats;
   nature?: string;
+  originalForm?: {
+    stats: Stats;
+    ability: string;
+    typeOverride?: PokemonType[];
+    moves: [MoveSlot, MoveSlot, MoveSlot, MoveSlot];
+  };
 }
 
 export interface SlotState {
