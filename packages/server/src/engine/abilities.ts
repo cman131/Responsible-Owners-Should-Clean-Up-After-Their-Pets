@@ -24,6 +24,7 @@ export interface SwitchInResult {
   traceAbilityId?: string;                   // sets tracedAbilityId on incoming Pokémon (Trace)
   clearScreens?: boolean;                    // removes Reflect/Light Screen/Aurora Veil from both sides (Screen Cleaner)
   setWeather?: { type: WeatherType; turnsRemaining: number; permanent?: boolean };
+  transform?: true;                          // transform into the opposing active Pokémon (Imposter)
 }
 
 export interface SwitchContext {
@@ -394,6 +395,9 @@ const ABILITY_HOOKS: Record<string, AbilityHooks> = {
     onSwitchIn: () => ({
       setWeather: { type: 'strong-winds' as WeatherType, turnsRemaining: 999, permanent: true },
     }),
+  },
+  imposter: {
+    onSwitchIn: () => ({ transform: true }),
   },
   'gorilla-tactics': {
     // Gorilla Tactics boosts Attack by 1.5× (physical only; holders are always physical attackers)

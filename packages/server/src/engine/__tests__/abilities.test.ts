@@ -791,3 +791,103 @@ describe('Strong Winds (Delta Stream) — type effectiveness clamp', () => {
     expect(remainingHp).toBeLessThan(100);    // took damage
   });
 });
+
+describe('Imposter', () => {
+  it('transforms into the foe\'s active Pokémon on switch-in', () => {
+    const state = make1v1State();
+    const ditto = makePokemon({
+      instanceId: 'p1-bench',
+      speciesName: 'ditto',
+      ability: 'imposter',
+      stats: { hp: 48, atk: 48, def: 48, spa: 48, spd: 48, spe: 48 },
+    });
+    state.teams[0]!.slots[0]!.party.push(ditto);
+
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    p2.ability = 'intimidate';
+    p2.statBoosts = { ...p2.statBoosts, atk: 2 };
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState, events } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'switch', targetInstanceId: 'p1-bench' },
+      'slot-b1': { type: 'move', moveIndex: 2 }, // roost (harmless)
+    });
+
+    const dittoAfter = newState.teams[0]!.slots[0]!.party.find(p => p.instanceId === 'p1-bench')!;
+    expect(dittoAfter.ability).toBe('intimidate');
+    expect(dittoAfter.stats).toEqual({ hp: 48, atk: 100, def: 100, spa: 100, spd: 100, spe: 80 });
+    expect(dittoAfter.statBoosts.atk).toBe(2);
+    expect(dittoAfter.moves.every(m => m.maxPp === 5)).toBe(true);
+    expect(dittoAfter.volatileStatus.some(v => v.name === 'transformed')).toBe(true);
+    expect(events.some(e => e.type === 'ability-triggered' && e.data['ability'] === 'imposter')).toBe(true);
+  });
+
+  it('does not transform when the foe is behind a substitute', () => {
+    const state = make1v1State();
+    const ditto = makePokemon({ instanceId: 'p1-bench', ability: 'imposter' });
+    state.teams[0]!.slots[0]!.party.push(ditto);
+
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    p2.volatileStatus.push({ name: 'substitute', hp: 25 });
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'switch', targetInstanceId: 'p1-bench' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+
+    const dittoAfter = newState.teams[0]!.slots[0]!.party.find(p => p.instanceId === 'p1-bench')!;
+    expect(dittoAfter.ability).toBe('imposter');
+    expect(dittoAfter.volatileStatus.some(v => v.name === 'transformed')).toBe(false);
+  });
+
+  it('does not transform when there is no live foe to copy', () => {
+    const state = make1v1State();
+    const ditto = makePokemon({ instanceId: 'p1-bench', ability: 'imposter' });
+    state.teams[0]!.slots[0]!.party.push(ditto);
+    state.teams[1]!.slots[0]!.party[0]!.fainted = true;
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+    const { newState } = engine.resolveTurn(state, {
+      'slot-a1': { type: 'switch', targetInstanceId: 'p1-bench' },
+    });
+
+    const dittoAfter = newState.teams[0]!.slots[0]!.party.find(p => p.instanceId === 'p1-bench')!;
+    expect(dittoAfter.ability).toBe('imposter');
+    expect(dittoAfter.volatileStatus.some(v => v.name === 'transformed')).toBe(false);
+  });
+
+  it('reverts to its original form when it switches out', () => {
+    const state = make1v1State();
+    const ditto = makePokemon({
+      instanceId: 'p1-bench',
+      ability: 'imposter',
+      stats: { hp: 48, atk: 48, def: 48, spa: 48, spd: 48, spe: 48 },
+    });
+    const dittoOriginalStats = { ...ditto.stats };
+    state.teams[0]!.slots[0]!.party.push(ditto);
+
+    const secondBench = makePokemon({ instanceId: 'p1-bench-2' });
+    state.teams[0]!.slots[0]!.party.push(secondBench);
+
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    p2.ability = 'intimidate';
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+
+    const turn1 = engine.resolveTurn(state, {
+      'slot-a1': { type: 'switch', targetInstanceId: 'p1-bench' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+
+    const turn2 = engine.resolveTurn(turn1.newState, {
+      'slot-a1': { type: 'switch', targetInstanceId: 'p1-bench-2' },
+      'slot-b1': { type: 'move', moveIndex: 2 },
+    });
+
+    const dittoAfter = turn2.newState.teams[0]!.slots[0]!.party.find(p => p.instanceId === 'p1-bench')!;
+    expect(dittoAfter.ability).toBe('imposter');
+    expect(dittoAfter.stats).toEqual(dittoOriginalStats);
+    expect(dittoAfter.volatileStatus.some(v => v.name === 'transformed')).toBe(false);
+  });
+});

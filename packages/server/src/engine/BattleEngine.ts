@@ -10,6 +10,7 @@ import { PARALYSIS_SPEED_MOD } from './status.js';
 import { EffectEngine, SlotContext } from './EffectEngine.js';
 import { getAbilityHooks, effectiveAbilityId } from './abilities.js';
 import type { SwitchInResult } from './abilities.js';
+import { applyTransform } from './transform.js';
 import { getItemHooks } from './items.js';
 import { applyStatus, applyStatBoost, evaluateSecondaryEffect, evaluateVolatileEffect, applySecondaries, applyVolatile } from './effects.js';
 import type { SecondaryContext } from './effects.js';
@@ -2659,6 +2660,21 @@ export class BattleEngine {
       if (!s.field.weather?.permanent || permanent) {
         s.field.weather = { type, turnsRemaining, fromAbility: true, ...(permanent !== undefined ? { permanent } : {}) };
         events.push({ type: 'weather-started', data: { weather: type, turnsRemaining } });
+      }
+    }
+
+    // Imposter: transform into the opposing active Pokémon
+    if (result.transform) {
+      const incomingTeamIndex = s.teams.findIndex(t => t.slots.some(sl => sl.slotId === slotId));
+      const foeTeamIndex = incomingTeamIndex === 0 ? 1 : 0;
+      const foeTeam = s.teams[foeTeamIndex];
+      const foeSlot = foeTeam?.slots[0];
+      const foeMon = foeSlot?.party[foeSlot.activePokemonIndex];
+      const foeBehindSub = foeMon?.volatileStatus.some(v => v.name === 'substitute') ?? false;
+      if (foeMon && !foeMon.fainted && !foeBehindSub) {
+        const foeTypes = this.resolveEffectiveTypes(foeMon);
+        events.push(...applyTransform(incoming, slotId, foeMon, foeTypes));
+        events.push({ type: 'ability-triggered', data: { slotId, ability: 'imposter', effect: 'transform' } });
       }
     }
   }
