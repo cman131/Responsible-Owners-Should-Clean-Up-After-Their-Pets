@@ -11,6 +11,7 @@ import {
   forceSwitch, itemSwap,
 } from './effectFactories.js';
 import { clearHazards, clearScreens } from './sideConditions.js';
+import { applyTransform } from './transform.js';
 import { applyStatBoost, applyVolatile, applyStatus } from './effects.js';
 import { canApplyStatus } from './status.js';
 import { getEffectiveStat } from './stats.js';
@@ -1124,38 +1125,7 @@ export function buildDefaultRegistry(data: DataLoader = new DataLoader()): MoveE
     if (!target) {
       return { events: [{ type: 'move-failed', data: { moveId: 'transform', reason: 'no-target' } }] };
     }
-
-    // Copy stats (not HP)
-    ctx.user.stats = { ...target.stats, hp: ctx.user.stats.hp };
-
-    // Copy stat boosts
-    ctx.user.statBoosts = { ...target.statBoosts };
-
-    // Copy ability
-    ctx.user.ability = target.ability;
-
-    // Copy effective types (using pre-resolved ctx.targetTypes[0])
-    if (ctx.targetTypes[0]) {
-      ctx.user.typeOverride = [...ctx.targetTypes[0]];
-    } else {
-      delete ctx.user.typeOverride;
-    }
-
-    // Copy moves with PP capped at 5
-    ctx.user.moves = target.moves.map(slot => ({
-      moveId: slot.moveId,
-      currentPp: Math.min(slot.currentPp, 5),
-      maxPp: 5,
-    })) as [any, any, any, any]; // TypeScript tuple assertion
-
-    // Mark as transformed
-    if (!ctx.user.volatileStatus.some(v => v.name === 'transformed')) {
-      ctx.user.volatileStatus.push({ name: 'transformed' });
-    }
-
-    return {
-      events: [{ type: 'volatile-applied', data: { targetSlotId: ctx.userSlotId, volatile: 'transformed' } }],
-    };
+    return { events: applyTransform(ctx.user, ctx.userSlotId, target, ctx.targetTypes[0] ?? []) };
   });
 
   r.register('mimic', (ctx) => {
