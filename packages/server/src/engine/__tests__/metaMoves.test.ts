@@ -732,6 +732,53 @@ describe('Transform', () => {
     // Types should match target's effective types
     expect(p1After.typeOverride).toEqual(['Water', 'Dragon']);
   });
+
+  it('reverts stats, ability, type, and moves when the transformed Pokémon switches out', () => {
+    const state = make1v1State();
+
+    const p1 = state.teams[0]!.slots[0]!.party[0]!;
+    p1.moves[0] = { moveId: 'transform', currentPp: 10, maxPp: 10 };
+    p1.stats = { ...p1.stats, spe: 200 }; // p1 moves first
+
+    const bench = makePokemon({ instanceId: 'p1-bench' });
+    state.teams[0]!.slots[0]!.party.push(bench);
+
+    const p2 = state.teams[1]!.slots[0]!.party[0]!;
+    p2.ability = 'intimidate';
+    p2.typeOverride = ['Water', 'Dragon'];
+    p2.stats = { hp: 100, atk: 120, def: 100, spa: 100, spd: 100, spe: 80 };
+
+    const engine = new BattleEngine({ rng: () => 0.5 });
+
+    // Turn 1: p1 transforms into p2
+    const turn1 = engine.resolveTurn(state, {
+      'slot-a1': { type: 'move', moveIndex: 0 }, // Transform
+      'slot-b1': { type: 'move', moveIndex: 2 }, // roost (harmless)
+    });
+
+    const p1Transformed = turn1.newState.teams[0]!.slots[0]!.party[0]!;
+    expect(p1Transformed.ability).toBe('intimidate');
+    expect(p1Transformed.typeOverride).toEqual(['Water', 'Dragon']);
+
+    // Turn 2: p1 switches out to its bench mon
+    const turn2 = engine.resolveTurn(turn1.newState, {
+      'slot-a1': { type: 'switch', targetInstanceId: 'p1-bench' },
+      'slot-b1': { type: 'move', moveIndex: 2 }, // roost (harmless)
+    });
+
+    const p1Reverted = turn2.newState.teams[0]!.slots[0]!.party.find(p => p.instanceId === p1.instanceId)!;
+    expect(p1Reverted.ability).toBe('blaze'); // original Charizard ability from makePokemon default
+    expect(p1Reverted.stats).toEqual({ hp: 100, atk: 100, def: 100, spa: 100, spd: 100, spe: 200 });
+    expect(p1Reverted.moves).toEqual([
+      { moveId: 'transform', currentPp: 9, maxPp: 10 }, // 1 PP spent using it turn 1
+      { moveId: 'airslash', currentPp: 15, maxPp: 15 },
+      { moveId: 'roost', currentPp: 10, maxPp: 10 },
+      { moveId: 'willowisp', currentPp: 15, maxPp: 15 },
+    ]);
+    expect(p1Reverted.typeOverride).toBeUndefined();
+    expect(p1Reverted.volatileStatus.some(v => v.name === 'transformed')).toBe(false);
+    expect(p1Reverted.originalForm).toBeUndefined();
+  });
 });
 
 describe('Psych Up', () => {

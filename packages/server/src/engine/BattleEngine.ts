@@ -2432,6 +2432,18 @@ export class BattleEngine {
 
     // 2. Switch-out cleanup
     if (outgoing) {
+      if (outgoing.originalForm) {
+        outgoing.stats = outgoing.originalForm.stats;
+        outgoing.ability = outgoing.originalForm.ability;
+        outgoing.moves = outgoing.originalForm.moves;
+        if (outgoing.originalForm.typeOverride) {
+          outgoing.typeOverride = outgoing.originalForm.typeOverride;
+        } else {
+          delete outgoing.typeOverride;
+        }
+        delete outgoing.originalForm;
+        outgoing.volatileStatus = outgoing.volatileStatus.filter(v => v.name !== 'transformed');
+      }
       outgoing.volatileStatus = outgoing.volatileStatus.filter(v =>
         !SWITCH_CLEAR_NAMES.has(v.name) &&
         !SWITCH_CLEAR_PREFIXES.some(p => v.name.startsWith(p))
