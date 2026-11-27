@@ -2803,7 +2803,7 @@ export class BattleEngine {
 
     // Field counter decrements + expiry events
     if (s.field.weather) {
-      if (!s.field.weather.permanent) {
+      if (!s.field.weather.permanent && !s.field.weather.indefinite) {
         s.field.weather.turnsRemaining -= 1;
         if (s.field.weather.turnsRemaining <= 0) {
           events.push({ type: 'weather-ended', data: { weather: s.field.weather.type } });
