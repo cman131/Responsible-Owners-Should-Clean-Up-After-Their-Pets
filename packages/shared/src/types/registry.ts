@@ -1,6 +1,7 @@
 import type { PokemonType } from './pokemon.js';
 
 export interface PokemonSet {
+  pokemonId?: string;  // assigned by the server for saved player Pokémon
   speciesId: number;
   nickname: string;
   level: number;

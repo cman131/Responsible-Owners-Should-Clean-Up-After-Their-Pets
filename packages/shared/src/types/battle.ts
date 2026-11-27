@@ -37,6 +37,8 @@ export interface MoveSlot {
 
 export interface PartyMember {
   instanceId: string;       // unique per battle (uuid)
+  pokemonId?: string;       // set only for tracked player Pokémon
+  ownerProfileId?: string;  // player profile that owns this Pokémon
   speciesId: number;
   speciesName: string;      // internal PS name, e.g. 'charizard' — used for sprite URLs
   nickname: string;

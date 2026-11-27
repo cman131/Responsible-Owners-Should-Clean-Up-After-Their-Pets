@@ -2,6 +2,7 @@ import type { BattleState, PartyMember } from './battle.js';
 import type { MoveTarget } from './pokemon.js';
 import type { PlayerProfile, PokemonSet } from './registry.js';
 import type { HeldItem } from './pokemon.js';
+import type { PlayerHealthPayload, BattleStartResultPayload } from './condition.js';
 
 // ── Client → Server ──────────────────────────────────────────────────────────
 
@@ -50,6 +51,8 @@ export interface AdminActionPayload {
     | 'registry:delete-npc'
     | 'registry:save-team'
     | 'registry:delete-team'
+    | 'registry:player-health'
+    | 'registry:heal-player'
     | 'start-battle'
     | 'cancel-battle'
     | 'data:query';
@@ -216,6 +219,9 @@ export interface ServerToClientEvents {
   'battle:history': (payload: { turns: Array<{ turnNumber: number; events: TurnResolveEvent[] }> }) => void;
   'admin:authenticated': () => void;
   'admin:error': (payload: { message: string }) => void;
+  'admin:start-result': (payload: BattleStartResultPayload) => void;
+  'admin:warning': (payload: { message: string }) => void;
+  'player:health': (payload: PlayerHealthPayload) => void;
   'npc:action-request': (payload: {
     battleId: string;
     slots: Array<{ slotId: string; displayName: string; request: ActionRequestPayload }>;
