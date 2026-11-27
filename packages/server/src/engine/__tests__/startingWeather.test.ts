@@ -3,7 +3,7 @@ import type { BattleState } from '@poke-fighter/shared';
 import { BattleEngine } from '../BattleEngine.js';
 import { make1v1State, makePokemon } from './fixtures.js';
 
-const ROOST = { type: 'move' as const, moveIndex: 2 };
+const ROOST = { type: 'move', moveIndex: 2 } as const;
 const engine = new BattleEngine({ rng: () => 0.5 });
 
 function stateWithStartingWeather(): BattleState {
