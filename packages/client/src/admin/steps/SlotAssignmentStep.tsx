@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getSocket } from '../../socket.js';
+import type { PlayerHealthPayload } from '@poke-fighter/shared';
+import { getSlotReadiness, type SlotReadiness } from '../slotReadiness.js';
 
 interface SlotConfig {
   slotId: string;
@@ -52,6 +54,29 @@ export function SlotAssignmentStep({ teamASlots, teamBSlots, onNext, onBack }: P
     };
   }, []);
 
+  const [healthById, setHealthById] = useState<Record<string, PlayerHealthPayload>>({});
+
+  useEffect(() => {
+    const socket = getSocket();
+    function handleHealth(payload: PlayerHealthPayload) {
+      setHealthById((prev) => ({ ...prev, [payload.profileId]: payload }));
+    }
+    socket.on('player:health', handleHealth);
+    return () => { socket.off('player:health', handleHealth); };
+  }, []);
+
+  const playerIds = slots.flatMap((s) => (s.type === 'player' && s.profileId ? [s.profileId] : [])).join(',');
+
+  useEffect(() => {
+    for (const profileId of playerIds.split(',').filter(Boolean)) {
+      getSocket().emit('admin:action', { type: 'registry:player-health', data: { profileId } });
+    }
+  }, [playerIds]);
+
+  const readinessFor = (slot: SlotConfig): SlotReadiness =>
+    getSlotReadiness(slot, slots, slot.profileId ? healthById[slot.profileId] : undefined);
+  const blocked = slots.some((s) => readinessFor(s).blocker !== null);
+
   function updateSlot(index: number, update: Partial<SlotConfig>) {
     setSlots((prev) => prev.map((s, i) => i === index ? { ...s, ...update } : s));
   }
@@ -77,6 +102,7 @@ export function SlotAssignmentStep({ teamASlots, teamBSlots, onNext, onBack }: P
           savedPlayers={savedPlayers}
           savedNpcs={savedNpcs}
           duplicateNames={duplicateNames}
+          readinessFor={readinessFor}
         />
         <TeamColumn
           label="Team B"
@@ -87,6 +113,7 @@ export function SlotAssignmentStep({ teamASlots, teamBSlots, onNext, onBack }: P
           savedPlayers={savedPlayers}
           savedNpcs={savedNpcs}
           duplicateNames={duplicateNames}
+          readinessFor={readinessFor}
         />
       </div>
 
@@ -95,7 +122,7 @@ export function SlotAssignmentStep({ teamASlots, teamBSlots, onNext, onBack }: P
         <button
           onClick={() => onNext({ teamA: slots.filter((s) => s.slotId.startsWith('a')), teamB: slots.filter((s) => s.slotId.startsWith('b')) })}
           style={{ ...btnStyle, background: '#2980b9' }}
-          disabled={!allFilled}
+          disabled={!allFilled || blocked}
         >
           NEXT →
         </button>
@@ -104,20 +131,20 @@ export function SlotAssignmentStep({ teamASlots, teamBSlots, onNext, onBack }: P
   );
 }
 
-function TeamColumn({ label, slots, startIndex, onUpdate, waitingPlayers, savedPlayers, savedNpcs, duplicateNames }: any) {
+function TeamColumn({ label, slots, startIndex, onUpdate, waitingPlayers, savedPlayers, savedNpcs, duplicateNames, readinessFor }: any) {
   return (
     <div style={{ flex: 1 }}>
       <div style={{ color: '#aaa', fontSize: 12, letterSpacing: 2, marginBottom: 12 }}>{label.toUpperCase()}</div>
       {slots.map((slot: any, i: number) => (
         <SlotRow key={slot.slotId} slot={slot} index={startIndex + i} onUpdate={onUpdate}
           waitingPlayers={waitingPlayers} savedPlayers={savedPlayers} savedNpcs={savedNpcs}
-          duplicateNames={duplicateNames} />
+          duplicateNames={duplicateNames} readiness={readinessFor(slot)} />
       ))}
     </div>
   );
 }
 
-function SlotRow({ slot, index, onUpdate, waitingPlayers, savedPlayers, savedNpcs, duplicateNames }: any) {
+function SlotRow({ slot, index, onUpdate, waitingPlayers, savedPlayers, savedNpcs, duplicateNames, readiness }: any) {
   return (
     <div style={{ background: '#0d0d1a', border: '1px solid #333', borderRadius: 4, padding: 12, marginBottom: 8, display: 'flex', gap: 8, alignItems: 'center' }}>
       <select
@@ -164,6 +191,8 @@ function SlotRow({ slot, index, onUpdate, waitingPlayers, savedPlayers, savedNpc
       {duplicateNames?.has(slot.displayName) && (
         <span style={{ color: '#f0c040', fontSize: 10 }}>⚠ duplicate</span>
       )}
+      {readiness.blocker && <span style={{ color: '#e74c3c', fontSize: 10 }}>{readiness.blocker}</span>}
+      {readiness.summary && <span style={{ color: '#f0c040', fontSize: 10 }}>{readiness.summary}</span>}
     </div>
   );
 }

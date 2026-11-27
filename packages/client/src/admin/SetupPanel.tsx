@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import type { BattleStartResultPayload } from '@poke-fighter/shared';
 import { getSocket } from '../socket.js';
 import { TeamStructureStep } from './steps/TeamStructureStep.js';
 import { SlotAssignmentStep } from './steps/SlotAssignmentStep.js';
@@ -24,6 +25,26 @@ export function SetupPanel({ onBack, onWatch }: SetupPanelProps) {
   const [structure, setStructure] = useState({ teamASlots: 1, teamBSlots: 1 });
   const [slotAssignment, setSlotAssignment] = useState<{ teamA: any[]; teamB: any[] } | null>(null);
   const [battleId, setBattleId] = useState<string | null>(null);
+  const [startError, setStartError] = useState<string | null>(null);
+  const pendingBattleId = useRef<string | null>(null);
+
+  useEffect(() => {
+    const socket = getSocket();
+    function handleResult(result: BattleStartResultPayload) {
+      if (result.battleId !== pendingBattleId.current) {
+        return;
+      }
+      pendingBattleId.current = null;
+      if (result.ok) {
+        setBattleId(result.battleId);
+        setStep('started');
+      } else {
+        setStartError(result.message ?? 'Battle failed to start.');
+      }
+    }
+    socket.on('admin:start-result', handleResult);
+    return () => { socket.off('admin:start-result', handleResult); };
+  }, []);
 
   function handleStructureNext(config: { teamASlots: number; teamBSlots: number }) {
     setStructure(config);
@@ -36,9 +57,13 @@ export function SetupPanel({ onBack, onWatch }: SetupPanelProps) {
   }
 
   function handleStart({ label, levelCap }: { label: string; levelCap?: number }) {
+    if (pendingBattleId.current !== null) {
+      return;
+    }
     const socket = getSocket();
     const id = uuidv4();
-    setBattleId(id);
+    pendingBattleId.current = id;
+    setStartError(null);
 
     function buildSlots(slots: any[]) {
       return slots.map((slot: any) => ({
@@ -46,6 +71,7 @@ export function SetupPanel({ onBack, onWatch }: SetupPanelProps) {
         displayName: slot.displayName,
         isNpc: slot.type === 'npc',
         party: slot.defaultTeam ?? [],
+        ...(slot.type === 'player' && slot.profileId ? { profileId: slot.profileId } : {}),
       }));
     }
 
@@ -61,7 +87,6 @@ export function SetupPanel({ onBack, onWatch }: SetupPanelProps) {
         ],
       },
     } as any);
-    setStep('started');
   }
 
   if (step === 'started' && battleId && slotAssignment) {
@@ -99,10 +124,13 @@ export function SetupPanel({ onBack, onWatch }: SetupPanelProps) {
               onBack={() => setStep('structure')}
             />
           )}
+          {step === 'settings' && startError && (
+            <div style={{ color: '#e74c3c', fontSize: 12, padding: '16px 24px 0' }}>{startError}</div>
+          )}
           {step === 'settings' && (
             <BattleSettingsStep
               onStart={handleStart}
-              onBack={() => setStep('assignment')}
+              onBack={() => { setStartError(null); setStep('assignment'); }}
             />
           )}
         </div>
