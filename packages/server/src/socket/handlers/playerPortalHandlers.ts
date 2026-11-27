@@ -2,6 +2,7 @@ import type { Socket } from 'socket.io';
 import type { ServerToClientEvents, ClientToServerEvents, PokemonSet } from '@poke-fighter/shared';
 import type { AppDatabase } from '../../db/Database.js';
 import { IMPLEMENTED_ITEM_IDS } from '../../engine/items.js';
+import type { HealthService } from '../../setup/playerHealth.js';
 import { filterItemsQuery } from './adminHandlers.js';
 
 function coreFingerprint(p: PokemonSet): string {
@@ -18,7 +19,8 @@ function coreFingerprint(p: PokemonSet): string {
 
 export function registerPlayerPortalHandlers(
   socket: Socket<ClientToServerEvents, ServerToClientEvents>,
-  db: AppDatabase
+  db: AppDatabase,
+  health: Pick<HealthService, 'publish'> = { publish: () => {} }
 ): void {
   socket.on('player:portal-roster-request', () => {
     const players = db.players.list().map((p) => ({ profileId: p.profileId, displayName: p.displayName }));
@@ -33,6 +35,7 @@ export function registerPlayerPortalHandlers(
     }
     socket.data['portalProfileId'] = match.profileId;
     socket.emit('player:portal-data', { profile: match });
+    health.publish(match.profileId);
   });
 
   socket.on('player:portal-save', ({ profileId, team, bank }) => {
@@ -56,14 +59,21 @@ export function registerPlayerPortalHandlers(
       ...(existing.defaultTeam?.pokemon ?? []),
       ...(existing.bank ?? []),
     ];
-    const existingFingerprints = existingPool.map(coreFingerprint);
-
+    const storedById = new Map(existingPool.map((p) => [p.pokemonId, p]));
     const incoming = [...team, ...bank];
-    for (const p of incoming) {
-      if (!existingFingerprints.includes(coreFingerprint(p))) {
-        socket.emit('player:portal-error', { message: 'Invalid change: only held items, nicknames, and team/bank order may be changed.' });
-        return;
+    const seen = new Set<string>();
+    // The save must contain every stored Pokémon exactly once
+    const unchanged = incoming.length === existingPool.length && incoming.every((p) => {
+      if (p.pokemonId === undefined || seen.has(p.pokemonId)) {
+        return false;
       }
+      seen.add(p.pokemonId);
+      const original = storedById.get(p.pokemonId);
+      return original !== undefined && coreFingerprint(original) === coreFingerprint(p);
+    });
+    if (!unchanged) {
+      socket.emit('player:portal-error', { message: 'Invalid change: only held items, nicknames, and team/bank order may be changed.' });
+      return;
     }
 
     const heldCounts: Record<string, number> = {};
@@ -95,8 +105,9 @@ export function registerPlayerPortalHandlers(
       } : {}),
       bank,
     };
-    db.players.save(updated);
-    socket.emit('player:portal-data', { profile: updated });
+    const saved = db.players.save(updated);
+    socket.emit('player:portal-data', { profile: saved });
+    health.publish(profileId);
   });
 
   socket.on('player:portal-items-query', async ({ speciesName }) => {

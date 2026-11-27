@@ -32,6 +32,11 @@ const makePlayer = (overrides: Partial<PlayerProfile> = {}): PlayerProfile => ({
   ...overrides,
 });
 
+function stored(db: AppDatabase) {
+  const player = db.players.get('p1')!;
+  return { team: player.defaultTeam?.pokemon ?? [], bank: player.bank ?? [] };
+}
+
 describe('registerPlayerPortalHandlers – player:portal-roster-request', () => {
   let db: AppDatabase;
   let socket: ReturnType<typeof makeSocket>;
@@ -174,7 +179,7 @@ describe('registerPlayerPortalHandlers – player:portal-save', () => {
     });
     db.players.save(player);
     socket.data['portalProfileId'] = 'p1';
-    const updated = makeSet({ nickname: 'New', heldItem: 'leftovers' });
+    const updated = { ...stored(db).team[0]!, nickname: 'New', heldItem: 'leftovers' };
     await socket.trigger('player:portal-save', { profileId: 'p1', team: [updated], bank: [] });
     expect(socket.emit).toHaveBeenCalledWith('player:portal-data', expect.objectContaining({
       profile: expect.objectContaining({ profileId: 'p1' }),
@@ -187,7 +192,7 @@ describe('registerPlayerPortalHandlers – player:portal-save', () => {
     const player = makePlayer({ defaultTeam: { templateId: 't1', name: 'Team', createdAt: '2026-01-01', pokemon: [original] } });
     db.players.save(player);
     socket.data['portalProfileId'] = 'p1';
-    const modified = makeSet({ moves: ['scratch', '', '', ''] });
+    const modified: PokemonSet = { ...stored(db).team[0]!, moves: ['scratch', '', '', ''] };
     await socket.trigger('player:portal-save', { profileId: 'p1', team: [modified], bank: [] });
     expect(socket.emit).toHaveBeenCalledWith('player:portal-error', expect.objectContaining({
       message: expect.any(String),
@@ -199,7 +204,7 @@ describe('registerPlayerPortalHandlers – player:portal-save', () => {
     const player = makePlayer({ defaultTeam: { templateId: 't1', name: 'Team', createdAt: '2026-01-01', pokemon: [original] } });
     db.players.save(player);
     socket.data['portalProfileId'] = 'p1';
-    const modified = makeSet({ speciesId: 4 });
+    const modified = { ...stored(db).team[0]!, speciesId: 4 };
     await socket.trigger('player:portal-save', { profileId: 'p1', team: [modified], bank: [] });
     expect(socket.emit).toHaveBeenCalledWith('player:portal-error', expect.objectContaining({
       message: expect.any(String),
@@ -221,7 +226,7 @@ describe('registerPlayerPortalHandlers – player:portal-save', () => {
     const player = makePlayer({ bank: [poke] });
     db.players.save(player);
     socket.data['portalProfileId'] = 'p1';
-    await socket.trigger('player:portal-save', { profileId: 'p1', team: [poke], bank: [] });
+    await socket.trigger('player:portal-save', { profileId: 'p1', team: stored(db).bank, bank: [] });
     expect(socket.emit).toHaveBeenCalledWith('player:portal-data', expect.objectContaining({
       profile: expect.objectContaining({ profileId: 'p1' }),
     }));
@@ -233,11 +238,44 @@ describe('registerPlayerPortalHandlers – player:portal-save', () => {
     const player = makePlayer({ defaultTeam: { templateId: 't1', name: 'Team', createdAt: '2026-01-01', pokemon: [original] } });
     db.players.save(player);
     socket.data['portalProfileId'] = 'p1';
-    const updated = makeSet({ nickname: 'New' });
+    const updated = { ...stored(db).team[0]!, nickname: 'New' };
     await socket.trigger('player:portal-save', { profileId: 'p1', team: [updated], bank: [] });
     const savedPlayer = db.players.list().find((p) => p.profileId === 'p1');
     expect(savedPlayer?.defaultTeam?.pokemon[0]?.nickname).toBe('New');
   });
+  it('rejects a save that repeats, invents or drops a Pokémon ID', async () => {
+    db.players.save(makePlayer({
+      defaultTeam: { templateId: 't1', name: 'Team', createdAt: '2026-01-01', pokemon: [makeSet(), makeSet()] },
+    }));
+    socket.data['portalProfileId'] = 'p1';
+    const [first, second] = stored(db).team;
+
+    for (const team of [[first!, first!], [first!, { ...second!, pokemonId: 'made-up' }], [first!]]) {
+      socket.emit.mockClear();
+      await socket.trigger('player:portal-save', { profileId: 'p1', team, bank: [] });
+      expect(socket.emit).toHaveBeenCalledWith('player:portal-error', expect.anything());
+    }
+    expect(stored(db).team).toHaveLength(2);
+  });
+
+  it('keeps condition when Pokémon are reordered, and publishes health', async () => {
+    const publish = vi.fn();
+    socket = makeSocket();
+    registerPlayerPortalHandlers(socket as any, db, { publish });
+    db.players.save(makePlayer({
+      defaultTeam: { templateId: 't1', name: 'Team', createdAt: '2026-01-01', pokemon: [makeSet(), makeSet()] },
+    }));
+    const [first, second] = stored(db).team;
+    const condition = { currentHp: 1, maxHp: 20, ppUsed: {} };
+    db.conditions.saveMany([{ profileId: 'p1', pokemonId: first!.pokemonId!, condition }]);
+    socket.data['portalProfileId'] = 'p1';
+
+    await socket.trigger('player:portal-save', { profileId: 'p1', team: [second!, first!], bank: [] });
+
+    expect(db.conditions.getForProfile('p1').get(first!.pokemonId!)).toEqual(condition);
+    expect(publish).toHaveBeenCalledWith('p1');
+  });
+
 });
 
 describe('registerPlayerPortalHandlers – player:portal-items-query', () => {
@@ -298,7 +336,7 @@ describe('registerPlayerPortalHandlers – player:portal-save leasing validation
     });
     db.players.save(player);
     socket.data['portalProfileId'] = 'p1';
-    await socket.trigger('player:portal-save', { profileId: 'p1', team: [poke1, poke2], bank: [] });
+    await socket.trigger('player:portal-save', { profileId: 'p1', team: stored(db).team, bank: [] });
     expect(socket.emit).toHaveBeenCalledWith('player:portal-error', expect.objectContaining({
       message: expect.any(String),
     }));
@@ -312,7 +350,7 @@ describe('registerPlayerPortalHandlers – player:portal-save leasing validation
     });
     db.players.save(player);
     socket.data['portalProfileId'] = 'p1';
-    await socket.trigger('player:portal-save', { profileId: 'p1', team: [poke], bank: [] });
+    await socket.trigger('player:portal-save', { profileId: 'p1', team: stored(db).team, bank: [] });
     expect(socket.emit).not.toHaveBeenCalledWith('player:portal-error', expect.anything());
     expect(socket.emit).toHaveBeenCalledWith('player:portal-data', expect.anything());
   });
@@ -327,7 +365,7 @@ describe('registerPlayerPortalHandlers – player:portal-save leasing validation
     });
     db.players.save(player);
     socket.data['portalProfileId'] = 'p1';
-    await socket.trigger('player:portal-save', { profileId: 'p1', team: [poke1], bank: [poke2] });
+    await socket.trigger('player:portal-save', { profileId: 'p1', team: stored(db).team, bank: stored(db).bank });
     expect(socket.emit).toHaveBeenCalledWith('player:portal-error', expect.objectContaining({
       message: expect.any(String),
     }));
@@ -341,7 +379,7 @@ describe('registerPlayerPortalHandlers – player:portal-save leasing validation
     });
     db.players.save(player);
     socket.data['portalProfileId'] = 'p1';
-    await socket.trigger('player:portal-save', { profileId: 'p1', team: [poke], bank: [] });
+    await socket.trigger('player:portal-save', { profileId: 'p1', team: stored(db).team, bank: [] });
     expect(socket.emit).toHaveBeenCalledWith('player:portal-error', expect.objectContaining({
       message: expect.any(String),
     }));
