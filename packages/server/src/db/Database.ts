@@ -1,8 +1,13 @@
 import Database from 'better-sqlite3';
 import type { PlayerProfile, NpcProfile, TeamTemplate, BattleState, BattleSummary, PokemonSet, TurnResolveEvent } from '@poke-fighter/shared';
+import { ConditionStore } from './ConditionStore.js';
+import { allPokemon, assignPokemonIds, needsPokemonIds } from './pokemonIds.js';
 
 class PlayersStore {
-  constructor(private readonly db: InstanceType<typeof Database>) {}
+  constructor(
+    private readonly db: InstanceType<typeof Database>,
+    private readonly conditions: ConditionStore,
+  ) {}
 
   list(): PlayerProfile[] {
     const rows = this.db.prepare('SELECT * FROM players').all() as Array<{
@@ -21,29 +26,39 @@ class PlayersStore {
     }));
   }
 
-  save(profile: PlayerProfile): void {
-    this.db.prepare(`
-      INSERT INTO players (profileId, displayName, createdAt, defaultTeam, bank, inventory, playerKey)
-      VALUES (@profileId, @displayName, @createdAt, @defaultTeam, @bank, @inventory, @playerKey)
-      ON CONFLICT(profileId) DO UPDATE SET
-        displayName = excluded.displayName,
-        defaultTeam = excluded.defaultTeam,
-        bank        = excluded.bank,
-        inventory   = excluded.inventory,
-        playerKey   = excluded.playerKey
-    `).run({
-      profileId: profile.profileId,
-      displayName: profile.displayName,
-      createdAt: profile.createdAt,
-      defaultTeam: profile.defaultTeam !== undefined ? JSON.stringify(profile.defaultTeam) : null,
-      bank: profile.bank !== undefined ? JSON.stringify(profile.bank) : null,
-      inventory: profile.inventory !== undefined ? JSON.stringify(profile.inventory) : null,
-      playerKey: profile.playerKey ?? null,
-    });
+  get(profileId: string): PlayerProfile | undefined {
+    return this.list().find((p) => p.profileId === profileId);
+  }
+
+  save(profile: PlayerProfile): PlayerProfile {
+    const saved = assignPokemonIds(profile);
+    this.db.transaction(() => {
+      this.db.prepare(`
+        INSERT INTO players (profileId, displayName, createdAt, defaultTeam, bank, inventory, playerKey)
+        VALUES (@profileId, @displayName, @createdAt, @defaultTeam, @bank, @inventory, @playerKey)
+        ON CONFLICT(profileId) DO UPDATE SET
+          displayName = excluded.displayName,
+          defaultTeam = excluded.defaultTeam,
+          bank        = excluded.bank,
+          inventory   = excluded.inventory,
+          playerKey   = excluded.playerKey
+      `).run({
+        profileId: saved.profileId,
+        displayName: saved.displayName,
+        createdAt: saved.createdAt,
+        defaultTeam: saved.defaultTeam !== undefined ? JSON.stringify(saved.defaultTeam) : null,
+        bank: saved.bank !== undefined ? JSON.stringify(saved.bank) : null,
+        inventory: saved.inventory !== undefined ? JSON.stringify(saved.inventory) : null,
+        playerKey: saved.playerKey ?? null,
+      });
+      this.conditions.prune(saved.profileId, allPokemon(saved).map((p) => p.pokemonId!));
+    })();
+    return saved;
   }
 
   delete(profileId: string): void {
     this.db.prepare('DELETE FROM players WHERE profileId = ?').run(profileId);
+    this.conditions.clear(profileId);
   }
 }
 
@@ -198,6 +213,7 @@ class BattlesStore {
 export class AppDatabase {
   private readonly conn: InstanceType<typeof Database>;
   readonly players: PlayersStore;
+  readonly conditions: ConditionStore;
   readonly npcs: NpcsStore;
   readonly teams: TeamsStore;
   readonly battles: BattlesStore;
@@ -237,6 +253,16 @@ export class AppDatabase {
         initialState   TEXT NOT NULL,
         currentState   TEXT NOT NULL
       );
+      CREATE TABLE IF NOT EXISTS pokemon_condition (
+        profileId   TEXT NOT NULL,
+        pokemonId   TEXT NOT NULL,
+        currentHp   INTEGER NOT NULL,
+        maxHp       INTEGER NOT NULL,
+        status      TEXT,
+        sleepTurns  INTEGER,
+        ppUsed      TEXT NOT NULL,
+        PRIMARY KEY (profileId, pokemonId)
+      );
     `);
     try {
       this.conn.exec(`ALTER TABLE battles ADD COLUMN eventLog TEXT NOT NULL DEFAULT '[]'`);
@@ -253,10 +279,17 @@ export class AppDatabase {
     } catch {
       // column already exists — safe to ignore
     }
-    this.players = new PlayersStore(this.conn);
+    this.conditions = new ConditionStore(this.conn);
+    this.players = new PlayersStore(this.conn, this.conditions);
     this.npcs = new NpcsStore(this.conn);
     this.teams = new TeamsStore(this.conn);
     this.battles = new BattlesStore(this.conn);
+    // Backfill IDs for players saved before health tracking
+    for (const player of this.players.list()) {
+      if (needsPokemonIds(player)) {
+        this.players.save(player);
+      }
+    }
   }
 
   close(): void {
