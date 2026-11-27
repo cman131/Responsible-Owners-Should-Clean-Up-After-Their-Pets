@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { BattleConfigurator } from '../BattleConfigurator.js';
-import type { PokemonSet } from '@poke-fighter/shared';
+import { STARTING_WEATHERS, type PokemonSet, type StartingWeather } from '@poke-fighter/shared';
 
 const mockSet: PokemonSet = {
   speciesId: 6, level: 50, ability: 'blaze',
@@ -137,5 +137,26 @@ describe('BattleConfigurator saved condition', () => {
     expect(slot.party[0]!.fainted).toBe(false);
     expect(slot.party[0]!.ownerProfileId).toBeUndefined();
     expect(slot.activePokemonIndex).toBe(0);
+  });
+});
+
+describe('BattleConfigurator starting weather', () => {
+  const buildWithWeather = (weather?: StartingWeather) => new BattleConfigurator().build({
+    battleId: 'x', label: 'x',
+    teams: [
+      { slots: [{ slotId: 'a1', displayName: 'A', isNpc: true, party: [mockSet] }] },
+      { slots: [{ slotId: 'b1', displayName: 'B', isNpc: true, party: [mockSet] }] },
+    ],
+    ...(weather !== undefined ? { weather } : {}),
+  });
+
+  it.each(STARTING_WEATHERS)('starts in indefinite %s', (weather) => {
+    expect(buildWithWeather(weather).field.weather).toEqual({
+      type: weather, turnsRemaining: 0, fromAbility: false, indefinite: true,
+    });
+  });
+
+  it('leaves weather unset when none is chosen', () => {
+    expect(buildWithWeather().field).not.toHaveProperty('weather');
   });
 });

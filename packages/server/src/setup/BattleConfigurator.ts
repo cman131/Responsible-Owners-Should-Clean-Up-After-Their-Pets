@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { BattleState, SlotState, PartyMember, TeamState, FieldState, SideConditions } from '@poke-fighter/shared';
-import type { PokemonSet, PokemonCondition } from '@poke-fighter/shared';
+import type { PokemonSet, PokemonCondition, StartingWeather } from '@poke-fighter/shared';
 import { DataLoader } from '../data/loader.js';
 import { calcAllStats } from '../engine/stats.js';
 import { applyCondition } from './condition.js';
@@ -23,19 +23,24 @@ interface BuildConfig {
   label: string;
   teams: [TeamConfig, TeamConfig];
   levelCap?: number;
+  weather?: StartingWeather;
 }
 
 function defaultSideConditions(): SideConditions {
   return { stealthRock: false, spikes: 0, toxicSpikes: 0, stickyWeb: false, reflect: 0, lightScreen: 0, auroraVeil: 0, tailwind: 0, safeguard: 0, mist: 0, luckychant: 0 };
 }
 
-function defaultField(): FieldState {
-  return {
+function defaultField(weather?: StartingWeather): FieldState {
+  const field: FieldState = {
     trickroom: 0, gravity: 0,
     wonderroom: 0, magicroom: 0, mudSport: 0, waterSport: 0,
     ionDeluge: false, fairyLock: 0,
     sideConditions: [defaultSideConditions(), defaultSideConditions()],
   };
+  if (weather !== undefined) {
+    field.weather = { type: weather, turnsRemaining: 0, fromAbility: false, indefinite: true };
+  }
+  return field;
 }
 
 export class BattleConfigurator {
@@ -50,7 +55,7 @@ export class BattleConfigurator {
       turnNumber: 1,
       phase: 'action',
       teams,
-      field: defaultField(),
+      field: defaultField(config.weather),
     };
   }
 
