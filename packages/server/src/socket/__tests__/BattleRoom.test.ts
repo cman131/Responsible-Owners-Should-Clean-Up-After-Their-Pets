@@ -615,3 +615,32 @@ describe('submitDefaultAction', () => {
     expect(result.ok).toBe(true);
   });
 });
+
+describe('onBattleEnd condition state', () => {
+  it('passes the pre-forfeit state for saving conditions', () => {
+    const state = make1v1State();
+    state.teams[0]!.slots[0]!.party[0]!.currentHp = 37;
+    const room = new BattleRoom({ initialState: state });
+    let finalHp = -1;
+    let conditionHp = -1;
+    room.onBattleEnd((_winner, finalState, conditionState) => {
+      finalHp = finalState.teams[0]!.slots[0]!.party[0]!.currentHp;
+      conditionHp = conditionState.teams[0]!.slots[0]!.party[0]!.currentHp;
+    });
+
+    room.forfeit('team-a');
+
+    expect(finalHp).toBe(0);
+    expect(conditionHp).toBe(37);
+  });
+
+  it('passes the final state after a normal win', () => {
+    const room = new BattleRoom({ initialState: make1v1State() });
+    let same = false;
+    room.onBattleEnd((_winner, finalState, conditionState) => { same = finalState === conditionState; });
+
+    room.forceFaint('slot-b1');
+
+    expect(same).toBe(true);
+  });
+});

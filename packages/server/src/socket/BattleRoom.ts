@@ -13,7 +13,7 @@ interface BattleRoomOptions {
 }
 
 type TurnResolvedCallback = (events: TurnResolveEvent[], newState: BattleState) => void;
-type BattleEndCallback = (winningTeamId: string, finalState: BattleState) => void;
+type BattleEndCallback = (winningTeamId: string, finalState: BattleState, conditionState: BattleState) => void;
 type SwitchRequestCallback = (slots: SlotState[]) => void;
 type NpcActionRequiredCallback = (slots: Array<{ slotId: string; displayName: string; request: ActionRequestPayload }>) => void;
 type PlayerActionRequiredCallback = (requests: Array<{ slotId: string; request: ActionRequestPayload }>) => void;
@@ -242,7 +242,7 @@ export class BattleRoom {
       this.state = s;
       const winningTeamId = s.teams[winner]?.teamId ?? '';
       try {
-        this.onBattleEndCb?.(winningTeamId, s);
+        this.onBattleEndCb?.(winningTeamId, s, s);
       } catch (err) {
         console.error('[BattleRoom] forceFaint onBattleEndCb threw:', err);
       }
@@ -267,6 +267,8 @@ export class BattleRoom {
   }
 
   forfeit(teamId: string): void {
+    // Health is saved from the state before the forfeiting team is zeroed
+    const beforeForfeit = structuredClone(this.state);
     const s = structuredClone(this.state);
     const teamIdx = s.teams.findIndex((t) => t.teamId === teamId);
     if (teamIdx === -1) return;
@@ -285,7 +287,7 @@ export class BattleRoom {
 
     const winningTeamId = s.teams[winnerIdx]?.teamId ?? '';
     try {
-      this.onBattleEndCb?.(winningTeamId, s);
+      this.onBattleEndCb?.(winningTeamId, s, beforeForfeit);
     } catch (err) {
       console.error('[BattleRoom] forfeit onBattleEndCb threw:', err);
     }
@@ -560,7 +562,7 @@ export class BattleRoom {
       this.state = { ...this.state, phase: 'ended', winner };
       const winningTeamId = this.state.teams[winner]?.teamId ?? '';
       try {
-        this.onBattleEndCb?.(winningTeamId, this.state);
+        this.onBattleEndCb?.(winningTeamId, this.state, this.state);
       } catch (err) {
         console.error('[BattleRoom] postSwitchContinuation onBattleEndCb threw:', err);
       }
@@ -637,7 +639,7 @@ export class BattleRoom {
     if (result.newState.phase === 'ended' && result.newState.winner !== undefined) {
       const winningTeam = result.newState.teams[result.newState.winner];
       try {
-        this.onBattleEndCb?.(winningTeam?.teamId ?? '', result.newState);
+        this.onBattleEndCb?.(winningTeam?.teamId ?? '', result.newState, result.newState);
       } catch (err) {
         console.error('[BattleRoom] onBattleEnd callback threw:', err);
       }
