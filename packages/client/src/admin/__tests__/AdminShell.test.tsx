@@ -105,6 +105,16 @@ describe('AdminShell', () => {
     expect(screen.getByPlaceholderText(/admin token/i)).toBeTruthy();
   });
 
+  it('shows admin:warning as a dismissible banner without logging out', async () => {
+    render(<AdminShell />);
+    await act(async () => { emit('admin:authenticated'); });
+    await act(async () => { emit('admin:warning', { message: 'Health was not updated.' }); });
+    expect(screen.getByRole('alert').textContent).toContain('Health was not updated.');
+    expect(screen.getByText('admin-router')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /dismiss/i }));
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
   it('clears session and shows error on admin:error', async () => {
     localStorage.setItem('poke_admin_session', JSON.stringify({
       token: 'bad-token',

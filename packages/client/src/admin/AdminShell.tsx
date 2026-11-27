@@ -25,6 +25,7 @@ export function AdminShell() {
   const [authenticated, setAuthenticated] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
   const pendingToken = useRef<string | null>(null);
 
   useEffect(() => {
@@ -56,11 +57,16 @@ export function AdminShell() {
       setError(message);
     };
 
+    // Unlike admin:error, a warning keeps the admin signed in
+    const onWarning = ({ message }: { message: string }) => setWarning(message);
+
     socket.on('admin:authenticated', onAuthenticated);
     socket.on('admin:error', onError);
+    socket.on('admin:warning', onWarning);
     return () => {
       socket.off('admin:authenticated', onAuthenticated);
       socket.off('admin:error', onError);
+      socket.off('admin:warning', onWarning);
     };
   }, []);
 
@@ -81,7 +87,19 @@ export function AdminShell() {
     setConnecting(false);
   }
 
-  if (authenticated) return <AdminRouter onLogout={handleLogout} />;
+  if (authenticated) {
+    return (
+      <>
+        {warning && (
+          <div role="alert" style={{ background: '#7a4a00', color: '#fff', padding: '8px 16px', display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 12 }}>
+            <span>{warning}</span>
+            <button onClick={() => setWarning(null)} style={{ background: 'none', border: '1px solid #fff', color: '#fff', borderRadius: 3, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11 }}>DISMISS</button>
+          </div>
+        )}
+        <AdminRouter onLogout={handleLogout} />
+      </>
+    );
+  }
 
   if (connecting) {
     return (
