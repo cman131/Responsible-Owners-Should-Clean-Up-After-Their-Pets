@@ -3,6 +3,7 @@ import type {
   ServerToClientEvents, ClientToServerEvents, AdminActionPayload,
   MoveAction, SwitchAction, BattleState, PokemonSpecies, Move, HeldItem,
 } from '@poke-fighter/shared';
+import { isStartingWeather } from '@poke-fighter/shared';
 import type { BattleRoom } from '../BattleRoom.js';
 import type { LobbyManager } from '../LobbyManager.js';
 import type { AppDatabase } from '../../db/Database.js';
@@ -55,9 +56,13 @@ export function registerAdminHandlers(
         break;
       }
       case 'start-battle': {
-        const { battleId, label, teams, levelCap } = payload.data as {
-          battleId: string; label: string; levelCap?: number; teams: StartTeams;
+        const { battleId, label, teams, levelCap, weather } = payload.data as {
+          battleId: string; label: string; levelCap?: number; weather?: unknown; teams: StartTeams;
         };
+        if (weather !== undefined && !isStartingWeather(weather)) {
+          socket.emit('admin:start-result', { battleId, ok: false, message: 'Unknown starting weather.' });
+          break;
+        }
         // No await between the checks and startBattle, so two quick requests can't both pass
         try {
           const prepared = prepareBattleTeams(db, teams, (id) => health.isInBattle(id));
@@ -68,8 +73,13 @@ export function registerAdminHandlers(
           const state = new BattleConfigurator().build({
             battleId, label, teams: prepared.teams,
             ...(levelCap !== undefined ? { levelCap } : {}),
+            ...(weather !== undefined ? { weather } : {}),
           });
           db.battles.insert(state);
+          if (weather !== undefined) {
+            // Turn 0 marks the pre-battle entry; real turns are numbered from 1
+            db.battles.appendTurnEvents(battleId, { turnNumber: 0, events: [{ type: 'weather-started', data: { weather } }] });
+          }
           startBattle(state);
           socket.emit('admin:start-result', { battleId, ok: true });
         } catch (err) {
