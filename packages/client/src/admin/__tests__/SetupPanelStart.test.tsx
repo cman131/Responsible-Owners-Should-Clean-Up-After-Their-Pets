@@ -18,7 +18,12 @@ vi.mock('../steps/SlotAssignmentStep.js', () => ({
   ),
 }));
 vi.mock('../steps/BattleSettingsStep.js', () => ({
-  BattleSettingsStep: ({ onStart }: any) => <button onClick={() => onStart({ label: 'Battle' })}>start</button>,
+  BattleSettingsStep: ({ onStart }: any) => (
+    <>
+      <button onClick={() => onStart({ label: 'Battle' })}>start</button>
+      <button onClick={() => onStart({ label: 'Battle', weather: 'rain' })}>start-rain</button>
+    </>
+  ),
 }));
 vi.mock('../BattleWaitingScreen.js', () => ({ BattleWaitingScreen: () => <div>waiting-screen</div> }));
 
@@ -42,6 +47,14 @@ describe('SetupPanel start result', () => {
     expect(screen.queryByText('waiting-screen')).toBeNull();
     act(() => handlers['admin:start-result']!({ battleId: 'battle-1', ok: true }));
     expect(screen.getByText('waiting-screen')).toBeTruthy();
+  });
+
+  it('sends starting weather only when chosen', () => {
+    startBattle();
+    expect(mockSocket.emit.mock.calls[0]![1].data).not.toHaveProperty('weather');
+    act(() => handlers['admin:start-result']!({ battleId: 'battle-1', ok: false, message: 'no' }));
+    fireEvent.click(screen.getByText('start-rain'));
+    expect(mockSocket.emit.mock.calls[1]![1].data).toMatchObject({ weather: 'rain' });
   });
 
   it('stays on settings and shows the reason when refused', () => {

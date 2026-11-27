@@ -6,6 +6,15 @@ export type StatusCondition = 'brn' | 'par' | 'slp' | 'frz' | 'psn' | 'tox' | 'f
 
 export type WeatherType = 'sun' | 'rain' | 'sand' | 'snow' | 'heavy-rain' | 'harsh-sun' | 'strong-winds';
 
+/** Weather a battle can be set to start with. */
+export const STARTING_WEATHERS = ['rain', 'sun', 'sand', 'snow'] as const satisfies readonly WeatherType[];
+
+export type StartingWeather = (typeof STARTING_WEATHERS)[number];
+
+export function isStartingWeather(value: unknown): value is StartingWeather {
+  return (STARTING_WEATHERS as readonly unknown[]).includes(value);
+}
+
 export type TerrainType = 'electric' | 'grassy' | 'misty' | 'psychic';
 
 export interface VolatileStatusEntry {
@@ -108,7 +117,8 @@ export interface SideConditions {
 }
 
 export interface FieldState {
-  weather?: { type: WeatherType; turnsRemaining: number; fromAbility: boolean; permanent?: boolean };
+  /** `indefinite`: no turn limit, `turnsRemaining` is ignored. Unlike `permanent`, abilities can still replace it. */
+  weather?: { type: WeatherType; turnsRemaining: number; fromAbility: boolean; permanent?: boolean; indefinite?: boolean };
   terrain?: { type: TerrainType; turnsRemaining: number };
   trickroom: number;
   gravity: number;

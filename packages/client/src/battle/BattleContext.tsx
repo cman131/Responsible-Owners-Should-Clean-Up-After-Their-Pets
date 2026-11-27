@@ -41,6 +41,15 @@ const WEATHER_END: Record<string, string> = {
   hail: 'The hail stopped.',
   snow: 'The snow stopped.',
 };
+
+/** The opening log line for a battle still on turn 1 in its starting weather. */
+function openingWeatherLog(state: BattleState | null | undefined): LogEntry[] {
+  const weather = state?.field?.weather;
+  if (state?.turnNumber !== 1 || !weather?.indefinite) {
+    return [];
+  }
+  return [{ type: 'normal', text: WEATHER_START[weather.type] ?? 'Weather started!' }];
+}
 const TERRAIN_START: Record<string, string> = {
   electric: 'Electric Terrain electrified the field!',
   grassy: 'Grass grew to cover the battlefield!',
@@ -461,7 +470,7 @@ export function BattleProvider({ mySlotId, initialState, children }: Props) {
   const stateRef = useRef<BattleState | null>(initialState ?? null);
   const [actionRequest, setActionRequest] = useState<ActionRequestPayload | null>(null);
   const [switchRequest, setSwitchRequest] = useState<SwitchRequestPayload | null>(null);
-  const [turnLog, setTurnLog] = useState<LogEntry[]>([]);
+  const [turnLog, setTurnLog] = useState<LogEntry[]>(() => openingWeatherLog(initialState));
   const [displayHp, setDisplayHp] = useState<Map<string, number>>(new Map());
   const [animatingSlots, setAnimatingSlots] = useState<Map<string, 'attack' | 'hit' | 'faint'>>(new Map());
   const [eventQueue, _setEventQueue] = useState<PlaybackEntry[]>([]);
@@ -571,12 +580,14 @@ export function BattleProvider({ mySlotId, initialState, children }: Props) {
       setState(s);
       stateRef.current = s;
       setDisplayHp(new Map());
-      setTurnLog([{ type: 'normal', text: `Battle started! Turn ${s.turnNumber}` }]);
+      setTurnLog([{ type: 'normal', text: `Battle started! Turn ${s.turnNumber}` }, ...openingWeatherLog(s)]);
     });
 
     socket.on('state:sync', (s: BattleState) => {
       setState(s);
       stateRef.current = s;
+      // Only seeds an empty log, so a repeated sync cannot duplicate the line
+      setTurnLog((prev) => (prev.length === 0 ? openingWeatherLog(s) : prev));
     });
 
     socket.on('turn:resolve', ({ turnNumber, events, state: s }: TurnResolvePayload) => {
@@ -603,7 +614,10 @@ export function BattleProvider({ mySlotId, initialState, children }: Props) {
     socket.on('battle:history', ({ turns }: { turns: Array<{ turnNumber: number; events: TurnResolveEvent[] }> }) => {
       const entries: LogEntry[] = [];
       for (const turn of turns) {
-        entries.push({ type: 'round-start', text: `-------Round ${turn.turnNumber - 1}-------` });
+        // Turn 0 is the pre-battle entry and has no round heading
+        if (turn.turnNumber > 0) {
+          entries.push({ type: 'round-start', text: `-------Round ${turn.turnNumber - 1}-------` });
+        }
         for (const event of turn.events) {
           const result = eventToText(event);
           const texts = Array.isArray(result) ? result : [result];
