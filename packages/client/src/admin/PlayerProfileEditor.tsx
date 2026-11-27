@@ -4,6 +4,7 @@ import { getSocket } from '../socket.js';
 import { TeamBuilder, slotStatus } from './TeamBuilder.js';
 import { BankTab } from './BankTab.js';
 import { InventoryTab } from './InventoryTab.js';
+import { HealthTab } from './HealthTab.js';
 import type { PlayerProfile, PokemonSet } from '@poke-fighter/shared';
 
 interface Props {
@@ -25,7 +26,7 @@ export function PlayerProfileEditor({ profile, onBack }: Props) {
   const [team, setTeam] = useState<PokemonSet[]>(profile?.defaultTeam?.pokemon ?? []);
   const [bank, setBank] = useState<PokemonSet[]>(profile?.bank ?? []);
   const [inventory, setInventory] = useState<Record<string, number>>(profile?.inventory ?? {});
-  const [tab, setTab] = useState<'team' | 'bank' | 'inventory'>('team');
+  const [tab, setTab] = useState<EditorTab>('team');
   const [teamKey, setTeamKey] = useState(0);
 
   const isNew = profile === null;
@@ -103,13 +104,13 @@ export function PlayerProfileEditor({ profile, onBack }: Props) {
         </div>
 
         <div style={{ display: 'flex', borderBottom: '1px solid #333' }}>
-          {(['team', 'bank', 'inventory'] as const).map((t) => (
+          {(['team', 'bank', 'inventory', 'health'] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
               style={{ padding: '8px 20px', background: tab === t ? TAB_COLOR[t] : '#1a1a2e', color: tab === t ? '#fff' : '#888', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, letterSpacing: 2 }}
             >
-              {t === 'team' ? `TEAM (${team.length}/6)` : t === 'bank' ? `BANK (${bank.length})` : `INVENTORY (${Object.keys(inventory).length})`}
+              {t === 'team' ? `TEAM (${team.length}/6)` : t === 'bank' ? `BANK (${bank.length})` : t === 'inventory' ? `INVENTORY (${Object.keys(inventory).length})` : 'HEALTH'}
             </button>
           ))}
         </div>
@@ -139,6 +140,14 @@ export function PlayerProfileEditor({ profile, onBack }: Props) {
           <div style={{ display: tab === 'inventory' ? 'block' : 'none', padding: 16 }}>
             <InventoryTab inventory={inventory} onInventoryChange={setInventory} />
           </div>
+          {/* Mounted only when selected, so it requests fresh health each time */}
+          {tab === 'health' && (
+            <div style={{ padding: 16 }}>
+              {profile
+                ? <HealthTab profileId={profile.profileId} team={team} bank={bank} />
+                : <div style={{ color: '#888', fontSize: 12 }}>Save this player first. New Pokémon start fully healthy.</div>}
+            </div>
+          )}
         </div>
 
         {!isValid && (
@@ -155,6 +164,7 @@ export function PlayerProfileEditor({ profile, onBack }: Props) {
   );
 }
 
-const TAB_COLOR: Record<'team' | 'bank' | 'inventory', string> = { team: '#2980b9', bank: '#27ae60', inventory: '#8e44ad' };
+type EditorTab = 'team' | 'bank' | 'inventory' | 'health';
+const TAB_COLOR: Record<EditorTab, string> = { team: '#2980b9', bank: '#27ae60', inventory: '#8e44ad', health: '#c0392b' };
 const backBtn: React.CSSProperties = { background: 'none', border: '1px solid #555', color: '#aaa', padding: '5px 12px', borderRadius: 3, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11 };
 const actionBtn: React.CSSProperties = { border: 'none', color: '#fff', padding: '6px 16px', borderRadius: 3, fontFamily: 'inherit', fontSize: 12, letterSpacing: 1 };
