@@ -9,6 +9,7 @@ import { registerBattleHandlers } from './handlers/battleHandlers.js';
 import { registerAdminHandlers } from './handlers/adminHandlers.js';
 import { registerPlayerPortalHandlers } from './handlers/playerPortalHandlers.js';
 import { AppDatabase } from '../db/Database.js';
+import { buildPlayerHealth, getOwnerProfileIds, saveBattleConditions, type HealthService } from '../setup/playerHealth.js';
 
 interface SocketServerOptions { adminToken: string }
 
@@ -17,6 +18,10 @@ export class SocketServer {
   private readonly lobby = new LobbyManager();
   private readonly rooms = new Map<string, BattleRoom>();
   private readonly db: AppDatabase;
+  private readonly healthService: HealthService = {
+    isInBattle: (profileId) => this.isPlayerInBattle(profileId),
+    publish: (profileId) => this.publishPlayerHealth(profileId),
+  };
 
   constructor(httpServer: HttpServer, { adminToken }: SocketServerOptions) {
     this.io = new Server(httpServer, {
@@ -55,7 +60,7 @@ export class SocketServer {
       registerBattleHandlers(socket, this.lobby, (id) => this.rooms.get(id));
 
       if (socket.data['isAdmin']) {
-        registerAdminHandlers(socket, this.io, (id) => this.rooms.get(id), this.startBattle.bind(this), this.db, this.lobby, this.cancelBattle.bind(this));
+        registerAdminHandlers(socket, this.io, (id) => this.rooms.get(id), this.startBattle.bind(this), this.db, this.lobby, this.cancelBattle.bind(this), this.healthService);
         socket.emit('admin:authenticated');
       } else {
         const providedToken = socket.handshake.auth['token'] as string | undefined;
@@ -65,7 +70,7 @@ export class SocketServer {
         socket.on('admin:action', () => {
           socket.emit('admin:error', { message: 'Unauthorized' });
         });
-        registerPlayerPortalHandlers(socket, this.db);
+        registerPlayerPortalHandlers(socket, this.db, this.healthService);
         // Push current battle list immediately to this new non-admin connection
         const battles = this.getBattleJoinOptions();
         socket.emit('lobby:battles', { battles });
@@ -136,16 +141,46 @@ export class SocketServer {
     }
   }
 
+  private isPlayerInBattle(profileId: string): boolean {
+    return [...this.rooms.values()].some((room) => getOwnerProfileIds(room.getState()).includes(profileId));
+  }
+
+  private publishPlayerHealth(profileId: string): void {
+    const payload = buildPlayerHealth(this.db, profileId, this.isPlayerInBattle(profileId));
+    for (const s of this.io.sockets.sockets.values()) {
+      if (s.data['isAdmin'] || s.data['portalProfileId'] === profileId) {
+        s.emit('player:health', payload);
+      }
+    }
+  }
+
+  private saveHealthAfterBattle(state: BattleState): void {
+    try {
+      saveBattleConditions(this.db, state);
+    } catch (err) {
+      console.error('[SocketServer] failed to save Pokémon condition:', err);
+      for (const s of this.io.sockets.sockets.values()) {
+        if (s.data['isAdmin']) {
+          s.emit('admin:warning', { message: `Health was not updated after "${state.label}". Check the server log.` });
+        }
+      }
+    }
+  }
+
   private cancelBattle(battleId: string): void {
+    const room = this.rooms.get(battleId);
+    const owners = room ? getOwnerProfileIds(room.getState()) : [];
     this.rooms.delete(battleId);
     this.db.battles.markEnded(battleId, null);
     this.notifyAdminsOfBattles();
     this.notifyPlayersOfBattles();
+    owners.forEach((profileId) => this.publishPlayerHealth(profileId));
   }
 
   startBattle(initialState: BattleState): BattleRoom {
     const room = new BattleRoom({ initialState: structuredClone(initialState) });
     this.rooms.set(initialState.battleId, room);
+    getOwnerProfileIds(initialState).forEach((profileId) => this.publishPlayerHealth(profileId));
 
     for (const team of initialState.teams) {
       for (const slot of team.slots) {
@@ -195,12 +230,14 @@ export class SocketServer {
       });
     });
 
-    room.onBattleEnd((winningTeamId, finalState) => {
+    room.onBattleEnd((winningTeamId, finalState, conditionState) => {
       this.io.to(`battle:${initialState.battleId}`).emit('battle:end', { winningTeamId, state: finalState });
+      this.saveHealthAfterBattle(conditionState);
       this.db.battles.markEnded(initialState.battleId, winningTeamId);
       this.rooms.delete(initialState.battleId);
       this.notifyAdminsOfBattles();
       this.notifyPlayersOfBattles();
+      getOwnerProfileIds(initialState).forEach((profileId) => this.publishPlayerHealth(profileId));
     });
 
     room.onSwitchRequest((slots: SlotState[]) => {
