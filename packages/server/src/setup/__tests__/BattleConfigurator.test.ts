@@ -107,3 +107,35 @@ describe('BattleConfigurator', () => {
     });
   });
 });
+
+describe('BattleConfigurator saved condition', () => {
+  const build = (isNpc: boolean) => new BattleConfigurator().build({
+    battleId: 'x', label: 'x',
+    teams: [
+      { slots: [{
+        slotId: 'a1', displayName: 'Ash', isNpc, profileId: 'p1',
+        party: [{ ...mockSet, pokemonId: 'a' }, { ...mockSet, pokemonId: 'b' }],
+        conditions: new Map([
+          ['a', { currentHp: 0, maxHp: 153, ppUsed: {} }],
+          ['b', { currentHp: 20, maxHp: 153, status: 'par' as const, ppUsed: { flamethrower: 4 } }],
+        ]),
+      }] },
+      { slots: [{ slotId: 'b1', displayName: 'Gary', isNpc: true, party: [mockSet] }] },
+    ],
+  }).teams[0]!.slots[0]!;
+
+  it('applies condition and leads with the first healthy Pokémon', () => {
+    const slot = build(false);
+    expect(slot.party[0]!.fainted).toBe(true);
+    expect(slot.party[1]!).toMatchObject({ currentHp: 20, status: 'par', pokemonId: 'b', ownerProfileId: 'p1' });
+    expect(slot.party[1]!.moves[0].currentPp).toBe(slot.party[1]!.moves[0].maxPp - 4);
+    expect(slot.activePokemonIndex).toBe(1);
+  });
+
+  it('does not track NPCs', () => {
+    const slot = build(true);
+    expect(slot.party[0]!.fainted).toBe(false);
+    expect(slot.party[0]!.ownerProfileId).toBeUndefined();
+    expect(slot.activePokemonIndex).toBe(0);
+  });
+});

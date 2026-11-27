@@ -1,14 +1,17 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { BattleState, SlotState, PartyMember, TeamState, FieldState, SideConditions } from '@poke-fighter/shared';
-import type { PokemonSet } from '@poke-fighter/shared';
+import type { PokemonSet, PokemonCondition } from '@poke-fighter/shared';
 import { DataLoader } from '../data/loader.js';
 import { calcAllStats } from '../engine/stats.js';
+import { applyCondition } from './condition.js';
 
 interface SlotConfig {
   slotId: string;
   displayName: string;
   isNpc: boolean;
   party: PokemonSet[];
+  profileId?: string;
+  conditions?: ReadonlyMap<string, PokemonCondition>;
 }
 
 interface TeamConfig {
@@ -59,17 +62,33 @@ export class BattleConfigurator {
   }
 
   private buildSlot(slotConfig: SlotConfig, levelCap?: number): SlotState {
+    const party = slotConfig.party.map((set) => this.buildTrackedMember(set, slotConfig, levelCap));
+    const leadIndex = party.findIndex((member) => !member.fainted);
     return {
       slotId: slotConfig.slotId,
       displayName: slotConfig.displayName,
       isNpc: slotConfig.isNpc,
       isSpectator: false,
-      party: slotConfig.party.map((set) => this.buildPartyMember(set, levelCap)),
-      activePokemonIndex: 0,
+      party,
+      activePokemonIndex: Math.max(0, leadIndex),
     };
   }
 
-  private buildPartyMember(set: PokemonSet, levelCap?: number): PartyMember {
+  private buildTrackedMember(set: PokemonSet, slotConfig: SlotConfig, levelCap?: number): PartyMember {
+    const member = this.buildMember(set, levelCap);
+    if (slotConfig.isNpc || slotConfig.profileId === undefined || set.pokemonId === undefined) {
+      return member;
+    }
+    member.pokemonId = set.pokemonId;
+    member.ownerProfileId = slotConfig.profileId;
+    const condition = slotConfig.conditions?.get(set.pokemonId);
+    if (condition !== undefined) {
+      applyCondition(member, condition);
+    }
+    return member;
+  }
+
+  buildMember(set: PokemonSet, levelCap?: number): PartyMember {
     const species = this.data.getSpecies(set.speciesId);
     if (!species) throw new Error(`Unknown species id: ${set.speciesId}`);
 
