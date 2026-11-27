@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import type { BattleStartResultPayload } from '@poke-fighter/shared';
+import type { BattleStartResultPayload, StartingWeather } from '@poke-fighter/shared';
 import { getSocket } from '../socket.js';
 import { TeamStructureStep } from './steps/TeamStructureStep.js';
 import { SlotAssignmentStep } from './steps/SlotAssignmentStep.js';
@@ -56,7 +56,7 @@ export function SetupPanel({ onBack, onWatch }: SetupPanelProps) {
     setStep('settings');
   }
 
-  function handleStart({ label, levelCap }: { label: string; levelCap?: number }) {
+  function handleStart({ label, levelCap, weather }: { label: string; levelCap?: number; weather?: StartingWeather }) {
     if (pendingBattleId.current !== null) {
       return;
     }
@@ -81,6 +81,7 @@ export function SetupPanel({ onBack, onWatch }: SetupPanelProps) {
         battleId: id,
         label,
         ...(levelCap !== undefined ? { levelCap } : {}),
+        ...(weather !== undefined ? { weather } : {}),
         teams: [
           { slots: buildSlots(slotAssignment!.teamA) },
           { slots: buildSlots(slotAssignment!.teamB) },
