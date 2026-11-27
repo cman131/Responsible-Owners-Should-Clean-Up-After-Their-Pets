@@ -352,3 +352,29 @@ describe('PlayerPortalPage', () => {
     });
   });
 });
+
+describe('PlayerPortalPage health tab', () => {
+  it('shows read-only health and applies updates', () => {
+    render(<MemoryRouter><PlayerPortalPage /></MemoryRouter>);
+    act(() => socketHandlers['player:portal-roster']!({ players: [{ profileId: 'p1', displayName: 'Ash Ketchum' }] }));
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'p1' } });
+    fireEvent.change(screen.getByPlaceholderText('Player Key'), { target: { value: 'k' } });
+    fireEvent.click(screen.getByRole('button', { name: 'ENTER' }));
+    const profile = {
+      ...mockProfile,
+      defaultTeam: { templateId: 't', name: 'T', createdAt: '2024-01-01', pokemon: [{ ...pikachu, pokemonId: 'a' }] },
+    };
+    act(() => socketHandlers['player:portal-data']!({ profile }));
+    const health = (currentHp: number) => ({
+      profileId: 'p1', inBattle: false, pokemon: [{ pokemonId: 'a', currentHp, maxHp: 95, moves: [] }],
+    });
+    act(() => socketHandlers['player:health']!(health(30)));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Health' }));
+    expect(screen.getByText('30/95 HP')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /heal(\s|$)/i })).toBeNull();
+
+    act(() => socketHandlers['player:health']!(health(95)));
+    expect(screen.getByText('95/95 HP')).toBeTruthy();
+  });
+});

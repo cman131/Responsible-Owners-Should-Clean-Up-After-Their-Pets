@@ -1,12 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getSocket, connectAsPlayerPortal } from '../socket.js';
-import type { PlayerProfile, PokemonSet } from '@poke-fighter/shared';
+import type { PlayerProfile, PokemonSet, PlayerHealthPayload } from '@poke-fighter/shared';
+import { PokemonHealthList } from '../components/PokemonHealthList.js';
 import { PlayerTeamView } from '../player/PlayerTeamView.js';
 import { PlayerBankTab } from '../player/PlayerBankTab.js';
 
 type Phase = 'entry' | 'loading' | 'portal';
-type ActiveTab = 'team' | 'bank' | 'inventory';
+type ActiveTab = 'team' | 'bank' | 'inventory' | 'health';
 type SaveStatus = 'idle' | 'saving' | 'saved';
 
 export function PlayerPortalPage() {
@@ -21,7 +22,18 @@ export function PlayerPortalPage() {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [saveError, setSaveError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ActiveTab>('team');
+  const [health, setHealth] = useState<PlayerHealthPayload | null>(null);
   const navigate = useNavigate();
+
+  // Subscribed from mount because the server sends health right after sign-in
+  useEffect(() => {
+    const socket = getSocket();
+    function handleHealth(payload: PlayerHealthPayload) {
+      setHealth(payload);
+    }
+    socket.on('player:health', handleHealth);
+    return () => { socket.off('player:health', handleHealth); };
+  }, []);
 
   const leasedItems = useMemo(() => {
     const map: Record<string, number> = {};
@@ -140,6 +152,10 @@ export function PlayerPortalPage() {
               style={{ ...styles.tabButton, ...(activeTab === 'inventory' ? styles.tabActive : {}) }}
               onClick={() => setActiveTab('inventory')}
             >Inventory</button>
+            <button
+              style={{ ...styles.tabButton, ...(activeTab === 'health' ? styles.tabActive : {}) }}
+              onClick={() => setActiveTab('health')}
+            >Health</button>
           </div>
           <div style={styles.tabContent}>
             {activeTab === 'team' && (
@@ -174,6 +190,17 @@ export function PlayerPortalPage() {
                         <span style={{ color: '#aaa' }}>×{qty}</span>
                       </div>
                     ))}
+                  </div>
+                )
+            )}
+            {activeTab === 'health' && (
+              health === null || health.profileId !== profile.profileId
+                ? <p style={styles.placeholder}>Health not available yet.</p>
+                : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {health.inBattle && <p style={styles.placeholder}>In battle. Health updates when it ends.</p>}
+                    <PokemonHealthList title="TEAM" pokemon={localTeam} health={health.pokemon} />
+                    <PokemonHealthList title="BANK" pokemon={localBank} health={health.pokemon} />
                   </div>
                 )
             )}
