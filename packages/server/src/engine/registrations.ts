@@ -532,6 +532,7 @@ export function buildDefaultRegistry(data: DataLoader = new DataLoader()): MoveE
     target.status = transferred;
     if (transferred === 'slp') {
       const counter = Math.floor(Math.random() * 3) + 1;
+      target.volatileStatus = target.volatileStatus.filter(v => v.name !== 'sleep');
       target.volatileStatus.push({ name: 'sleep', counter });
     }
     delete ctx.user.status;

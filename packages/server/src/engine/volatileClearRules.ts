@@ -8,7 +8,6 @@ export const SWITCH_CLEAR_NAMES = new Set([
   'foresight', 'miracle-eye',
   'destiny-bond', 'endure',
   'substitute',
-  'sleep',
   'laser-focus',
   'geomancy-charge',
   'infatuation',

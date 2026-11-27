@@ -28,6 +28,7 @@ export function applyStatus(
   member.status = status;
   if (status === 'slp') {
     const counter = Math.floor(Math.random() * 3) + 1;
+    member.volatileStatus = member.volatileStatus.filter(v => v.name !== 'sleep');
     member.volatileStatus.push({ name: 'sleep', counter });
   }
   return { type: 'status-applied', data: { slotId, status, pokemonName: member.nickname } };
