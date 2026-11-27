@@ -414,3 +414,51 @@ describe('battle:end buffering', () => {
     expect(result.current.actionRequest).toBeNull();
   });
 });
+
+describe('starting weather opening line', () => {
+  const weatherState = {
+    turnNumber: 1, phase: 'action', teams: [],
+    field: { weather: { type: 'sand', turnsRemaining: 0, fromAbility: false, indefinite: true } },
+  };
+  const line = { type: 'normal', text: 'A sandstorm kicked up!' };
+  const openingTurn = { turnNumber: 0, events: [{ type: 'weather-started', data: { weather: 'sand' } }] };
+
+  it('shows the turn 0 history entry without a round heading', () => {
+    const { result } = renderHook(() => useBattle(), { wrapper });
+    act(() => { socketListeners['battle:history']?.({ turns: [openingTurn] }); });
+    expect(result.current.turnLog).toEqual([line]);
+  });
+
+  it('adds the line for a turn 1 initialState, once even when history follows', () => {
+    const { result } = renderHook(() => useBattle(), {
+      wrapper: ({ children }: { children: React.ReactNode }) => (
+        <BattleProvider mySlotId="s1" initialState={weatherState as any}>{children}</BattleProvider>
+      ),
+    });
+    expect(result.current.turnLog).toEqual([line]);
+    act(() => { socketListeners['battle:history']?.({ turns: [openingTurn] }); });
+    expect(result.current.turnLog).toEqual([line]);
+  });
+
+  it('adds the line once for repeated turn 1 state:sync', () => {
+    const { result } = renderHook(() => useBattle(), { wrapper });
+    act(() => { socketListeners['state:sync']?.(weatherState); });
+    act(() => { socketListeners['state:sync']?.(weatherState); });
+    expect(result.current.turnLog).toEqual([line]);
+  });
+
+  it('includes the line after battle:start', () => {
+    const { result } = renderHook(() => useBattle(), { wrapper });
+    act(() => { socketListeners['battle:start']?.({ state: weatherState }); });
+    expect(result.current.turnLog).toEqual([{ type: 'normal', text: 'Battle started! Turn 1' }, line]);
+  });
+
+  it('adds nothing after turn 1 or for weather with a turn limit', () => {
+    const { result } = renderHook(() => useBattle(), { wrapper });
+    act(() => { socketListeners['state:sync']?.({ ...weatherState, turnNumber: 3 }); });
+    act(() => {
+      socketListeners['state:sync']?.({ ...weatherState, field: { weather: { type: 'rain', turnsRemaining: 5, fromAbility: false } } });
+    });
+    expect(result.current.turnLog).toEqual([]);
+  });
+});
