@@ -7,6 +7,9 @@ import type { BattleRoom } from '../BattleRoom.js';
 import type { LobbyManager } from '../LobbyManager.js';
 import type { AppDatabase } from '../../db/Database.js';
 import { IMPLEMENTED_ITEM_IDS } from '../../engine/items.js';
+import { BattleConfigurator } from '../../setup/BattleConfigurator.js';
+import { prepareBattleTeams, type StartTeams } from '../../setup/battleStart.js';
+import { buildPlayerHealth, healPlayer, type HealthService } from '../../setup/playerHealth.js';
 
 export function pokemonMatchesQuery(s: PokemonSpecies, query: string): boolean {
   const q = query.toLowerCase();
@@ -31,6 +34,8 @@ export function filterItemsQuery(items: HeldItem[], opts: { equippableOnly?: boo
   return opts.query ? speciesFiltered.filter((i) => itemMatchesQuery(i, opts.query!)) : speciesFiltered;
 }
 
+const NO_HEALTH: HealthService = { isInBattle: () => false, publish: () => {} };
+
 export function registerAdminHandlers(
   socket: Socket<ClientToServerEvents, ServerToClientEvents>,
   io: Server<ClientToServerEvents, ServerToClientEvents>,
@@ -38,7 +43,8 @@ export function registerAdminHandlers(
   startBattle: (config: BattleState) => BattleRoom,
   db: AppDatabase,
   lobby: LobbyManager,
-  cancelRoom: (battleId: string) => void
+  cancelRoom: (battleId: string) => void,
+  health: HealthService = NO_HEALTH
 ): void {
   socket.on('admin:action', async (payload: AdminActionPayload) => {
     switch (payload.type) {
@@ -50,16 +56,26 @@ export function registerAdminHandlers(
       }
       case 'start-battle': {
         const { battleId, label, teams, levelCap } = payload.data as {
-          battleId: string; label: string; levelCap?: number;
-          teams: [{ slots: { slotId: string; displayName: string; isNpc: boolean; party: import('@poke-fighter/shared').PokemonSet[] }[] }, { slots: { slotId: string; displayName: string; isNpc: boolean; party: import('@poke-fighter/shared').PokemonSet[] }[] }];
+          battleId: string; label: string; levelCap?: number; teams: StartTeams;
         };
-        const { BattleConfigurator } = await import('../../setup/BattleConfigurator.js');
-        const configurator = new BattleConfigurator();
-        const buildConfig = { battleId, label, teams } as { battleId: string; label: string; teams: typeof teams; levelCap?: number };
-        if (levelCap !== undefined) buildConfig.levelCap = levelCap;
-        const state = configurator.build(buildConfig);
-        db.battles.insert(state);
-        startBattle(state);
+        // No await between the checks and startBattle, so two quick requests can't both pass
+        try {
+          const prepared = prepareBattleTeams(db, teams, (id) => health.isInBattle(id));
+          if (!prepared.ok) {
+            socket.emit('admin:start-result', { battleId, ok: false, message: prepared.message });
+            break;
+          }
+          const state = new BattleConfigurator().build({
+            battleId, label, teams: prepared.teams,
+            ...(levelCap !== undefined ? { levelCap } : {}),
+          });
+          db.battles.insert(state);
+          startBattle(state);
+          socket.emit('admin:start-result', { battleId, ok: true });
+        } catch (err) {
+          console.error('[start-battle] failed:', err);
+          socket.emit('admin:start-result', { battleId, ok: false, message: 'Battle failed to start. Check the server log.' });
+        }
         break;
       }
       case 'battles:list': {
@@ -210,6 +226,22 @@ export function registerAdminHandlers(
         }
         db.players.save(profile);
         socket.emit('registry:data', { resource: 'players', data: db.players.list() });
+        health.publish(profile.profileId);
+        break;
+      }
+      case 'registry:player-health': {
+        const { profileId } = payload.data as { profileId: string };
+        socket.emit('player:health', buildPlayerHealth(db, profileId, health.isInBattle(profileId)));
+        break;
+      }
+      case 'registry:heal-player': {
+        const { profileId, pokemonId } = payload.data as { profileId: string; pokemonId?: string };
+        const result = healPlayer(db, profileId, pokemonId, health.isInBattle(profileId));
+        if (!result.ok) {
+          socket.emit('registry:error', { type: 'registry:heal-player', message: result.message });
+          break;
+        }
+        health.publish(profileId);
         break;
       }
       case 'registry:delete-player': {
