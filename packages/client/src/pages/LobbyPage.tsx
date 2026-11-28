@@ -52,6 +52,8 @@ export function LobbyPage() {
       navigate('/battle', { state: navState });
     });
 
+    socket.emit('lobby:battles-request');
+
     return () => {
       socket.off('lobby:battles');
       socket.off('lobby:error');

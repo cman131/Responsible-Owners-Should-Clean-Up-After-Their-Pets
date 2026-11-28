@@ -71,9 +71,10 @@ export class SocketServer {
           socket.emit('admin:error', { message: 'Unauthorized' });
         });
         registerPlayerPortalHandlers(socket, this.db, this.healthService);
-        // Push current battle list immediately to this new non-admin connection
-        const battles = this.getBattleJoinOptions();
-        socket.emit('lobby:battles', { battles });
+        const sendBattles = () => socket.emit('lobby:battles', { battles: this.getBattleJoinOptions() });
+        // The lobby page asks again when it opens on an already-connected socket
+        socket.on('lobby:battles-request', sendBattles);
+        sendBattles();
       }
 
       socket.on('disconnect', () => {

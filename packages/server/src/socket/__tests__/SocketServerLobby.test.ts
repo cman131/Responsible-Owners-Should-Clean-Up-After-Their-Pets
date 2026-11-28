@@ -122,6 +122,18 @@ describe('SocketServer lobby slots across battles', () => {
     expect((await list).battles).toEqual([]);
   });
 
+  it('sends the battle list when a connected player asks for it', async () => {
+    const ash = await newClient();
+    start('one', 'Ash');
+    // Let the pushes from connecting and starting arrive before asking
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    const list = new Promise<{ battles: BattleJoinOption[] }>((resolve) => ash.once('lobby:battles', resolve));
+
+    ash.emit('lobby:battles-request');
+
+    expect((await list).battles.map((b) => b.battleId)).toEqual(['one']);
+  });
+
   it('does not treat a slot as taken because another live battle uses the same slot ID', async () => {
     start('one', 'Ash');
     await join_(await newClient(), 'one');

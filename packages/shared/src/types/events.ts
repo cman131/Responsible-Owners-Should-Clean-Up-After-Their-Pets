@@ -239,6 +239,7 @@ export interface ClientToServerEvents {
   'switch:submit': (payload: SwitchSubmitPayload) => void;
   'admin:action': (payload: AdminActionPayload) => void;
   'player:leave': () => void;
+  'lobby:battles-request': () => void;
   'player:portal-auth': (payload: { profileId: string; playerKey: string }) => void;
   'player:portal-save': (payload: { profileId: string; team: PokemonSet[]; bank: PokemonSet[] }) => void;
   'player:portal-items-query': (payload: { speciesName?: string }) => void;

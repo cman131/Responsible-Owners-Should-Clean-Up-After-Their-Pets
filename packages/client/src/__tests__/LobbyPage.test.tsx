@@ -226,6 +226,15 @@ describe('LobbyPage', () => {
     expect(screen.getByText('Kyle')).toBeTruthy();
   });
 
+  it('requests the battle list on mount, after it starts listening', () => {
+    render(<MemoryRouter><LobbyPage /></MemoryRouter>);
+    expect(mockSocket.emit).toHaveBeenCalledWith('lobby:battles-request');
+    const listenOrder = mockSocket.on.mock.invocationCallOrder[
+      mockSocket.on.mock.calls.findIndex((c) => c[0] === 'lobby:battles')
+    ]!;
+    expect(listenOrder).toBeLessThan(mockSocket.emit.mock.invocationCallOrder.at(-1)!);
+  });
+
   it('clears mySlotId from sessionStorage on mount', () => {
     sessionStorage.setItem('mySlotId', 'previous-slot');
     render(<MemoryRouter><LobbyPage /></MemoryRouter>);
