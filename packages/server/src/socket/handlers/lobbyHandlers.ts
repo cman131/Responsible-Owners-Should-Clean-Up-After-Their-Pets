@@ -28,7 +28,7 @@ export function registerLobbyHandlers(
       return;
     }
 
-    const existing = lobby.getBySlotId(slotId);
+    const existing = lobby.getBySlotId(battleId, slotId);
     if (existing && existing.disconnectedAt === undefined) {
       socket.emit('lobby:error', { code: 'SLOT_TAKEN', message: 'That slot is already taken.' });
       return;

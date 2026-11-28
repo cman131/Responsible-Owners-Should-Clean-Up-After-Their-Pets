@@ -198,7 +198,7 @@ export function registerAdminHandlers(
           .map((s) => ({
             slotId: s.slotId,
             displayName: s.displayName,
-            joined: lobby.isConnected(s.slotId),
+            joined: lobby.isConnected(battleId, s.slotId),
           }));
         socket.emit('lobby:slot-status', { battleId, slots });
         break;

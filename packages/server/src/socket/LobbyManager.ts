@@ -67,6 +67,13 @@ export class LobbyManager {
     }
   }
 
+  /** Frees the names and slots held by everyone in a battle that is over. */
+  releaseBattle(battleId: string): void {
+    for (const player of this.getAllPlayers()) {
+      if (player.battleId === battleId) this.removePlayer(player.socketId);
+    }
+  }
+
   getBySocketId(socketId: string): ConnectedPlayer | undefined {
     return this.bySocketId.get(socketId);
   }
@@ -83,15 +90,16 @@ export class LobbyManager {
     return Array.from(this.bySocketId.values());
   }
 
-  getBySlotId(slotId: string): ConnectedPlayer | undefined {
+  /** Slot IDs repeat across battles ('a1', 'b1'), so a lookup needs both IDs. */
+  getBySlotId(battleId: string, slotId: string): ConnectedPlayer | undefined {
     for (const player of this.bySocketId.values()) {
-      if (player.battleSlotId === slotId) return player;
+      if (player.battleId === battleId && player.battleSlotId === slotId) return player;
     }
     return undefined;
   }
 
-  isConnected(slotId: string): boolean {
-    const player = this.getBySlotId(slotId);
+  isConnected(battleId: string, slotId: string): boolean {
+    const player = this.getBySlotId(battleId, slotId);
     return !!player && player.disconnectedAt === undefined;
   }
 

@@ -101,7 +101,7 @@ export class SocketServer {
         .map((s) => ({
           slotId: s.slotId,
           displayName: s.displayName,
-          status: computeSlotStatus(this.lobby.getBySlotId(s.slotId)),
+          status: computeSlotStatus(this.lobby.getBySlotId(battleId, s.slotId)),
         }));
       options.push({ battleId, label: state.label, slots });
     }
@@ -127,7 +127,7 @@ export class SocketServer {
       .map((s) => ({
         slotId: s.slotId,
         displayName: s.displayName,
-        joined: this.lobby.isConnected(s.slotId),
+        joined: this.lobby.isConnected(battleId, s.slotId),
       }));
     for (const s of this.io.sockets.sockets.values()) {
       if (s.data['isAdmin']) s.emit('lobby:slot-status', { battleId, slots });
@@ -167,11 +167,22 @@ export class SocketServer {
     }
   }
 
+  private releasePlayers(battleId: string): void {
+    this.lobby.releaseBattle(battleId);
+    for (const s of this.io.sockets.sockets.values()) {
+      if (s.data['battleId'] === battleId) {
+        delete s.data['battleId'];
+        s.leave(`battle:${battleId}`);
+      }
+    }
+  }
+
   private cancelBattle(battleId: string): void {
     const room = this.rooms.get(battleId);
     const owners = room ? getOwnerProfileIds(room.getState()) : [];
     this.rooms.delete(battleId);
     this.db.battles.markEnded(battleId, null);
+    this.releasePlayers(battleId);
     this.notifyAdminsOfBattles();
     this.notifyPlayersOfBattles();
     owners.forEach((profileId) => this.publishPlayerHealth(profileId));
@@ -181,27 +192,6 @@ export class SocketServer {
     const room = new BattleRoom({ initialState: structuredClone(initialState) });
     this.rooms.set(initialState.battleId, room);
     getOwnerProfileIds(initialState).forEach((profileId) => this.publishPlayerHealth(profileId));
-
-    for (const team of initialState.teams) {
-      for (const slot of team.slots) {
-        if (slot.isNpc || slot.isSpectator) continue;
-        const player = this.lobby.getByName(slot.displayName);
-        if (player) {
-          player.battleSlotId = slot.slotId;
-          player.battleId = initialState.battleId;
-        }
-      }
-    }
-
-    for (const team of initialState.teams) {
-      for (const slot of team.slots) {
-        if (slot.isSpectator) continue;
-        const player = this.lobby.getBySlotId(slot.slotId);
-        if (!player) continue;
-        const socket = this.io.sockets.sockets.get(player.socketId);
-        socket?.join(`battle:${initialState.battleId}`);
-      }
-    }
 
     this.io.to(`battle:${initialState.battleId}`).emit('battle:start', { state: initialState });
     this.notifyAdminsOfBattles();
@@ -235,6 +225,7 @@ export class SocketServer {
       this.saveHealthAfterBattle(conditionState);
       this.db.battles.markEnded(initialState.battleId, winningTeamId);
       this.rooms.delete(initialState.battleId);
+      this.releasePlayers(initialState.battleId);
       this.notifyAdminsOfBattles();
       this.notifyPlayersOfBattles();
       getOwnerProfileIds(initialState).forEach((profileId) => this.publishPlayerHealth(profileId));
@@ -264,7 +255,7 @@ export class SocketServer {
           }
           continue;
         }
-        const player = this.lobby.getBySlotId(slot.slotId);
+        const player = this.lobby.getBySlotId(initialState.battleId, slot.slotId);
         if (!player) continue;
         const availableParty = slot.party.filter((p, i) => i !== slot.activePokemonIndex && !p.fainted);
         this.io.to(player.socketId).emit('switch:request', {
@@ -284,7 +275,7 @@ export class SocketServer {
 
     room.onPlayerActionRequired((requests) => {
       for (const { slotId, request } of requests) {
-        const player = this.lobby.getBySlotId(slotId);
+        const player = this.lobby.getBySlotId(initialState.battleId, slotId);
         if (!player) continue;
         const socket = this.io.sockets.sockets.get(player.socketId);
         socket?.emit('action:request', request);
