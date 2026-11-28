@@ -52,6 +52,8 @@ export function LobbyPage() {
       navigate('/battle', { state: navState });
     });
 
+    // Arriving here, including by browser Back, means leaving any battle. This frees the slot.
+    socket.emit('player:leave');
     socket.emit('lobby:battles-request');
 
     return () => {

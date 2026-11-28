@@ -235,6 +235,11 @@ describe('LobbyPage', () => {
     expect(listenOrder).toBeLessThan(mockSocket.emit.mock.invocationCallOrder.at(-1)!);
   });
 
+  it('leaves any current battle on mount, before requesting the list', () => {
+    render(<MemoryRouter><LobbyPage /></MemoryRouter>);
+    expect(mockSocket.emit.mock.calls.map((c) => c[0])).toEqual(['player:leave', 'lobby:battles-request']);
+  });
+
   it('clears mySlotId from sessionStorage on mount', () => {
     sessionStorage.setItem('mySlotId', 'previous-slot');
     render(<MemoryRouter><LobbyPage /></MemoryRouter>);

@@ -134,6 +134,17 @@ describe('SocketServer lobby slots across battles', () => {
     expect((await list).battles.map((b) => b.battleId)).toEqual(['one']);
   });
 
+  it('lets a player who leaves a live battle rejoin it and get their pending move again', async () => {
+    const ash = await newClient();
+    start('one', 'Ash');
+    await join_(ash, 'one');
+    ash.emit('player:leave');
+    const request = new Promise<{ slotId: string }>((resolve) => ash.once('action:request', resolve));
+
+    expect(await join_(ash, 'one')).toBe('joined');
+    expect((await request).slotId).toBe('a1');
+  });
+
   it('does not treat a slot as taken because another live battle uses the same slot ID', async () => {
     start('one', 'Ash');
     await join_(await newClient(), 'one');
